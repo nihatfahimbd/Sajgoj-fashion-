@@ -1,0 +1,6 @@
+{
+  "name": "SAJGOJ FASHION",
+  "description": "Exclusive Bangladeshi jewelry and designer saree e-commerce app with cart, order checkout, coupon codes, admin control panel, invoice generation, and courier tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
