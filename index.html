@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SAJGOJ FASHION - Premium Jewelry & Sharee Collection</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --maroon: #7a1c2b;
+      --gold: #d4a574;
+      --gold-dark: #b8956a;
+      --cream: #fff8f0;
+      --cream-light: #fffaf5;
+      --dark: #2c1810;
+    }
+    * {
+      font-family: 'Hind Siliguri', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#fffaf5] text-[#2c1810] min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Demo Assets
+    const imgSharee = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0e6'/><rect x='40' y='80' width='520' height='440' rx='24' fill='#7a1c2b'/><text x='50%' y='48%' dominant-baseline='middle' text-anchor='middle' fill='#fff8f0' font-size='28' font-weight='700'>Designer Sharee</text><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='#d4a574' font-size='18'>SAJ-001 • 3500৳</text></svg>");
+    const imgChoker = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><circle cx='300' cy='300' r='180' fill='#d4a574'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#2c1810' font-size='26' font-weight='700'>Rajwadi Choker</text></svg>");
+    const imgBangles = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fffaf5'/><circle cx='220' cy='300' r='70' fill='none' stroke='#b8956a' stroke-width='18'/><circle cx='380' cy='300' r='70' fill='none' stroke='#7a1c2b' stroke-width='18'/><text x='50%' y='80%' text-anchor='middle' fill='#2c1810' font-size='18'>City Gold Bangles</text></svg>");
+    const imgBracelet = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><rect x='150' y='250' width='300' height='24' rx='12' fill='#2c1810'/><text x='50%' y='50%' text-anchor='middle' fill='#7a1c2b' font-size='22' font-weight='700'>Stone Bracelet</text></svg>");
+    const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='600'><rect width='1200' height='600' fill='#7a1c2b'/><circle cx='900' cy='200' r='220' fill='#d4a574' opacity='0.3'/><text x='80' y='200' fill='#fff8f0' font-size='56' font-weight='800'>Eid Collection 2026</text><text x='80' y='260' fill='#ffdcc0' font-size='24'>Exclusive Sharee & Designer Jewelry</text></svg>");
+    const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='600'><rect width='1200' height='600' fill='#2c1810'/><rect x='0' y='0' width='600' height='600' fill='#b8956a'/><text x='80' y='220' fill='#fff' font-size='48' font-weight='700'>Rajwadi Bridal Choker</text><text x='80' y='270' fill='#fff8f0' font-size='22'>Flat 20% Off • Limited Edition</text></svg>");
+
+    // Initial Data
+    const initialProducts = [
+      { id: "p1", name: "Designer Model Collection Sharee", price: 3500, stock: 8, category: "Sharee", images: [imgSharee, imgBangles], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24 },
+      { id: "p2", name: "Rajwadi Choker Set with Jhumka", price: 2999, stock: 15, category: "Necklace", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা。", rating: 4.9, reviewsCount: 41 },
+      { id: "p3", name: "City Gold Hand Bangles 4pc", price: 1250, stock: 3, category: "Bangles", images: [imgBangles], sku: "SAJ-003", description: "টেকসই রঙের সিটি গোল্ড চুড়ি সেট (৪ পিস)। পার্টি অথবা রেগুলার ব্যবহারের জন্য উপযুক্ত。", rating: 4.5, reviewsCount: 12 },
+      { id: "p4", name: "Ruby Stone Bracelet Pair", price: 890, stock: 22, category: "Bracelet", images: [imgBracelet], sku: "SAJ-004", description: "রুবী ক্রিস্টাল খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই。", rating: 4.6, reviewsCount: 8 }
+    ];
+
+    const initialCategories = [
+      { id: "c1", name: "Sharee", icon: "👗" },
+      { id: "c2", name: "Necklace", icon: "📿" },
+      { id: "c3", name: "Bangles", icon: "💍" },
+      { id: "c4", name: "Bracelet", icon: "✨" }
+    ];
+
+    const initialOrders = [
+      { id: "ORD-1001", customer: "ফাতেমা আক্তার", phone: "01712345678", total: 3500, subtotal: 3500, status: "Pending", date: "2026-10-18", items: [{ productId: "p1", qty: 1, name: "Designer Model Collection Sharee", price: 3500 }], address: "বাসা ১২, রোড ৫", district: "Dhaka", thana: "ধানমন্ডি", deliveryCharge: 0, discount: 0, paymentMethod: "Cash on Delivery", trackingId: "" },
+      { id: "ORD-1002", customer: "নুসরাত জাহান", phone: "01813987654", total: 3501, subtotal: 3889, status: "Shipped", date: "2026-10-19", items: [{ productId: "p2", qty: 1, name: "Rajwadi Choker Set with Jhumka", price: 2999 }, { productId: "p4", qty: 1, name: "Ruby Stone Bracelet Pair", price: 890 }], address: "ফ্ল্যাট ৩বি, গুলশান এভিনিউ", district: "Dhaka", thana: "গুলশান", couponCode: "EID2026", discount: 388, deliveryCharge: 0, paymentMethod: "bKash", trackingId: "ST-884219" }
+    ];
+
+    const initialCoupons = [
+      { id: "cp1", code: "EID2026", type: "%", value: 10, minOrder: 2000, expiry: "2026-06-30", active: true },
+      { id: "cp2", code: "NEW100", type: "Flat", value: 100, minOrder: 500, expiry: "2026-12-31", active: true }
+    ];
+
+    const initialBanners = [
+      { id: "b1", title: "Eid Collection 2026", subtitle: "এক্সক্লুসিভ ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন", buttonText: "কালেকশন দেখুন", link: "#products", image: banner1, active: true, order: 1 },
+      { id: "b2", title: "রাজওয়াড়ি ব্রাইডাল কালেকশন", subtitle: "ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত কাজ", buttonText: "অফার লুফে নিন", link: "#products", image: banner2, active: true, order: 2 }
+    ];
+
+    const initialStoreConfig = {
+      storeName: "SAJGOJ FASHION",
+      logo: "",
+      tagline: "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
+      whatsapp: "88018051198888",
+      email: "contact@sajgoj.com",
+      address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
+      announcement: { text: "🔥 Eid Special: ২০০০ টাকার অর্ডারে সারা দেশে ডেলিভারি সম্পূর্ণ ফ্রি!", enabled: true },
+      header: { showSearch: true, showCart: true, showCategories: true, sticky: true },
+      footer: {
+        about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
+        email: "support@sajgoj.com",
+        phone: "018051198888",
+        address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
+        bkash: true, nagad: true, rocket: true, cod: true,
+        copyright: "© 2026 SAJGOJ FASHION. All Rights Reserved."
+      }
+    };
+
+    function App() {
+      // LocalStorage Sync Helpers
+      const getStored = (key, defaultVal) => {
+        try {
+          const item = localStorage.getItem("sajgoj_" + key);
+          return item ? JSON.parse(item) : defaultVal;
+        } catch(e) { return defaultVal; }
+      };
+      const setStored = (key, val) => {
+        try { localStorage.setItem("sajgoj_" + key, JSON.stringify(val)); } catch(e) {}
+      };
+
+      // State Management
+      const [products, setProducts] = useState(() => getStored("products", initialProducts));
+      const [categories, setCategories] = useState(() => getStored("categories", initialCategories));
+      const [orders, setOrders] = useState(() => getStored("orders", initialOrders));
+      const [coupons, setCoupons] = useState(() => getStored("coupons", initialCoupons));
+      const [banners, setBanners] = useState(() => getStored("banners", initialBanners));
+      const [config, setConfig] = useState(() => getStored("config", initialStoreConfig));
+
+      useEffect(() => setStored("products", products), [products]);
+      useEffect(() => setStored("categories", categories), [categories]);
+      useEffect(() => setStored("orders", orders), [orders]);
+      useEffect(() => setStored("coupons", coupons), [coupons]);
+      useEffect(() => setStored("banners", banners), [banners]);
+      useEffect(() => setStored("config", config), [config]);
+
+      // Navigation & Modals
+      const [activeTab, setActiveTab] = useState("Storefront");
+      const [toast, setToast] = useState(null);
+
+      // Storefront & Cart State
+      const [cart, setCart] = useState(() => getStored("cart", []));
+      useEffect(() => setStored("cart", cart), [cart]);
+      const [isCartOpen, setIsCartOpen] = useState(false);
+      const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+      const [storeSearch, setStoreSearch] = useState("");
+      const [selectedCat, setSelectedCat] = useState("All");
+      const [currentSlide, setCurrentSlide] = useState(0);
+      const [viewProduct, setViewProduct] = useState(null);
+      const [productQty, setProductQty] = useState(1);
+
+      // Checkout form state
+      const [checkoutForm, setCheckoutForm] = useState({
+        name: "",
+        phone: "",
+        district: "Dhaka",
+        thana: "",
+        address: "",
+        paymentMethod: "Cash on Delivery"
+      });
+      const [appliedCoupon, setAppliedCoupon] = useState(null);
+      const [couponInput, setCouponInput] = useState("");
+
+      // Modals
+      const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+      const [editingProduct, setEditingProduct] = useState(null);
+      const [productForm, setProductForm] = useState({ name: "", price: 0, stock: 1, category: "Sharee", images: [], sku: "", description: "" });
+
+      const notify = (msg) => {
+        setToast(msg);
+        setTimeout(() => setToast(null), 3500);
+      };
+
+      // Auto Carousel
+      useEffect(() => {
+        if (activeTab !== "Storefront") return;
+        const activeBanners = banners.filter(b => b.active);
+        if (activeBanners.length <= 1) return;
+        const timer = setInterval(() => {
+          setCurrentSlide(prev => (prev + 1) % activeBanners.length);
+        }, 5000);
+        return () => clearInterval(timer);
+      }, [activeTab, banners]);
+
+      // Cart Functions
+      const addToCart = (product, qty = 1) => {
+        if (product.stock <= 0) {
+          notify("দুঃখিত, এই পণ্যটি স্টক আউট!");
+          return;
+        }
+        setCart(prev => {
+          const existing = prev.find(item => item.id === product.id);
+          if (existing) {
+            return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + qty } : item);
+          }
+          return [...prev, { ...product, qty }];
+        });
+        notify(`"${product.name}" কার্টে যুক্ত হয়েছে! 🛒`);
+      };
+
+      const updateCartQty = (id, delta) => {
+        setCart(prev => prev.map(item => {
+          if (item.id === id) {
+            const newQty = item.qty + delta;
+            return newQty > 0 ? { ...item, qty: newQty } : null;
+          }
+          return item;
+        }).filter(Boolean));
+      };
+
+      const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const deliveryCharge = cartSubtotal >= 2000 ? 0 : (checkoutForm.district === "Dhaka" ? 60 : 120);
+
+      let discountAmount = 0;
+      if (appliedCoupon) {
+        if (appliedCoupon.type === "%") {
+          discountAmount = Math.round((cartSubtotal * appliedCoupon.value) / 100);
+        } else {
+          discountAmount = appliedCoupon.value;
+        }
+      }
+      const cartGrandTotal = Math.max(0, cartSubtotal - discountAmount) + deliveryCharge;
+
+      // Apply Coupon
+      const handleApplyCoupon = () => {
+        const found = coupons.find(c => c.code.toUpperCase() === couponInput.trim().toUpperCase() && c.active);
+        if (!found) {
+          notify("ভুল বা মেয়াদোত্তীর্ণ কুপন কোড!");
+          return;
+        }
+        if (cartSubtotal < found.minOrder) {
+          notify(`এই কুপনের জন্য ন্যূনতম ${found.minOrder}৳ এর অর্ডার প্রয়োজন!`);
+          return;
+        }
+        setAppliedCoupon(found);
+        notify(`🎉 কুপন "${found.code}" কার্যকর হয়েছে!`);
+      };
+
+      // Place Order
+      const handlePlaceOrder = (e) => {
+        e.preventDefault();
+        if (!checkoutForm.name || !checkoutForm.phone || !checkoutForm.address) {
+          notify("অনুগ্রহ করে আপনার নাম, মোবাইল নম্বর এবং সম্পূর্ণ ঠিকানা দিন!");
+          return;
+        }
+        if (cart.length === 0) {
+          notify("আপনার কার্ট খালি!");
+          return;
+        }
+
+        const newOrderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+        const orderData = {
+          id: newOrderId,
+          customer: checkoutForm.name,
+          phone: checkoutForm.phone,
+          district: checkoutForm.district,
+          thana: checkoutForm.thana || "N/A",
+          address: checkoutForm.address,
+          total: cartGrandTotal,
+          subtotal: cartSubtotal,
+          discount: discountAmount,
+          couponCode: appliedCoupon ? appliedCoupon.code : "",
+          deliveryCharge,
+          paymentMethod: checkoutForm.paymentMethod,
+          status: "Pending",
+          date: new Date().toISOString().split("T")[0],
+          items: cart.map(i => ({ productId: i.id, name: i.name, qty: i.qty, price: i.price })),
+          trackingId: ""
+        };
+
+        // Deduct stock
+        setProducts(prev => prev.map(p => {
+          const inCart = cart.find(c => c.id === p.id);
+          return inCart ? { ...p, stock: Math.max(0, p.stock - inCart.qty) } : p;
+        }));
+
+        setOrders(prev => [orderData, ...prev]);
+        setCart([]);
+        setIsCheckoutOpen(false);
+        setIsCartOpen(false);
+        setAppliedCoupon(null);
+        setCouponInput("");
+        notify(`ধন্যবাদ! আপনার অর্ডারটি নিশ্চিত হয়েছে (ID: #${newOrderId}) 🎉`);
+      };
+
+      // Dispatch to Courier
+      const dispatchCourier = (orderId, provider) => {
+        const tracking = (provider === "Steadfast" ? "ST-" : "PTH-") + Math.floor(100000 + Math.random() * 900000);
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "Shipped", trackingId: tracking } : o));
+        notify(`অর্ডার #${orderId} সফলভাবে ${provider}-এ বুকিং করা হয়েছে! ট্র্যাকিং ID: ${tracking}`);
+      };
+
+      // Filtered Products
+      const filteredProducts = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(storeSearch.toLowerCase()) || p.sku.toLowerCase().includes(storeSearch.toLowerCase());
+        const matchesCat = selectedCat === "All" || p.category === selectedCat;
+        return matchesSearch && matchesCat;
+      });
+
+      return (
+        <div className="min-h-screen flex flex-col bg-[#fffaf5]">
+          {/* Announcement Bar */}
+          {config.announcement.enabled && (
+            <div className="bg-[#7a1c2b] text-[#fff8f0] text-center text-xs sm:text-sm py-2 px-4 font-medium tracking-wide">
+              {config.announcement.text}
+            </div>
+          )}
+
+          {/* Navigation Bar */}
+          <header className="bg-white/95 backdrop-blur border-b border-[#f3e2d0] sticky top-0 z-30">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setActiveTab(activeTab === "Storefront" ? "Dashboard" : "Storefront")}
+                  className="w-10 h-10 rounded-full bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center font-bold text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition"
+                  title="Switch Admin / Store"
+                >
+                  {activeTab === "Storefront" ? "⚙️" : "🛍️"}
+                </button>
+                <div className="cursor-pointer" onClick={() => setActiveTab("Storefront")}>
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#7a1c2b]">{config.storeName}</h1>
+                  <p className="text-[10px] text-[#b8956a] -mt-1 font-medium">{config.tagline}</p>
+                </div>
+              </div>
+
+              {/* Storefront Search Bar */}
+              {config.header.showSearch && activeTab === "Storefront" && (
+                <div className="flex-1 max-w-md hidden sm:block">
+                  <div className="relative">
+                    <input 
+                      type="text"
+                      value={storeSearch}
+                      onChange={(e) => setStoreSearch(e.target.value)}
+                      placeholder="শাড়ি বা জুয়েলারির নাম দিয়ে সার্চ করুন..."
+                      className="w-full bg-[#fffaf5] border border-[#e8d5c0] rounded-full px-5 py-2 text-sm outline-none focus:border-[#7a1c2b] pl-10"
+                    />
+                    <span className="absolute left-3.5 top-2.5 text-gray-400">🔍</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                {activeTab === "Storefront" ? (
+                  <>
+                    <button 
+                      onClick={() => setIsCartOpen(true)}
+                      className="relative bg-[#7a1c2b] text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-semibold shadow hover:bg-[#681727] transition"
+                    >
+                      <span>🛒 কার্ট</span>
+                      {cart.length > 0 && (
+                        <span className="bg-[#d4a574] text-[#2c1810] text-xs px-2 py-0.5 rounded-full font-bold">
+                          {cart.reduce((sum, i) => sum + i.qty, 0)}
+                        </span>
+                      )}
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="border border-[#d4a574] text-[#7a1c2b] px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-[#fff8f0]"
+                    >
+                      অ্যাডমিন
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={() => setActiveTab("Storefront")}
+                    className="bg-[#2c1810] text-[#fff8f0] px-4 py-2 rounded-full text-xs font-semibold hover:bg-black transition"
+                  >
+                    ← স্টোরে ফিরে যান
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Admin Tabs */}
+            {activeTab !== "Storefront" && (
+              <div className="bg-[#fff8f0] border-t border-[#f3e2d0] overflow-x-auto scrollbar-hide py-2 px-4">
+                <div className="flex gap-2 min-w-max max-w-7xl mx-auto">
+                  {["Storefront", "Dashboard", "Products", "Orders", "Categories", "Coupons"].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-medium transition border ${
+                        activeTab === tab 
+                          ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow" 
+                          : "bg-white text-[#2c1810] border-[#e8d5c0] hover:bg-[#fffaf5]"
+                      }`}
+                    >
+                      {tab === "Storefront" ? "🛍️ Storefront" : tab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </header>
+
+          {/* MAIN STOREFRONT */}
+          <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+            {activeTab === "Storefront" && (
+              <div className="space-y-8">
+                {/* Banner Carousel */}
+                {banners.filter(b => b.active).length > 0 && (
+                  <div className="relative rounded-3xl overflow-hidden shadow-lg border-2 border-[#d4a574]/40 h-64 sm:h-96 bg-[#2c1810]">
+                    {banners.filter(b => b.active).map((b, idx) => (
+                      <div 
+                        key={b.id}
+                        className={`absolute inset-0 transition-opacity duration-700 ${idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                      >
+                        <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent flex flex-col justify-center p-6 sm:p-12">
+                          <span className="bg-[#d4a574] text-[#2c1810] text-xs font-bold px-3 py-1 rounded-full w-fit mb-3">
+                            EXCLUSIVE OFFER
+                          </span>
+                          <h2 className="text-2xl sm:text-5xl font-bold text-white max-w-lg leading-tight mb-2">
+                            {b.title}
+                          </h2>
+                          <p className="text-[#ffdcc0] text-sm sm:text-base max-w-md mb-6">
+                            {b.subtitle}
+                          </p>
+                          <a 
+                            href="#products" 
+                            className="bg-[#d4a574] text-[#2c1810] hover:bg-[#c79a60] w-fit px-6 py-2.5 rounded-full font-bold text-sm shadow transition"
+                          >
+                            {b.buttonText} →
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Categories */}
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+                  <button
+                    onClick={() => setSelectedCat("All")}
+                    className={`px-5 py-2 rounded-full text-sm font-semibold transition shrink-0 border ${
+                      selectedCat === "All" ? "bg-[#7a1c2b] text-white border-[#7a1c2b]" : "bg-white border-[#e8d5c0] text-[#2c1810]"
+                    }`}
+                  >
+                    সকল কালেকশন
+                  </button>
+                  {categories.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedCat(c.name)}
+                      className={`px-5 py-2 rounded-full text-sm font-semibold transition shrink-0 border flex items-center gap-1.5 ${
+                        selectedCat === c.name ? "bg-[#7a1c2b] text-white border-[#7a1c2b]" : "bg-white border-[#e8d5c0] text-[#2c1810]"
+                      }`}
+                    >
+                      <span>{c.icon}</span>
+                      <span>{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Products Grid */}
+                <div id="products">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">আমাদের এক্সক্লুসিভ আইটেমস</h3>
+                      <p className="text-xs text-[#b8956a]">মোট {filteredProducts.length} টি প্রিমিয়াম প্রোডাক্ট প্রদর্শিত হচ্ছে</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                    {filteredProducts.map(p => (
+                      <div 
+                        key={p.id}
+                        className="bg-white rounded-2xl border border-[#f3e2d0] overflow-hidden hover:shadow-xl transition group flex flex-col justify-between"
+                      >
+                        <div 
+                          className="relative cursor-pointer aspect-square bg-[#fff8f0] overflow-hidden"
+                          onClick={() => { setViewProduct(p); setProductQty(1); }}
+                        >
+                          <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          {p.stock <= 5 && (
+                            <span className="absolute top-2 left-2 bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                              Stock: {p.stock}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+                          <div>
+                            <span className="text-[10px] text-[#b8956a] font-semibold uppercase">{p.category}</span>
+                            <h4 
+                              onClick={() => { setViewProduct(p); setProductQty(1); }}
+                              className="font-semibold text-sm sm:text-base leading-snug hover:text-[#7a1c2b] cursor-pointer line-clamp-2 mt-1"
+                            >
+                              {p.name}
+                            </h4>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-[#f3e2d0] flex items-center justify-between">
+                            <span className="text-base sm:text-lg font-bold text-[#7a1c2b]">{p.price.toLocaleString()} ৳</span>
+                            <button 
+                              onClick={() => addToCart(p, 1)}
+                              disabled={p.stock <= 0}
+                              className="text-xs px-3 sm:px-4 py-2 rounded-full font-semibold transition bg-[#7a1c2b] text-white hover:bg-[#681727]"
+                            >
+                              অর্ডার করুন
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ADMIN DASHBOARD & ORDERS */}
+            {activeTab === "Dashboard" && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-[#7a1c2b]">স্টোর ড্যাশবোর্ড</h2>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs text-[#b8956a]">মোট বিক্রয়</p>
+                    <h3 className="text-2xl font-bold text-[#7a1c2b] mt-1">{orders.reduce((sum, o) => sum + o.total, 0)} ৳</h3>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs text-[#b8956a]">মোট অর্ডার</p>
+                    <h3 className="text-2xl font-bold mt-1">{orders.length}</h3>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs text-[#b8956a]">মোট প্রোডাক্ট</p>
+                    <h3 className="text-2xl font-bold mt-1">{products.length}</h3>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
+                    <p className="text-xs text-[#b8956a]">কুপন অফার</p>
+                    <h3 className="text-2xl font-bold mt-1">{coupons.length}</h3>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ORDERS TAB */}
+            {activeTab === "Orders" && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-[#7a1c2b]">কাস্টমার অর্ডার তালিকা ({orders.length})</h3>
+                <div className="bg-white rounded-2xl border overflow-hidden">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-[#fff8f0] text-[#7a1c2b] text-xs font-semibold">
+                      <tr>
+                        <th className="p-3">অর্ডার আইডি</th>
+                        <th className="p-3">গ্রাহক</th>
+                        <th className="p-3">ঠিকানা</th>
+                        <th className="p-3">মোট</th>
+                        <th className="p-3">স্ট্যাটাস</th>
+                        <th className="p-3 text-right">কুরিয়ার</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {orders.map(o => (
+                        <tr key={o.id} className="hover:bg-[#fffaf5]">
+                          <td className="p-3 font-mono font-bold text-xs">{o.id}</td>
+                          <td className="p-3">
+                            <p className="font-semibold">{o.customer}</p>
+                            <p className="text-xs text-gray-500">{o.phone}</p>
+                          </td>
+                          <td className="p-3 text-xs">{o.address}, {o.thana}, {o.district}</td>
+                          <td className="p-3 font-bold text-[#7a1c2b]">{o.total} ৳</td>
+                          <td className="p-3"><span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">{o.status}</span></td>
+                          <td className="p-3 text-right">
+                            <button 
+                              onClick={() => dispatchCourier(o.id, "Steadfast")}
+                              className="px-3 py-1 bg-[#2c1810] text-white rounded-full text-xs font-semibold hover:bg-black"
+                            >
+                              🚚 Steadfast
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* CART DRAWER */}
+          {isCartOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
+              <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
+                <div className="p-4 bg-[#fff8f0] border-b flex justify-between items-center">
+                  <h3 className="font-bold text-base text-[#7a1c2b]">শপিং ব্যাগ ({cart.length})</h3>
+                  <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 rounded-full bg-white border flex items-center justify-center font-bold">✕</button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {cart.length === 0 ? (
+                    <div className="text-center py-16 text-gray-400">
+                      <p className="text-3xl mb-2">🛍️</p>
+                      <p className="text-sm font-semibold">আপনার কার্ট খালি!</p>
+                    </div>
+                  ) : (
+                    cart.map(item => (
+                      <div key={item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
+                        <img src={item.images[0]} alt={item.name} className="w-16 h-16 rounded-xl object-cover border" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{item.name}</p>
+                          <p className="text-xs text-[#7a1c2b] font-bold mt-0.5">{item.price} ৳</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <button onClick={() => updateCartQty(item.id, -1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">-</button>
+                            <span className="text-xs font-bold">{item.qty}</span>
+                            <button onClick={() => updateCartQty(item.id, 1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">+</button>
+                          </div>
+                        </div>
+                        <div className="text-right flex flex-col justify-between">
+                          <span className="font-bold text-sm text-[#7a1c2b]">{item.price * item.qty} ৳</span>
+                          <button onClick={() => updateCartQty(item.id, -item.qty)} className="text-[11px] text-red-500 font-semibold hover:underline">রিমুভ</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {cart.length > 0 && (
+                  <div className="p-4 bg-[#fff8f0] border-t space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span>সাবটোটাল</span>
+                      <span className="font-bold">{cartSubtotal} ৳</span>
+                    </div>
+                    <button 
+                      onClick={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }}
+                      className="w-full bg-[#7a1c2b] text-white py-3 rounded-full font-bold text-sm shadow hover:bg-[#681727] transition"
+                    >
+                      অর্ডার সম্পন্ন করুন →
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* CHECKOUT MODAL */}
+          {isCheckoutOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 border shadow-2xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-[#7a1c2b]">ক্যাশ অন ডেলিভারি চেকআউট</h3>
+                  <button onClick={() => setIsCheckoutOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
+                </div>
+
+                <form onSubmit={handlePlaceOrder} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold">আপনার নাম *</label>
+                    <input 
+                      type="text" 
+                      required 
+                      placeholder="পুরো নাম..." 
+                      value={checkoutForm.name} 
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })} 
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold">মোবাইল নম্বর * (১১ ডিজিট)</label>
+                    <input 
+                      type="tel" 
+                      required 
+                      placeholder="01XXXXXXXXX" 
+                      value={checkoutForm.phone} 
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })} 
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold">জেলা *</label>
+                      <select 
+                        value={checkoutForm.district} 
+                        onChange={(e) => setCheckoutForm({ ...checkoutForm, district: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1"
+                      >
+                        <option value="Dhaka">ঢাকা (ডেলিভারি ৬০৳)</option>
+                        <option value="Outside">ঢাকার বাইরে (ডেলিভারি ১২০৳)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold">থানা / উপজেলা</label>
+                      <input 
+                        type="text" 
+                        placeholder="যেমন: ধানমন্ডি" 
+                        value={checkoutForm.thana} 
+                        onChange={(e) => setCheckoutForm({ ...checkoutForm, thana: e.target.value })} 
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1" 
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold">সম্পূর্ণ ঠিকানা (বাসা/রোড নম্বর)*</label>
+                    <textarea 
+                      rows="2" 
+                      required 
+                      placeholder="বাসা নম্বর, রোড নম্বর, এলাকা..." 
+                      value={checkoutForm.address} 
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })} 
+                      className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
+                    />
+                  </div>
+
+                  {/* Coupon Box */}
+                  <div className="p-3 bg-[#fffaf5] rounded-2xl border">
+                    <label className="text-xs font-semibold text-[#7a1c2b]">কুপন কোড (যেমন: EID2026)</label>
+                    <div className="flex gap-2 mt-1">
+                      <input 
+                        type="text" 
+                        placeholder="কুপন কোড..." 
+                        value={couponInput} 
+                        onChange={(e) => setCouponInput(e.target.value)} 
+                        className="flex-1 bg-white border rounded-full px-4 py-2 text-xs outline-none" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={handleApplyCoupon} 
+                        className="bg-[#2c1810] text-white px-5 py-2 rounded-full text-xs font-bold"
+                      >
+                        প্রয়োগ
+                      </button>
+                    </div>
+                    {appliedCoupon && (
+                      <p className="text-xs text-green-700 font-semibold mt-1">
+                        ✓ কুপন কার্যকর হয়েছে (-{discountAmount} ৳)
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Pricing Summary */}
+                  <div className="bg-[#fff8f0] p-4 rounded-2xl space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span>সাবটোটাল</span>
+                      <span>{cartSubtotal} ৳</span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-green-700 font-semibold">
+                        <span>ডিসকাউন্ট</span>
+                        <span>- {discountAmount} ৳</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>ডেলিভারি চার্জ</span>
+                      <span>{deliveryCharge === 0 ? "ফ্রি" : `${deliveryCharge} ৳`}</span>
+                    </div>
+                    <div className="flex justify-between text-base font-bold text-[#7a1c2b] pt-2 border-t border-[#d4a574]">
+                      <span>সর্বমোট</span>
+                      <span>{cartGrandTotal} ৳</span>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="w-full bg-[#7a1c2b] text-white py-3.5 rounded-full font-bold text-sm shadow-lg hover:bg-[#681727] transition"
+                  >
+                    অর্ডার নিশ্চিত করুন (Confirm Order)
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Toast Notification */}
+          {toast && (
+            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-[#2c1810] text-[#fff8f0] px-6 py-3 rounded-full text-sm font-semibold shadow-2xl border border-[#d4a574]">
+              {toast}
+            </div>
+          )}
+
+          {/* Site Footer */}
+          <footer className="mt-16 bg-[#2c1810] text-[#fff8f0] border-t-4 border-[#d4a574] py-8 px-4 text-center text-xs">
+            <h3 className="text-lg font-bold text-[#d4a574] mb-2">{config.storeName}</h3>
+            <p className="text-[#ffdcc0] max-w-md mx-auto mb-4">{config.footer.about}</p>
+            <p className="text-[#b8956a]">📞 {config.footer.phone} | ✉️ {config.footer.email} | 📍 {config.footer.address}</p>
+            <p className="text-gray-500 mt-4">{config.footer.copyright}</p>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
