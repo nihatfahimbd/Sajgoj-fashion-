@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
         val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
 
         val selectedProduct by viewModel.selectedProduct.collectAsStateWithLifecycle()
+        val reviews by viewModel.reviews.collectAsStateWithLifecycle()
         val selectedOrderInvoice by viewModel.selectedOrderInvoice.collectAsStateWithLifecycle()
         val isCartOpen by viewModel.isCartOpen.collectAsStateWithLifecycle()
 
@@ -165,10 +166,15 @@ class MainActivity : ComponentActivity() {
 
               // Overlays & Modals
               if (selectedProduct != null) {
+                val productReviews = reviews.filter { it.productId == selectedProduct!!.id }
                 ProductDetailDialog(
                   product = selectedProduct!!,
+                  reviews = productReviews,
                   onDismiss = { viewModel.closeProductDetail() },
-                  onAddToCart = { prod, qty -> viewModel.addToCart(prod, qty) }
+                  onAddToCart = { prod, qty -> viewModel.addToCart(prod, qty) },
+                  onAddReview = { rating, name, comment ->
+                    viewModel.addReview(selectedProduct!!.id, name, rating, comment)
+                  }
                 )
               }
 

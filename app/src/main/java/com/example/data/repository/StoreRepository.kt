@@ -12,7 +12,11 @@ import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.PixelConfig
 import com.example.data.model.Product
+import com.example.data.model.ProductReview
 import com.example.data.model.StoreConfig
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -164,9 +168,78 @@ class StoreRepository(private val context: Context) {
     )
   )
 
+  private val initialReviews = listOf(
+    ProductReview(
+      id = "rev-1",
+      productId = "p1",
+      customerName = "সুমাইয়া রহমান",
+      rating = 5,
+      comment = "শাড়িটা সামনাসামনি আরও অনেক সুন্দর! কাপড়ের কোয়ালিটি এবং জরি ও সুতার কাজ অসাধারণ। প্যাকেজিংও খুব প্রিমিয়াম ছিল।",
+      date = "2026-10-15",
+      verified = true
+    ),
+    ProductReview(
+      id = "rev-2",
+      productId = "p1",
+      customerName = "তানজিনা ইসলাম",
+      rating = 5,
+      comment = "অসাধারণ কালেকশন! ঈদের জন্য নিয়েছিলাম, পরিবারের সবাই খুব প্রশংসা করেছে। ডেলিভারিও খুব দ্রুত পেয়েছি।",
+      date = "2026-10-17",
+      verified = true
+    ),
+    ProductReview(
+      id = "rev-3",
+      productId = "p1",
+      customerName = "মেহজাবিন চৌধুরী",
+      rating = 4,
+      comment = "রংটা ছবিতে যেমন ছিল হুবহু তেমন। ব্লাউজ পিসটাও চমৎকার। সাজগোজকে ধন্যবাদ।",
+      date = "2026-10-19",
+      verified = true
+    ),
+    ProductReview(
+      id = "rev-4",
+      productId = "p2",
+      customerName = "আফসানা মিমি",
+      rating = 5,
+      comment = "চোকার সেটটি রাজকীয় লুক দেয়! কুন্দনের ফিনিশিং অসম্ভব সুন্দর এবং ভারি মনে হলেও পরতে খুব আরামদায়ক।",
+      date = "2026-10-12",
+      verified = true
+    ),
+    ProductReview(
+      id = "rev-5",
+      productId = "p2",
+      customerName = "নাদিয়া হাসান",
+      rating = 5,
+      comment = "ব্রাইডাল সাজের জন্য পারফেক্ট একটা সেট। ঝুমকা দুটোও চমৎকার মানিয়েছে। হাইলি রেকমেন্ডেড!",
+      date = "2026-10-18",
+      verified = true
+    ),
+    ProductReview(
+      id = "rev-6",
+      productId = "p3",
+      customerName = "রোকসানা পারভীন",
+      rating = 5,
+      comment = "সিটি গোল্ডের ফিনিশিং একদম খাঁটি সোনার মতো চকচক করে। ৪ পিস বালা পেয়ে খুবই খুশি।",
+      date = "2026-10-16",
+      verified = true
+    ),
+    ProductReview(
+      id = "rev-7",
+      productId = "p4",
+      customerName = "সাদিয়া আফরিন",
+      rating = 5,
+      comment = "রুবি স্টোনগুলো খুব উজ্জ্বল এবং ব্রেসলেটের সাইজ খুব সহজেই অ্যাডজাস্ট করা যায়। দারুণ উপহার হতে পারে।",
+      date = "2026-10-14",
+      verified = true
+    )
+  )
+
   // StateFlows
   private val _products = MutableStateFlow<List<Product>>(loadProducts())
   val products: StateFlow<List<Product>> = _products.asStateFlow()
+
+  private val _reviews = MutableStateFlow<List<ProductReview>>(initialReviews)
+  val reviews: StateFlow<List<ProductReview>> = _reviews.asStateFlow()
 
   private val _categories = MutableStateFlow<List<Category>>(initialCategories)
   val categories: StateFlow<List<Category>> = _categories.asStateFlow()
@@ -191,6 +264,130 @@ class StoreRepository(private val context: Context) {
 
   private val _pixelConfig = MutableStateFlow(PixelConfig())
   val pixelConfig: StateFlow<PixelConfig> = _pixelConfig.asStateFlow()
+
+  private val firestore: FirebaseFirestore? by lazy {
+    try {
+      val dbId = context.getString(R.string.firestore_database_id)
+      FirebaseFirestore.getInstance(FirebaseApp.getInstance(), dbId)
+    } catch (e: Exception) {
+      try {
+        FirebaseFirestore.getInstance()
+      } catch (e2: Exception) {
+        null
+      }
+    }
+  }
+
+  init {
+    initFirestoreSync()
+  }
+
+  private fun initFirestoreSync() {
+    val db = firestore ?: return
+    try {
+      db.collection("products").addSnapshotListener { snapshot, error ->
+        if (error == null && snapshot != null && !snapshot.isEmpty) {
+          val list = snapshot.documents.mapNotNull { doc ->
+            try {
+              val ratingVal = (doc.getDouble("rating") ?: doc.getLong("rating")?.toDouble() ?: 4.8).toFloat()
+              val reviewsCountVal = (doc.getLong("reviewsCount") ?: doc.getLong("reviews") ?: 12L).toInt()
+              Product(
+                id = doc.getString("id") ?: doc.id,
+                name = doc.getString("name") ?: "",
+                price = (doc.getLong("price") ?: 0L).toInt(),
+                stock = (doc.getLong("stock") ?: 0L).toInt(),
+                category = doc.getString("category") ?: "শাড়ি",
+                imageUrl = doc.getString("imageUrl") ?: (doc.get("images") as? List<*>)?.firstOrNull()?.toString() ?: "",
+                sku = doc.getString("sku") ?: "",
+                description = doc.getString("description") ?: "",
+                rating = ratingVal,
+                reviewsCount = reviewsCountVal,
+                sourceUrl = doc.getString("sourceUrl") ?: ""
+              )
+            } catch (e: Exception) {
+              null
+            }
+          }
+          if (list.isNotEmpty()) {
+            _products.value = list
+          }
+        }
+      }
+
+      db.collection("reviews").addSnapshotListener { snapshot, error ->
+        if (error == null && snapshot != null && !snapshot.isEmpty) {
+          val list = snapshot.documents.mapNotNull { doc ->
+            try {
+              ProductReview(
+                id = doc.getString("id") ?: doc.id,
+                productId = doc.getString("productId") ?: "",
+                customerName = doc.getString("customerName") ?: "",
+                rating = (doc.getLong("rating") ?: 5L).toInt(),
+                comment = doc.getString("comment") ?: "",
+                date = doc.getString("date") ?: "",
+                createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis(),
+                verified = doc.getBoolean("verified") ?: true
+              )
+            } catch (e: Exception) {
+              null
+            }
+          }.sortedWith(compareByDescending<ProductReview> { it.date }.thenByDescending { it.createdAt })
+          if (list.isNotEmpty()) {
+            _reviews.value = list
+          }
+        } else if (snapshot != null && snapshot.isEmpty) {
+          initialReviews.forEach { r ->
+            db.collection("reviews").document(r.id).set(
+              mapOf(
+                "id" to r.id,
+                "productId" to r.productId,
+                "customerName" to r.customerName,
+                "rating" to r.rating,
+                "comment" to r.comment,
+                "date" to r.date,
+                "createdAt" to r.createdAt,
+                "verified" to r.verified
+              )
+            )
+          }
+        }
+      }
+
+      db.collection("orders").addSnapshotListener { snapshot, error ->
+        if (error == null && snapshot != null && !snapshot.isEmpty) {
+          val list = snapshot.documents.mapNotNull { doc ->
+            try {
+              Order(
+                id = doc.getString("id") ?: doc.id,
+                customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
+                phone = doc.getString("phone") ?: "",
+                district = doc.getString("district") ?: "ঢাকা",
+                thana = doc.getString("thana") ?: "সদর",
+                address = doc.getString("address") ?: "",
+                items = emptyList(),
+                subtotal = (doc.getLong("subtotal") ?: 0L).toInt(),
+                deliveryCharge = (doc.getLong("deliveryCharge") ?: 0L).toInt(),
+                discount = (doc.getLong("discount") ?: 0L).toInt(),
+                couponCode = doc.getString("couponCode") ?: "",
+                total = (doc.getLong("total") ?: 0L).toInt(),
+                paymentMethod = doc.getString("paymentMethod") ?: "Cash on Delivery",
+                status = doc.getString("status") ?: "Pending",
+                date = doc.getString("date") ?: "",
+                trackingId = doc.getString("trackingId") ?: ""
+              )
+            } catch (e: Exception) {
+              null
+            }
+          }
+          if (list.isNotEmpty()) {
+            _orders.value = list
+          }
+        }
+      }
+    } catch (e: Exception) {
+      // Fallback gracefully
+    }
+  }
 
   private fun loadProducts(): List<Product> {
     return initialProducts
@@ -298,6 +495,31 @@ class StoreRepository(private val context: Context) {
     // Add to orders
     _orders.value = listOf(newOrder) + _orders.value
 
+    try {
+      firestore?.collection("orders")?.document(newOrder.id)?.set(
+        mapOf(
+          "id" to newOrder.id,
+          "customer" to newOrder.customerName,
+          "customerName" to newOrder.customerName,
+          "phone" to newOrder.phone,
+          "district" to newOrder.district,
+          "thana" to newOrder.thana,
+          "address" to newOrder.address,
+          "subtotal" to newOrder.subtotal,
+          "deliveryCharge" to newOrder.deliveryCharge,
+          "discount" to newOrder.discount,
+          "couponCode" to newOrder.couponCode,
+          "total" to newOrder.total,
+          "paymentMethod" to newOrder.paymentMethod,
+          "status" to newOrder.status,
+          "date" to newOrder.date,
+          "trackingId" to newOrder.trackingId
+        )
+      )
+    } catch (e: Exception) {
+      // Ignore
+    }
+
     // Clear cart
     clearCart()
 
@@ -309,6 +531,9 @@ class StoreRepository(private val context: Context) {
     _orders.value = _orders.value.map {
       if (it.id == orderId) it.copy(status = newStatus) else it
     }
+    try {
+      firestore?.collection("orders")?.document(orderId)?.update("status", newStatus)
+    } catch (e: Exception) {}
   }
 
   fun dispatchToCourier(orderId: String, provider: String): String {
@@ -317,20 +542,60 @@ class StoreRepository(private val context: Context) {
     _orders.value = _orders.value.map {
       if (it.id == orderId) it.copy(status = "Shipped", trackingId = tracking) else it
     }
+    try {
+      firestore?.collection("orders")?.document(orderId)?.update(
+        mapOf(
+          "status" to "Shipped",
+          "trackingId" to tracking
+        )
+      )
+    } catch (e: Exception) {}
     return tracking
   }
 
   // Product CRUD
   fun addProduct(product: Product) {
     _products.value = listOf(product) + _products.value
+    try {
+      firestore?.collection("products")?.document(product.id)?.set(
+        mapOf(
+          "id" to product.id,
+          "name" to product.name,
+          "price" to product.price,
+          "stock" to product.stock,
+          "category" to product.category,
+          "imageUrl" to product.imageUrl,
+          "sku" to product.sku,
+          "description" to product.description
+        )
+      )
+    } catch (e: Exception) {}
   }
 
   fun updateProduct(product: Product) {
     _products.value = _products.value.map { if (it.id == product.id) product else it }
+    try {
+      firestore?.collection("products")?.document(product.id)?.set(
+        mapOf(
+          "id" to product.id,
+          "name" to product.name,
+          "price" to product.price,
+          "stock" to product.stock,
+          "category" to product.category,
+          "imageUrl" to product.imageUrl,
+          "sku" to product.sku,
+          "description" to product.description
+        ),
+        SetOptions.merge()
+      )
+    } catch (e: Exception) {}
   }
 
   fun deleteProduct(productId: String) {
     _products.value = _products.value.filterNot { it.id == productId }
+    try {
+      firestore?.collection("products")?.document(productId)?.delete()
+    } catch (e: Exception) {}
   }
 
   // Category CRUD
@@ -396,8 +661,64 @@ class StoreRepository(private val context: Context) {
     return root.toString(2)
   }
 
+  // Customer Reviews
+  fun addReview(review: ProductReview) {
+    val updated = listOf(review) + _reviews.value
+    _reviews.value = updated
+
+    // Recalculate product rating
+    val productReviews = updated.filter { it.productId == review.productId }
+    if (productReviews.isNotEmpty()) {
+      val avgRating = productReviews.map { it.rating }.average().toFloat()
+      val roundedAvg = (Math.round(avgRating * 10.0) / 10.0).toFloat()
+      val count = productReviews.size
+      _products.value = _products.value.map { p ->
+        if (p.id == review.productId) {
+          p.copy(rating = roundedAvg, reviewsCount = count)
+        } else {
+          p
+        }
+      }
+
+      val db = firestore
+      if (db != null) {
+        try {
+          db.collection("products").document(review.productId).set(
+            mapOf(
+              "rating" to roundedAvg,
+              "reviewsCount" to count
+            ),
+            SetOptions.merge()
+          )
+        } catch (e: Exception) {
+          // ignore
+        }
+      }
+    }
+
+    val db = firestore ?: return
+    try {
+      db.collection("reviews").document(review.id).set(
+        mapOf(
+          "id" to review.id,
+          "productId" to review.productId,
+          "customerName" to review.customerName,
+          "rating" to review.rating,
+          "comment" to review.comment,
+          "date" to review.date,
+          "createdAt" to review.createdAt,
+          "verified" to review.verified
+        ),
+        SetOptions.merge()
+      )
+    } catch (e: Exception) {
+      // ignore
+    }
+  }
+
   fun resetToDefaults() {
     _products.value = initialProducts
+    _reviews.value = initialReviews
     _categories.value = initialCategories
     _orders.value = initialOrders
     _coupons.value = initialCoupons

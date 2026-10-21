@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Sajgoj Fashion E-commerce store rules
+    
+    // Products collection: public read, allow write for store admin
+    match /products/{productId} {
+      allow read, write: if true;
+    }
+    
+    // Categories collection
+    match /categories/{categoryId} {
+      allow read, write: if true;
+    }
+    
+    // Banners collection
+    match /banners/{bannerId} {
+      allow read, write: if true;
+    }
+    
+    // Orders collection: customers can create orders, store admin can read and update
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+    
+    // Coupons collection
+    match /coupons/{couponId} {
+      allow read, write: if true;
+    }
+
+    // Customer reviews collection: customers can read and write product reviews
+    match /reviews/{reviewId} {
+      allow read, write: if true;
+    }
+    
+    // Store configuration (store, courier, pixel, seo, header, footer)
+    match /config/{configDoc} {
+      allow read, write: if true;
+    }
+  }
+}

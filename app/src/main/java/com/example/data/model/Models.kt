@@ -99,3 +99,15 @@ data class PixelConfig(
   val addToCart: Boolean = true,
   val purchase: Boolean = true
 )
+
+data class ProductReview(
+  val id: String = "",
+  val productId: String = "",
+  val customerName: String = "",
+  val rating: Int = 5,
+  val comment: String = "",
+  val date: String = "",
+  val createdAt: Long = System.currentTimeMillis(),
+  val verified: Boolean = true
+)
+

@@ -11,6 +11,7 @@ import com.example.data.model.CourierConfig
 import com.example.data.model.Order
 import com.example.data.model.PixelConfig
 import com.example.data.model.Product
+import com.example.data.model.ProductReview
 import com.example.data.model.StoreConfig
 import com.example.data.repository.StoreRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,6 +46,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   private val repository = StoreRepository(application)
 
   val products: StateFlow<List<Product>> = repository.products
+  val reviews: StateFlow<List<ProductReview>> = repository.reviews
   val categories: StateFlow<List<Category>> = repository.categories
   val cart: StateFlow<List<CartItem>> = repository.cart
   val orders: StateFlow<List<Order>> = repository.orders
@@ -179,6 +181,22 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   fun clearCart() {
     repository.clearCart()
+  }
+
+  fun addReview(productId: String, customerName: String, rating: Int, comment: String) {
+    val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+    val review = ProductReview(
+      id = "rev-${System.currentTimeMillis()}",
+      productId = productId,
+      customerName = customerName.ifBlank { "ভেরিফাইড ক্রেতা" },
+      rating = rating.coerceIn(1, 5),
+      comment = comment,
+      date = dateStr,
+      createdAt = System.currentTimeMillis(),
+      verified = true
+    )
+    repository.addReview(review)
+    emitToast("ধন্যবাদ! আপনার মূল্যবান রিভিউটি সফলভাবে যুক্ত হয়েছে! ⭐")
   }
 
   fun placeOrder(
