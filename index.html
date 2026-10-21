@@ -35,7 +35,6 @@
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     
-    /* Animation helpers */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -62,10 +61,10 @@
 
     // Seed Data
     const initialProducts = [
-      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24 },
-      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41 },
-      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12 },
-      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8 }
+      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "" },
+      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "" },
+      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "" },
+      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "" }
     ];
 
     const initialCategories = [
@@ -77,8 +76,8 @@
     ];
 
     const initialOrders = [
-      { id: "ORD-1001", customer: "ফাতেমা আক্তার", phone: "01712345678", total: 3500, subtotal: 3500, status: "Pending", date: "2026-10-18", items: [{ productId: "p1", qty: 1, name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500 }], address: "বাসা ১২, রোড ৫", district: "ঢাকা", thana: "ধানমন্ডি", deliveryCharge: 0, discount: 0, paymentMethod: "Cash on Delivery", trackingId: "" },
-      { id: "ORD-1002", customer: "নুসরাত জাহান", phone: "01813987654", total: 3501, subtotal: 3889, status: "Shipped", date: "2026-10-19", items: [{ productId: "p2", qty: 1, name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999 }, { productId: "p4", qty: 1, name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890 }], address: "ফ্ল্যাট ৩বি, গুলশান এভিনিউ", district: "ঢাকা", thana: "গুলশান", couponCode: "EID2026", discount: 388, deliveryCharge: 0, paymentMethod: "bKash", trackingId: "ST-884219" }
+      { id: "ORD-1001", customer: "ফাতেমা আক্তার", phone: "01712345678", total: 3500, subtotal: 3500, status: "Pending", date: "2026-10-18", items: [{ productId: "p1", qty: 1, name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, sourceUrl: "" }], address: "বাসা ১২, রোড ৫", district: "ঢাকা", thana: "ধানমন্ডি", deliveryCharge: 0, discount: 0, paymentMethod: "Cash on Delivery", trackingId: "" },
+      { id: "ORD-1002", customer: "নুসরাত জাহান", phone: "01813987654", total: 3501, subtotal: 3889, status: "Shipped", date: "2026-10-19", items: [{ productId: "p2", qty: 1, name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, sourceUrl: "" }, { productId: "p4", qty: 1, name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, sourceUrl: "" }], address: "ফ্ল্যাট ৩বি, গুলশান এভিনিউ", district: "ঢাকা", thana: "গুলশান", couponCode: "EID2026", discount: 388, deliveryCharge: 0, paymentMethod: "bKash", trackingId: "ST-884219" }
     ];
 
     const initialCoupons = [
@@ -203,6 +202,7 @@
       const [selectedCat, setSelectedCat] = useState("All");
       const [currentSlide, setCurrentSlide] = useState(0);
       const [viewProduct, setViewProduct] = useState(null);
+      const [selectedDetailImg, setSelectedDetailImg] = useState(0);
       const [productQty, setProductQty] = useState(1);
       const [viewInvoiceOrder, setViewInvoiceOrder] = useState(null);
 
@@ -228,9 +228,13 @@
         category: "শাড়ি", 
         images: [], 
         sku: "", 
-        description: "" 
+        description: "",
+        sourceUrl: ""
       });
+      const [externalLinkInput, setExternalLinkInput] = useState("");
       const [imageUrlInput, setImageUrlInput] = useState("");
+      const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+      const [imgLoadStatus, setImgLoadStatus] = useState("idle"); // idle, loaded, error
 
       const [newCategory, setNewCategory] = useState({ name: "", icon: "✨" });
       const [couponForm, setCouponForm] = useState({ code: "", type: "%", value: 10, minOrder: 1500, expiry: "2026-12-31", active: true });
@@ -247,19 +251,6 @@
         setTimeout(() => setToast(null), 3500);
       };
 
-      // Dynamic Favicon Update
-      useEffect(() => {
-        if (config.favicon) {
-          let link = document.querySelector("link[rel~='icon']");
-          if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.getElementsByTagName('head')[0].appendChild(link);
-          }
-          link.href = config.favicon;
-        }
-      }, [config.favicon]);
-
       // Auto Carousel
       useEffect(() => {
         if (activeTab !== "Storefront") return;
@@ -270,6 +261,106 @@
         }, 5000);
         return () => clearInterval(timer);
       }, [activeTab, banners]);
+
+      // Smart External Product Link Fetcher
+      const handleSmartFetch = async () => {
+        const url = externalLinkInput.trim();
+        if (!url) {
+          notify("অনুগ্রহ করে অন্য ওয়েবসাইটের প্রোডাক্ট লিঙ্ক পেস্ট করুন!");
+          return;
+        }
+
+        setIsFetchingUrl(true);
+        setImgLoadStatus("idle");
+        notify("ওয়েবসাইট থেকে প্রোডাক্টের ছবি ও তথ্য খোঁজা হচ্ছে... ⏳");
+
+        // Check if user directly pasted an image URL
+        const isDirectImage = /\.(jpeg|jpg|png|webp|gif|svg)($|\?)/i.test(url) || 
+                              url.includes("alicdn.com") || 
+                              url.includes("daraz.com.bd/image") || 
+                              url.includes("m.media-amazon.com") ||
+                              url.includes("images/");
+
+        if (isDirectImage) {
+          setImageUrlInput(url);
+          setProductForm(prev => ({ 
+            ...prev, 
+            sourceUrl: url,
+            images: [url, ...prev.images.filter(x => x !== url)]
+          }));
+          setIsFetchingUrl(false);
+          setImgLoadStatus("loaded");
+          notify("✓ ছবির সরাসরি লিঙ্ক সফলভাবে কানেক্ট হয়েছে!");
+          return;
+        }
+
+        // Try extracting Open Graph metadata via public CORS proxy
+        try {
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+          const response = await fetch(proxyUrl);
+          if (!response.ok) throw new Error("Proxy error");
+          const data = await response.json();
+          const html = data.contents;
+
+          if (html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+
+            // Extract Title
+            const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content') || 
+                            doc.querySelector('title')?.innerText || "";
+            // Extract Image
+            let ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || 
+                          doc.querySelector('meta[name="twitter:image"]')?.getAttribute('content') || "";
+            // Extract Description
+            const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
+                           doc.querySelector('meta[name="description"]')?.getAttribute('content') || "";
+
+            // Fallback image search inside page
+            if (!ogImage) {
+              const imgEls = Array.from(doc.querySelectorAll('img[src*="http"]'));
+              const productImg = imgEls.find(i => i.src && !i.src.includes('logo') && !i.src.includes('icon'));
+              if (productImg) ogImage = productImg.src;
+            }
+
+            const cleanTitle = ogTitle ? ogTitle.replace(/[-|].*$/, "").trim() : "";
+            
+            setProductForm(prev => ({
+              ...prev,
+              name: cleanTitle || prev.name || "নতুন ইমপোর্ট করা পণ্য",
+              description: ogDesc ? ogDesc.trim() : prev.description,
+              sourceUrl: url,
+              images: ogImage ? [ogImage, ...prev.images.filter(x => x !== ogImage)] : prev.images
+            }));
+
+            if (ogImage) {
+              setImageUrlInput(ogImage);
+              setImgLoadStatus("loaded");
+              notify("✨ অন্য ওয়েবসাইট থেকে প্রোডাক্টের ছবি ও টাইটেল অটো-ইমপোর্ট হয়েছে!");
+            } else {
+              notify("প্রোডাক্টের টাইটেল পাওয়া গেছে! নিচের বক্সে ছবির সরাসরি লিঙ্ক দিন।");
+            }
+          }
+        } catch (err) {
+          // If proxy fails or site restricts, set sourceUrl and prompt for direct image link
+          setProductForm(prev => ({ ...prev, sourceUrl: url }));
+          notify("ওয়েবসাইট থেকে সরাসরি ছবি ফেচ করা যায়নি। নিচের বক্সে ছবির লিঙ্ক (Image URL) দিন।");
+        } finally {
+          setIsFetchingUrl(false);
+        }
+      };
+
+      // Add image to product's image list
+      const addImageToGallery = (url) => {
+        if (!url || !url.trim()) return;
+        setProductForm(prev => ({
+          ...prev,
+          images: prev.images.includes(url) ? prev.images : [...prev.images, url]
+        }));
+        setImageUrlInput("");
+        setImgLoadStatus("loaded");
+        notify("গ্যালারিতে নতুন ছবি যুক্ত হয়েছে! 🖼️");
+      };
 
       // Cart Functions
       const addToCart = (product, qty = 1) => {
@@ -357,7 +448,14 @@
           paymentMethod: checkoutForm.paymentMethod,
           status: "Pending",
           date: new Date().toISOString().split("T")[0],
-          items: cart.map(i => ({ productId: i.id, name: i.name, qty: i.qty, price: i.price, image: i.images?.[0] })),
+          items: cart.map(i => ({ 
+            productId: i.id, 
+            name: i.name, 
+            qty: i.qty, 
+            price: i.price, 
+            image: i.images?.[0],
+            sourceUrl: i.sourceUrl || "" 
+          })),
           trackingId: ""
         };
 
@@ -487,94 +585,6 @@
           </html>
         `);
         w.document.close();
-      };
-
-      // Generate Sitemap XML
-      const generateSitemap = () => {
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-        xml += `  <url><loc>${seo.canonicalUrl}</loc><priority>1.0</priority></url>\n`;
-        categories.forEach(c => {
-          xml += `  <url><loc>${seo.canonicalUrl}/#category-${encodeURIComponent(c.name)}</loc><priority>0.8</priority></url>\n`;
-        });
-        products.forEach(p => {
-          xml += `  <url><loc>${seo.canonicalUrl}/#product-${p.id}</loc><priority>0.7</priority></url>\n`;
-        });
-        xml += `</urlset>`;
-
-        const blob = new Blob([xml], { type: "application/xml" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "sitemap.xml";
-        a.click();
-        URL.revokeObjectURL(url);
-        notify("সফলভাবে sitemap.xml তৈরি ও ডাউনলোড হয়েছে! ✅");
-      };
-
-      // Export JSON Backup
-      const exportBackup = () => {
-        const fullBackup = {
-          app: "SAJGOJ FASHION",
-          exportedAt: new Date().toISOString(),
-          products,
-          categories,
-          orders,
-          coupons,
-          banners,
-          config,
-          courier,
-          pixel,
-          seo
-        };
-        const blob = new Blob([JSON.stringify(fullBackup, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `sajgoj-full-backup-${new Date().toISOString().split("T")[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        notify("সম্পূর্ণ স্টোর ব্যাকআপ ডাউনলোড হয়েছে! 💾");
-      };
-
-      // Import JSON Backup
-      const importBackup = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const data = JSON.parse(event.target.result);
-            if (data.products) setProducts(data.products);
-            if (data.categories) setCategories(data.categories);
-            if (data.orders) setOrders(data.orders);
-            if (data.coupons) setCoupons(data.coupons);
-            if (data.banners) setBanners(data.banners);
-            if (data.config) setConfig(data.config);
-            if (data.courier) setCourier(data.courier);
-            if (data.pixel) setPixel(data.pixel);
-            if (data.seo) setSeo(data.seo);
-            notify("✅ ব্যাকআপ ডাটা সফলভাবে রিস্টোর হয়েছে!");
-          } catch(err) {
-            notify("❌ অবৈধ ব্যাকআপ ফাইল!");
-          }
-        };
-        reader.readAsText(file);
-      };
-
-      // Reset to Default Demo Data
-      const resetToDefaults = () => {
-        if (confirm("আপনি কি স্টোরের সমস্ত ডাটা ফ্যাক্টরি ডিফল্টে রিসেট করতে চান? বর্তমান সকল কাস্টম তথ্য মুছে যাবে।")) {
-          setProducts(initialProducts);
-          setCategories(initialCategories);
-          setOrders(initialOrders);
-          setCoupons(initialCoupons);
-          setBanners(initialBanners);
-          setConfig(initialStoreConfig);
-          setCourier(initialCourierConfig);
-          setPixel(initialPixelConfig);
-          setSeo(initialSeoConfig);
-          notify("🔄 সমস্ত ডাটা ডিফল্ট সংস্করণে রিসেট করা হয়েছে!");
-        }
       };
 
       // File to Base64 image reader
@@ -856,12 +866,13 @@
                         >
                           <div 
                             className="aspect-square bg-gray-100 overflow-hidden relative cursor-pointer"
-                            onClick={() => { setViewProduct(p); setProductQty(1); }}
+                            onClick={() => { setViewProduct(p); setSelectedDetailImg(0); setProductQty(1); }}
                           >
                             <img 
                               src={p.images[0] || imgSharee} 
                               alt={p.name} 
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                              onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
                             />
                             {p.stock > 0 && p.stock <= 5 && (
                               <span className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">
@@ -873,13 +884,18 @@
                                 স্টক আউট
                               </span>
                             )}
+                            {p.sourceUrl && (
+                              <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[9px] px-2 py-0.5 rounded-full">
+                                🌐 ইমপোর্ট
+                              </span>
+                            )}
                           </div>
 
                           <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
                             <div>
                               <span className="text-[10px] text-[#b8956a] font-semibold uppercase tracking-wider">{p.category}</span>
                               <h4 
-                                onClick={() => { setViewProduct(p); setProductQty(1); }}
+                                onClick={() => { setViewProduct(p); setSelectedDetailImg(0); setProductQty(1); }}
                                 className="font-semibold text-xs sm:text-sm leading-snug hover:text-[#7a1c2b] cursor-pointer line-clamp-2 mt-1"
                               >
                                 {p.name}
@@ -930,9 +946,12 @@
                           category: categories[0]?.name || "শাড়ি", 
                           images: [], 
                           sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
-                          description: "" 
+                          description: "",
+                          sourceUrl: ""
                         });
+                        setExternalLinkInput("");
                         setImageUrlInput("");
+                        setImgLoadStatus("idle");
                         setIsProductModalOpen(true);
                       }}
                       className="bg-[#d4a574] text-[#2c1810] px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:bg-white transition flex items-center gap-1.5"
@@ -1004,7 +1023,7 @@
                           👗
                         </div>
                         <h4 className="font-bold text-sm text-[#2c1810]">প্রোডাক্ট ক্যাটালগ</h4>
-                        <p className="text-xs text-gray-500 mt-1">পণ্য যোগ, এডিট, ছবি আপলোড ও স্টক</p>
+                        <p className="text-xs text-gray-500 mt-1">পণ্য যোগ, অন্য সাইটের লিঙ্ক ইমপোর্ট ও স্টক</p>
                       </div>
                       <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
                         {products.length} টি পণ্য →
@@ -1153,14 +1172,14 @@
             )}
 
             {/* ========================================================= */}
-            {/* 3. PRODUCTS TAB (ADD, EDIT, DELETE, IMAGE UPLOAD WORKING) */}
+            {/* 3. PRODUCTS TAB (WITH EXTERNAL SOURCE LINK TRACKING) */}
             {/* ========================================================= */}
             {activeTab === "Products" && (
               <div className="space-y-5 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
                   <div>
                     <h3 className="text-xl font-bold text-[#7a1c2b]">প্রোডাক্ট ক্যাটালগ ({products.length})</h3>
-                    <p className="text-xs text-[#b8956a]">পণ্য যোগ, ছবি আপলোড, মূল্য ও স্টক ম্যানেজমেন্ট</p>
+                    <p className="text-xs text-[#b8956a]">পণ্য যোগ, অন্য সাইটের লিংক থেকে ইমপোর্ট ও স্টক ম্যানেজমেন্ট</p>
                   </div>
                   <button 
                     onClick={() => {
@@ -1172,9 +1191,12 @@
                         category: categories[0]?.name || "শাড়ি", 
                         images: [], 
                         sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
-                        description: "" 
+                        description: "",
+                        sourceUrl: ""
                       });
+                      setExternalLinkInput("");
                       setImageUrlInput("");
+                      setImgLoadStatus("idle");
                       setIsProductModalOpen(true);
                     }}
                     className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] flex items-center gap-2"
@@ -1183,47 +1205,77 @@
                   </button>
                 </div>
 
-                {/* Mobile View: Product Cards */}
+                {/* Product Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {products.map(p => (
-                    <div key={p.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 shadow-sm flex gap-3.5 items-center justify-between">
-                      <img src={p.images[0] || imgSharee} alt={p.name} className="w-20 h-20 rounded-2xl object-cover border flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-[10px] bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-2 py-0.5 rounded-full font-bold">
-                          {p.category}
-                        </span>
-                        <h4 className="font-semibold text-sm truncate mt-1 text-gray-900">{p.name}</h4>
-                        <p className="text-xs text-gray-400 font-mono">SKU: {p.sku}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="font-bold text-sm text-[#7a1c2b]">{p.price} ৳</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                            স্টক: {p.stock}
+                    <div key={p.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 shadow-sm flex flex-col justify-between space-y-3">
+                      <div className="flex gap-3.5 items-center">
+                        <img 
+                          src={p.images[0] || imgSharee} 
+                          alt={p.name} 
+                          className="w-20 h-20 rounded-2xl object-cover border flex-shrink-0" 
+                          onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[10px] bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-2 py-0.5 rounded-full font-bold">
+                            {p.category}
                           </span>
+                          <h4 className="font-semibold text-sm truncate mt-1 text-gray-900">{p.name}</h4>
+                          <p className="text-xs text-gray-400 font-mono">SKU: {p.sku}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="font-bold text-sm text-[#7a1c2b]">{p.price} ৳</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                              স্টক: {p.stock}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-1.5 flex-shrink-0">
-                        <button 
-                          onClick={() => {
-                            setEditingProduct(p);
-                            setProductForm(p);
-                            setImageUrlInput(p.images[0] || "");
-                            setIsProductModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
-                        >
-                          ✏️ এডিট
-                        </button>
-                        <button 
-                          onClick={() => {
-                            if (confirm(`আপনি কি "${p.name}" মুছে ফেলতে চান?`)) {
-                              setProducts(prev => prev.filter(item => item.id !== p.id));
-                              notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
-                            }
-                          }}
-                          className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
-                        >
-                          🗑️ মুছুন
-                        </button>
+
+                      {/* Source Link & Action Buttons */}
+                      <div className="flex items-center justify-between pt-2 border-t border-[#f3e2d0]">
+                        {p.sourceUrl ? (
+                          <a 
+                            href={p.sourceUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-semibold hover:bg-blue-100 flex items-center gap-1"
+                          >
+                            <span>🌐</span>
+                            <span>সোর্স ওয়েবসাইট</span>
+                          </a>
+                        ) : (
+                          <span className="text-[11px] text-gray-400">ম্যানুয়াল আপলোড</span>
+                        )}
+
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => {
+                              setEditingProduct(p);
+                              setProductForm({
+                                ...p,
+                                images: p.images || []
+                              });
+                              setImageUrlInput(p.images[0] || "");
+                              setExternalLinkInput(p.sourceUrl || "");
+                              setImgLoadStatus(p.images[0] ? "loaded" : "idle");
+                              setIsProductModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                          >
+                            ✏️ এডিট
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm(`আপনি কি "${p.name}" মুছে ফেলতে চান?`)) {
+                                setProducts(prev => prev.filter(item => item.id !== p.id));
+                                notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
+                          >
+                            🗑️ মুছুন
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1232,7 +1284,7 @@
             )}
 
             {/* ========================================================= */}
-            {/* 4. ORDERS TAB (STATUS DROPDOWN, MOBILE CARDS, INVOICE, COURIER) */}
+            {/* 4. ORDERS TAB */}
             {/* ========================================================= */}
             {activeTab === "Orders" && (
               <div className="space-y-4 animate-fadeIn">
@@ -1330,7 +1382,7 @@
                           </div>
                         </div>
 
-                        {/* Ordered Items List */}
+                        {/* Ordered Items List & Supplier Links */}
                         <div className="bg-white p-3 rounded-2xl border border-gray-100">
                           <p className="text-xs font-semibold text-gray-500 mb-2">অর্ডারের পণ্যসমূহ ({o.items.length}):</p>
                           <div className="flex flex-wrap gap-2">
@@ -1341,6 +1393,17 @@
                                   {it.qty} টি
                                 </span>
                                 <span className="font-bold text-[#b8956a]">{it.price * it.qty} ৳</span>
+                                {it.sourceUrl && (
+                                  <a 
+                                    href={it.sourceUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold hover:underline"
+                                    title="সোর্স ওয়েবসাইটে ড্রপশিপ / কিনুন"
+                                  >
+                                    🌐 সোর্স লিঙ্ক
+                                  </a>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1440,7 +1503,6 @@
                           }
                         }}
                         className="text-red-500 hover:text-red-700 text-sm font-bold w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center transition"
-                        title="Delete Category"
                       >
                         ✕
                       </button>
@@ -1480,20 +1542,20 @@
                       placeholder="ছাড়ের পরিমাণ (Value)" 
                       value={couponForm.value}
                       onChange={(e) => setCouponForm({ ...couponForm, value: Number(e.target.value) })}
-                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]"
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
                     />
                     <input 
                       type="number" 
                       placeholder="নূন্যতম অর্ডার মূল্য (Min Order)" 
                       value={couponForm.minOrder}
                       onChange={(e) => setCouponForm({ ...couponForm, minOrder: Number(e.target.value) })}
-                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]"
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
                     />
                     <input 
                       type="date" 
                       value={couponForm.expiry}
                       onChange={(e) => setCouponForm({ ...couponForm, expiry: e.target.value })}
-                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]"
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
                     />
                     <button 
                       onClick={() => {
@@ -1545,7 +1607,7 @@
             )}
 
             {/* ========================================================= */}
-            {/* 7. BANNERS TAB (HERO BANNER & SLIDER SETTINGS) */}
+            {/* 7. BANNERS TAB */}
             {/* ========================================================= */}
             {activeTab === "Banners" && (
               <div className="space-y-6 animate-fadeIn">
@@ -1650,7 +1712,7 @@
             )}
 
             {/* ========================================================= */}
-            {/* 8. COURIER SETTINGS TAB (STEADFAST, PATHAO, CHARGES) */}
+            {/* 8. COURIER SETTINGS TAB */}
             {/* ========================================================= */}
             {activeTab === "Courier" && (
               <div className="space-y-6 animate-fadeIn">
@@ -1815,7 +1877,7 @@
                   </div>
                   <div className="pt-2 flex gap-3">
                     <button 
-                      onClick={() => notify(`Pixel (${pixel.pixelId}) টেস্ট ইভেন্ট সফলভাবে পাঠানো হয়েছে! কনসোলে ট্র্যাক রেকর্ড হয়েছে।`)} 
+                      onClick={() => notify(`Pixel (${pixel.pixelId}) টেস্ট ইভেন্ট পাঠানো হয়েছে! কনসোলে ট্র্যাক হয়েছে।`)} 
                       className="bg-[#1877F2] text-white px-6 py-2.5 rounded-full text-xs font-semibold shadow hover:bg-blue-700 transition"
                     >
                       টেস্ট ইভেন্ট পাঠান
@@ -1892,7 +1954,7 @@
             )}
 
             {/* ========================================================= */}
-            {/* 11. GENERAL SETTINGS (LOGO, FAVICON, HEADER, FOOTER) */}
+            {/* 11. GENERAL SETTINGS */}
             {/* ========================================================= */}
             {activeTab === "Settings" && (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
@@ -2241,7 +2303,12 @@
                   ) : (
                     cart.map(item => (
                       <div key={item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
-                        <img src={item.images[0] || imgSharee} alt={item.name} className="w-16 h-16 rounded-xl object-cover border flex-shrink-0" />
+                        <img 
+                          src={item.images[0] || imgSharee} 
+                          alt={item.name} 
+                          className="w-16 h-16 rounded-xl object-cover border flex-shrink-0" 
+                          onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-xs sm:text-sm truncate">{item.name}</p>
                           <p className="text-xs text-[#7a1c2b] font-bold mt-0.5">{item.price} ৳</p>
@@ -2416,7 +2483,7 @@
           )}
 
           {/* ========================================================= */}
-          {/* PRODUCT DETAILS MODAL */}
+          {/* PRODUCT DETAILS MODAL (WITH MULTI-IMAGE CAROUSEL) */}
           {/* ========================================================= */}
           {viewProduct && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2427,13 +2494,38 @@
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <img src={viewProduct.images[0] || imgSharee} alt={viewProduct.name} className="w-full aspect-square rounded-2xl object-cover border" />
+                  {/* Image Display & Thumbnails */}
+                  <div className="space-y-3">
+                    <div className="aspect-square rounded-2xl overflow-hidden border bg-gray-50 relative">
+                      <img 
+                        src={(viewProduct.images && viewProduct.images[selectedDetailImg]) || viewProduct.images?.[0] || imgSharee} 
+                        alt={viewProduct.name} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                      />
+                    </div>
+
+                    {/* Multi-image thumbnails */}
+                    {viewProduct.images && viewProduct.images.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+                        {viewProduct.images.map((img, i) => (
+                          <img 
+                            key={i} 
+                            src={img} 
+                            alt={`Thumb ${i+1}`} 
+                            onClick={() => setSelectedDetailImg(i)}
+                            className={`w-14 h-14 rounded-xl object-cover border-2 cursor-pointer transition ${selectedDetailImg === i ? 'border-[#7a1c2b] scale-105' : 'border-gray-200 opacity-60 hover:opacity-100'}`}
+                            onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
+
                   <div className="flex flex-col justify-between">
                     <div>
                       <p className="text-2xl font-bold text-[#7a1c2b] mb-1">{viewProduct.price.toLocaleString()} ৳</p>
-                      <p className="text-xs text-[#b8956a] mb-4">SKU: {viewProduct.sku} | ক্যাটাগরি: {viewProduct.category}</p>
+                      <p className="text-xs text-[#b8956a] mb-3">SKU: {viewProduct.sku} | ক্যাটাগরি: {viewProduct.category}</p>
                       <p className="text-sm text-gray-700 leading-relaxed mb-6">{viewProduct.description}</p>
                     </div>
 
@@ -2462,42 +2554,86 @@
           )}
 
           {/* ========================================================= */}
-          {/* ADD / EDIT PRODUCT MODAL (WITH DIRECT IMAGE UPLOAD & URL) */}
+          {/* ADD / EDIT PRODUCT MODAL (ULTRA-PREMIUM WITH SMART IMPORT) */}
           {/* ========================================================= */}
           {isProductModalOpen && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 border shadow-2xl animate-fadeIn">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-lg text-[#7a1c2b]">
-                    {editingProduct ? "প্রোডাক্ট তথ্য আপডেট করুন" : "নতুন প্রোডাক্ট যোগ করুন"}
-                  </h3>
-                  <button onClick={() => setIsProductModalOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 border shadow-2xl animate-fadeIn">
+                <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#f3e2d0]">
+                  <div>
+                    <h3 className="font-bold text-xl text-[#7a1c2b]">
+                      {editingProduct ? "প্রোডাক্ট তথ্য আপডেট করুন" : "নতুন প্রোডাক্ট যুক্ত করুন"}
+                    </h3>
+                    <p className="text-xs text-[#b8956a]">অন্য সাইটের প্রোডাক্ট লিংক বা সরাসরি ছবির লিংক দিয়ে খুব সহজেই যুক্ত করুন</p>
+                  </div>
+                  <button onClick={() => setIsProductModalOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold text-gray-600 hover:text-black">✕</button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-5">
+                  
+                  {/* SMART LINK IMPORTER BOX (PREMIUM FEATURE) */}
+                  <div className="bg-gradient-to-br from-[#fff8f0] to-[#fff0e6] p-4 sm:p-5 rounded-3xl border-2 border-[#d4a574] shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">⚡</span>
+                        <h4 className="font-bold text-sm text-[#7a1c2b]">অন্য ওয়েবসাইটের প্রোডাক্ট লিংক থেকে অটো-ইমপোর্ট</h4>
+                      </div>
+                      <span className="text-[10px] bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full font-bold">
+                        Smart Fetch
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      Daraz, AliExpress, Amazon, অথবা অন্য যেকোনো ই-কমার্স সাইটের প্রোডাক্ট পেজের লিংক এখানে পেস্ট করুন। ছবি ও টাইটেল অটোমেটিক চলে আসবে!
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input 
+                        type="url" 
+                        placeholder="https://... (অন্য ওয়েবসাইটের প্রোডাক্ট পেজের লিঙ্ক বা ছবির লিঙ্ক)" 
+                        value={externalLinkInput}
+                        onChange={(e) => setExternalLinkInput(e.target.value)}
+                        className="flex-1 bg-white border border-[#d4a574] rounded-full px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-[#7a1c2b]"
+                      />
+                      <button 
+                        type="button" 
+                        onClick={handleSmartFetch}
+                        disabled={isFetchingUrl}
+                        className="bg-[#7a1c2b] hover:bg-[#681727] text-white px-5 py-2.5 rounded-full text-xs font-bold transition shadow flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                      >
+                        {isFetchingUrl ? (
+                          <><span>⏳</span><span>ফেচ হচ্ছে...</span></>
+                        ) : (
+                          <><span>🔍</span><span>তথ্য ও ছবি আনুন</span></>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* PRODUCT BASIC INFO */}
                   <div>
-                    <label className="text-xs font-semibold">প্রোডাক্টের নাম *</label>
+                    <label className="text-xs font-semibold text-gray-700">প্রোডাক্টের নাম *</label>
                     <input 
                       type="text" 
                       value={productForm.name} 
                       onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                      placeholder="যেমন: এক্সক্লুসিভ কাতান শাড়ি"
+                      placeholder="যেমন: এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি"
                       className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold">মূল্য (টাকা) *</label>
+                      <label className="text-xs font-semibold text-gray-700">বিক্রয় মূল্য (টাকা) *</label>
                       <input 
                         type="number" 
-                        value={productForm.price} 
+                        value={productForm.price || ''} 
                         onChange={(e) => setProductForm({ ...productForm, price: Number(e.target.value) })}
+                        placeholder="3500"
                         className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold">স্টক পরিমাণ *</label>
+                      <label className="text-xs font-semibold text-gray-700">স্টক পরিমাণ *</label>
                       <input 
                         type="number" 
                         value={productForm.stock} 
@@ -2509,7 +2645,7 @@
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold">ক্যাটাগরি</label>
+                      <label className="text-xs font-semibold text-gray-700">ক্যাটাগরি</label>
                       <select 
                         value={productForm.category}
                         onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
@@ -2519,7 +2655,7 @@
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold">SKU কোড</label>
+                      <label className="text-xs font-semibold text-gray-700">SKU কোড</label>
                       <input 
                         type="text" 
                         placeholder="SAJ-101" 
@@ -2530,47 +2666,135 @@
                     </div>
                   </div>
 
-                  {/* Image Upload & URL */}
-                  <div>
-                    <label className="text-xs font-semibold">পণ্যের ছবি (Device Upload বা URL)</label>
-                    <div className="flex gap-2 mt-1">
+                  {/* IMAGE MANAGEMENT WITH LIVE PREVIEW */}
+                  <div className="p-4 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#7a1c2b]">প্রোডাক্টের ছবি (অন্য সাইটের ইমেজ লিঙ্ক বা আপলোড)</label>
+                      <span className="text-[11px] text-gray-500">মোট ছবি: {productForm.images.length || (imageUrlInput ? 1 : 0)} টি</span>
+                    </div>
+
+                    {/* Direct Image URL input + Add to Gallery */}
+                    <div className="flex gap-2">
                       <input 
-                        type="text" 
-                        placeholder="ইমেজ URL দিন..." 
+                        type="url" 
+                        placeholder="অন্য সাইটের ছবির সরাসরি লিঙ্ক পেস্ট করুন (https://...jpg / png)..." 
                         value={imageUrlInput}
-                        onChange={(e) => setImageUrlInput(e.target.value)}
-                        className="flex-1 bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none" 
+                        onChange={(e) => {
+                          setImageUrlInput(e.target.value);
+                          setImgLoadStatus("idle");
+                        }}
+                        className="flex-1 bg-white border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
                       />
+                      <button 
+                        type="button" 
+                        onClick={() => addImageToGallery(imageUrlInput)}
+                        className="bg-[#d4a574] text-[#2c1810] px-4 py-2 rounded-full text-xs font-bold hover:bg-white border transition shadow-sm whitespace-nowrap"
+                      >
+                        + ছবি যুক্ত করুন
+                      </button>
+                    </div>
+
+                    {/* Device Upload Button */}
+                    <div className="flex items-center gap-2 pt-1">
                       <input 
                         type="file" 
                         accept="image/*" 
                         ref={productImgFileRef} 
-                        onChange={(e) => handleImageUpload(e, (dataUrl) => setImageUrlInput(dataUrl))} 
+                        onChange={(e) => handleImageUpload(e, (dataUrl) => addImageToGallery(dataUrl))} 
                         className="hidden" 
                       />
                       <button 
                         type="button" 
                         onClick={() => productImgFileRef.current?.click()} 
-                        className="bg-[#2c1810] text-white px-4 py-2 rounded-full text-xs font-semibold hover:bg-black"
+                        className="bg-white border border-[#d4a574] text-[#7a1c2b] px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-[#fff8f0] flex items-center gap-1.5"
                       >
-                        📷 ছবি আপলোড
+                        <span>📷</span>
+                        <span>ডিভাইস / গ্যালারি থেকে ছবি সিলেক্ট করুন</span>
                       </button>
                     </div>
-                    {imageUrlInput && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <img src={imageUrlInput} alt="Preview" className="w-12 h-12 rounded-xl object-cover border" />
-                        <span className="text-[11px] text-green-700 font-semibold">ছবি সংযুক্ত হয়েছে ✓</span>
+
+                    {/* Live Image Preview & Gallery List */}
+                    {(productForm.images.length > 0 || imageUrlInput) && (
+                      <div className="pt-2">
+                        <p className="text-[11px] font-semibold text-gray-500 mb-2">সংযুক্ত ছবিসমূহ (গ্রাহকরা এই ছবিগুলো দেখতে পাবেন):</p>
+                        <div className="flex flex-wrap gap-3">
+                          {/* Image from current input if not added yet */}
+                          {imageUrlInput && !productForm.images.includes(imageUrlInput) && (
+                            <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-dashed border-[#7a1c2b] bg-white flex items-center justify-center">
+                              <img 
+                                src={imageUrlInput} 
+                                alt="Live Preview" 
+                                className="w-full h-full object-cover" 
+                                onLoad={() => setImgLoadStatus("loaded")}
+                                onError={() => setImgLoadStatus("error")}
+                              />
+                              <span className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[8px] text-center py-0.5">
+                                প্রিভিউ
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Gallery items */}
+                          {productForm.images.map((img, idx) => (
+                            <div key={idx} className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#7a1c2b] bg-white shadow-sm">
+                              <img 
+                                src={img} 
+                                alt={`Product ${idx+1}`} 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                              />
+                              <button 
+                                type="button" 
+                                onClick={() => setProductForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                                className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow hover:scale-110"
+                                title="মুছে ফেলুন"
+                              >
+                                ✕
+                              </button>
+                              {idx === 0 && (
+                                <span className="absolute bottom-0 inset-x-0 bg-[#7a1c2b] text-white text-[8px] text-center py-0.5 font-bold">
+                                  মূল ছবি
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        {imgLoadStatus === "loaded" && (
+                          <p className="text-[11px] text-green-700 font-semibold mt-2 flex items-center gap-1">
+                            <span>✓</span>
+                            <span>ছবির লিঙ্ক কার্যকর এবং সফলভাবে লোড হয়েছে!</span>
+                          </p>
+                        )}
+                        {imgLoadStatus === "error" && (
+                          <p className="text-[11px] text-red-600 font-semibold mt-2">
+                            ⚠️ লিঙ্কটি থেকে ছবি লোড হতে পারেনি। সঠিক Image URL দিন বা ডিভাইস থেকে ছবি আপলোড করুন।
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
 
+                  {/* SOURCE SUPPLIER LINK (DROPSHIP / SOURCING TRACKING) */}
                   <div>
-                    <label className="text-xs font-semibold">বিস্তারিত বিবরণ</label>
+                    <label className="text-xs font-semibold text-gray-700">সোর্স ওয়েবসাইট লিঙ্ক (Dropship / Supplier URL - অপশনাল)</label>
+                    <input 
+                      type="url" 
+                      placeholder="অর্ডার আসলে যে ওয়েবসাইট থেকে আপনি পণ্য কিনবেন সেই লিংক..." 
+                      value={productForm.sourceUrl || ''} 
+                      onChange={(e) => setProductForm({ ...productForm, sourceUrl: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-xs outline-none mt-1 focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+
+                  {/* DESCRIPTION */}
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">পণ্য সম্পর্কে বিস্তারিত বিবরণ</label>
                     <textarea 
                       rows="3" 
                       value={productForm.description} 
                       onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                      placeholder="পণ্য সম্পর্কে বিস্তারিত তথ্য লিখুন..." 
+                      placeholder="পণ্যের উপাদান, সাইজ, কালার ও অন্যান্য সুবিধা লিখুন..." 
                       className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                     />
                   </div>
@@ -2578,15 +2802,24 @@
                   <button 
                     onClick={() => {
                       if (!productForm.name || !productForm.price) return notify("নাম ও মূল্য আবশ্যক!");
-                      const img = imageUrlInput || productForm.images[0] || imgSharee;
+                      const allImages = [...productForm.images];
+                      if (imageUrlInput && !allImages.includes(imageUrlInput)) {
+                        allImages.push(imageUrlInput);
+                      }
+                      const finalImages = allImages.length > 0 ? allImages : [imgSharee];
+
                       if (editingProduct) {
-                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...productForm, images: [img] } : p));
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { 
+                          ...p, 
+                          ...productForm, 
+                          images: finalImages 
+                        } : p));
                         notify("প্রোডাক্ট সফলভাবে আপডেট হয়েছে! ✅");
                       } else {
                         const newP = {
                           id: "p" + Date.now(),
                           ...productForm,
-                          images: [img],
+                          images: finalImages,
                           sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
                           rating: 4.8,
                           reviewsCount: 1
@@ -2596,10 +2829,11 @@
                       }
                       setIsProductModalOpen(false);
                       setImageUrlInput("");
+                      setExternalLinkInput("");
                     }}
-                    className="w-full bg-[#7a1c2b] text-white py-3 rounded-full font-bold text-sm shadow hover:bg-[#681727] transition"
+                    className="w-full bg-[#7a1c2b] text-white py-3.5 rounded-full font-bold text-sm shadow-lg hover:bg-[#681727] transition"
                   >
-                    সংরক্ষণ করুন
+                    প্রোডাক্ট সংরক্ষণ করুন (Save Product)
                   </button>
                 </div>
               </div>

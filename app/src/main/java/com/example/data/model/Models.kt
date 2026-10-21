@@ -10,7 +10,8 @@ data class Product(
   val sku: String,
   val description: String,
   val rating: Float = 4.8f,
-  val reviewsCount: Int = 18
+  val reviewsCount: Int = 18,
+  val sourceUrl: String = ""
 )
 
 data class Category(
