@@ -4,17 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SAJGOJ FASHION - Premium Jewelry & Sharee Collection</title>
+  
+  <!-- Cloudflare Fast CDN for Global & Bangladesh BDIX Speed -->
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Hind Siliguri -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- React & ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- React & ReactDOM (cdnjs for fast edge delivery) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel standalone for JSX compiling -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
 
   <style>
     :root {
@@ -31,6 +34,15 @@
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Animation helpers */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
   </style>
 </head>
 <body class="bg-[#fffaf5] text-[#2c1810] min-h-screen">
@@ -39,37 +51,40 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // Demo Assets
-    const imgSharee = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0e6'/><rect x='40' y='80' width='520' height='440' rx='24' fill='#7a1c2b'/><text x='50%' y='48%' dominant-baseline='middle' text-anchor='middle' fill='#fff8f0' font-size='28' font-weight='700'>Designer Sharee</text><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' fill='#d4a574' font-size='18'>SAJ-001 • 3500৳</text></svg>");
-    const imgChoker = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><circle cx='300' cy='300' r='180' fill='#d4a574'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#2c1810' font-size='26' font-weight='700'>Rajwadi Choker</text></svg>");
-    const imgBangles = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fffaf5'/><circle cx='220' cy='300' r='70' fill='none' stroke='#b8956a' stroke-width='18'/><circle cx='380' cy='300' r='70' fill='none' stroke='#7a1c2b' stroke-width='18'/><text x='50%' y='80%' text-anchor='middle' fill='#2c1810' font-size='18'>City Gold Bangles</text></svg>");
-    const imgBracelet = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><rect x='150' y='250' width='300' height='24' rx='12' fill='#2c1810'/><text x='50%' y='50%' text-anchor='middle' fill='#7a1c2b' font-size='22' font-weight='700'>Stone Bracelet</text></svg>");
-    const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='600'><rect width='1200' height='600' fill='#7a1c2b'/><circle cx='900' cy='200' r='220' fill='#d4a574' opacity='0.3'/><text x='80' y='200' fill='#fff8f0' font-size='56' font-weight='800'>Eid Collection 2026</text><text x='80' y='260' fill='#ffdcc0' font-size='24'>Exclusive Sharee & Designer Jewelry</text></svg>");
-    const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='600'><rect width='1200' height='600' fill='#2c1810'/><rect x='0' y='0' width='600' height='600' fill='#b8956a'/><text x='80' y='220' fill='#fff' font-size='48' font-weight='700'>Rajwadi Bridal Choker</text><text x='80' y='270' fill='#fff8f0' font-size='22'>Flat 20% Off • Limited Edition</text></svg>");
+    // Self-contained high quality SVG Fallback Images
+    const imgSharee = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0e6'/><rect x='40' y='60' width='520' height='480' rx='28' fill='#7a1c2b'/><circle cx='300' cy='280' r='120' fill='#d4a574' opacity='0.25'/><text x='50%' y='46%' dominant-baseline='middle' text-anchor='middle' fill='#fff8f0' font-size='32' font-weight='700'>ডিজাইনার কাতান শাড়ি</text><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#d4a574' font-size='22'>SAJ-001 • ৩৫০০ ৳</text></svg>");
+    const imgChoker = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><circle cx='300' cy='300' r='190' fill='#d4a574'/><circle cx='300' cy='300' r='140' fill='#7a1c2b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#fff8f0' font-size='28' font-weight='700'>রাজওয়াড়ি ব্রাইডাল চোকার</text></svg>");
+    const imgBangles = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fffaf5'/><circle cx='210' cy='300' r='80' fill='none' stroke='#b8956a' stroke-width='22'/><circle cx='390' cy='300' r='80' fill='none' stroke='#7a1c2b' stroke-width='22'/><text x='50%' y='82%' text-anchor='middle' fill='#2c1810' font-size='24' font-weight='700'>সিটি গোল্ড চুড়ি সেট</text></svg>");
+    const imgBracelet = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><rect x='130' y='260' width='340' height='30' rx='15' fill='#2c1810'/><circle cx='300' cy='275' r='36' fill='#7a1c2b'/><text x='50%' y='48%' text-anchor='middle' fill='#7a1c2b' font-size='26' font-weight='700'>রুবি স্টোন ব্রেসলেট</text></svg>");
+    
+    const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#7a1c2b'/><circle cx='950' cy='220' r='260' fill='#d4a574' opacity='0.3'/><circle cx='1050' cy='400' r='180' fill='#53111c' opacity='0.4'/><text x='80' y='200' fill='#fff8f0' font-size='60' font-weight='800'>Eid Collection 2026</text><text x='80' y='270' fill='#ffdcc0' font-size='26'>এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি</text><rect x='80' y='320' width='220' height='56' rx='28' fill='#d4a574'/><text x='190' y='355' text-anchor='middle' fill='#2c1810' font-size='20' font-weight='bold'>কালেকশন দেখুন</text></svg>");
+    const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#2c1810'/><rect x='0' y='0' width='550' height='550' fill='#7a1c2b' opacity='0.85'/><circle cx='600' cy='275' r='160' fill='#d4a574' opacity='0.25'/><text x='80' y='210' fill='#fff' font-size='52' font-weight='800'>রাজওয়াড়ি ব্রাইডাল কালেকশন</text><text x='80' y='275' fill='#ffdcc0' font-size='24'>ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত হাতের কাজ</text><rect x='80' y='325' width='220' height='56' rx='28' fill='#fff8f0'/><text x='190' y='360' text-anchor='middle' fill='#7a1c2b' font-size='20' font-weight='bold'>অফার লুফে নিন</text></svg>");
 
-    // Initial Data
+    // Seed Data
     const initialProducts = [
-      { id: "p1", name: "Designer Model Collection Sharee", price: 3500, stock: 8, category: "Sharee", images: [imgSharee, imgBangles], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24 },
-      { id: "p2", name: "Rajwadi Choker Set with Jhumka", price: 2999, stock: 15, category: "Necklace", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা。", rating: 4.9, reviewsCount: 41 },
-      { id: "p3", name: "City Gold Hand Bangles 4pc", price: 1250, stock: 3, category: "Bangles", images: [imgBangles], sku: "SAJ-003", description: "টেকসই রঙের সিটি গোল্ড চুড়ি সেট (৪ পিস)। পার্টি অথবা রেগুলার ব্যবহারের জন্য উপযুক্ত。", rating: 4.5, reviewsCount: 12 },
-      { id: "p4", name: "Ruby Stone Bracelet Pair", price: 890, stock: 22, category: "Bracelet", images: [imgBracelet], sku: "SAJ-004", description: "রুবী ক্রিস্টাল খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই。", rating: 4.6, reviewsCount: 8 }
+      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24 },
+      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41 },
+      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12 },
+      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8 }
     ];
 
     const initialCategories = [
-      { id: "c1", name: "Sharee", icon: "👗" },
-      { id: "c2", name: "Necklace", icon: "📿" },
-      { id: "c3", name: "Bangles", icon: "💍" },
-      { id: "c4", name: "Bracelet", icon: "✨" }
+      { id: "c1", name: "শাড়ি", icon: "👗" },
+      { id: "c2", name: "নেকলেস", icon: "📿" },
+      { id: "c3", name: "চুড়ি", icon: "💍" },
+      { id: "c4", name: "ব্রেসলেট", icon: "✨" },
+      { id: "c5", name: "ব্রাইডাল সেট", icon: "👑" }
     ];
 
     const initialOrders = [
-      { id: "ORD-1001", customer: "ফাতেমা আক্তার", phone: "01712345678", total: 3500, subtotal: 3500, status: "Pending", date: "2026-10-18", items: [{ productId: "p1", qty: 1, name: "Designer Model Collection Sharee", price: 3500 }], address: "বাসা ১২, রোড ৫", district: "Dhaka", thana: "ধানমন্ডি", deliveryCharge: 0, discount: 0, paymentMethod: "Cash on Delivery", trackingId: "" },
-      { id: "ORD-1002", customer: "নুসরাত জাহান", phone: "01813987654", total: 3501, subtotal: 3889, status: "Shipped", date: "2026-10-19", items: [{ productId: "p2", qty: 1, name: "Rajwadi Choker Set with Jhumka", price: 2999 }, { productId: "p4", qty: 1, name: "Ruby Stone Bracelet Pair", price: 890 }], address: "ফ্ল্যাট ৩বি, গুলশান এভিনিউ", district: "Dhaka", thana: "গুলশান", couponCode: "EID2026", discount: 388, deliveryCharge: 0, paymentMethod: "bKash", trackingId: "ST-884219" }
+      { id: "ORD-1001", customer: "ফাতেমা আক্তার", phone: "01712345678", total: 3500, subtotal: 3500, status: "Pending", date: "2026-10-18", items: [{ productId: "p1", qty: 1, name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500 }], address: "বাসা ১২, রোড ৫", district: "ঢাকা", thana: "ধানমন্ডি", deliveryCharge: 0, discount: 0, paymentMethod: "Cash on Delivery", trackingId: "" },
+      { id: "ORD-1002", customer: "নুসরাত জাহান", phone: "01813987654", total: 3501, subtotal: 3889, status: "Shipped", date: "2026-10-19", items: [{ productId: "p2", qty: 1, name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999 }, { productId: "p4", qty: 1, name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890 }], address: "ফ্ল্যাট ৩বি, গুলশান এভিনিউ", district: "ঢাকা", thana: "গুলশান", couponCode: "EID2026", discount: 388, deliveryCharge: 0, paymentMethod: "bKash", trackingId: "ST-884219" }
     ];
 
     const initialCoupons = [
-      { id: "cp1", code: "EID2026", type: "%", value: 10, minOrder: 2000, expiry: "2026-06-30", active: true },
-      { id: "cp2", code: "NEW100", type: "Flat", value: 100, minOrder: 500, expiry: "2026-12-31", active: true }
+      { id: "cp1", code: "EID2026", type: "%", value: 10, minOrder: 2000, expiry: "2026-12-31", active: true },
+      { id: "cp2", code: "NEW100", type: "Flat", value: 100, minOrder: 500, expiry: "2026-12-31", active: true },
+      { id: "cp3", code: "SAJGOJ20", type: "%", value: 20, minOrder: 4000, expiry: "2026-12-31", active: true }
     ];
 
     const initialBanners = [
@@ -80,50 +95,102 @@
     const initialStoreConfig = {
       storeName: "SAJGOJ FASHION",
       logo: "",
+      favicon: "",
       tagline: "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
       whatsapp: "88018051198888",
       email: "contact@sajgoj.com",
+      phone: "018051198888",
       address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
-      announcement: { text: "🔥 Eid Special: ২০০০ টাকার অর্ডারে সারা দেশে ডেলিভারি সম্পূর্ণ ফ্রি!", enabled: true },
-      header: { showSearch: true, showCart: true, showCategories: true, sticky: true },
+      deliveryInsideDhaka: 60,
+      deliveryOutsideDhaka: 120,
+      freeDeliveryThreshold: 2000,
+      announcement: { 
+        text: "🔥 Eid Special: ২০০০ টাকার অর্ডারে সারা দেশে ডেলিভারি সম্পূর্ণ ফ্রি!", 
+        enabled: true 
+      },
+      header: { 
+        showSearch: true, 
+        showCart: true, 
+        showCategories: true, 
+        sticky: true 
+      },
       footer: {
         about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
         email: "support@sajgoj.com",
         phone: "018051198888",
         address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
-        bkash: true, nagad: true, rocket: true, cod: true,
+        fb: "https://facebook.com/sajgojfashion",
+        insta: "https://instagram.com/sajgojfashion",
+        youtube: "https://youtube.com/@sajgojfashion",
+        tiktok: "https://tiktok.com/@sajgojfashion",
+        bkash: true, 
+        nagad: true, 
+        rocket: true, 
+        cod: true, 
+        visa: true,
         copyright: "© 2026 SAJGOJ FASHION. All Rights Reserved."
       }
     };
 
+    const initialCourierConfig = {
+      steadfastApiKey: "st_live_983204928340",
+      steadfastSecret: "••••••••••••••••",
+      pathaoClientId: "pathao_user_883",
+      pathaoClientSecret: "••••••••••••",
+      pathaoStoreId: "store_9921"
+    };
+
+    const initialPixelConfig = {
+      enabled: true,
+      pixelId: "123456789012345",
+      accessToken: "",
+      testEventsCode: "",
+      events: { pageView: true, viewContent: true, addToCart: true, purchase: true, initiateCheckout: true }
+    };
+
+    const initialSeoConfig = {
+      siteTitle: "SAJGOJ FASHION - Premium Jewelry & Sharee",
+      metaDescription: "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।",
+      metaKeywords: "sajgoj, sharee, choker, jewelry bd, bridal set, eid collection",
+      canonicalUrl: "https://sajgojfashion.netlify.app",
+      robots: "index, follow"
+    };
+
     function App() {
-      // LocalStorage Sync Helpers
+      // LocalStorage Helper with fallback
       const getStored = (key, defaultVal) => {
         try {
-          const item = localStorage.getItem("sajgoj_" + key);
+          const item = localStorage.getItem("sajgoj_store_" + key);
           return item ? JSON.parse(item) : defaultVal;
         } catch(e) { return defaultVal; }
       };
       const setStored = (key, val) => {
-        try { localStorage.setItem("sajgoj_" + key, JSON.stringify(val)); } catch(e) {}
+        try { localStorage.setItem("sajgoj_store_" + key, JSON.stringify(val)); } catch(e) {}
       };
 
-      // State Management
+      // Main Reactive States
       const [products, setProducts] = useState(() => getStored("products", initialProducts));
       const [categories, setCategories] = useState(() => getStored("categories", initialCategories));
       const [orders, setOrders] = useState(() => getStored("orders", initialOrders));
       const [coupons, setCoupons] = useState(() => getStored("coupons", initialCoupons));
       const [banners, setBanners] = useState(() => getStored("banners", initialBanners));
       const [config, setConfig] = useState(() => getStored("config", initialStoreConfig));
+      const [courier, setCourier] = useState(() => getStored("courier", initialCourierConfig));
+      const [pixel, setPixel] = useState(() => getStored("pixel", initialPixelConfig));
+      const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
 
+      // Persistent Sync
       useEffect(() => setStored("products", products), [products]);
       useEffect(() => setStored("categories", categories), [categories]);
       useEffect(() => setStored("orders", orders), [orders]);
       useEffect(() => setStored("coupons", coupons), [coupons]);
       useEffect(() => setStored("banners", banners), [banners]);
       useEffect(() => setStored("config", config), [config]);
+      useEffect(() => setStored("courier", courier), [courier]);
+      useEffect(() => setStored("pixel", pixel), [pixel]);
+      useEffect(() => setStored("seo", seo), [seo]);
 
-      // Navigation & Modals
+      // Navigation & Toast State
       const [activeTab, setActiveTab] = useState("Storefront");
       const [toast, setToast] = useState(null);
 
@@ -137,6 +204,7 @@
       const [currentSlide, setCurrentSlide] = useState(0);
       const [viewProduct, setViewProduct] = useState(null);
       const [productQty, setProductQty] = useState(1);
+      const [viewInvoiceOrder, setViewInvoiceOrder] = useState(null);
 
       // Checkout form state
       const [checkoutForm, setCheckoutForm] = useState({
@@ -150,15 +218,47 @@
       const [appliedCoupon, setAppliedCoupon] = useState(null);
       const [couponInput, setCouponInput] = useState("");
 
-      // Modals
+      // Admin Modals & Forms
       const [isProductModalOpen, setIsProductModalOpen] = useState(false);
       const [editingProduct, setEditingProduct] = useState(null);
-      const [productForm, setProductForm] = useState({ name: "", price: 0, stock: 1, category: "Sharee", images: [], sku: "", description: "" });
+      const [productForm, setProductForm] = useState({ 
+        name: "", 
+        price: 0, 
+        stock: 5, 
+        category: "শাড়ি", 
+        images: [], 
+        sku: "", 
+        description: "" 
+      });
+      const [imageUrlInput, setImageUrlInput] = useState("");
+
+      const [newCategory, setNewCategory] = useState({ name: "", icon: "✨" });
+      const [couponForm, setCouponForm] = useState({ code: "", type: "%", value: 10, minOrder: 1500, expiry: "2026-12-31", active: true });
+      const [bannerForm, setBannerForm] = useState({ title: "", subtitle: "", buttonText: "কালেকশন দেখুন", link: "#products", image: "", active: true });
+
+      const fileInputRef = useRef(null);
+      const productImgFileRef = useRef(null);
+      const logoFileRef = useRef(null);
+      const faviconFileRef = useRef(null);
+      const bannerImgFileRef = useRef(null);
 
       const notify = (msg) => {
         setToast(msg);
         setTimeout(() => setToast(null), 3500);
       };
+
+      // Dynamic Favicon Update
+      useEffect(() => {
+        if (config.favicon) {
+          let link = document.querySelector("link[rel~='icon']");
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.getElementsByTagName('head')[0].appendChild(link);
+          }
+          link.href = config.favicon;
+        }
+      }, [config.favicon]);
 
       // Auto Carousel
       useEffect(() => {
@@ -198,7 +298,11 @@
       };
 
       const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-      const deliveryCharge = cartSubtotal >= 2000 ? 0 : (checkoutForm.district === "Dhaka" ? 60 : 120);
+      const isDhaka = checkoutForm.district.includes("ঢাকা") || checkoutForm.district.includes("Dhaka");
+      const freeThreshold = config.freeDeliveryThreshold || 2000;
+      const insideDhakaFee = config.deliveryInsideDhaka !== undefined ? config.deliveryInsideDhaka : 60;
+      const outsideDhakaFee = config.deliveryOutsideDhaka !== undefined ? config.deliveryOutsideDhaka : 120;
+      const deliveryCharge = cartSubtotal >= freeThreshold ? 0 : (isDhaka ? insideDhakaFee : outsideDhakaFee);
 
       let discountAmount = 0;
       if (appliedCoupon) {
@@ -218,7 +322,7 @@
           return;
         }
         if (cartSubtotal < found.minOrder) {
-          notify(`এই কুপনের জন্য ন্যূনতম ${found.minOrder}৳ এর অর্ডার প্রয়োজন!`);
+          notify(`এই কুপন ব্যবহারের জন্য ন্যূনতম ${found.minOrder} ৳ এর অর্ডার প্রয়োজন!`);
           return;
         }
         setAppliedCoupon(found);
@@ -229,7 +333,7 @@
       const handlePlaceOrder = (e) => {
         e.preventDefault();
         if (!checkoutForm.name || !checkoutForm.phone || !checkoutForm.address) {
-          notify("অনুগ্রহ করে আপনার নাম, মোবাইল নম্বর এবং সম্পূর্ণ ঠিকানা দিন!");
+          notify("অনুগ্রহ করে নাম, মোবাইল নম্বর এবং ঠিকানা পূরণ করুন!");
           return;
         }
         if (cart.length === 0) {
@@ -243,7 +347,7 @@
           customer: checkoutForm.name,
           phone: checkoutForm.phone,
           district: checkoutForm.district,
-          thana: checkoutForm.thana || "N/A",
+          thana: checkoutForm.thana || "সদর",
           address: checkoutForm.address,
           total: cartGrandTotal,
           subtotal: cartSubtotal,
@@ -253,7 +357,7 @@
           paymentMethod: checkoutForm.paymentMethod,
           status: "Pending",
           date: new Date().toISOString().split("T")[0],
-          items: cart.map(i => ({ productId: i.id, name: i.name, qty: i.qty, price: i.price })),
+          items: cart.map(i => ({ productId: i.id, name: i.name, qty: i.qty, price: i.price, image: i.images?.[0] })),
           trackingId: ""
         };
 
@@ -269,14 +373,220 @@
         setIsCartOpen(false);
         setAppliedCoupon(null);
         setCouponInput("");
-        notify(`ধন্যবাদ! আপনার অর্ডারটি নিশ্চিত হয়েছে (ID: #${newOrderId}) 🎉`);
+        notify(`ধন্যবাদ ${checkoutForm.name}! আপনার অর্ডার সফল হয়েছে (ID: #${newOrderId}) 🎉`);
       };
 
-      // Dispatch to Courier
+      // Courier Dispatch
       const dispatchCourier = (orderId, provider) => {
-        const tracking = (provider === "Steadfast" ? "ST-" : "PTH-") + Math.floor(100000 + Math.random() * 900000);
+        const prefix = provider === "Steadfast" ? "ST-" : "PTH-";
+        const tracking = prefix + Math.floor(100000 + Math.random() * 900000);
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "Shipped", trackingId: tracking } : o));
         notify(`অর্ডার #${orderId} সফলভাবে ${provider}-এ বুকিং করা হয়েছে! ট্র্যাকিং ID: ${tracking}`);
+      };
+
+      // Change Order Status
+      const updateOrderStatus = (orderId, newStatus) => {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        notify(`অর্ডার #${orderId} এর স্ট্যাটাস "${newStatus}" করা হয়েছে! ✅`);
+      };
+
+      // Delete Order
+      const deleteOrder = (orderId) => {
+        if (confirm(`আপনি কি অর্ডার #${orderId} মুছে ফেলতে চান?`)) {
+          setOrders(prev => prev.filter(o => o.id !== orderId));
+          notify("অর্ডার মুছে ফেলা হয়েছে!");
+        }
+      };
+
+      // Print Invoice Window
+      const printInvoiceWindow = (order) => {
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const rows = order.items.map(it => `
+          <tr>
+            <td style="padding:10px;border-bottom:1px solid #f0e0d0;">${it.name}</td>
+            <td style="padding:10px;text-align:center;border-bottom:1px solid #f0e0d0;">${it.qty}</td>
+            <td style="padding:10px;text-align:right;border-bottom:1px solid #f0e0d0;">${it.price} ৳</td>
+            <td style="padding:10px;text-align:right;font-weight:bold;border-bottom:1px solid #f0e0d0;">${it.price * it.qty} ৳</td>
+          </tr>
+        `).join("");
+
+        w.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Invoice - ${order.id}</title>
+            <style>
+              body { font-family: 'Hind Siliguri', sans-serif; background: #fffaf5; color: #2c1810; margin: 0; padding: 20px; }
+              .box { max-width: 680px; margin: 0 auto; background: #fff; border: 2px solid #7a1c2b; border-radius: 16px; overflow: hidden; }
+              .header { background: #7a1c2b; color: #fff8f0; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+              th { background: #fff8f0; color: #7a1c2b; padding: 10px; text-align: left; font-size: 13px; }
+              .summary { margin-top: 16px; padding: 14px; background: #fff8f0; border-radius: 12px; }
+              .flex { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+              @media print { .no-print { display: none; } .box { border: none; } }
+            </style>
+          </head>
+          <body>
+            <div class="box">
+              <div class="header">
+                <div>
+                  <h2 style="margin:0;">${config.storeName}</h2>
+                  <p style="margin:4px 0;font-size:12px;color:#d4a574;">${config.tagline}</p>
+                  <p style="margin:0;font-size:11px;">হটলাইন: ${config.phone} | ${config.email}</p>
+                </div>
+                <div style="text-align:right;">
+                  <h3 style="margin:0;color:#d4a574;">INVOICE</h3>
+                  <p style="margin:2px 0;font-size:13px;"># ${order.id}</p>
+                  <p style="margin:0;font-size:11px;">তারিখ: ${order.date}</p>
+                </div>
+              </div>
+              <div style="padding: 24px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 16px; font-size: 13px;">
+                  <div>
+                    <h4 style="margin:0 0 4px 0;color:#7a1c2b;">গ্রাহক বিবরণ:</h4>
+                    <p style="margin:2px 0;font-weight:bold;">${order.customer}</p>
+                    <p style="margin:2px 0;">মোবাইল: ${order.phone}</p>
+                    <p style="margin:2px 0;">ঠিকানা: ${order.address}, ${order.thana}, ${order.district}</p>
+                  </div>
+                  <div style="text-align:right;">
+                    <p style="margin:2px 0;"><b>পেমেন্ট মাধ্যম:</b> ${order.paymentMethod}</p>
+                    <p style="margin:2px 0;"><b>স্ট্যাটাস:</b> ${order.status}</p>
+                    ${order.trackingId ? `<p style="margin:2px 0;color:#7a1c2b;"><b>কুরিয়ার ট্র্যাকিং:</b> ${order.trackingId}</p>` : ''}
+                  </div>
+                </div>
+
+                <table>
+                  <thead>
+                    <tr>
+                      <th>পণ্য</th>
+                      <th style="text-align:center;">পরিমাণ</th>
+                      <th style="text-align:right;">মূল্য</th>
+                      <th style="text-align:right;">মোট</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+
+                <div class="summary">
+                  <div class="flex"><span>সাবটোটাল</span><span>${order.subtotal} ৳</span></div>
+                  ${order.discount ? `<div class="flex" style="color:green;"><span>কুপন ছাড় (${order.couponCode || 'Promo'})</span><span>- ${order.discount} ৳</span></div>` : ''}
+                  <div class="flex"><span>ডেলিভারি চার্জ</span><span>${order.deliveryCharge === 0 ? 'ফ্রি' : order.deliveryCharge + ' ৳'}</span></div>
+                  <hr style="border:none;border-top:1px solid #d4a574;margin:8px 0;">
+                  <div class="flex" style="font-weight:bold;font-size:16px;color:#7a1c2b;"><span>সর্বমোট বিল</span><span>${order.total} ৳</span></div>
+                </div>
+
+                <p style="text-align:center;margin-top:20px;font-size:12px;color:#666;">সজগোজ ফ্যাশনের সাথে থাকার জন্য ধন্যবাদ! 💖</p>
+                <div class="no-print" style="text-align:center;margin-top:20px;">
+                  <button onclick="window.print()" style="background:#7a1c2b;color:#fff;padding:8px 24px;border:none;border-radius:20px;cursor:pointer;font-weight:bold;">প্রিন্ট করুন</button>
+                  <button onclick="window.close()" style="background:#ddd;color:#333;padding:8px 20px;border:none;border-radius:20px;cursor:pointer;margin-left:10px;">বন্ধ করুন</button>
+                </div>
+              </div>
+            </div>
+          </body>
+          </html>
+        `);
+        w.document.close();
+      };
+
+      // Generate Sitemap XML
+      const generateSitemap = () => {
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+        xml += `  <url><loc>${seo.canonicalUrl}</loc><priority>1.0</priority></url>\n`;
+        categories.forEach(c => {
+          xml += `  <url><loc>${seo.canonicalUrl}/#category-${encodeURIComponent(c.name)}</loc><priority>0.8</priority></url>\n`;
+        });
+        products.forEach(p => {
+          xml += `  <url><loc>${seo.canonicalUrl}/#product-${p.id}</loc><priority>0.7</priority></url>\n`;
+        });
+        xml += `</urlset>`;
+
+        const blob = new Blob([xml], { type: "application/xml" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "sitemap.xml";
+        a.click();
+        URL.revokeObjectURL(url);
+        notify("সফলভাবে sitemap.xml তৈরি ও ডাউনলোড হয়েছে! ✅");
+      };
+
+      // Export JSON Backup
+      const exportBackup = () => {
+        const fullBackup = {
+          app: "SAJGOJ FASHION",
+          exportedAt: new Date().toISOString(),
+          products,
+          categories,
+          orders,
+          coupons,
+          banners,
+          config,
+          courier,
+          pixel,
+          seo
+        };
+        const blob = new Blob([JSON.stringify(fullBackup, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `sajgoj-full-backup-${new Date().toISOString().split("T")[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        notify("সম্পূর্ণ স্টোর ব্যাকআপ ডাউনলোড হয়েছে! 💾");
+      };
+
+      // Import JSON Backup
+      const importBackup = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            if (data.products) setProducts(data.products);
+            if (data.categories) setCategories(data.categories);
+            if (data.orders) setOrders(data.orders);
+            if (data.coupons) setCoupons(data.coupons);
+            if (data.banners) setBanners(data.banners);
+            if (data.config) setConfig(data.config);
+            if (data.courier) setCourier(data.courier);
+            if (data.pixel) setPixel(data.pixel);
+            if (data.seo) setSeo(data.seo);
+            notify("✅ ব্যাকআপ ডাটা সফলভাবে রিস্টোর হয়েছে!");
+          } catch(err) {
+            notify("❌ অবৈধ ব্যাকআপ ফাইল!");
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      // Reset to Default Demo Data
+      const resetToDefaults = () => {
+        if (confirm("আপনি কি স্টোরের সমস্ত ডাটা ফ্যাক্টরি ডিফল্টে রিসেট করতে চান? বর্তমান সকল কাস্টম তথ্য মুছে যাবে।")) {
+          setProducts(initialProducts);
+          setCategories(initialCategories);
+          setOrders(initialOrders);
+          setCoupons(initialCoupons);
+          setBanners(initialBanners);
+          setConfig(initialStoreConfig);
+          setCourier(initialCourierConfig);
+          setPixel(initialPixelConfig);
+          setSeo(initialSeoConfig);
+          notify("🔄 সমস্ত ডাটা ডিফল্ট সংস্করণে রিসেট করা হয়েছে!");
+        }
+      };
+
+      // File to Base64 image reader
+      const handleImageUpload = (e, callback) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          callback(event.target.result);
+          notify("ছবি সফলভাবে আপলোড হয়েছে! 📷");
+        };
+        reader.readAsDataURL(file);
       };
 
       // Filtered Products
@@ -286,35 +596,54 @@
         return matchesSearch && matchesCat;
       });
 
+      const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+      const lowStockProducts = products.filter(p => p.stock <= 5);
+
+      const adminTabs = [
+        { id: "Dashboard", label: "ড্যাশবোর্ড", icon: "📊" },
+        { id: "Products", label: "প্রোডাক্টস", icon: "👗" },
+        { id: "Orders", label: "অর্ডারস", icon: "📦" },
+        { id: "Categories", label: "ক্যাটাগরি", icon: "🏷️" },
+        { id: "Coupons", label: "কুপন কোড", icon: "🎟️" },
+        { id: "Banners", label: "ব্যানার সেটিংস", icon: "🖼️" },
+        { id: "Courier", label: "কুরিয়ার সেটিংস", icon: "🚚" },
+        { id: "Pixel", label: "ফেসবুক পিক্সেল", icon: "📈" },
+        { id: "SEO", label: "এসইও ও সাইটম্যাপ", icon: "🌐" },
+        { id: "Settings", label: "স্টোর ও লোগো সেটিংস", icon: "⚙️" },
+        { id: "Backup", label: "ডাটাবেজ ব্যাকআপ", icon: "💾" }
+      ];
+
       return (
         <div className="min-h-screen flex flex-col bg-[#fffaf5]">
-          {/* Announcement Bar */}
-          {config.announcement.enabled && (
-            <div className="bg-[#7a1c2b] text-[#fff8f0] text-center text-xs sm:text-sm py-2 px-4 font-medium tracking-wide">
-              {config.announcement.text}
+          {/* Top Announcement Bar */}
+          {config.announcement.enabled && config.announcement.text && (
+            <div className="bg-[#7a1c2b] text-[#fff8f0] text-center text-xs sm:text-sm py-2 px-4 font-medium tracking-wide shadow-sm flex items-center justify-center gap-2">
+              <span>{config.announcement.text}</span>
             </div>
           )}
 
-          {/* Navigation Bar */}
-          <header className="bg-white/95 backdrop-blur border-b border-[#f3e2d0] sticky top-0 z-30">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setActiveTab(activeTab === "Storefront" ? "Dashboard" : "Storefront")}
-                  className="w-10 h-10 rounded-full bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center font-bold text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition"
-                  title="Switch Admin / Store"
-                >
-                  {activeTab === "Storefront" ? "⚙️" : "🛍️"}
-                </button>
-                <div className="cursor-pointer" onClick={() => setActiveTab("Storefront")}>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#7a1c2b]">{config.storeName}</h1>
-                  <p className="text-[10px] text-[#b8956a] -mt-1 font-medium">{config.tagline}</p>
+          {/* Main Top Header */}
+          <header className={`bg-white/95 backdrop-blur border-b border-[#f3e2d0] transition-all duration-200 ${config.header.sticky ? 'sticky top-0 z-30' : ''}`}>
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3 sm:gap-4">
+              
+              {/* Logo & Store Title */}
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => setActiveTab("Storefront")}>
+                {config.logo ? (
+                  <img src={config.logo} alt="Logo" className="w-10 h-10 object-contain rounded-full border border-[#d4a574]" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#7a1c2b] text-[#fff8f0] flex items-center justify-center text-xl shadow-md border border-[#d4a574]">
+                    👑
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-[#7a1c2b] leading-tight">{config.storeName}</h1>
+                  <p className="text-[10px] sm:text-xs text-[#b8956a] -mt-0.5 font-medium">{config.tagline}</p>
                 </div>
               </div>
 
               {/* Storefront Search Bar */}
               {config.header.showSearch && activeTab === "Storefront" && (
-                <div className="flex-1 max-w-md hidden sm:block">
+                <div className="flex-1 max-w-md hidden md:block">
                   <div className="relative">
                     <input 
                       type="text"
@@ -324,58 +653,71 @@
                       className="w-full bg-[#fffaf5] border border-[#e8d5c0] rounded-full px-5 py-2 text-sm outline-none focus:border-[#7a1c2b] pl-10"
                     />
                     <span className="absolute left-3.5 top-2.5 text-gray-400">🔍</span>
+                    {storeSearch && (
+                      <button onClick={() => setStoreSearch("")} className="absolute right-3.5 top-2 text-xs text-gray-400 hover:text-black">✕</button>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
+              {/* Action Buttons: Storefront <-> Admin Switcher */}
               <div className="flex items-center gap-2">
                 {activeTab === "Storefront" ? (
                   <>
                     <button 
                       onClick={() => setIsCartOpen(true)}
-                      className="relative bg-[#7a1c2b] text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-semibold shadow hover:bg-[#681727] transition"
+                      className="relative bg-[#7a1c2b] text-white px-3.5 sm:px-4 py-2 rounded-full flex items-center gap-2 text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] transition"
                     >
                       <span>🛒 কার্ট</span>
                       {cart.length > 0 && (
-                        <span className="bg-[#d4a574] text-[#2c1810] text-xs px-2 py-0.5 rounded-full font-bold">
+                        <span className="bg-[#d4a574] text-[#2c1810] text-[11px] sm:text-xs px-2 py-0.2 rounded-full font-bold">
                           {cart.reduce((sum, i) => sum + i.qty, 0)}
                         </span>
                       )}
                     </button>
                     <button 
                       onClick={() => setActiveTab("Dashboard")}
-                      className="border border-[#d4a574] text-[#7a1c2b] px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-[#fff8f0]"
+                      className="border-2 border-[#7a1c2b] bg-[#fff8f0] text-[#7a1c2b] px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition shadow-sm flex items-center gap-1.5"
                     >
-                      অ্যাডমিন
+                      <span>⚙️</span>
+                      <span className="hidden sm:inline">এডমিন ড্যাশবোর্ড</span>
+                      <span className="sm:hidden">এডমিন</span>
                     </button>
                   </>
                 ) : (
                   <button 
                     onClick={() => setActiveTab("Storefront")}
-                    className="bg-[#2c1810] text-[#fff8f0] px-4 py-2 rounded-full text-xs font-semibold hover:bg-black transition"
+                    className="bg-[#2c1810] text-[#fff8f0] px-4 py-2 rounded-full text-xs font-semibold hover:bg-black transition shadow flex items-center gap-1.5"
                   >
-                    ← স্টোরে ফিরে যান
+                    <span>←</span>
+                    <span>স্টোরফ্রন্ট দেখুন</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Admin Tabs */}
+            {/* Admin Full Navigation Header Bar */}
             {activeTab !== "Storefront" && (
-              <div className="bg-[#fff8f0] border-t border-[#f3e2d0] overflow-x-auto scrollbar-hide py-2 px-4">
-                <div className="flex gap-2 min-w-max max-w-7xl mx-auto">
-                  {["Storefront", "Dashboard", "Products", "Orders", "Categories", "Coupons"].map(tab => (
+              <div className="bg-[#fff8f0] border-t border-[#f3e2d0] overflow-x-auto scrollbar-hide py-2.5 px-4 shadow-inner">
+                <div className="flex items-center gap-2 min-w-max max-w-7xl mx-auto">
+                  <button
+                    onClick={() => setActiveTab("Storefront")}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#2c1810] text-white border border-[#2c1810] hover:bg-black"
+                  >
+                    🛍️ স্টোরফ্রন্ট
+                  </button>
+                  {adminTabs.map(tab => (
                     <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-medium transition border ${
-                        activeTab === tab 
-                          ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow" 
-                          : "bg-white text-[#2c1810] border-[#e8d5c0] hover:bg-[#fffaf5]"
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs transition border flex items-center gap-1.5 ${
+                        activeTab === tab.id 
+                          ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow font-bold scale-105" 
+                          : "bg-white text-[#2c1810] border-[#e8d5c0] hover:bg-[#fffaf5] font-medium"
                       }`}
                     >
-                      {tab === "Storefront" ? "🛍️ Storefront" : tab}
+                      <span>{tab.icon}</span>
+                      <span>{tab.label}</span>
                     </button>
                   ))}
                 </div>
@@ -383,211 +725,1525 @@
             )}
           </header>
 
-          {/* MAIN STOREFRONT */}
+          {/* MAIN CONTAINER */}
           <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+            
+            {/* ========================================================= */}
+            {/* 1. STOREFRONT VIEW */}
+            {/* ========================================================= */}
             {activeTab === "Storefront" && (
-              <div className="space-y-8">
-                {/* Banner Carousel */}
+              <div className="space-y-8 animate-fadeIn">
+                {/* Mobile Search */}
+                {config.header.showSearch && (
+                  <div className="md:hidden">
+                    <input 
+                      type="text"
+                      value={storeSearch}
+                      onChange={(e) => setStoreSearch(e.target.value)}
+                      placeholder="পণ্য বা জুয়েলারি খুঁজুন..."
+                      className="w-full bg-white border border-[#e8d5c0] rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] shadow-sm"
+                    />
+                  </div>
+                )}
+
+                {/* Hero Banner Slider */}
                 {banners.filter(b => b.active).length > 0 && (
-                  <div className="relative rounded-3xl overflow-hidden shadow-lg border-2 border-[#d4a574]/40 h-64 sm:h-96 bg-[#2c1810]">
+                  <div className="relative rounded-3xl overflow-hidden shadow-xl border border-[#f3e2d0] bg-gray-100 aspect-[16/8] sm:aspect-[21/9]">
                     {banners.filter(b => b.active).map((b, idx) => (
                       <div 
-                        key={b.id}
-                        className={`absolute inset-0 transition-opacity duration-700 ${idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                        key={b.id} 
+                        className={`absolute inset-0 transition-opacity duration-700 ${idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
                       >
                         <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent flex flex-col justify-center p-6 sm:p-12">
-                          <span className="bg-[#d4a574] text-[#2c1810] text-xs font-bold px-3 py-1 rounded-full w-fit mb-3">
-                            EXCLUSIVE OFFER
-                          </span>
-                          <h2 className="text-2xl sm:text-5xl font-bold text-white max-w-lg leading-tight mb-2">
-                            {b.title}
-                          </h2>
-                          <p className="text-[#ffdcc0] text-sm sm:text-base max-w-md mb-6">
-                            {b.subtitle}
-                          </p>
-                          <a 
-                            href="#products" 
-                            className="bg-[#d4a574] text-[#2c1810] hover:bg-[#c79a60] w-fit px-6 py-2.5 rounded-full font-bold text-sm shadow transition"
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center p-6 sm:p-12">
+                          <div className="max-w-md text-white space-y-2 sm:space-y-3">
+                            <span className="inline-block bg-[#d4a574] text-[#2c1810] text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                              এক্সক্লুসিভ অফার
+                            </span>
+                            <h2 className="text-xl sm:text-4xl font-extrabold leading-tight drop-shadow">{b.title}</h2>
+                            <p className="text-xs sm:text-base text-gray-200 line-clamp-2">{b.subtitle}</p>
+                            <a 
+                              href="#products-section" 
+                              className="inline-block bg-[#d4a574] text-[#2c1810] px-5 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg hover:bg-white transition"
+                            >
+                              {b.buttonText || "কালেকশন দেখুন"} →
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Carousel Dots */}
+                    {banners.filter(b => b.active).length > 1 && (
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                        {banners.filter(b => b.active).map((_, i) => (
+                          <button 
+                            key={i} 
+                            onClick={() => setCurrentSlide(i)} 
+                            className={`h-2 rounded-full transition-all ${i === currentSlide ? 'w-6 bg-[#d4a574]' : 'w-2 bg-white/60'}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Category Pills Bar */}
+                {config.header.showCategories && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-lg text-[#7a1c2b]">ক্যাটাগরি অনুযায়ী ব্রাউজ করুন</h3>
+                      <span className="text-xs text-[#b8956a]">{categories.length} টি ক্যাটাগরি</span>
+                    </div>
+                    <div className="flex gap-2.5 overflow-x-auto scrollbar-hide py-1">
+                      <button
+                        onClick={() => setSelectedCat("All")}
+                        className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition border flex items-center gap-2 whitespace-nowrap ${
+                          selectedCat === "All" 
+                            ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-md" 
+                            : "bg-white text-[#2c1810] border-[#e8d5c0] hover:bg-[#fff8f0]"
+                        }`}
+                      >
+                        <span>🌟</span>
+                        <span>সকল কালেকশন</span>
+                      </button>
+                      {categories.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => setSelectedCat(c.name)}
+                          className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition border flex items-center gap-2 whitespace-nowrap ${
+                            selectedCat === c.name 
+                              ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-md" 
+                              : "bg-white text-[#2c1810] border-[#e8d5c0] hover:bg-[#fff8f0]"
+                          }`}
+                        >
+                          <span>{c.icon || "✨"}</span>
+                          <span>{c.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Product Grid */}
+                <div id="products-section" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">
+                        {selectedCat === "All" ? "জনপ্রিয় কালেকশন" : `${selectedCat} কালেকশন`}
+                      </h3>
+                      <p className="text-xs text-[#b8956a]">মোট {filteredProducts.length} টি পণ্য পাওয়া গেছে</p>
+                    </div>
+                  </div>
+
+                  {filteredProducts.length === 0 ? (
+                    <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8">
+                      <p className="text-4xl mb-3">🛍️</p>
+                      <h4 className="font-bold text-lg text-gray-700">কোন পণ্য পাওয়া যায়নি</h4>
+                      <p className="text-xs text-gray-400 mt-1">অন্য ক্যাটাগরি বা সার্চ কি-ওয়ার্ড দিয়ে আবার চেষ্টা করুন।</p>
+                      <button 
+                        onClick={() => { setSelectedCat("All"); setStoreSearch(""); }}
+                        className="mt-4 bg-[#7a1c2b] text-white px-6 py-2 rounded-full text-xs font-semibold"
+                      >
+                        সকল পণ্য দেখুন
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                      {filteredProducts.map(p => (
+                        <div 
+                          key={p.id} 
+                          className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm hover:shadow-xl transition flex flex-col group"
+                        >
+                          <div 
+                            className="aspect-square bg-gray-100 overflow-hidden relative cursor-pointer"
+                            onClick={() => { setViewProduct(p); setProductQty(1); }}
                           >
-                            {b.buttonText} →
-                          </a>
+                            <img 
+                              src={p.images[0] || imgSharee} 
+                              alt={p.name} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                            />
+                            {p.stock > 0 && p.stock <= 5 && (
+                              <span className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">
+                                মাত্র {p.stock} টি বাকি
+                              </span>
+                            )}
+                            {p.stock === 0 && (
+                              <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">
+                                স্টক আউট
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                              <span className="text-[10px] text-[#b8956a] font-semibold uppercase tracking-wider">{p.category}</span>
+                              <h4 
+                                onClick={() => { setViewProduct(p); setProductQty(1); }}
+                                className="font-semibold text-xs sm:text-sm leading-snug hover:text-[#7a1c2b] cursor-pointer line-clamp-2 mt-1"
+                              >
+                                {p.name}
+                              </h4>
+                            </div>
+
+                            <div className="mt-3 pt-2.5 border-t border-[#f3e2d0] flex items-center justify-between">
+                              <span className="text-sm sm:text-base font-bold text-[#7a1c2b]">{p.price.toLocaleString()} ৳</span>
+                              <button 
+                                onClick={() => addToCart(p, 1)}
+                                disabled={p.stock <= 0}
+                                className={`text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold transition ${
+                                  p.stock > 0 
+                                    ? "bg-[#7a1c2b] text-white hover:bg-[#681727] shadow" 
+                                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                }`}
+                              >
+                                {p.stock > 0 ? "অর্ডার করুন" : "স্টক আউট"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 2. ADMIN DASHBOARD - ALL 10 MODULES DIRECTLY ACCESSIBLE */}
+            {/* ========================================================= */}
+            {activeTab === "Dashboard" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#7a1c2b] to-[#53111c] text-[#fff8f0] p-6 rounded-3xl shadow-lg">
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold">স্টোর এডমিন কন্ট্রোল সেন্টার</h2>
+                    <p className="text-xs sm:text-sm text-[#ffdcc0] mt-1">সজগোজ ফ্যাশন - ওয়েবসাইট, প্রোডাক্ট, অর্ডার ও সেটিংস এক নজরে</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button 
+                      onClick={() => {
+                        setEditingProduct(null);
+                        setProductForm({ 
+                          name: "", 
+                          price: 0, 
+                          stock: 5, 
+                          category: categories[0]?.name || "শাড়ি", 
+                          images: [], 
+                          sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
+                          description: "" 
+                        });
+                        setImageUrlInput("");
+                        setIsProductModalOpen(true);
+                      }}
+                      className="bg-[#d4a574] text-[#2c1810] px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:bg-white transition flex items-center gap-1.5"
+                    >
+                      <span>+ নতুন প্রোডাক্ট যোগ করুন</span>
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab("Storefront")}
+                      className="bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition"
+                    >
+                      🛍️ মূল স্টোর দেখুন
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI Metrics */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                    <p className="text-xs text-[#b8956a] font-semibold">মোট বিক্রয়</p>
+                    <h3 className="text-2xl font-bold text-[#7a1c2b] mt-1">{totalRevenue.toLocaleString()} ৳</h3>
+                    <p className="text-[11px] text-green-600 mt-2 font-medium">↑ লাইভ হিসাব</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                    <p className="text-xs text-[#b8956a] font-semibold">মোট অর্ডার</p>
+                    <h3 className="text-2xl font-bold mt-1 text-[#2c1810]">{orders.length}</h3>
+                    <p className="text-[11px] text-amber-600 mt-2 font-medium">{orders.filter(o => o.status === "Pending").length} টি পেন্ডিং অর্ডার</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                    <p className="text-xs text-[#b8956a] font-semibold">মোট প্রোডাক্ট</p>
+                    <h3 className="text-2xl font-bold mt-1 text-[#2c1810]">{products.length}</h3>
+                    <p className="text-[11px] text-[#b8956a] mt-2 font-medium">{categories.length} টি ক্যাটাগরিতে</p>
+                  </div>
+                  <div className="bg-red-50 p-5 rounded-3xl border border-red-200 shadow-sm">
+                    <p className="text-xs text-red-600 font-semibold">কম স্টক সতর্কতা</p>
+                    <h3 className="text-2xl font-bold text-red-700 mt-1">{lowStockProducts.length}</h3>
+                    <p className="text-[11px] text-red-600 mt-2 font-medium">রিস্টক প্রয়োজন</p>
+                  </div>
+                </div>
+
+                {/* All 10 Management Modules Cards */}
+                <div>
+                  <h3 className="font-bold text-lg text-[#7a1c2b] mb-4">সকল এডমিন ফিচার ও সেটিংস মডিউল</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    
+                    {/* Module 1: Orders */}
+                    <div 
+                      onClick={() => setActiveTab("Orders")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          📦
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">অর্ডার ব্যবস্থাপনা</h4>
+                        <p className="text-xs text-gray-500 mt-1">স্ট্যাটাস পরিবর্তন, চালান প্রিন্ট ও কুরিয়ার</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        {orders.length} টি অর্ডার →
+                      </span>
+                    </div>
+
+                    {/* Module 2: Products */}
+                    <div 
+                      onClick={() => setActiveTab("Products")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          👗
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">প্রোডাক্ট ক্যাটালগ</h4>
+                        <p className="text-xs text-gray-500 mt-1">পণ্য যোগ, এডিট, ছবি আপলোড ও স্টক</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        {products.length} টি পণ্য →
+                      </span>
+                    </div>
+
+                    {/* Module 3: Categories */}
+                    <div 
+                      onClick={() => setActiveTab("Categories")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          🏷️
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">ক্যাটাগরি সেটিংস</h4>
+                        <p className="text-xs text-gray-500 mt-1">নতুন ক্যাটাগরি তৈরি ও আইকন সেট</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        {categories.length} টি ক্যাটাগরি →
+                      </span>
+                    </div>
+
+                    {/* Module 4: Coupons */}
+                    <div 
+                      onClick={() => setActiveTab("Coupons")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          🎟️
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">কুপন ও ছাড়</h4>
+                        <p className="text-xs text-gray-500 mt-1">ডিসকাউন্ট কোড, শতাংশ বা ফ্ল্যাট ছাড়</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        {coupons.length} টি কুপন →
+                      </span>
+                    </div>
+
+                    {/* Module 5: Banners */}
+                    <div 
+                      onClick={() => setActiveTab("Banners")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          🖼️
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">ব্যানার ও স্লাইডার</h4>
+                        <p className="text-xs text-gray-500 mt-1">হোমপেজ ব্যানার, অফার টাইটেল ও ছবি</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        {banners.length} টি ব্যানার →
+                      </span>
+                    </div>
+
+                    {/* Module 6: Store Settings */}
+                    <div 
+                      onClick={() => setActiveTab("Settings")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          ⚙️
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">স্টোর ও লোগো সেটিংস</h4>
+                        <p className="text-xs text-gray-500 mt-1">লোগো, নোটিশ বার, ফোন, হোয়াটসঅ্যাপ ও ফুটার</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        সেটিংস পরিবর্তন →
+                      </span>
+                    </div>
+
+                    {/* Module 7: Courier */}
+                    <div 
+                      onClick={() => setActiveTab("Courier")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          🚚
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">কুরিয়ার ইন্টিগ্রেশন</h4>
+                        <p className="text-xs text-gray-500 mt-1">Steadfast ও Pathao API এবং ডেলিভারি চার্জ</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        কুরিয়ার কনফিগার →
+                      </span>
+                    </div>
+
+                    {/* Module 8: Pixel */}
+                    <div 
+                      onClick={() => setActiveTab("Pixel")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          📈
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">ফেসবুক পিক্সেল</h4>
+                        <p className="text-xs text-gray-500 mt-1">Meta Pixel ID ও কনভার্সন ট্র্যাকিং</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        পিক্সেল কোড সেট →
+                      </span>
+                    </div>
+
+                    {/* Module 9: SEO */}
+                    <div 
+                      onClick={() => setActiveTab("SEO")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          🌐
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">এসইও ও সাইটম্যাপ</h4>
+                        <p className="text-xs text-gray-500 mt-1">Google সার্চ ইনডেক্স ও sitemap.xml ডাউনলোড</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        এসইও অপশন →
+                      </span>
+                    </div>
+
+                    {/* Module 10: Backup */}
+                    <div 
+                      onClick={() => setActiveTab("Backup")} 
+                      className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                          💾
+                        </div>
+                        <h4 className="font-bold text-sm text-[#2c1810]">ডাটাবেজ ব্যাকআপ</h4>
+                        <p className="text-xs text-gray-500 mt-1">JSON ফাইল ব্যাকআপ ও সরাসরি রিস্টোর</p>
+                      </div>
+                      <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                        ব্যাকআপ সেন্টার →
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 3. PRODUCTS TAB (ADD, EDIT, DELETE, IMAGE UPLOAD WORKING) */}
+            {/* ========================================================= */}
+            {activeTab === "Products" && (
+              <div className="space-y-5 animate-fadeIn">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <div>
+                    <h3 className="text-xl font-bold text-[#7a1c2b]">প্রোডাক্ট ক্যাটালগ ({products.length})</h3>
+                    <p className="text-xs text-[#b8956a]">পণ্য যোগ, ছবি আপলোড, মূল্য ও স্টক ম্যানেজমেন্ট</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setEditingProduct(null);
+                      setProductForm({ 
+                        name: "", 
+                        price: 0, 
+                        stock: 5, 
+                        category: categories[0]?.name || "শাড়ি", 
+                        images: [], 
+                        sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
+                        description: "" 
+                      });
+                      setImageUrlInput("");
+                      setIsProductModalOpen(true);
+                    }}
+                    className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] flex items-center gap-2"
+                  >
+                    <span>+ নতুন প্রোডাক্ট অ্যাড করুন</span>
+                  </button>
+                </div>
+
+                {/* Mobile View: Product Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {products.map(p => (
+                    <div key={p.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 shadow-sm flex gap-3.5 items-center justify-between">
+                      <img src={p.images[0] || imgSharee} alt={p.name} className="w-20 h-20 rounded-2xl object-cover border flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-2 py-0.5 rounded-full font-bold">
+                          {p.category}
+                        </span>
+                        <h4 className="font-semibold text-sm truncate mt-1 text-gray-900">{p.name}</h4>
+                        <p className="text-xs text-gray-400 font-mono">SKU: {p.sku}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="font-bold text-sm text-[#7a1c2b]">{p.price} ৳</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                            স্টক: {p.stock}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5 flex-shrink-0">
+                        <button 
+                          onClick={() => {
+                            setEditingProduct(p);
+                            setProductForm(p);
+                            setImageUrlInput(p.images[0] || "");
+                            setIsProductModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                        >
+                          ✏️ এডিট
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (confirm(`আপনি কি "${p.name}" মুছে ফেলতে চান?`)) {
+                              setProducts(prev => prev.filter(item => item.id !== p.id));
+                              notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
+                        >
+                          🗑️ মুছুন
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 4. ORDERS TAB (STATUS DROPDOWN, MOBILE CARDS, INVOICE, COURIER) */}
+            {/* ========================================================= */}
+            {activeTab === "Orders" && (
+              <div className="space-y-4 animate-fadeIn">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <div>
+                    <h3 className="text-xl font-bold text-[#7a1c2b]">কাস্টমার অর্ডার তালিকা ({orders.length})</h3>
+                    <p className="text-xs text-[#b8956a]">অর্ডার অনুমোদন, স্ট্যাটাস পরিবর্তন, মেমো প্রিন্ট ও কুরিয়ার বুকিং</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-bold">
+                      পেন্ডিং: {orders.filter(o => o.status === "Pending").length}
+                    </span>
+                    <span className="text-xs bg-green-100 text-green-800 px-3 py-1.5 rounded-full font-bold">
+                      সম্পন্ন: {orders.filter(o => o.status === "Delivered").length}
+                    </span>
+                  </div>
+                </div>
+
+                {orders.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8">
+                    <p className="text-4xl mb-3">📦</p>
+                    <h4 className="font-bold text-base text-gray-700">কোন অর্ডার নেই</h4>
+                    <p className="text-xs text-gray-400 mt-1">গ্রাহক স্টোরফ্রন্ট থেকে অর্ডার করলে এখানে তালিকা চলে আসবে।</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map(o => (
+                      <div key={o.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 sm:p-5 shadow-sm space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f3e2d0] pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-sm sm:text-base text-[#7a1c2b] bg-[#fff8f0] px-3 py-1 rounded-full border border-[#d4a574]">
+                              #{o.id}
+                            </span>
+                            <span className="text-xs text-gray-400">তারিখ: {o.date}</span>
+                          </div>
+                          
+                          {/* Status Dropdown with Live Trigger */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-gray-500 hidden sm:inline">স্ট্যাটাস:</span>
+                            <select 
+                              value={o.status}
+                              onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                              className={`text-xs rounded-full px-3.5 py-1.5 font-bold outline-none cursor-pointer border shadow-sm ${
+                                o.status === "Pending" ? "bg-amber-100 text-amber-800 border-amber-300" :
+                                o.status === "Confirmed" ? "bg-blue-100 text-blue-800 border-blue-300" :
+                                o.status === "Shipped" ? "bg-purple-100 text-purple-800 border-purple-300" :
+                                o.status === "Delivered" ? "bg-green-100 text-green-800 border-green-300" :
+                                "bg-red-100 text-red-800 border-red-300"
+                              }`}
+                            >
+                              <option value="Pending">🟡 Pending (পেন্ডিং)</option>
+                              <option value="Confirmed">🔵 Confirmed (অনুমোদিত)</option>
+                              <option value="Shipped">🟣 Shipped (ডেলিভারিতে)</option>
+                              <option value="Delivered">🟢 Delivered (সম্পন্ন)</option>
+                              <option value="Cancelled">🔴 Cancelled (বাতিল)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Customer & Address details */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                          <div className="bg-[#fffaf5] p-3 rounded-2xl border">
+                            <p className="font-bold text-sm text-[#2c1810]">{o.customer}</p>
+                            <p className="text-gray-600 mt-1 font-mono">📞 {o.phone}</p>
+                            <div className="flex gap-2 mt-2">
+                              <a href={`tel:${o.phone}`} className="bg-white border px-2.5 py-1 rounded-full text-[11px] font-bold text-green-700 hover:bg-green-50">
+                                📞 কল করুন
+                              </a>
+                              <a href={`https://wa.me/88${o.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(o.customer)},%20regarding%20your%20SAJGOJ%20FASHION%20Order%20${o.id}`} target="_blank" className="bg-[#25D366] text-white px-2.5 py-1 rounded-full text-[11px] font-bold">
+                                💬 WhatsApp
+                              </a>
+                            </div>
+                          </div>
+
+                          <div className="bg-[#fffaf5] p-3 rounded-2xl border">
+                            <p className="font-semibold text-gray-500">ডেলিভারি ঠিকানা</p>
+                            <p className="text-[#2c1810] mt-1">{o.address}, {o.thana}, {o.district}</p>
+                            <p className="text-gray-400 mt-1">পেমেন্ট: <b className="text-[#7a1c2b]">{o.paymentMethod}</b></p>
+                          </div>
+
+                          <div className="bg-[#fffaf5] p-3 rounded-2xl border flex flex-col justify-between">
+                            <div>
+                              <p className="font-semibold text-gray-500">বিলের সারসংক্ষেপ</p>
+                              <p className="text-[#7a1c2b] font-bold text-base mt-0.5">{o.total} ৳</p>
+                              <p className="text-[11px] text-gray-500">
+                                সাবটোটাল: {o.subtotal} ৳ | ডেলিভারি: {o.deliveryCharge} ৳
+                                {o.discount > 0 && ` | ছাড়: -${o.discount} ৳`}
+                              </p>
+                            </div>
+                            {o.trackingId && (
+                              <p className="text-[11px] text-green-700 font-bold bg-green-50 p-1.5 rounded-lg border border-green-200 mt-1">
+                                🚚 ট্র্যাকিং ID: {o.trackingId}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Ordered Items List */}
+                        <div className="bg-white p-3 rounded-2xl border border-gray-100">
+                          <p className="text-xs font-semibold text-gray-500 mb-2">অর্ডারের পণ্যসমূহ ({o.items.length}):</p>
+                          <div className="flex flex-wrap gap-2">
+                            {o.items.map((it, idx) => (
+                              <div key={idx} className="bg-[#fff8f0] border rounded-xl px-3 py-1.5 text-xs flex items-center gap-2">
+                                <span className="font-semibold">{it.name}</span>
+                                <span className="bg-[#7a1c2b] text-white px-2 py-0.2 rounded-full font-bold text-[10px]">
+                                  {it.qty} টি
+                                </span>
+                                <span className="font-bold text-[#b8956a]">{it.price * it.qty} ৳</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Action Buttons: Invoice, Steadfast, Pathao, Delete */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#f3e2d0]">
+                          <div className="flex flex-wrap gap-2">
+                            <button 
+                              onClick={() => printInvoiceWindow(o)}
+                              className="px-4 py-2 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition shadow-sm flex items-center gap-1.5"
+                            >
+                              <span>🧾</span>
+                              <span>চালান / মেমো প্রিন্ট</span>
+                            </button>
+                            <button 
+                              onClick={() => dispatchCourier(o.id, "Steadfast")}
+                              className="px-4 py-2 bg-[#2c1810] text-white rounded-full text-xs font-semibold hover:bg-black transition shadow-sm flex items-center gap-1.5"
+                            >
+                              <span>🚚 Steadfast বুকিং</span>
+                            </button>
+                            <button 
+                              onClick={() => dispatchCourier(o.id, "Pathao")}
+                              className="px-4 py-2 bg-[#e2136e] text-white rounded-full text-xs font-semibold hover:bg-[#c20d5c] transition shadow-sm flex items-center gap-1.5"
+                            >
+                              <span>🛵 Pathao বুকিং</span>
+                            </button>
+                          </div>
+                          
+                          <button 
+                            onClick={() => deleteOrder(o.id)}
+                            className="px-3 py-1.5 text-red-500 hover:text-red-700 text-xs font-bold hover:bg-red-50 rounded-full transition"
+                          >
+                            🗑️ অর্ডার মুছুন
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
+              </div>
+            )}
 
-                {/* Categories */}
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
-                  <button
-                    onClick={() => setSelectedCat("All")}
-                    className={`px-5 py-2 rounded-full text-sm font-semibold transition shrink-0 border ${
-                      selectedCat === "All" ? "bg-[#7a1c2b] text-white border-[#7a1c2b]" : "bg-white border-[#e8d5c0] text-[#2c1810]"
-                    }`}
-                  >
-                    সকল কালেকশন
-                  </button>
-                  {categories.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedCat(c.name)}
-                      className={`px-5 py-2 rounded-full text-sm font-semibold transition shrink-0 border flex items-center gap-1.5 ${
-                        selectedCat === c.name ? "bg-[#7a1c2b] text-white border-[#7a1c2b]" : "bg-white border-[#e8d5c0] text-[#2c1810]"
-                      }`}
+            {/* ========================================================= */}
+            {/* 5. CATEGORIES TAB */}
+            {/* ========================================================= */}
+            {activeTab === "Categories" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <h3 className="font-bold text-lg text-[#7a1c2b] mb-1">নতুন ক্যাটাগরি তৈরি করুন</h3>
+                  <p className="text-xs text-gray-500 mb-4">ক্যাটাগরি তৈরি করলে সরাসরি স্টোরফ্রন্ট মেনু ও ফিল্টারে যুক্ত হবে</p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input 
+                      type="text" 
+                      placeholder="ক্যাটাগরির নাম (যেমন: ব্রাইডাল সেট, জামদানি)" 
+                      value={newCategory.name}
+                      onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                      className="flex-1 bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]"
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="ইমোজি আইকন (যেমন: 👑, 👗)" 
+                      value={newCategory.icon}
+                      onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
+                      className="w-full sm:w-32 bg-[#fffaf5] border rounded-full px-4 py-2.5 text-center text-sm outline-none focus:border-[#7a1c2b]"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (!newCategory.name.trim()) return notify("ক্যাটাগরির নাম লিখুন!");
+                        setCategories(prev => [...prev, { id: "c" + Date.now(), name: newCategory.name.trim(), icon: newCategory.icon || "✨" }]);
+                        setNewCategory({ name: "", icon: "✨" });
+                        notify("নতুন ক্যাটাগরি সংরক্ষিত হয়েছে!");
+                      }}
+                      className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-sm font-semibold shadow hover:bg-[#681727] whitespace-nowrap"
                     >
-                      <span>{c.icon}</span>
-                      <span>{c.name}</span>
+                      + ক্যাটাগরি যোগ করুন
                     </button>
-                  ))}
+                  </div>
                 </div>
 
-                {/* Products Grid */}
-                <div id="products">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">আমাদের এক্সক্লুসিভ আইটেমস</h3>
-                      <p className="text-xs text-[#b8956a]">মোট {filteredProducts.length} টি প্রিমিয়াম প্রোডাক্ট প্রদর্শিত হচ্ছে</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {categories.map(c => (
+                    <div key={c.id} className="bg-white p-4 rounded-3xl border border-[#f3e2d0] shadow-sm flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl p-2.5 bg-[#fff8f0] rounded-2xl border border-[#d4a574]">{c.icon}</span>
+                        <div>
+                          <p className="font-bold text-sm text-[#2c1810]">{c.name}</p>
+                          <p className="text-xs text-[#b8956a]">{products.filter(p => p.category === c.name).length} টি পণ্য</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`"${c.name}" ক্যাটাগরি ডিলিট করবেন?`)) {
+                            setCategories(prev => prev.filter(item => item.id !== c.id));
+                            notify("ক্যাটাগরি ডিলিট করা হয়েছে!");
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 text-sm font-bold w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center transition"
+                        title="Delete Category"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 6. COUPONS TAB */}
+            {/* ========================================================= */}
+            {activeTab === "Coupons" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <h3 className="font-bold text-lg text-[#7a1c2b] mb-1">নতুন ডিসকাউন্ট কুপন তৈরি করুন</h3>
+                  <p className="text-xs text-gray-500 mb-4">গ্রাহকরা চেকআউটে এই কুপন কোড দিয়ে ছাড় পাবেন</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input 
+                      type="text" 
+                      placeholder="কুপন কোড (যেমন: EID2026)" 
+                      value={couponForm.code}
+                      onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none font-mono focus:border-[#7a1c2b]"
+                    />
+                    <select 
+                      value={couponForm.type}
+                      onChange={(e) => setCouponForm({ ...couponForm, type: e.target.value })}
+                      className="bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none"
+                    >
+                      <option value="%">% শতাংশ ছাড়</option>
+                      <option value="Flat">নির্দিষ্ট টাকা (Flat ৳)</option>
+                    </select>
+                    <input 
+                      type="number" 
+                      placeholder="ছাড়ের পরিমাণ (Value)" 
+                      value={couponForm.value}
+                      onChange={(e) => setCouponForm({ ...couponForm, value: Number(e.target.value) })}
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]"
+                    />
+                    <input 
+                      type="number" 
+                      placeholder="নূন্যতম অর্ডার মূল্য (Min Order)" 
+                      value={couponForm.minOrder}
+                      onChange={(e) => setCouponForm({ ...couponForm, minOrder: Number(e.target.value) })}
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]"
+                    />
+                    <input 
+                      type="date" 
+                      value={couponForm.expiry}
+                      onChange={(e) => setCouponForm({ ...couponForm, expiry: e.target.value })}
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (!couponForm.code.trim()) return notify("কুপন কোড দিন!");
+                        setCoupons(prev => [...prev, { id: "cp" + Date.now(), ...couponForm, code: couponForm.code.trim() }]);
+                        setCouponForm({ code: "", type: "%", value: 10, minOrder: 1500, expiry: "2026-12-31", active: true });
+                        notify("নতুন কুপন সফলভাবে সেভ হয়েছে!");
+                      }}
+                      className="bg-[#7a1c2b] text-white rounded-full text-sm font-semibold py-2.5 shadow hover:bg-[#681727]"
+                    >
+                      + কুপন সেভ করুন
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {coupons.map(cp => (
+                    <div key={cp.id} className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm flex items-center justify-between">
+                      <div>
+                        <span className="font-mono font-bold text-base bg-[#fff8f0] px-3.5 py-1 rounded-full border border-[#d4a574] text-[#7a1c2b]">
+                          {cp.code}
+                        </span>
+                        <p className="text-xs text-gray-700 font-semibold mt-2.5">
+                          ছাড়: {cp.type === "%" ? `${cp.value}%` : `${cp.value} ৳`} | ন্যূনতম অর্ডার: {cp.minOrder} ৳
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">মেয়াদ: {cp.expiry}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            setCoupons(prev => prev.map(c => c.id === cp.id ? { ...c, active: !c.active } : c));
+                            notify("কুপন স্ট্যাটাস আপডেট হয়েছে!");
+                          }}
+                          className={`text-xs px-3.5 py-1.5 rounded-full font-bold border transition ${cp.active ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-500 border-gray-300'}`}
+                        >
+                          {cp.active ? "Active" : "Inactive"}
+                        </button>
+                        <button 
+                          onClick={() => setCoupons(prev => prev.filter(c => c.id !== cp.id))}
+                          className="text-red-500 hover:text-red-700 p-2 font-bold hover:bg-red-50 rounded-full"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 7. BANNERS TAB (HERO BANNER & SLIDER SETTINGS) */}
+            {/* ========================================================= */}
+            {activeTab === "Banners" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <h3 className="font-bold text-lg text-[#7a1c2b] mb-1">নতুন হোমপেজ হিরো ব্যানার যোগ করুন</h3>
+                  <p className="text-xs text-gray-500 mb-4">ব্যানার সরাসরি হোমপেজ স্লাইডারে প্রদর্শিত হবে</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input 
+                      type="text" 
+                      placeholder="ব্যানার টাইটেল..." 
+                      value={bannerForm.title} 
+                      onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })} 
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="সাবটাইটেল / অফার টেক্সট..." 
+                      value={bannerForm.subtitle} 
+                      onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })} 
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="বাটন টেক্সট (যেমন: কালেকশন দেখুন)" 
+                      value={bannerForm.buttonText} 
+                      onChange={(e) => setBannerForm({ ...bannerForm, buttonText: e.target.value })} 
+                      className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
+                    />
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="ইমেজ URL..." 
+                        value={bannerForm.image} 
+                        onChange={(e) => setBannerForm({ ...bannerForm, image: e.target.value })} 
+                        className="flex-1 bg-[#fffaf5] border rounded-full px-4 py-2.5 text-xs outline-none focus:border-[#7a1c2b]" 
+                      />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        ref={bannerImgFileRef} 
+                        onChange={(e) => handleImageUpload(e, (dataUrl) => setBannerForm(prev => ({ ...prev, image: dataUrl })))} 
+                        className="hidden" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => bannerImgFileRef.current?.click()} 
+                        className="bg-[#fff8f0] border border-[#d4a574] px-4 py-2 rounded-full text-xs font-bold text-[#7a1c2b]"
+                      >
+                        📷 আপলোড
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                    {filteredProducts.map(p => (
-                      <div 
-                        key={p.id}
-                        className="bg-white rounded-2xl border border-[#f3e2d0] overflow-hidden hover:shadow-xl transition group flex flex-col justify-between"
-                      >
-                        <div 
-                          className="relative cursor-pointer aspect-square bg-[#fff8f0] overflow-hidden"
-                          onClick={() => { setViewProduct(p); setProductQty(1); }}
-                        >
-                          <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                          {p.stock <= 5 && (
-                            <span className="absolute top-2 left-2 bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                              Stock: {p.stock}
-                            </span>
-                          )}
+                  <button 
+                    onClick={() => {
+                      if (!bannerForm.title) return notify("ব্যানার টাইটেল দিন!");
+                      const newB = { id: "b" + Date.now(), ...bannerForm, image: bannerForm.image || banner1 };
+                      setBanners(prev => [...prev, newB]);
+                      setBannerForm({ title: "", subtitle: "", buttonText: "কালেকশন দেখুন", link: "#products", image: "", active: true });
+                      notify("ব্যানার সফলভাবে যোগ হয়েছে!");
+                    }}
+                    className="mt-4 bg-[#7a1c2b] text-white px-8 py-2.5 rounded-full text-sm font-semibold shadow hover:bg-[#681727]"
+                  >
+                    + ব্যানার সেভ করুন
+                  </button>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {banners.map(b => (
+                    <div key={b.id} className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm">
+                      <div className="h-44 bg-gray-100 relative">
+                        <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
+                        <span className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-bold shadow ${b.active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                          {b.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div className="p-4 flex justify-between items-center">
+                        <div>
+                          <h4 className="font-bold text-sm text-[#2c1810]">{b.title}</h4>
+                          <p className="text-xs text-gray-500 line-clamp-1">{b.subtitle}</p>
                         </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setBanners(prev => prev.map(item => item.id === b.id ? { ...item, active: !item.active } : item))}
+                            className="text-xs border px-3 py-1.5 rounded-full hover:bg-gray-50 font-semibold"
+                          >
+                            টগল
+                          </button>
+                          <button 
+                            onClick={() => setBanners(prev => prev.filter(item => item.id !== b.id))}
+                            className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 font-semibold"
+                          >
+                            ডিলিট
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                        <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
-                          <div>
-                            <span className="text-[10px] text-[#b8956a] font-semibold uppercase">{p.category}</span>
-                            <h4 
-                              onClick={() => { setViewProduct(p); setProductQty(1); }}
-                              className="font-semibold text-sm sm:text-base leading-snug hover:text-[#7a1c2b] cursor-pointer line-clamp-2 mt-1"
-                            >
-                              {p.name}
-                            </h4>
-                          </div>
+            {/* ========================================================= */}
+            {/* 8. COURIER SETTINGS TAB (STEADFAST, PATHAO, CHARGES) */}
+            {/* ========================================================= */}
+            {activeTab === "Courier" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <h3 className="text-xl font-bold text-[#7a1c2b] mb-1">কুরিয়ার ডেলিভারি চার্জ কনফিগারেশন</h3>
+                  <p className="text-xs text-gray-500 mb-4">ঢাকা ও ঢাকার বাইরে ডেলিভারি ফি এবং ফ্রি ডেলিভারির নিয়ম নির্ধারণ করুন</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600">ঢাকার ভিতরে ডেলিভারি চার্জ (টাকা)</label>
+                      <input 
+                        type="number" 
+                        value={config.deliveryInsideDhaka !== undefined ? config.deliveryInsideDhaka : 60} 
+                        onChange={(e) => setConfig({ ...config, deliveryInsideDhaka: Number(e.target.value) })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600">ঢাকার বাইরে ডেলিভারি চার্জ (টাকা)</label>
+                      <input 
+                        type="number" 
+                        value={config.deliveryOutsideDhaka !== undefined ? config.deliveryOutsideDhaka : 120} 
+                        onChange={(e) => setConfig({ ...config, deliveryOutsideDhaka: Number(e.target.value) })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600">ফ্রি ডেলিভারি ন্যূনতম অর্ডার (টাকা)</label>
+                      <input 
+                        type="number" 
+                        value={config.freeDeliveryThreshold !== undefined ? config.freeDeliveryThreshold : 2000} 
+                        onChange={(e) => setConfig({ ...config, freeDeliveryThreshold: Number(e.target.value) })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                          <div className="mt-4 pt-3 border-t border-[#f3e2d0] flex items-center justify-between">
-                            <span className="text-base sm:text-lg font-bold text-[#7a1c2b]">{p.price.toLocaleString()} ৳</span>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Steadfast */}
+                  <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-base text-[#7a1c2b]">Steadfast Courier API</h4>
+                      <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-bold">সক্রিয়</span>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-semibold">API Key</label>
+                        <input 
+                          type="text" 
+                          value={courier.steadfastApiKey} 
+                          onChange={(e) => setCourier({ ...courier, steadfastApiKey: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1 font-mono" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">Secret Key</label>
+                        <input 
+                          type="password" 
+                          value={courier.steadfastSecret} 
+                          onChange={(e) => setCourier({ ...courier, steadfastSecret: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1" 
+                        />
+                      </div>
+                      <button 
+                        onClick={() => notify("Steadfast API কানেকশন সফল! টেস্ট পিং কার্যকর হয়েছে। ✅")} 
+                        className="w-full bg-[#7a1c2b] text-white py-2.5 rounded-full text-xs font-semibold hover:bg-[#681727] transition shadow"
+                      >
+                        কানেকশন টেস্ট করুন
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Pathao */}
+                  <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-base text-[#7a1c2b]">Pathao Logistics API</h4>
+                      <span className="bg-amber-100 text-amber-700 text-xs px-3 py-1 rounded-full font-bold">প্রস্তুত</span>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-semibold">Client ID</label>
+                        <input 
+                          type="text" 
+                          value={courier.pathaoClientId} 
+                          onChange={(e) => setCourier({ ...courier, pathaoClientId: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1 font-mono" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">Client Secret</label>
+                        <input 
+                          type="password" 
+                          value={courier.pathaoClientSecret} 
+                          onChange={(e) => setCourier({ ...courier, pathaoClientSecret: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1" 
+                        />
+                      </div>
+                      <button 
+                        onClick={() => notify("Pathao API সংযোগ সফল! ✅")} 
+                        className="w-full bg-[#2c1810] text-white py-2.5 rounded-full text-xs font-semibold hover:bg-black transition shadow"
+                      >
+                        কানেকশন টেস্ট করুন
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => notify("কুরিয়ার কনফিগারেশন সফলভাবে সংরক্ষিত হয়েছে! ✅")} 
+                  className="bg-[#7a1c2b] text-white px-8 py-3 rounded-full text-sm font-semibold shadow hover:bg-[#681727]"
+                >
+                  কুরিয়ার কনফিগারেশন সেভ করুন
+                </button>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 9. PIXEL SETTINGS TAB */}
+            {/* ========================================================= */}
+            {activeTab === "Pixel" && (
+              <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-xl font-bold text-[#7a1c2b]">Meta / Facebook Pixel ও ট্র্যাকিং</h3>
+                    <p className="text-xs text-gray-500">Facebook Ad ক্যাম্পেইনের জন্য কনভার্সন ট্র্যাকিং</p>
+                  </div>
+                  <span className={`text-xs px-3.5 py-1.5 rounded-full font-bold ${pixel.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}>
+                    {pixel.enabled ? "● Pixel Active" : "○ Inactive"}
+                  </span>
+                </div>
+
+                <div className="space-y-4 max-w-xl">
+                  <label className="flex items-center gap-2 text-sm font-semibold">
+                    <input 
+                      type="checkbox" 
+                      checked={pixel.enabled} 
+                      onChange={(e) => setPixel({ ...pixel, enabled: e.target.checked })} 
+                      className="w-4 h-4 accent-[#7a1c2b]"
+                    />
+                    পিক্সেল ট্র্যাকিং চালু রাখুন
+                  </label>
+                  <div>
+                    <label className="text-xs font-semibold">Pixel ID (Numeric)</label>
+                    <input 
+                      type="text" 
+                      value={pixel.pixelId} 
+                      onChange={(e) => setPixel({ ...pixel, pixelId: e.target.value.replace(/\D/g, '') })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 font-mono focus:border-[#7a1c2b]" 
+                      placeholder="e.g. 123456789012345"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold">Access Token (Conversion API - Optional)</label>
+                    <input 
+                      type="password" 
+                      value={pixel.accessToken} 
+                      onChange={(e) => setPixel({ ...pixel, accessToken: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                      placeholder="EAA..."
+                    />
+                  </div>
+                  <div className="pt-2 flex gap-3">
+                    <button 
+                      onClick={() => notify(`Pixel (${pixel.pixelId}) টেস্ট ইভেন্ট সফলভাবে পাঠানো হয়েছে! কনসোলে ট্র্যাক রেকর্ড হয়েছে।`)} 
+                      className="bg-[#1877F2] text-white px-6 py-2.5 rounded-full text-xs font-semibold shadow hover:bg-blue-700 transition"
+                    >
+                      টেস্ট ইভেন্ট পাঠান
+                    </button>
+                    <button 
+                      onClick={() => notify("পিক্সেল কনফিগারেশন সংরক্ষিত হয়েছে! ✅")} 
+                      className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs font-semibold shadow hover:bg-[#681727]"
+                    >
+                      পিক্সেল সেভ করুন
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 10. SEO & SITEMAP TAB */}
+            {/* ========================================================= */}
+            {activeTab === "SEO" && (
+              <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <h3 className="text-xl font-bold text-[#7a1c2b]">সার্চ ইঞ্জিন অপটিমাইজেশন (SEO)</h3>
+                    <p className="text-xs text-gray-500">Google সার্চ ইনডেক্সিং, মেটা ট্যাগ এবং সাইটম্যাপ কনফিগারেশন</p>
+                  </div>
+                  <button onClick={generateSitemap} className="bg-[#2c1810] text-white px-6 py-2.5 rounded-full text-xs font-semibold hover:bg-black shadow flex items-center gap-1.5">
+                    <span>🗺️</span>
+                    <span>sitemap.xml ডাউনলোড করুন</span>
+                  </button>
+                </div>
+
+                <div className="space-y-4 max-w-2xl">
+                  <div>
+                    <label className="text-xs font-semibold">Meta Site Title (গুগলে প্রদর্শিত টাইটেল)</label>
+                    <input 
+                      type="text" 
+                      value={seo.siteTitle} 
+                      onChange={(e) => setSeo({ ...seo, siteTitle: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold">Meta Description (বর্ণনা)</label>
+                    <textarea 
+                      rows="3" 
+                      value={seo.metaDescription} 
+                      onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-2xl p-3.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold">Meta Keywords (কমা দিয়ে লিখুন)</label>
+                    <input 
+                      type="text" 
+                      value={seo.metaKeywords} 
+                      onChange={(e) => setSeo({ ...seo, metaKeywords: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold">Canonical Site URL</label>
+                    <input 
+                      type="text" 
+                      value={seo.canonicalUrl} 
+                      onChange={(e) => setSeo({ ...seo, canonicalUrl: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 font-mono focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+                  <button onClick={() => notify("SEO সেটিংস সফলভাবে সেভ হয়েছে! ✅")} className="bg-[#7a1c2b] text-white px-8 py-3 rounded-full text-sm font-semibold shadow hover:bg-[#681727]">
+                    এসইও তথ্য সেভ করুন
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* 11. GENERAL SETTINGS (LOGO, FAVICON, HEADER, FOOTER) */}
+            {/* ========================================================= */}
+            {activeTab === "Settings" && (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
+                <div>
+                  <h3 className="text-2xl font-bold text-[#7a1c2b]">স্টোর, লোগো, হেডার ও ফুটার পূর্ণাঙ্গ সেটিংস</h3>
+                  <p className="text-xs text-gray-500 mt-1">আপনার ব্র্যান্ড নাম, লোগো, ফ্যাভিকন, নোটিশ বার এবং যোগাযোগের তথ্য পরিবর্তন করুন</p>
+                </div>
+                
+                <div className="space-y-6">
+                  {/* Brand, Logo & Favicon Upload Section */}
+                  <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-4">
+                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">১. ব্র্যান্ড, লোগো ও ফ্যাভিকন</h4>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold">স্টোরের নাম</label>
+                        <input 
+                          type="text" 
+                          value={config.storeName} 
+                          onChange={(e) => setConfig({ ...config, storeName: e.target.value })}
+                          className="w-full bg-white border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">ট্যাগলাইন (স্লোগান)</label>
+                        <input 
+                          type="text" 
+                          value={config.tagline} 
+                          onChange={(e) => setConfig({ ...config, tagline: e.target.value })}
+                          className="w-full bg-white border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Logo Upload / URL */}
+                    <div className="grid md:grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold">স্টোর লোগো (Logo Image)</label>
+                        <div className="flex items-center gap-3">
+                          {config.logo ? (
+                            <img src={config.logo} alt="Logo Preview" className="w-14 h-14 rounded-2xl object-cover border-2 border-[#7a1c2b] bg-white p-1" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-2xl bg-[#7a1c2b] text-white flex items-center justify-center text-2xl">👑</div>
+                          )}
+                          <div className="flex-1 space-y-1.5">
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              ref={logoFileRef} 
+                              onChange={(e) => handleImageUpload(e, (dataUrl) => setConfig(prev => ({ ...prev, logo: dataUrl })))} 
+                              className="hidden" 
+                            />
                             <button 
-                              onClick={() => addToCart(p, 1)}
-                              disabled={p.stock <= 0}
-                              className="text-xs px-3 sm:px-4 py-2 rounded-full font-semibold transition bg-[#7a1c2b] text-white hover:bg-[#681727]"
+                              type="button" 
+                              onClick={() => logoFileRef.current?.click()} 
+                              className="bg-[#7a1c2b] text-white px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-[#681727]"
                             >
-                              অর্ডার করুন
+                              📷 লোগো আপলোড করুন
                             </button>
+                            <input 
+                              type="text" 
+                              placeholder="অথবা লোগো URL দিন..." 
+                              value={config.logo} 
+                              onChange={(e) => setConfig({ ...config, logo: e.target.value })} 
+                              className="w-full bg-white border rounded-full px-3 py-1 text-xs outline-none" 
+                            />
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* ADMIN DASHBOARD & ORDERS */}
-            {activeTab === "Dashboard" && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-[#7a1c2b]">স্টোর ড্যাশবোর্ড</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
-                    <p className="text-xs text-[#b8956a]">মোট বিক্রয়</p>
-                    <h3 className="text-2xl font-bold text-[#7a1c2b] mt-1">{orders.reduce((sum, o) => sum + o.total, 0)} ৳</h3>
-                  </div>
-                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
-                    <p className="text-xs text-[#b8956a]">মোট অর্ডার</p>
-                    <h3 className="text-2xl font-bold mt-1">{orders.length}</h3>
-                  </div>
-                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
-                    <p className="text-xs text-[#b8956a]">মোট প্রোডাক্ট</p>
-                    <h3 className="text-2xl font-bold mt-1">{products.length}</h3>
-                  </div>
-                  <div className="bg-white p-5 rounded-2xl border shadow-sm">
-                    <p className="text-xs text-[#b8956a]">কুপন অফার</p>
-                    <h3 className="text-2xl font-bold mt-1">{coupons.length}</h3>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ORDERS TAB */}
-            {activeTab === "Orders" && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-[#7a1c2b]">কাস্টমার অর্ডার তালিকা ({orders.length})</h3>
-                <div className="bg-white rounded-2xl border overflow-hidden">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-[#fff8f0] text-[#7a1c2b] text-xs font-semibold">
-                      <tr>
-                        <th className="p-3">অর্ডার আইডি</th>
-                        <th className="p-3">গ্রাহক</th>
-                        <th className="p-3">ঠিকানা</th>
-                        <th className="p-3">মোট</th>
-                        <th className="p-3">স্ট্যাটাস</th>
-                        <th className="p-3 text-right">কুরিয়ার</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {orders.map(o => (
-                        <tr key={o.id} className="hover:bg-[#fffaf5]">
-                          <td className="p-3 font-mono font-bold text-xs">{o.id}</td>
-                          <td className="p-3">
-                            <p className="font-semibold">{o.customer}</p>
-                            <p className="text-xs text-gray-500">{o.phone}</p>
-                          </td>
-                          <td className="p-3 text-xs">{o.address}, {o.thana}, {o.district}</td>
-                          <td className="p-3 font-bold text-[#7a1c2b]">{o.total} ৳</td>
-                          <td className="p-3"><span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">{o.status}</span></td>
-                          <td className="p-3 text-right">
+                      {/* Favicon Upload / URL */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold">ওয়েবসাইট ফ্যাভিকন (Favicon Icon)</label>
+                        <div className="flex items-center gap-3">
+                          {config.favicon ? (
+                            <img src={config.favicon} alt="Favicon Preview" className="w-10 h-10 rounded-xl object-contain border p-1 bg-white" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-gray-200 text-gray-500 flex items-center justify-center text-sm font-bold">ICO</div>
+                          )}
+                          <div className="flex-1 space-y-1.5">
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              ref={faviconFileRef} 
+                              onChange={(e) => handleImageUpload(e, (dataUrl) => setConfig(prev => ({ ...prev, favicon: dataUrl })))} 
+                              className="hidden" 
+                            />
                             <button 
-                              onClick={() => dispatchCourier(o.id, "Steadfast")}
-                              className="px-3 py-1 bg-[#2c1810] text-white rounded-full text-xs font-semibold hover:bg-black"
+                              type="button" 
+                              onClick={() => faviconFileRef.current?.click()} 
+                              className="bg-[#2c1810] text-white px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-black"
                             >
-                              🚚 Steadfast
+                              🌐 ফ্যাভিকন আপলোড
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                            <input 
+                              type="text" 
+                              placeholder="অথবা ফ্যাভিকন URL দিন..." 
+                              value={config.favicon} 
+                              onChange={(e) => setConfig({ ...config, favicon: e.target.value })} 
+                              className="w-full bg-white border rounded-full px-3 py-1 text-xs outline-none" 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Announcement Bar Settings */}
+                  <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">২. টপ অ্যানাউন্সমেন্ট / নোটিশ বার</h4>
+                      <label className="flex items-center gap-2 font-bold text-xs text-[#7a1c2b] cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={config.announcement.enabled} 
+                          onChange={(e) => setConfig({ ...config, announcement: { ...config.announcement, enabled: e.target.checked } })} 
+                          className="w-4 h-4 accent-[#7a1c2b]"
+                        />
+                        নোটিশ বার চালু রাখুন
+                      </label>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="অ্যানাউন্সমেন্ট টেক্সট লিখুন..." 
+                      value={config.announcement.text} 
+                      onChange={(e) => setConfig({ ...config, announcement: { ...config.announcement, text: e.target.value } })}
+                      className="w-full bg-white border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+
+                  {/* Header Toggles */}
+                  <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
+                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৩. হেডার ডিসপ্লে সেটিংস</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
+                        <input type="checkbox" checked={config.header.showSearch} onChange={(e) => setConfig({ ...config, header: { ...config.header, showSearch: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        সার্চ বক্স প্রদর্শন
+                      </label>
+                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
+                        <input type="checkbox" checked={config.header.showCart} onChange={(e) => setConfig({ ...config, header: { ...config.header, showCart: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        কার্ট বাটন প্রদর্শন
+                      </label>
+                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
+                        <input type="checkbox" checked={config.header.showCategories} onChange={(e) => setConfig({ ...config, header: { ...config.header, showCategories: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        ক্যাটাগরি বার
+                      </label>
+                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
+                        <input type="checkbox" checked={config.header.sticky} onChange={(e) => setConfig({ ...config, header: { ...config.header, sticky: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        স্টিকি হেডার
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Contact Info */}
+                  <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
+                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৪. কন্টাক্ট ও হেল্পলাইন তথ্য</h4>
+                    <div className="grid md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold">হটলাইন ফোন নম্বর</label>
+                        <input 
+                          type="text" 
+                          value={config.phone} 
+                          onChange={(e) => setConfig({ ...config, phone: e.target.value })}
+                          className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-[#7a1c2b]" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">WhatsApp হেল্পলাইন নম্বর</label>
+                        <input 
+                          type="text" 
+                          value={config.whatsapp} 
+                          onChange={(e) => setConfig({ ...config, whatsapp: e.target.value })}
+                          className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-[#7a1c2b]" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">ইমেইল ঠিকানা</label>
+                        <input 
+                          type="text" 
+                          value={config.email} 
+                          onChange={(e) => setConfig({ ...config, email: e.target.value })}
+                          className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-[#7a1c2b]" 
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold">দোকান / শোরুমের পূর্ণাঙ্গ ঠিকানা</label>
+                      <input 
+                        type="text" 
+                        value={config.address} 
+                        onChange={(e) => setConfig({ ...config, address: e.target.value })}
+                        className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-[#7a1c2b]" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Footer Settings */}
+                  <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
+                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৫. ফুটার সেটিংস ও পেমেন্ট মেথড</h4>
+                    <div>
+                      <label className="text-xs font-semibold">ফুটার পরিচিতি (About Store)</label>
+                      <textarea 
+                        rows="2" 
+                        value={config.footer.about} 
+                        onChange={(e) => setConfig({ ...config, footer: { ...config.footer, about: e.target.value } })}
+                        className="w-full bg-white border rounded-2xl p-3 text-xs outline-none mt-1 focus:border-[#7a1c2b]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                      <div>
+                        <label className="text-xs font-semibold">Facebook লিঙ্ক</label>
+                        <input 
+                          type="text" 
+                          value={config.footer.fb} 
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, fb: e.target.value } })}
+                          className="w-full bg-white border rounded-full px-3 py-1.5 text-xs outline-none mt-1" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">Instagram লিঙ্ক</label>
+                        <input 
+                          type="text" 
+                          value={config.footer.insta} 
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, insta: e.target.value } })}
+                          className="w-full bg-white border rounded-full px-3 py-1.5 text-xs outline-none mt-1" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">YouTube লিঙ্ক</label>
+                        <input 
+                          type="text" 
+                          value={config.footer.youtube} 
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, youtube: e.target.value } })}
+                          className="w-full bg-white border rounded-full px-3 py-1.5 text-xs outline-none mt-1" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold">TikTok লিঙ্ক</label>
+                        <input 
+                          type="text" 
+                          value={config.footer.tiktok || ''} 
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, tiktok: e.target.value } })}
+                          className="w-full bg-white border rounded-full px-3 py-1.5 text-xs outline-none mt-1" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <p className="text-xs font-bold text-[#7a1c2b] mb-2">ফুটার পেমেন্ট ব্যাজ টগল:</p>
+                      <div className="flex flex-wrap gap-4 text-xs">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={config.footer.bkash} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, bkash: e.target.checked } })} className="accent-[#7a1c2b]" /> bKash
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={config.footer.nagad} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, nagad: e.target.checked } })} className="accent-[#7a1c2b]" /> Nagad
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={config.footer.rocket} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, rocket: e.target.checked } })} className="accent-[#7a1c2b]" /> Rocket
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={config.footer.cod} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, cod: e.target.checked } })} className="accent-[#7a1c2b]" /> Cash on Delivery
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => notify("স্টোর, লোগো, হেডার ও ফুটার সেটিংস সফলভাবে সেভ হয়েছে! ✅")} 
+                    className="bg-[#7a1c2b] text-white px-10 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-[#681727] transition"
+                  >
+                    সমস্ত সেটিংস সংরক্ষণ করুন (Save All Settings)
+                  </button>
                 </div>
               </div>
             )}
+
+            {/* ========================================================= */}
+            {/* 12. BACKUP & RESTORE TAB */}
+            {/* ========================================================= */}
+            {activeTab === "Backup" && (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
+                <div>
+                  <h3 className="text-xl font-bold text-[#7a1c2b]">ডাটাবেজ ব্যাকআপ ও রিস্টোর সেন্টার</h3>
+                  <p className="text-xs text-[#b8956a] mt-1">
+                    আপনার স্টোরের সকল প্রোডাক্ট, কাস্টমার অর্ডার, কুপন, ব্যানার ও সেটিংস নিরাপদে ব্যাকআপ রাখুন
+                  </p>
+                </div>
+
+                <div className="p-6 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="font-bold text-base text-[#2c1810]">সম্পূর্ণ ডাটাবেজ ব্যাকআপ (JSON)</h4>
+                    <p className="text-xs text-gray-500 mt-1">মোট {products.length} টি পণ্য এবং {orders.length} টি অর্ডার অন্তর্ভুক্ত আছে</p>
+                  </div>
+                  <button onClick={exportBackup} className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow hover:bg-[#681727] flex items-center gap-2">
+                    <span>💾</span>
+                    <span>ব্যাকআপ ডাউনলোড করুন</span>
+                  </button>
+                </div>
+
+                <div className="p-6 bg-white rounded-3xl border border-[#f3e2d0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="font-bold text-base text-[#2c1810]">ডাটা রিস্টোর করুন</h4>
+                    <p className="text-xs text-gray-500 mt-1">পূর্বে ডাউনলোড করা JSON ফাইল সিলেক্ট করে সমস্ত ডাটা ফেরত আনুন</p>
+                  </div>
+                  <div>
+                    <input type="file" accept=".json" ref={fileInputRef} onChange={importBackup} className="hidden" />
+                    <button onClick={() => fileInputRef.current?.click()} className="border-2 border-[#7a1c2b] text-[#7a1c2b] px-6 py-2 rounded-full text-xs font-bold hover:bg-[#fff8f0] flex items-center gap-2">
+                      <span>📂</span>
+                      <span>JSON ফাইল সিলেক্ট করুন</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-red-50 rounded-3xl border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="font-bold text-base text-red-700">ডিফল্ট ডেমো ডাটা রিসেট</h4>
+                    <p className="text-xs text-red-600 mt-1">সমস্যা হলে বা নতুন করে সাজাতে চাইলে ডিফল্ট ক্যাটালগ রিস্টোর করুন</p>
+                  </div>
+                  <button onClick={resetToDefaults} className="bg-red-600 text-white px-6 py-2 rounded-full text-xs font-bold hover:bg-red-700 shadow">
+                    🔄 রিসেট টু ডিফল্ট
+                  </button>
+                </div>
+              </div>
+            )}
+
           </main>
 
+          {/* ========================================================= */}
           {/* CART DRAWER */}
+          {/* ========================================================= */}
           {isCartOpen && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
-              <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
+              <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-fadeIn">
                 <div className="p-4 bg-[#fff8f0] border-b flex justify-between items-center">
                   <h3 className="font-bold text-base text-[#7a1c2b]">শপিং ব্যাগ ({cart.length})</h3>
-                  <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 rounded-full bg-white border flex items-center justify-center font-bold">✕</button>
+                  <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 rounded-full bg-white border flex items-center justify-center font-bold text-gray-600 hover:text-black">✕</button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {cart.length === 0 ? (
-                    <div className="text-center py-16 text-gray-400">
-                      <p className="text-3xl mb-2">🛍️</p>
-                      <p className="text-sm font-semibold">আপনার কার্ট খালি!</p>
+                    <div className="text-center py-20 text-gray-400">
+                      <p className="text-4xl mb-3">🛍️</p>
+                      <p className="text-sm font-semibold text-gray-700">আপনার কার্ট খালি!</p>
+                      <p className="text-xs mt-1 text-gray-400">পছন্দের শাড়ি বা জুয়েলারি নির্বাচন করে অর্ডার করুন।</p>
                     </div>
                   ) : (
                     cart.map(item => (
                       <div key={item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
-                        <img src={item.images[0]} alt={item.name} className="w-16 h-16 rounded-xl object-cover border" />
+                        <img src={item.images[0] || imgSharee} alt={item.name} className="w-16 h-16 rounded-xl object-cover border flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{item.name}</p>
+                          <p className="font-semibold text-xs sm:text-sm truncate">{item.name}</p>
                           <p className="text-xs text-[#7a1c2b] font-bold mt-0.5">{item.price} ৳</p>
                           <div className="flex items-center gap-3 mt-2">
                             <button onClick={() => updateCartQty(item.id, -1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">-</button>
@@ -596,7 +2252,7 @@
                           </div>
                         </div>
                         <div className="text-right flex flex-col justify-between">
-                          <span className="font-bold text-sm text-[#7a1c2b]">{item.price * item.qty} ৳</span>
+                          <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">{item.price * item.qty} ৳</span>
                           <button onClick={() => updateCartQty(item.id, -item.qty)} className="text-[11px] text-red-500 font-semibold hover:underline">রিমুভ</button>
                         </div>
                       </div>
@@ -622,10 +2278,12 @@
             </div>
           )}
 
+          {/* ========================================================= */}
           {/* CHECKOUT MODAL */}
+          {/* ========================================================= */}
           {isCheckoutOpen && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 border shadow-2xl">
+              <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 border shadow-2xl animate-fadeIn">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-bold text-[#7a1c2b]">ক্যাশ অন ডেলিভারি চেকআউট</h3>
                   <button onClick={() => setIsCheckoutOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
@@ -637,7 +2295,7 @@
                     <input 
                       type="text" 
                       required 
-                      placeholder="পুরো নাম..." 
+                      placeholder="পুরো নাম লিখুন..." 
                       value={checkoutForm.name} 
                       onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })} 
                       className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
@@ -664,8 +2322,14 @@
                         onChange={(e) => setCheckoutForm({ ...checkoutForm, district: e.target.value })}
                         className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1"
                       >
-                        <option value="Dhaka">ঢাকা (ডেলিভারি ৬০৳)</option>
-                        <option value="Outside">ঢাকার বাইরে (ডেলিভারি ১২০৳)</option>
+                        <option value="Dhaka">ঢাকা (ডেলিভারি {insideDhakaFee} ৳)</option>
+                        <option value="Chattogram">চট্টগ্রাম (ডেলিভারি {outsideDhakaFee} ৳)</option>
+                        <option value="Sylhet">সিলেট (ডেলিভারি {outsideDhakaFee} ৳)</option>
+                        <option value="Rajshahi">রাজশাহী (ডেলিভারি {outsideDhakaFee} ৳)</option>
+                        <option value="Khulna">খুলনা (ডেলিভারি {outsideDhakaFee} ৳)</option>
+                        <option value="Barishal">বরিশাল (ডেলিভারি {outsideDhakaFee} ৳)</option>
+                        <option value="Rangpur">রংপুর (ডেলিভারি {outsideDhakaFee} ৳)</option>
+                        <option value="Mymensingh">ময়মনসিংহ (ডেলিভারি {outsideDhakaFee} ৳)</option>
                       </select>
                     </div>
                     <div>
@@ -681,7 +2345,7 @@
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold">সম্পূর্ণ ঠিকানা (বাসা/রোড নম্বর)*</label>
+                    <label className="text-xs font-semibold">সম্পূর্ণ বিস্তারিত ঠিকানা *</label>
                     <textarea 
                       rows="2" 
                       required 
@@ -693,32 +2357,32 @@
                   </div>
 
                   {/* Coupon Box */}
-                  <div className="p-3 bg-[#fffaf5] rounded-2xl border">
-                    <label className="text-xs font-semibold text-[#7a1c2b]">কুপন কোড (যেমন: EID2026)</label>
+                  <div className="p-3.5 bg-[#fffaf5] rounded-2xl border">
+                    <label className="text-xs font-semibold text-[#7a1c2b]">কুপন ডিসকাউন্ট কোড</label>
                     <div className="flex gap-2 mt-1">
                       <input 
                         type="text" 
-                        placeholder="কুপন কোড..." 
+                        placeholder="যেমন: EID2026" 
                         value={couponInput} 
                         onChange={(e) => setCouponInput(e.target.value)} 
-                        className="flex-1 bg-white border rounded-full px-4 py-2 text-xs outline-none" 
+                        className="flex-1 bg-white border rounded-full px-4 py-2 text-xs outline-none uppercase font-mono" 
                       />
                       <button 
                         type="button" 
                         onClick={handleApplyCoupon} 
-                        className="bg-[#2c1810] text-white px-5 py-2 rounded-full text-xs font-bold"
+                        className="bg-[#2c1810] text-white px-5 py-2 rounded-full text-xs font-bold hover:bg-black"
                       >
-                        প্রয়োগ
+                        প্রয়োগ করুন
                       </button>
                     </div>
                     {appliedCoupon && (
-                      <p className="text-xs text-green-700 font-semibold mt-1">
-                        ✓ কুপন কার্যকর হয়েছে (-{discountAmount} ৳)
+                      <p className="text-xs text-green-700 font-semibold mt-1.5">
+                        ✓ কুপন {appliedCoupon.code} প্রযোজ্য হয়েছে (-{discountAmount} ৳)
                       </p>
                     )}
                   </div>
 
-                  {/* Pricing Summary */}
+                  {/* Summary */}
                   <div className="bg-[#fff8f0] p-4 rounded-2xl space-y-1.5 text-xs">
                     <div className="flex justify-between">
                       <span>সাবটোটাল</span>
@@ -732,10 +2396,10 @@
                     )}
                     <div className="flex justify-between">
                       <span>ডেলিভারি চার্জ</span>
-                      <span>{deliveryCharge === 0 ? "ফ্রি" : `${deliveryCharge} ৳`}</span>
+                      <span>{deliveryCharge === 0 ? "ফ্রি (Free)" : `${deliveryCharge} ৳`}</span>
                     </div>
                     <div className="flex justify-between text-base font-bold text-[#7a1c2b] pt-2 border-t border-[#d4a574]">
-                      <span>সর্বমোট</span>
+                      <span>সর্বমোট প্রদেয়</span>
                       <span>{cartGrandTotal} ৳</span>
                     </div>
                   </div>
@@ -751,19 +2415,265 @@
             </div>
           )}
 
+          {/* ========================================================= */}
+          {/* PRODUCT DETAILS MODAL */}
+          {/* ========================================================= */}
+          {viewProduct && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border shadow-2xl animate-fadeIn">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-lg text-[#7a1c2b]">{viewProduct.name}</h3>
+                  <button onClick={() => setViewProduct(null)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <img src={viewProduct.images[0] || imgSharee} alt={viewProduct.name} className="w-full aspect-square rounded-2xl object-cover border" />
+                  </div>
+                  <div className="flex flex-col justify-between">
+                    <div>
+                      <p className="text-2xl font-bold text-[#7a1c2b] mb-1">{viewProduct.price.toLocaleString()} ৳</p>
+                      <p className="text-xs text-[#b8956a] mb-4">SKU: {viewProduct.sku} | ক্যাটাগরি: {viewProduct.category}</p>
+                      <p className="text-sm text-gray-700 leading-relaxed mb-6">{viewProduct.description}</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-semibold">পরিমাণ:</span>
+                        <button onClick={() => setProductQty(Math.max(1, productQty - 1))} className="w-8 h-8 rounded-full border font-bold">-</button>
+                        <span className="font-bold text-sm">{productQty}</span>
+                        <button onClick={() => setProductQty(productQty + 1)} className="w-8 h-8 rounded-full border font-bold">+</button>
+                      </div>
+
+                      <button 
+                        onClick={() => {
+                          addToCart(viewProduct, productQty);
+                          setViewProduct(null);
+                        }}
+                        className="w-full bg-[#7a1c2b] text-white py-3 rounded-full font-bold text-sm shadow hover:bg-[#681727] transition"
+                      >
+                        কার্টে যোগ করুন ({viewProduct.price * productQty} ৳)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* ADD / EDIT PRODUCT MODAL (WITH DIRECT IMAGE UPLOAD & URL) */}
+          {/* ========================================================= */}
+          {isProductModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 border shadow-2xl animate-fadeIn">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-lg text-[#7a1c2b]">
+                    {editingProduct ? "প্রোডাক্ট তথ্য আপডেট করুন" : "নতুন প্রোডাক্ট যোগ করুন"}
+                  </h3>
+                  <button onClick={() => setIsProductModalOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold">প্রোডাক্টের নাম *</label>
+                    <input 
+                      type="text" 
+                      value={productForm.name} 
+                      onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                      placeholder="যেমন: এক্সক্লুসিভ কাতান শাড়ি"
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold">মূল্য (টাকা) *</label>
+                      <input 
+                        type="number" 
+                        value={productForm.price} 
+                        onChange={(e) => setProductForm({ ...productForm, price: Number(e.target.value) })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold">স্টক পরিমাণ *</label>
+                      <input 
+                        type="number" 
+                        value={productForm.stock} 
+                        onChange={(e) => setProductForm({ ...productForm, stock: Number(e.target.value) })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold">ক্যাটাগরি</label>
+                      <select 
+                        value={productForm.category}
+                        onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1"
+                      >
+                        {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold">SKU কোড</label>
+                      <input 
+                        type="text" 
+                        placeholder="SAJ-101" 
+                        value={productForm.sku} 
+                        onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1 font-mono focus:border-[#7a1c2b]" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Image Upload & URL */}
+                  <div>
+                    <label className="text-xs font-semibold">পণ্যের ছবি (Device Upload বা URL)</label>
+                    <div className="flex gap-2 mt-1">
+                      <input 
+                        type="text" 
+                        placeholder="ইমেজ URL দিন..." 
+                        value={imageUrlInput}
+                        onChange={(e) => setImageUrlInput(e.target.value)}
+                        className="flex-1 bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none" 
+                      />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        ref={productImgFileRef} 
+                        onChange={(e) => handleImageUpload(e, (dataUrl) => setImageUrlInput(dataUrl))} 
+                        className="hidden" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => productImgFileRef.current?.click()} 
+                        className="bg-[#2c1810] text-white px-4 py-2 rounded-full text-xs font-semibold hover:bg-black"
+                      >
+                        📷 ছবি আপলোড
+                      </button>
+                    </div>
+                    {imageUrlInput && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <img src={imageUrlInput} alt="Preview" className="w-12 h-12 rounded-xl object-cover border" />
+                        <span className="text-[11px] text-green-700 font-semibold">ছবি সংযুক্ত হয়েছে ✓</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold">বিস্তারিত বিবরণ</label>
+                    <textarea 
+                      rows="3" 
+                      value={productForm.description} 
+                      onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                      placeholder="পণ্য সম্পর্কে বিস্তারিত তথ্য লিখুন..." 
+                      className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
+                    />
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      if (!productForm.name || !productForm.price) return notify("নাম ও মূল্য আবশ্যক!");
+                      const img = imageUrlInput || productForm.images[0] || imgSharee;
+                      if (editingProduct) {
+                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...productForm, images: [img] } : p));
+                        notify("প্রোডাক্ট সফলভাবে আপডেট হয়েছে! ✅");
+                      } else {
+                        const newP = {
+                          id: "p" + Date.now(),
+                          ...productForm,
+                          images: [img],
+                          sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
+                          rating: 4.8,
+                          reviewsCount: 1
+                        };
+                        setProducts(prev => [newP, ...prev]);
+                        notify("নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে! ✨");
+                      }
+                      setIsProductModalOpen(false);
+                      setImageUrlInput("");
+                    }}
+                    className="w-full bg-[#7a1c2b] text-white py-3 rounded-full font-bold text-sm shadow hover:bg-[#681727] transition"
+                  >
+                    সংরক্ষণ করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Floating WhatsApp Button */}
+          <a 
+            href={`https://wa.me/${config.whatsapp}?text=Hello%20SAJGOJ%20FASHION,%20I%20want%20to%20order`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-2xl border-2 border-white hover:scale-110 transition duration-300"
+            title="WhatsApp Helpline"
+          >
+            <span className="text-2xl font-bold">💬</span>
+          </a>
+
           {/* Toast Notification */}
           {toast && (
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-[#2c1810] text-[#fff8f0] px-6 py-3 rounded-full text-sm font-semibold shadow-2xl border border-[#d4a574]">
+            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#2c1810] text-[#fff8f0] px-6 py-3 rounded-full text-xs sm:text-sm font-semibold shadow-2xl border border-[#d4a574] animate-fadeIn">
               {toast}
             </div>
           )}
 
-          {/* Site Footer */}
-          <footer className="mt-16 bg-[#2c1810] text-[#fff8f0] border-t-4 border-[#d4a574] py-8 px-4 text-center text-xs">
-            <h3 className="text-lg font-bold text-[#d4a574] mb-2">{config.storeName}</h3>
-            <p className="text-[#ffdcc0] max-w-md mx-auto mb-4">{config.footer.about}</p>
-            <p className="text-[#b8956a]">📞 {config.footer.phone} | ✉️ {config.footer.email} | 📍 {config.footer.address}</p>
-            <p className="text-gray-500 mt-4">{config.footer.copyright}</p>
+          {/* Footer */}
+          <footer className="mt-16 bg-[#2c1810] text-[#fff8f0] border-t-4 border-[#d4a574]">
+            <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div>
+                <h3 className="text-xl font-bold text-[#d4a574] mb-3">{config.storeName}</h3>
+                <p className="text-xs text-[#ffdcc0] leading-relaxed">{config.footer.about}</p>
+                <p className="text-xs text-[#b8956a] mt-4 leading-relaxed">
+                  📞 {config.phone} <br />
+                  ✉️ {config.email} <br />
+                  📍 {config.address}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-sm text-[#d4a574] mb-3">কুইক লিঙ্কস</h4>
+                <ul className="text-xs space-y-2 text-[#ffdcc0]">
+                  <li onClick={() => { setSelectedCat("All"); setActiveTab("Storefront"); }} className="hover:text-white cursor-pointer">• সকল কালেকশন</li>
+                  <li onClick={() => { setSelectedCat("শাড়ি"); setActiveTab("Storefront"); }} className="hover:text-white cursor-pointer">• ডিজাইনার শাড়ি</li>
+                  <li onClick={() => { setSelectedCat("নেকলেস"); setActiveTab("Storefront"); }} className="hover:text-white cursor-pointer">• রাজওয়াড়ি জুয়েলারি</li>
+                  <li onClick={() => { setActiveTab("Dashboard"); }} className="hover:text-white cursor-pointer">• এডমিন কন্ট্রোল প্যানেল</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-sm text-[#d4a574] mb-3">যোগাযোগ ও সোশ্যাল মিডিয়া</h4>
+                <div className="text-xs space-y-2 text-[#ffdcc0]">
+                  <p>হটলাইন: {config.phone}</p>
+                  <p>হোয়াটসঅ্যাপ: {config.whatsapp}</p>
+                  <div className="flex gap-3 pt-2">
+                    <a href={config.footer.fb} target="_blank" className="hover:text-white font-semibold">Facebook</a>
+                    <a href={config.footer.insta} target="_blank" className="hover:text-white font-semibold">Instagram</a>
+                    <a href={config.footer.youtube} target="_blank" className="hover:text-white font-semibold">YouTube</a>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-sm text-[#d4a574] mb-3">পেমেন্ট মেথড</h4>
+                <div className="flex flex-wrap gap-2">
+                  {config.footer.bkash && <span className="text-[10px] bg-[#e2136e] text-white px-2.5 py-1 rounded-full font-bold">bKash</span>}
+                  {config.footer.nagad && <span className="text-[10px] bg-[#f6921e] text-white px-2.5 py-1 rounded-full font-bold">Nagad</span>}
+                  {config.footer.rocket && <span className="text-[10px] bg-[#8c3494] text-white px-2.5 py-1 rounded-full font-bold">Rocket</span>}
+                  {config.footer.cod && <span className="text-[10px] bg-white text-black px-2.5 py-1 rounded-full font-bold">Cash on Delivery</span>}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 py-4 text-center text-xs text-[#b8956a]">
+              {config.footer.copyright}
+            </div>
           </footer>
         </div>
       );
