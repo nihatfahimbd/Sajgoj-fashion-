@@ -25,6 +25,8 @@
 
   <style>
     :root {
+      --primary-color: #7a1c2b;
+      --primary-hover: #63141f;
       --maroon: #7a1c2b;
       --gold: #d4a574;
       --gold-dark: #b8956a;
@@ -45,6 +47,41 @@
     }
     .animate-fadeIn {
       animation: fadeIn 0.25s ease-out forwards;
+    }
+
+    /* Dynamic Storefront Theme Overrides linked to CSS Variables */
+    .theme-primary-bg,
+    [class*="bg-[#7a1c2b]"],
+    [class*="bg-[#7c1d2a]"] {
+      background-color: var(--primary-color) !important;
+    }
+
+    .theme-primary-text,
+    [class*="text-[#7a1c2b]"],
+    [class*="text-[#7c1d2a]"] {
+      color: var(--primary-color) !important;
+    }
+
+    .theme-primary-border,
+    [class*="border-[#7a1c2b]"],
+    [class*="border-[#7c1d2a]"] {
+      border-color: var(--primary-color) !important;
+    }
+
+    [class*="hover:bg-[#681727]"]:hover,
+    [class*="hover:bg-[#63141f]"]:hover {
+      background-color: var(--primary-hover) !important;
+    }
+
+    [class*="focus:border-[#7a1c2b]"]:focus,
+    [class*="focus:border-[#7c1d2a]"]:focus,
+    [class*="focus:ring-[#7a1c2b]"]:focus {
+      border-color: var(--primary-color) !important;
+    }
+
+    [class*="accent-[#7a1c2b]"],
+    [class*="accent-[#7c1d2a]"] {
+      accent-color: var(--primary-color) !important;
     }
   </style>
 </head>
@@ -170,6 +207,7 @@
 
     const initialStoreConfig = {
       storeName: "SAJGOJ FASHION",
+      primaryColor: "#7a1c2b",
       logo: "",
       favicon: "",
       tagline: "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
@@ -1044,6 +1082,43 @@
         await syncDocToCloud("config", "store", updated);
         notify("ওয়েবসাইট ফ্যাভিকন ক্লাউডে সেভ হয়েছে! 🌐");
       };
+
+      // Theme Customization Handler & Realtime CSS Variable Sync
+      const handleThemeColorUpdate = async (newColor) => {
+        if (!newColor) return;
+        const updated = { ...config, primaryColor: newColor };
+        setConfig(updated);
+        setStored("config", updated);
+        document.documentElement.style.setProperty('--primary-color', newColor);
+        document.documentElement.style.setProperty('--maroon', newColor);
+        await syncDocToCloud("config", "store", updated);
+        notify(`ব্র্যান্ড কালার (${newColor}) সফলভাবে আপডেট ও ক্লাউডে সেভ হয়েছে! 🎨`);
+      };
+
+      // Realtime CSS Variables Sync across Document
+      useEffect(() => {
+        const primary = config.primaryColor || "#7a1c2b";
+        document.documentElement.style.setProperty('--primary-color', primary);
+        document.documentElement.style.setProperty('--maroon', primary);
+
+        const darkenHex = (hex, percent = 15) => {
+          try {
+            let clean = hex.replace("#", "");
+            if (clean.length === 3) clean = clean.split("").map(c => c + c).join("");
+            const num = parseInt(clean, 16);
+            const amt = Math.round(2.55 * percent);
+            const r = Math.max(0, (num >> 16) - amt);
+            const g = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+            const b = Math.max(0, (num & 0x0000FF) - amt);
+            return "#" + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+          } catch(e) {
+            return primary;
+          }
+        };
+
+        const hoverColor = darkenHex(primary, 15);
+        document.documentElement.style.setProperty('--primary-hover', hoverColor);
+      }, [config.primaryColor]);
 
       // Filtered Products
       const filteredProducts = products.filter(p => {
@@ -2905,10 +2980,157 @@
                     </div>
                   </div>
 
+                  {/* 2. Theme & Brand Color Customization Section */}
+                  <div className="p-5 sm:p-6 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider flex items-center gap-2">
+                          <span>🎨</span>
+                          <span>২. থিম ও ব্র্যান্ড কালার কাস্টমাইজেশন (Primary Brand Color)</span>
+                        </h4>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          আপনার ব্র্যান্ডের প্রাইমারি কালার পরিবর্তন করুন (ডিফল্ট: #7a1c2b), যা রিয়েলটাইমে সম্পূর্ণ স্টোরফ্রন্টে প্রযোজ্য হবে
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-bold px-3 py-1 rounded-full border shadow-xs flex items-center gap-1.5 self-start sm:self-auto bg-white" style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}>
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}></span>
+                        {config.primaryColor || "#7a1c2b"}
+                      </span>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-5 pt-1">
+                      {/* Color Picker & Hex Input */}
+                      <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] space-y-3">
+                        <label className="text-xs font-semibold text-gray-700 block">কাস্টম কালার পিকার ও হেক্স কোড</label>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-12 h-12 rounded-2xl overflow-hidden border-2 shadow-sm flex-shrink-0 cursor-pointer" style={{ borderColor: config.primaryColor || '#7a1c2b' }}>
+                            <input 
+                              type="color" 
+                              value={config.primaryColor || "#7a1c2b"} 
+                              onChange={(e) => {
+                                const newCol = e.target.value;
+                                setConfig(prev => ({ ...prev, primaryColor: newCol }));
+                                document.documentElement.style.setProperty('--primary-color', newCol);
+                                document.documentElement.style.setProperty('--maroon', newCol);
+                              }}
+                              onBlur={(e) => handleThemeColorUpdate(e.target.value)}
+                              className="absolute -inset-4 w-20 h-20 cursor-pointer opacity-100"
+                              title="কালার নির্বাচন করুন"
+                            />
+                          </div>
+
+                          <div className="flex-1 space-y-1">
+                            <input 
+                              type="text" 
+                              placeholder="#7a1c2b" 
+                              value={config.primaryColor || "#7a1c2b"} 
+                              onChange={(e) => {
+                                const newCol = e.target.value;
+                                setConfig(prev => ({ ...prev, primaryColor: newCol }));
+                                if (/^#[0-9A-Fa-f]{6}$/.test(newCol)) {
+                                  document.documentElement.style.setProperty('--primary-color', newCol);
+                                  document.documentElement.style.setProperty('--maroon', newCol);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                                  handleThemeColorUpdate(e.target.value);
+                                }
+                              }}
+                              className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs font-mono font-bold outline-none uppercase focus:border-[#7a1c2b]" 
+                            />
+                            <p className="text-[10px] text-gray-400">কালার পিকার আইকনে ক্লিক করে সরাসরি পছন্দ করুন</p>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 flex items-center justify-between border-t border-gray-100">
+                          <button
+                            type="button"
+                            onClick={() => handleThemeColorUpdate("#7a1c2b")}
+                            className="text-[11px] text-[#7a1c2b] font-bold hover:underline flex items-center gap-1"
+                          >
+                            <span>↺</span>
+                            <span>ডিফল্ট মেরুন কালারে রিসেট করুন (#7a1c2b)</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Live Storefront Component Preview */}
+                      <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] space-y-3">
+                        <label className="text-xs font-semibold text-gray-700 block">লাইভ কম্পোনেন্ট প্রিভিউ</label>
+                        <div className="p-3.5 rounded-xl border border-dashed border-gray-200 bg-[#fffdfa] space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold" style={{ color: config.primaryColor || '#7a1c2b' }}>
+                              প্রোডাক্টের নাম (৩৫০০ ৳)
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-xs" style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}>
+                              বেস্টসেলার
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button 
+                              type="button" 
+                              className="flex-1 py-2 rounded-full text-xs font-bold text-white shadow transition"
+                              style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}
+                            >
+                              অর্ডার করুন →
+                            </button>
+                            <button 
+                              type="button" 
+                              className="px-4 py-2 rounded-full text-xs font-bold border transition bg-white"
+                              style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}
+                            >
+                              কার্ট 🛒
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <span>✓</span>
+                          <span>CSS ভেরিয়েবল <code>--primary-color</code> ও <code>--maroon</code> এর মাধ্যমে পুরো স্টোরফ্রন্টে সংযুক্ত</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Pre-designed Luxury Brand Color Presets */}
+                    <div className="pt-2">
+                      <p className="text-xs font-bold text-gray-700 mb-2">রেডিমেড লাক্সারি ব্র্যান্ড কালার প্যালেট (এক ক্লিকে পরিবর্তন):</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        {[
+                          { name: "Royal Maroon", color: "#7a1c2b", label: "রয়েল মেরুন (ডিফল্ট)" },
+                          { name: "Emerald Green", color: "#064e3b", label: "এমেরাল্ড গ্রিন" },
+                          { name: "Imperial Sapphire", color: "#1e3a8a", label: "স্যাফায়ার ব্লু" },
+                          { name: "Regal Velvet", color: "#4c1d95", label: "ভেলভেট পার্পল" },
+                          { name: "Crimson Rose", color: "#9f1239", label: "ক্রিমসন রোজ" },
+                          { name: "Deep Chocolate", color: "#3b2219", label: "চকলেট ব্রাউন" },
+                          { name: "Noir Obsidian", color: "#18181b", label: "অবসিডিয়ান ব্ল্যাক" }
+                        ].map((preset) => {
+                          const isSelected = (config.primaryColor || "#7a1c2b").toLowerCase() === preset.color.toLowerCase();
+                          return (
+                            <button
+                              key={preset.color}
+                              type="button"
+                              onClick={() => handleThemeColorUpdate(preset.color)}
+                              className={`p-2.5 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 ${
+                                isSelected ? "border-gray-900 shadow-md bg-white scale-[1.03] ring-2 ring-black/20" : "border-gray-200 bg-white hover:border-gray-400"
+                              }`}
+                            >
+                              <span className="w-7 h-7 rounded-full shadow-inner flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: preset.color }}>
+                                {isSelected ? "✓" : ""}
+                              </span>
+                              <span className="text-[10px] font-bold text-gray-800 truncate w-full">{preset.label}</span>
+                              <span className="text-[9px] font-mono text-gray-400">{preset.color}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Announcement Bar Settings */}
                   <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">২. টপ অ্যানাউন্সমেন্ট / নোটিশ বার</h4>
+                      <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৩. টপ অ্যানাউন্সমেন্ট / নোটিশ বার</h4>
                       <label className="flex items-center gap-2 font-bold text-xs text-[#7a1c2b] cursor-pointer">
                         <input 
                           type="checkbox" 
@@ -2930,7 +3152,7 @@
 
                   {/* Header Toggles */}
                   <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
-                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৩. হেডার ডিসপ্লে সেটিংস</h4>
+                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৪. হেডার ডিসপ্লে সেটিংস</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                       <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
                         <input type="checkbox" checked={config.header.showSearch} onChange={(e) => setConfig({ ...config, header: { ...config.header, showSearch: e.target.checked } })} className="accent-[#7a1c2b]" />
@@ -2953,7 +3175,7 @@
 
                   {/* Contact Info */}
                   <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
-                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৪. কন্টাক্ট ও হেল্পলাইন তথ্য</h4>
+                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৫. কন্টাক্ট ও হেল্পলাইন তথ্য</h4>
                     <div className="grid md:grid-cols-3 gap-3">
                       <div>
                         <label className="text-xs font-semibold">হটলাইন ফোন নম্বর</label>
@@ -2996,7 +3218,7 @@
 
                   {/* Footer Settings */}
                   <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
-                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৫. ফুটার সেটিংস ও পেমেন্ট মেথড</h4>
+                    <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৬. ফুটার সেটিংস ও পেমেন্ট মেথড</h4>
                     <div>
                       <label className="text-xs font-semibold">ফুটার পরিচিতি (About Store)</label>
                       <textarea 
@@ -3215,11 +3437,19 @@
 
                 {/* Royal Luxury Palette */}
                 <div className="bg-[#f8f1e8] p-5 rounded-2xl border border-[#d8c3ad] space-y-3 shadow-sm">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c1d2a]">ROYAL LUXURY COLOR PALETTE</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#7c1d2a]">ROYAL LUXURY COLOR PALETTE</p>
+                    <button 
+                      onClick={() => setActiveTab("General")} 
+                      className="text-[11px] text-[#7a1c2b] font-bold hover:underline"
+                    >
+                      কালার পরিবর্তন করুন ⚙️
+                    </button>
+                  </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="p-4 rounded-xl bg-[#7c1d2a] text-white text-center shadow">
-                      <p className="text-xs font-bold">Maroon</p>
-                      <p className="text-[10px] opacity-80 font-mono mt-0.5">#7c1d2a</p>
+                    <div className="p-4 rounded-xl text-white text-center shadow transition" style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}>
+                      <p className="text-xs font-bold">Brand Primary</p>
+                      <p className="text-[10px] opacity-90 font-mono mt-0.5">{config.primaryColor || '#7a1c2b'}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-[#d4af37] text-[#2c1810] text-center shadow">
                       <p className="text-xs font-bold">Gold</p>
