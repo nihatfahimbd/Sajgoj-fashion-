@@ -601,12 +601,15 @@
       const [newCategory, setNewCategory] = useState({ name: "", icon: "✨" });
       const [couponForm, setCouponForm] = useState({ code: "", type: "%", value: 10, minOrder: 1500, expiry: "2026-12-31", active: true });
       const [bannerForm, setBannerForm] = useState({ title: "", subtitle: "", buttonText: "কালেকশন দেখুন", link: "#products", image: "", active: true });
+      const [editingBanner, setEditingBanner] = useState(null);
+      const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
 
       const fileInputRef = useRef(null);
       const productImgFileRef = useRef(null);
       const logoFileRef = useRef(null);
       const faviconFileRef = useRef(null);
       const bannerImgFileRef = useRef(null);
+      const bannerEditFileRef = useRef(null);
 
       const notify = (msg) => {
         setToast(msg);
@@ -956,16 +959,90 @@
         w.document.close();
       };
 
-      // File to Base64 image reader
-      const handleImageUpload = (e, callback) => {
+      // Smart Client-Side Canvas Image Compressor (<100KB per image, prevents Firestore/localStorage limits)
+      const compressImage = (file, maxWidth = 1200, maxHeight = 800, quality = 0.82) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              let width = img.width;
+              let height = img.height;
+
+              if (width > height) {
+                if (width > maxWidth) {
+                  height = Math.round((height * maxWidth) / width);
+                  width = maxWidth;
+                }
+              } else {
+                if (height > maxHeight) {
+                  width = Math.round((width * maxHeight) / height);
+                  height = maxHeight;
+                }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, width, height);
+
+              // Use WebP if supported, fallback to JPEG
+              let dataUrl = canvas.toDataURL("image/webp", quality);
+              if (!dataUrl.startsWith("data:image/webp")) {
+                dataUrl = canvas.toDataURL("image/jpeg", quality);
+              }
+              resolve(dataUrl);
+            };
+            img.onerror = () => resolve(e.target.result);
+            img.src = e.target.result;
+          };
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
+      };
+
+      const handleImageUpload = async (e, callback, type = "general") => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          callback(event.target.result);
-          notify("ছবি সফলভাবে আপলোড হয়েছে! 📷");
-        };
-        reader.readAsDataURL(file);
+
+        let maxW = 1200, maxH = 800, qual = 0.82;
+        if (type === "logo") {
+          maxW = 400; maxH = 400; qual = 0.88;
+        } else if (type === "favicon") {
+          maxW = 128; maxH = 128; qual = 0.90;
+        } else if (type === "banner") {
+          maxW = 1400; maxH = 650; qual = 0.82;
+        } else if (type === "product") {
+          maxW = 900; maxH = 900; qual = 0.85;
+        }
+
+        notify("ছবি অপটিমাইজ ও আপলোড হচ্ছে... ⏳");
+        const compressed = await compressImage(file, maxW, maxH, qual);
+        if (compressed) {
+          callback(compressed);
+          notify("ছবি সফলভাবে আপলোড ও অপটিমাইজ হয়েছে! 📷");
+        } else {
+          notify("ছবি আপলোডে সমস্যা হয়েছে!");
+        }
+        e.target.value = "";
+      };
+
+      // Instant Logo & Favicon cloud sync helpers (never reverts on refresh!)
+      const handleLogoUpdate = async (newLogo) => {
+        const updated = { ...config, logo: newLogo };
+        setConfig(updated);
+        setStored("config", updated);
+        await syncDocToCloud("config", "store", updated);
+        notify("স্টোর লোগো সফলভাবে ক্লাউডে সেভ হয়েছে! 👑");
+      };
+
+      const handleFaviconUpdate = async (newFavicon) => {
+        const updated = { ...config, favicon: newFavicon };
+        setConfig(updated);
+        setStored("config", updated);
+        await syncDocToCloud("config", "store", updated);
+        notify("ওয়েবসাইট ফ্যাভিকন ক্লাউডে সেভ হয়েছে! 🌐");
       };
 
       // Filtered Products
@@ -1348,12 +1425,16 @@
                   {/* Brand Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-[#962635]/60">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-[#d4af37] text-[#2c1810] font-black text-2xl flex items-center justify-center shadow-lg border-2 border-[#f5dfa0]">
-                        S
-                      </div>
+                      {config.logo ? (
+                        <img src={config.logo} alt="Logo" className="w-11 h-11 rounded-2xl object-cover bg-white p-1 border-2 border-[#d4af37] shadow-lg" />
+                      ) : (
+                        <div className="w-11 h-11 rounded-2xl bg-[#d4af37] text-[#2c1810] font-black text-2xl flex items-center justify-center shadow-lg border-2 border-[#f5dfa0]">
+                          👑
+                        </div>
+                      )}
                       <div>
                         <h2 className="text-white font-extrabold text-sm sm:text-base tracking-wider uppercase leading-tight">{config.storeName || "SAJGOJ FASHION"}</h2>
-                        <p className="text-[#d4af37] text-[10px] sm:text-xs font-bold tracking-widest uppercase">V15.1 LIVE NO BILLING</p>
+                        <p className="text-[#d4af37] text-[10px] sm:text-xs font-bold tracking-widest uppercase">অ্যাডমিন কন্ট্রোল পোর্টাল</p>
                       </div>
                     </div>
                     <button 
@@ -1364,27 +1445,28 @@
                     </button>
                   </div>
 
-                  {/* Live Status Pill Box from screenshot */}
-                  <div className="bg-[#5c131e]/80 border border-[#962635] rounded-2xl p-3 backdrop-blur shadow-inner">
+                  {/* Live Status Pill Box */}
+                  <div className="bg-[#5c131e]/90 border border-[#962635] rounded-2xl p-3 shadow-inner">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span className="text-white text-xs font-semibold">Firestore • Preview Mode</span>
+                        <span className={`w-2.5 h-2.5 rounded-full ${cloudSyncStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                        <span className="text-white text-xs font-bold">ক্লাউড ডাটাবেজ সংযুক্ত</span>
                       </div>
                       <span className="bg-[#3e141a] text-emerald-400 border border-emerald-500/50 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider uppercase">LIVE</span>
                     </div>
-                    <p className="text-white/60 text-[11px] font-mono mt-1">sajgoj-web • No Blaze</p>
+                    <p className="text-white/70 text-[11px] mt-1">রিয়েলটাইম ক্লাউড সিঙ্ক সক্রিয় রয়েছে</p>
                   </div>
 
                   {/* Store Management Nav */}
                   <div className="space-y-1">
-                    <p className="text-[#f5c2c7]/70 text-[10px] font-bold tracking-widest px-3 py-1 uppercase">STORE MANAGEMENT</p>
+                    <p className="text-[#f5c2c7]/70 text-[10px] font-bold tracking-widest px-3 py-1 uppercase">স্টোর ম্যানেজমেন্ট</p>
                     {[
-                      { id: "Dashboard", label: "Dashboard", badge: "D" },
-                      { id: "Orders", label: "Orders", badge: "O" },
-                      { id: "Products", label: "Products", badge: "P" },
-                      { id: "Categories", label: "Categories", badge: "C" },
-                      { id: "Coupons", label: "Coupons", badge: "K" }
+                      { id: "Dashboard", label: "ড্যাশবোর্ড (Dashboard)", icon: "📊" },
+                      { id: "Orders", label: "অর্ডার তালিকা (Orders)", icon: "📦", count: orders.length },
+                      { id: "Products", label: "প্রোডাক্ট ক্যাটালগ (Products)", icon: "👗", count: products.length },
+                      { id: "Categories", label: "ক্যাটাগরি (Categories)", icon: "🏷️" },
+                      { id: "Coupons", label: "কুপন ও অফার (Coupons)", icon: "🎟️" },
+                      { id: "Reviews", label: "কাস্টমার রিভিউ (Reviews)", icon: "⭐", count: reviews.length }
                     ].map(item => (
                       <button
                         key={item.id}
@@ -1399,30 +1481,31 @@
                           <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
                             activeTab === item.id ? "bg-[#7c1d2a] text-white" : "bg-black/25 text-[#f5c2c7] border border-white/10"
                           }`}>
-                            {item.badge}
+                            {item.icon}
                           </span>
                           <span className="text-sm font-semibold">{item.label}</span>
                         </div>
-                        {activeTab === item.id && (
-                          <span className="w-2 h-2 rounded-full bg-[#d4af37]"></span>
+                        {item.count !== undefined && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            activeTab === item.id ? "bg-[#7c1d2a] text-white" : "bg-black/30 text-white/90"
+                          }`}>
+                            {item.count}
+                          </span>
                         )}
                       </button>
                     ))}
                   </div>
 
-                  {/* SETTINGS Nav Section from screenshot */}
+                  {/* SETTINGS Nav Section */}
                   <div className="space-y-1">
-                    <p className="text-[#f5c2c7]/70 text-[10px] font-bold tracking-widest px-3 py-1 uppercase">SETTINGS</p>
+                    <p className="text-[#f5c2c7]/70 text-[10px] font-bold tracking-widest px-3 py-1 uppercase">স্টোর সেটিংস ও কনফিগ</p>
                     {[
-                      { id: "General", label: "General", badge: "G" },
-                      { id: "Admin", label: "Admin", badge: "A" },
-                      { id: "Courier", label: "Courier", badge: "C" },
-                      { id: "Header", label: "Header", badge: "H" },
-                      { id: "Footer", label: "Footer", badge: "F" },
-                      { id: "Banners", label: "Banners", badge: "B" },
-                      { id: "Pixel", label: "Pixel", badge: "P" },
-                      { id: "SEO", label: "SEO", badge: "S" },
-                      { id: "Backup", label: "Backup", badge: "B" }
+                      { id: "General", label: "স্টোর ও লোগো সেটিংস", icon: "⚙️" },
+                      { id: "Banners", label: "হিরো ব্যানার স্লাইডার", icon: "🖼️" },
+                      { id: "Courier", label: "কুরিয়ার ডেলিভারি চার্জ", icon: "🚚" },
+                      { id: "Pixel", label: "পিক্সেল ও ট্র্যাকিং", icon: "📈" },
+                      { id: "SEO", label: "এসইও ও মেটাট্যাগ", icon: "🔍" },
+                      { id: "Backup", label: "ডাটা ব্যাকআপ ও ক্লাউড", icon: "☁️" }
                     ].map(item => (
                       <button
                         key={item.id}
@@ -1439,7 +1522,7 @@
                               ? "bg-[#7c1d2a] text-white" 
                               : "bg-black/25 text-[#f5c2c7] border border-white/10"
                           }`}>
-                            {item.badge}
+                            {item.icon}
                           </span>
                           <span className="text-sm font-semibold">{item.label}</span>
                         </div>
@@ -1451,13 +1534,16 @@
                   </div>
                 </div>
 
-                {/* Bottom Box: NO BILLING NOTE from screenshot */}
+                {/* Bottom Action Section */}
                 <div className="pt-4 mt-4 border-t border-[#962635]/60 space-y-2">
-                  <div className="bg-[#4d101a] border border-[#a62b3d]/50 p-3.5 rounded-2xl space-y-1">
-                    <p className="text-[#d4af37] text-xs font-bold tracking-wider uppercase">NO BILLING NOTE</p>
-                    <p className="text-[#ffd8dd] text-[11px] leading-relaxed">Storage disabled. Images saved as base64 in Firestore doc &lt;1MB. Canvas resize</p>
-                  </div>
-                  <p className="text-white/40 text-[10px] font-mono text-center">Netlify: sajgojfashion.netlify.app</p>
+                  <button
+                    onClick={() => setActiveTab("Storefront")}
+                    className="w-full bg-[#d4af37] hover:bg-white text-[#2c1810] py-2.5 rounded-xl text-xs font-bold transition shadow flex items-center justify-center gap-2"
+                  >
+                    <span>🛍️</span>
+                    <span>স্টোরফ্রন্ট ভিজিট করুন</span>
+                  </button>
+                  <p className="text-white/60 text-[10px] text-center font-medium">© {config.storeName} • সিকিউর এডমিন সিস্টেম</p>
                 </div>
               </aside>
 
@@ -2194,13 +2280,120 @@
             )}
 
             {/* ========================================================= */}
+            {/* 6. REVIEWS MANAGEMENT TAB */}
+            {/* ========================================================= */}
+            {activeTab === "Reviews" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 sm:p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <div>
+                    <h3 className="text-xl font-bold text-[#7a1c2b]">কাস্টমার রিভিউ ও রেটিং ব্যবস্থাপনা ({reviews.length})</h3>
+                    <p className="text-xs text-[#b8956a]">গ্রাহকদের মন্তব্য, স্টার রেটিং ও ফিডব্যাক মডারেশন করুন</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-full font-bold">
+                      ⭐ গড় রেটিং: {reviews.length > 0 ? (reviews.reduce((s, r) => s + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1) : "5.0"} / 5
+                    </span>
+                    <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-full font-bold">
+                      মোট রিভিউ: {reviews.length} টি
+                    </span>
+                  </div>
+                </div>
+
+                {reviews.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8">
+                    <p className="text-4xl mb-3">💬</p>
+                    <h4 className="font-bold text-base text-gray-700">এখনও কোনো রিভিউ যুক্ত হয়নি</h4>
+                    <p className="text-xs text-gray-400 mt-1">কাস্টমাররা স্টোরফ্রন্ট থেকে পণ্যের রিভিউ দিলে এখানে তালিকা চলে আসবে।</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {reviews.map(rev => {
+                      const prod = products.find(p => p.id === rev.productId);
+                      return (
+                        <div key={rev.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-5 shadow-sm space-y-3 flex flex-col justify-between hover:border-[#d4a574] transition">
+                          <div>
+                            {/* Product Header */}
+                            <div className="flex items-center gap-3 pb-3 border-b border-[#f3e2d0]">
+                              <img 
+                                src={prod?.images?.[0] || imgSharee} 
+                                alt={prod?.name || "Product"} 
+                                className="w-12 h-12 rounded-xl object-cover border flex-shrink-0"
+                                onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-xs sm:text-sm text-gray-900 truncate">{prod?.name || "অজানা পণ্য"}</h4>
+                                <p className="text-[11px] text-[#7a1c2b] font-bold">{prod ? `${prod.price} ৳` : ""}</p>
+                              </div>
+                            </div>
+
+                            {/* Review Content */}
+                            <div className="pt-3">
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center font-bold text-xs">
+                                    {rev.customerName ? rev.customerName[0] : "ক"}
+                                  </div>
+                                  <div>
+                                    <span className="font-bold text-xs text-gray-900 block leading-tight">{rev.customerName || "ভেরিফাইড ক্রেতা"}</span>
+                                    <span className="text-[10px] text-gray-400">{rev.date || "সাম্প্রতিক"}</span>
+                                  </div>
+                                </div>
+                                <div className="flex text-amber-500 text-sm">
+                                  {[1, 2, 3, 4, 5].map(st => (
+                                    <span key={st} className={st <= Number(rev.rating) ? "text-amber-500" : "text-gray-200"}>★</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-700 bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0] leading-relaxed">
+                                "{rev.comment}"
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Delete Review Button */}
+                          <div className="flex justify-end pt-2 border-t border-[#f3e2d0]">
+                            <button
+                              onClick={async () => {
+                                if (confirm(`আপনি কি এই রিভিউটি মুছে ফেলতে চান?`)) {
+                                  const updatedReviews = reviews.filter(r => r.id !== rev.id);
+                                  setReviews(updatedReviews);
+                                  setStored("reviews", updatedReviews);
+                                  await deleteDocFromCloud("reviews", rev.id);
+
+                                  // Recalculate product rating
+                                  if (prod) {
+                                    const prodReviews = updatedReviews.filter(r => r.productId === prod.id);
+                                    const newCount = prodReviews.length;
+                                    const newAvg = newCount > 0 ? parseFloat((prodReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / newCount).toFixed(1)) : 5.0;
+                                    const updatedProd = { ...prod, rating: newAvg, reviewsCount: newCount };
+                                    setProducts(prev => prev.map(p => p.id === prod.id ? updatedProd : p));
+                                    await syncDocToCloud("products", prod.id, updatedProd);
+                                  }
+                                  notify("রিভিউ মুছে ফেলা হয়েছে এবং পণ্যের গড় রেটিং আপডেট করা হয়েছে!");
+                                }
+                              }}
+                              className="text-xs text-red-600 bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 px-3.5 py-1.5 rounded-full font-bold transition flex items-center gap-1"
+                            >
+                              <span>🗑️</span>
+                              <span>রিভিউ মুছুন</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ========================================================= */}
             {/* 7. BANNERS TAB */}
             {/* ========================================================= */}
             {activeTab === "Banners" && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
                   <h3 className="font-bold text-lg text-[#7a1c2b] mb-1">নতুন হোমপেজ হিরো ব্যানার যোগ করুন</h3>
-                  <p className="text-xs text-gray-500 mb-4">ব্যানার সরাসরি হোমপেজ স্লাইডারে প্রদর্শিত হবে</p>
+                  <p className="text-xs text-gray-500 mb-4">ব্যানার সরাসরি হোমপেজ স্লাইডারে প্রদর্শিত হবে (অটো কম্প্রেশন সহ ক্লাউডে সংরক্ষিত হবে)</p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input 
@@ -2236,7 +2429,7 @@
                         type="file" 
                         accept="image/*" 
                         ref={bannerImgFileRef} 
-                        onChange={(e) => handleImageUpload(e, (dataUrl) => setBannerForm(prev => ({ ...prev, image: dataUrl })))} 
+                        onChange={(e) => handleImageUpload(e, (dataUrl) => setBannerForm(prev => ({ ...prev, image: dataUrl })), 'banner')} 
                         className="hidden" 
                       />
                       <button 
@@ -2250,13 +2443,15 @@
                   </div>
 
                   <button 
-                    onClick={() => {
+                    onClick={async () => {
                       if (!bannerForm.title) return notify("ব্যানার টাইটেল দিন!");
                       const newB = { id: "b" + Date.now(), ...bannerForm, image: bannerForm.image || banner1 };
-                      setBanners(prev => [...prev, newB]);
-                      syncDocToCloud("banners", newB.id, newB);
+                      const updated = [...banners, newB];
+                      setBanners(updated);
+                      setStored("banners", updated);
+                      await syncDocToCloud("banners", newB.id, newB);
                       setBannerForm({ title: "", subtitle: "", buttonText: "কালেকশন দেখুন", link: "#products", image: "", active: true });
-                      notify("ব্যানার সফলভাবে যোগ হয়েছে!");
+                      notify("ব্যানার সফলভাবে যোগ ও ক্লাউডে সেভ হয়েছে! 🖼️");
                     }}
                     className="mt-4 bg-[#7a1c2b] text-white px-8 py-2.5 rounded-full text-sm font-semibold shadow hover:bg-[#681727]"
                   >
@@ -2266,40 +2461,62 @@
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   {banners.map(b => (
-                    <div key={b.id} className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm">
-                      <div className="h-44 bg-gray-100 relative">
-                        <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
-                        <span className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-bold shadow ${b.active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                          {b.active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <div className="p-4 flex justify-between items-center">
-                        <div>
+                    <div key={b.id} className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm flex flex-col justify-between">
+                      <div>
+                        <div className="h-44 bg-gray-100 relative">
+                          <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
+                          <span className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-bold shadow ${b.active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                            {b.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        <div className="p-4">
                           <h4 className="font-bold text-sm text-[#2c1810]">{b.title}</h4>
-                          <p className="text-xs text-gray-500 line-clamp-1">{b.subtitle}</p>
+                          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{b.subtitle}</p>
+                          {b.buttonText && (
+                            <span className="inline-block mt-2 text-[10px] bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] px-2 py-0.5 rounded-full font-bold">
+                              বাটন: {b.buttonText}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => {
-                              const updated = { ...b, active: !b.active };
-                              setBanners(prev => prev.map(item => item.id === b.id ? updated : item));
-                              syncDocToCloud("banners", b.id, updated);
-                            }}
-                            className="text-xs border px-3 py-1.5 rounded-full hover:bg-gray-50 font-semibold"
-                          >
-                            টগল
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setBanners(prev => prev.filter(item => item.id !== b.id));
-                              deleteDocFromCloud("banners", b.id);
+                      </div>
+
+                      <div className="p-4 pt-0 flex gap-2 justify-end border-t border-[#f3e2d0]/50 mt-2">
+                        <button 
+                          onClick={() => {
+                            setEditingBanner({ ...b });
+                            setIsBannerModalOpen(true);
+                          }}
+                          className="text-xs bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-3.5 py-1.5 rounded-full hover:bg-[#7a1c2b] hover:text-white font-semibold transition"
+                        >
+                          ✏️ এডিট
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            const updated = { ...b, active: !b.active };
+                            const list = banners.map(item => item.id === b.id ? updated : item);
+                            setBanners(list);
+                            setStored("banners", list);
+                            await syncDocToCloud("banners", b.id, updated);
+                            notify(`ব্যানার "${b.title}" ${updated.active ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করা হয়েছে!`);
+                          }}
+                          className="text-xs border px-3 py-1.5 rounded-full hover:bg-gray-50 font-semibold"
+                        >
+                          টগল
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (confirm(`আপনি কি "${b.title}" ব্যানারটি মুছে ফেলতে চান?`)) {
+                              const list = banners.filter(item => item.id !== b.id);
+                              setBanners(list);
+                              setStored("banners", list);
+                              await deleteDocFromCloud("banners", b.id);
                               notify("ব্যানার মুছে ফেলা হয়েছে!");
-                            }}
-                            className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 font-semibold"
-                          >
-                            ডিলিট
-                          </button>
-                        </div>
+                            }
+                          }}
+                          className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 font-semibold"
+                        >
+                          ডিলিট
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -2564,7 +2781,7 @@
             {/* ========================================================= */}
             {/* 11. GENERAL SETTINGS */}
             {/* ========================================================= */}
-            {activeTab === "Settings" && (
+            {(activeTab === "General" || activeTab === "Settings") && (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
                 <div>
                   <h3 className="text-2xl font-bold text-[#7a1c2b]">স্টোর, লোগো, হেডার ও ফুটার পূর্ণাঙ্গ সেটিংস</h3>
@@ -2600,7 +2817,10 @@
                     {/* Logo Upload / URL */}
                     <div className="grid md:grid-cols-2 gap-4 pt-2">
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold">স্টোর লোগো (Logo Image)</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold">স্টোর লোগো (Logo Image)</label>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">অটো-ক্লাউড সেভ ✓</span>
+                        </div>
                         <div className="flex items-center gap-3">
                           {config.logo ? (
                             <img src={config.logo} alt="Logo Preview" className="w-14 h-14 rounded-2xl object-cover border-2 border-[#7a1c2b] bg-white p-1" />
@@ -2612,13 +2832,13 @@
                               type="file" 
                               accept="image/*" 
                               ref={logoFileRef} 
-                              onChange={(e) => handleImageUpload(e, (dataUrl) => setConfig(prev => ({ ...prev, logo: dataUrl })))} 
+                              onChange={(e) => handleImageUpload(e, (dataUrl) => handleLogoUpdate(dataUrl), 'logo')} 
                               className="hidden" 
                             />
                             <button 
                               type="button" 
                               onClick={() => logoFileRef.current?.click()} 
-                              className="bg-[#7a1c2b] text-white px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-[#681727]"
+                              className="bg-[#7a1c2b] text-white px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-[#681727] shadow"
                             >
                               📷 লোগো আপলোড করুন
                             </button>
@@ -2626,8 +2846,14 @@
                               type="text" 
                               placeholder="অথবা লোগো URL দিন..." 
                               value={config.logo} 
-                              onChange={(e) => setConfig({ ...config, logo: e.target.value })} 
-                              className="w-full bg-white border rounded-full px-3 py-1 text-xs outline-none" 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setConfig(prev => ({ ...prev, logo: val }));
+                              }}
+                              onBlur={(e) => {
+                                if (e.target.value) handleLogoUpdate(e.target.value);
+                              }}
+                              className="w-full bg-white border rounded-full px-3 py-1 text-xs outline-none focus:border-[#7a1c2b]" 
                             />
                           </div>
                         </div>
@@ -2635,7 +2861,10 @@
 
                       {/* Favicon Upload / URL */}
                       <div className="space-y-2">
-                        <label className="text-xs font-semibold">ওয়েবসাইট ফ্যাভিকন (Favicon Icon)</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold">ওয়েবসাইট ফ্যাভিকন (Favicon Icon)</label>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">অটো-ক্লাউড সেভ ✓</span>
+                        </div>
                         <div className="flex items-center gap-3">
                           {config.favicon ? (
                             <img src={config.favicon} alt="Favicon Preview" className="w-10 h-10 rounded-xl object-contain border p-1 bg-white" />
@@ -2647,13 +2876,13 @@
                               type="file" 
                               accept="image/*" 
                               ref={faviconFileRef} 
-                              onChange={(e) => handleImageUpload(e, (dataUrl) => setConfig(prev => ({ ...prev, favicon: dataUrl })))} 
+                              onChange={(e) => handleImageUpload(e, (dataUrl) => handleFaviconUpdate(dataUrl), 'favicon')} 
                               className="hidden" 
                             />
                             <button 
                               type="button" 
                               onClick={() => faviconFileRef.current?.click()} 
-                              className="bg-[#2c1810] text-white px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-black"
+                              className="bg-[#2c1810] text-white px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-black shadow"
                             >
                               🌐 ফ্যাভিকন আপলোড
                             </button>
@@ -2661,8 +2890,14 @@
                               type="text" 
                               placeholder="অথবা ফ্যাভিকন URL দিন..." 
                               value={config.favicon} 
-                              onChange={(e) => setConfig({ ...config, favicon: e.target.value })} 
-                              className="w-full bg-white border rounded-full px-3 py-1 text-xs outline-none" 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setConfig(prev => ({ ...prev, favicon: val }));
+                              }}
+                              onBlur={(e) => {
+                                if (e.target.value) handleFaviconUpdate(e.target.value);
+                              }}
+                              className="w-full bg-white border rounded-full px-3 py-1 text-xs outline-none focus:border-[#7a1c2b]" 
                             />
                           </div>
                         </div>
@@ -2950,11 +3185,11 @@
             {/* ========================================================= */}
             {activeTab === "Admin" && (
               <div className="space-y-6 animate-fadeIn">
-                {/* Top Theme Locked Card from screenshot */}
+                {/* Brand & Theme Overview Card */}
                 <div className="bg-[#f2e7db] border border-[#d8c3ad] rounded-2xl p-5 sm:p-6 shadow-sm space-y-2">
-                  <h3 className="text-2xl font-black text-[#2c1810]">Admin Settings</h3>
+                  <h3 className="text-2xl font-black text-[#2c1810]">এডমিন ও ব্র্যান্ড থিম সেটিংস</h3>
                   <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-medium">
-                    Locked V12 perfect theme — Maroon <code className="bg-white px-2 py-0.5 rounded text-[#7c1d2a] font-mono font-bold">#7c1d2a</code>, gold <code className="bg-white px-2 py-0.5 rounded text-[#997316] font-mono font-bold">#d4af37</code>, cream <code className="bg-white px-2 py-0.5 rounded text-[#70522c] font-mono font-bold">#fff8f0</code> — DO NOT CHANGE. This panel is preview-only in No Billing edition.
+                    সজগোজ ফ্যাশনের রাজকীয় ব্র্যান্ডিং কালার প্যালেট — মেরুন <code className="bg-white px-2 py-0.5 rounded text-[#7c1d2a] font-mono font-bold">#7c1d2a</code>, গোল্ড <code className="bg-white px-2 py-0.5 rounded text-[#997316] font-mono font-bold">#d4af37</code>, এবং ক্রিম <code className="bg-white px-2 py-0.5 rounded text-[#70522c] font-mono font-bold">#fff8f0</code>। এখান থেকে স্টোরের নাম, মুদ্রা ও নিরাপত্তা কোড নিয়ন্ত্রণ করুন।
                   </p>
                 </div>
 
@@ -4008,7 +4243,126 @@
             </div>
           )}
 
-          {/* Floating WhatsApp Button */}
+          {/* ========================================================= */}
+          {/* EDIT BANNER MODAL (AUTO COMPRESSION & CLOUD SYNC) */}
+          {/* ========================================================= */}
+          {isBannerModalOpen && editingBanner && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 border shadow-2xl animate-fadeIn">
+                <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#f3e2d0]">
+                  <div>
+                    <h3 className="font-bold text-lg text-[#7a1c2b]">ব্যানার তথ্য ও ছবি পরিবর্তন</h3>
+                    <p className="text-xs text-gray-500">হোমপেজ স্লাইডার ব্যানার এডিট ও ক্লাউড পারসিস্টেন্স</p>
+                  </div>
+                  <button onClick={() => setIsBannerModalOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold text-gray-600 hover:text-black">✕</button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">ব্যানার টাইটেল *</label>
+                    <input 
+                      type="text" 
+                      value={editingBanner.title} 
+                      onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">সাবটাইটেল / অফার টেক্সট</label>
+                    <input 
+                      type="text" 
+                      value={editingBanner.subtitle || ''} 
+                      onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">বাটন টেক্সট</label>
+                      <input 
+                        type="text" 
+                        value={editingBanner.buttonText || 'কালেকশন দেখুন'} 
+                        onChange={(e) => setEditingBanner({ ...editingBanner, buttonText: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">বাটন লিঙ্ক</label>
+                      <input 
+                        type="text" 
+                        value={editingBanner.link || '#products'} 
+                        onChange={(e) => setEditingBanner({ ...editingBanner, link: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Banner Image Preview & Upload with Compression */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-gray-700">ব্যানারের ছবি (Banner Image)</label>
+                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">অটো কম্প্রেশন সহ ক্লাউড সেভ ✓</span>
+                    </div>
+
+                    <div className="h-40 rounded-2xl overflow-hidden border-2 border-[#d4a574] relative bg-gray-100 shadow-inner">
+                      <img src={editingBanner.image} alt="Banner Preview" className="w-full h-full object-cover" />
+                    </div>
+
+                    <div className="flex gap-2 mt-2.5">
+                      <input 
+                        type="text" 
+                        placeholder="অথবা ছবির সরাসরি URL দিন..." 
+                        value={editingBanner.image} 
+                        onChange={(e) => setEditingBanner({ ...editingBanner, image: e.target.value })}
+                        className="flex-1 bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                      />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        ref={bannerEditFileRef} 
+                        onChange={(e) => handleImageUpload(e, (dataUrl) => setEditingBanner(prev => ({ ...prev, image: dataUrl })), 'banner')}
+                        className="hidden" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => bannerEditFileRef.current?.click()} 
+                        className="bg-[#7a1c2b] text-white px-5 py-2 rounded-full text-xs font-bold hover:bg-[#681727] whitespace-nowrap shadow"
+                      >
+                        📷 ছবি আপলোড
+                      </button>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer pt-1">
+                    <input 
+                      type="checkbox" 
+                      checked={editingBanner.active} 
+                      onChange={(e) => setEditingBanner({ ...editingBanner, active: e.target.checked })}
+                      className="w-4 h-4 accent-[#7a1c2b]"
+                    />
+                    হোমপেজে এই ব্যানারটি সক্রিয় (Active) রাখুন
+                  </label>
+
+                  <button 
+                    onClick={async () => {
+                      if (!editingBanner.title) return notify("ব্যানার টাইটেল দিন!");
+                      const updatedBanners = banners.map(b => b.id === editingBanner.id ? editingBanner : b);
+                      setBanners(updatedBanners);
+                      setStored("banners", updatedBanners);
+                      await syncDocToCloud("banners", editingBanner.id, editingBanner);
+                      setIsBannerModalOpen(false);
+                      notify("ব্যানার সফলভাবে আপডেট ও ক্লাউডে সংরক্ষিত হয়েছে! 🖼️");
+                    }}
+                    className="w-full bg-[#7a1c2b] text-white py-3 rounded-full font-bold text-sm shadow-md hover:bg-[#681727] transition mt-2"
+                  >
+                    ব্যানার আপডেট ও সেভ করুন ✓
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <a 
             href={`https://wa.me/${config.whatsapp}?text=Hello%20SAJGOJ%20FASHION,%20I%20want%20to%20order`} 
             target="_blank" 
@@ -4026,58 +4380,7 @@
             </div>
           )}
 
-          {/* Footer */}
-          <footer className="mt-16 bg-[#2c1810] text-[#fff8f0] border-t-4 border-[#d4a574]">
-            <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div>
-                <h3 className="text-xl font-bold text-[#d4a574] mb-3">{config.storeName}</h3>
-                <p className="text-xs text-[#ffdcc0] leading-relaxed">{config.footer.about}</p>
-                <p className="text-xs text-[#b8956a] mt-4 leading-relaxed">
-                  📞 {config.phone} <br />
-                  ✉️ {config.email} <br />
-                  📍 {config.address}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-sm text-[#d4a574] mb-3">কুইক লিঙ্কস</h4>
-                <ul className="text-xs space-y-2 text-[#ffdcc0]">
-                  <li onClick={() => { setSelectedCat("All"); setActiveTab("Storefront"); }} className="hover:text-white cursor-pointer">• সকল কালেকশন</li>
-                  <li onClick={() => { setSelectedCat("শাড়ি"); setActiveTab("Storefront"); }} className="hover:text-white cursor-pointer">• ডিজাইনার শাড়ি</li>
-                  <li onClick={() => { setSelectedCat("নেকলেস"); setActiveTab("Storefront"); }} className="hover:text-white cursor-pointer">• রাজওয়াড়ি জুয়েলারি</li>
-                  <li onClick={() => { setActiveTab("Dashboard"); }} className="hover:text-white cursor-pointer">• এডমিন কন্ট্রোল প্যানেল</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-sm text-[#d4a574] mb-3">যোগাযোগ ও সোশ্যাল মিডিয়া</h4>
-                <div className="text-xs space-y-2 text-[#ffdcc0]">
-                  <p>হটলাইন: {config.phone}</p>
-                  <p>হোয়াটসঅ্যাপ: {config.whatsapp}</p>
-                  <div className="flex gap-3 pt-2">
-                    <a href={config.footer.fb} target="_blank" className="hover:text-white font-semibold">Facebook</a>
-                    <a href={config.footer.insta} target="_blank" className="hover:text-white font-semibold">Instagram</a>
-                    <a href={config.footer.youtube} target="_blank" className="hover:text-white font-semibold">YouTube</a>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-sm text-[#d4a574] mb-3">পেমেন্ট মেথড</h4>
-                <div className="flex flex-wrap gap-2">
-                  {config.footer.bkash && <span className="text-[10px] bg-[#e2136e] text-white px-2.5 py-1 rounded-full font-bold">bKash</span>}
-                  {config.footer.nagad && <span className="text-[10px] bg-[#f6921e] text-white px-2.5 py-1 rounded-full font-bold">Nagad</span>}
-                  {config.footer.rocket && <span className="text-[10px] bg-[#8c3494] text-white px-2.5 py-1 rounded-full font-bold">Rocket</span>}
-                  {config.footer.cod && <span className="text-[10px] bg-white text-black px-2.5 py-1 rounded-full font-bold">Cash on Delivery</span>}
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-white/10 py-4 text-center text-xs text-[#b8956a]">
-              {config.footer.copyright}
-            </div>
-          </footer>
-        </div>
+          </div>
       );
     }
 
