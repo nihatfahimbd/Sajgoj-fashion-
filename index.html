@@ -619,6 +619,8 @@
       const [couponInput, setCouponInput] = useState("");
 
       // Admin Modals & Forms
+      const [adminOrderFilter, setAdminOrderFilter] = useState("All");
+      const [dashboardProductSearch, setDashboardProductSearch] = useState("");
       const [isProductModalOpen, setIsProductModalOpen] = useState(false);
       const [editingProduct, setEditingProduct] = useState(null);
       const [productForm, setProductForm] = useState({ 
@@ -1522,37 +1524,63 @@
                   </div>
                 </div>
 
-                {/* HORIZONTAL ADMIN NAV TABS BAR */}
+                {/* HORIZONTAL ADMIN NAV TABS BAR - CLEAN, STREAMLINED & NON-REDUNDANT */}
                 <div className="border-t border-[#f3e2d0] bg-[#fffaf5] px-4">
-                  <div className="max-w-7xl mx-auto flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-hide text-xs font-bold">
-                    {[
-                      { id: "Dashboard", label: "📊 ড্যাশবোর্ড" },
-                      { id: "Orders", label: `📦 অর্ডার (${orders.length})` },
-                      { id: "Products", label: `👗 প্রোডাক্ট (${products.length})` },
-                      { id: "Categories", label: `🏷️ ক্যাটাগরি (${categories.length})` },
-                      { id: "Coupons", label: `🎟️ কুপন (${coupons.length})` },
-                      { id: "Reviews", label: `⭐ রিভিউ (${reviews.length})` },
-                      { id: "Banners", label: `🖼️ ব্যানার (${banners.length})` },
-                      { id: "General", label: "⚙️ সেটিংস ও থিম" },
-                      { id: "Header", label: "🔝 হেডার" },
-                      { id: "Footer", label: "🔻 ফুটার" },
-                      { id: "Courier", label: "🚚 কুরিয়ার" },
-                      { id: "Pixel", label: "📈 পিক্সেল" },
-                      { id: "SEO", label: "🔍 এসইও" },
-                      { id: "Backup", label: "💾 ব্যাকআপ" }
-                    ].map(tab => (
+                  <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 overflow-x-auto py-2.5 scrollbar-hide text-xs font-bold">
+                    <div className="flex items-center gap-2">
                       <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-3.5 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                          activeTab === tab.id || (tab.id === "General" && activeTab === "Settings")
+                        onClick={() => setActiveTab("Dashboard")}
+                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
+                          activeTab === "Dashboard"
                             ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
                       >
-                        {tab.label}
+                        <span>📊</span>
+                        <span>অল-ইন-ওয়ান ড্যাশবোর্ড</span>
                       </button>
-                    ))}
+
+                      <button
+                        onClick={() => setActiveTab("Orders")}
+                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
+                          activeTab === "Orders"
+                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
+                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
+                        }`}
+                      >
+                        <span>📦</span>
+                        <span>অর্ডার ট্র্যাকিং ({orders.length})</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("Products")}
+                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
+                          activeTab === "Products"
+                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
+                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
+                        }`}
+                      >
+                        <span>👗</span>
+                        <span>প্রোডাক্ট ক্যাটালগ ({products.length})</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("General")}
+                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
+                          activeTab === "General" || activeTab === "Settings" || activeTab === "Admin"
+                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
+                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
+                        }`}
+                      >
+                        <span>⚙️</span>
+                        <span>স্টোর কনফিগারেশন হাব</span>
+                      </button>
+                    </div>
+
+                    <div className="hidden md:flex items-center gap-2 text-[11px] text-[#7a1c2b] bg-white px-3.5 py-1.5 rounded-full border border-[#f3e2d0] shadow-xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className="font-semibold">একক ইউনিফাইড ইন্টারফেস সক্রিয়</span>
+                    </div>
                   </div>
                 </div>
               </header>
@@ -1635,7 +1663,228 @@
                       </div>
                     </div>
 
-                    {/* DIRECT ON-DASHBOARD ALL SETTINGS HUB */}
+                    {/* CONSOLIDATED SECTION 1: LIVE ORDER STATUS TRACKING */}
+                    <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#f3e2d0]">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">📦</span>
+                            <h3 className="text-lg sm:text-xl font-bold text-[#7a1c2b]">লাইভ অর্ডার ট্র্যাকিং ও দ্রুত স্ট্যাটাস পরিবর্তন</h3>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            গ্রাহকদের নতুন অর্ডার অনুমোদন, কুরিয়ার ও ডেলিভারি স্ট্যাটাস সরাসরি এখান থেকে নিয়ন্ত্রণ করুন
+                          </p>
+                        </div>
+
+                        {/* Filter Tabs & View All button */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { id: "All", label: `সব (${orders.length})` },
+                            { id: "Pending", label: `পেন্ডিং (${orders.filter(o => o.status === "Pending").length})` },
+                            { id: "Confirmed", label: `কনফার্মড (${orders.filter(o => o.status === "Confirmed").length})` },
+                            { id: "Delivered", label: `ডেলিভার্ড (${orders.filter(o => o.status === "Delivered").length})` }
+                          ].map(f => (
+                            <button
+                              key={f.id}
+                              onClick={() => setAdminOrderFilter(f.id)}
+                              className={`text-xs px-3 py-1.5 rounded-full font-bold transition border ${
+                                adminOrderFilter === f.id
+                                  ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-xs"
+                                  : "bg-[#fffaf5] text-gray-600 border-[#f3e2d0] hover:bg-gray-100"
+                              }`}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => setActiveTab("Orders")}
+                            className="text-xs font-bold text-[#7a1c2b] hover:underline ml-1"
+                          >
+                            সকল অর্ডার বিস্তারিত →
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Orders List / Cards */}
+                      {orders.length === 0 ? (
+                        <div className="text-center py-10 bg-[#fffaf5] rounded-2xl border border-dashed border-[#f3e2d0] p-6">
+                          <p className="text-3xl mb-2">🛍️</p>
+                          <p className="font-bold text-sm text-gray-700">কোন অর্ডার নেই</p>
+                          <p className="text-xs text-gray-400 mt-1">গ্রাহকরা চেকআউট করলে এখানে সরাসরি রিয়েলটাইমে প্রদর্শিত হবে</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {orders
+                            .filter(o => adminOrderFilter === "All" || o.status === adminOrderFilter)
+                            .slice(0, 5)
+                            .map(o => (
+                              <div key={o.id} className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] flex flex-col md:flex-row items-start md:items-center justify-between gap-3 hover:border-[#7a1c2b] transition">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-mono font-bold text-xs bg-white text-[#7a1c2b] px-2.5 py-1 rounded-full border border-[#d4a574]">
+                                      #{o.id}
+                                    </span>
+                                    <span className="font-bold text-sm text-gray-900">{o.customerName || o.name || "গ্রাহক"}</span>
+                                    <span className="text-xs text-gray-500 font-mono">📞 {o.customerPhone || o.phone}</span>
+                                    <span className="text-[11px] text-gray-400">({o.date || "আজ"})</span>
+                                  </div>
+                                  <div className="text-xs text-gray-600 flex items-center gap-2 flex-wrap">
+                                    <span>📍 {o.district ? `${o.district}, ` : ''}{o.address || "ঠিকানা"}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="font-semibold text-gray-700">পণ্য: {o.items?.map(it => `${it.name} (${it.quantity}x)`).join(", ") || `${o.items?.length || 1} টি আইটেম`}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="font-bold text-[#7a1c2b] text-sm">{o.totalAmount || o.total || 0} ৳</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 self-end md:self-center">
+                                  {/* Direct Status Selector */}
+                                  <select 
+                                    value={o.status}
+                                    onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                                    className={`text-xs rounded-full px-3 py-1.5 font-bold outline-none cursor-pointer border shadow-xs ${
+                                      o.status === "Pending" ? "bg-amber-100 text-amber-800 border-amber-300" :
+                                      o.status === "Confirmed" ? "bg-blue-100 text-blue-800 border-blue-300" :
+                                      o.status === "Shipped" ? "bg-purple-100 text-purple-800 border-purple-300" :
+                                      o.status === "Delivered" ? "bg-green-100 text-green-800 border-green-300" :
+                                      "bg-red-100 text-red-800 border-red-300"
+                                    }`}
+                                  >
+                                    <option value="Pending">⏳ পেন্ডিং</option>
+                                    <option value="Confirmed">✅ কনফার্মড</option>
+                                    <option value="Shipped">🚚 শিফট / কুরিয়ারে</option>
+                                    <option value="Delivered">🎉 ডেলিভার্ড</option>
+                                    <option value="Cancelled">❌ বাতিল</option>
+                                  </select>
+
+                                  <button
+                                    onClick={() => printInvoice(o)}
+                                    className="p-1.5 rounded-full bg-white border border-[#f3e2d0] text-gray-700 hover:bg-[#7a1c2b] hover:text-white transition text-xs shadow-xs"
+                                    title="চালান প্রিন্ট"
+                                  >
+                                    🖨️
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CONSOLIDATED SECTION 2: PRODUCT MANAGEMENT & FAST STOCK CONTROL */}
+                    <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#f3e2d0]">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">👗</span>
+                            <h3 className="text-lg sm:text-xl font-bold text-[#7a1c2b]">প্রোডাক্ট ক্যাটালগ ও দ্রুত স্টক কন্ট্রোল</h3>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            স্টকের পরিমাণ, পণ্যের তথ্য ও দাম সরাসরি ড্যাশবোর্ড থেকেই হালনাগাদ করুন
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                          <input
+                            type="text"
+                            placeholder="🔍 প্রোডাক্ট খুঁজুন..."
+                            value={dashboardProductSearch}
+                            onChange={(e) => setDashboardProductSearch(e.target.value)}
+                            className="bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-1.5 text-xs outline-none focus:border-[#7a1c2b] flex-1 sm:w-44"
+                          />
+                          <button
+                            onClick={() => {
+                              setEditingProduct(null);
+                              setProductForm({ 
+                                name: "", 
+                                price: 0, 
+                                stock: 5, 
+                                category: categories[0]?.name || "শাড়ি", 
+                                images: [], 
+                                sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
+                                description: "",
+                                sourceUrl: ""
+                              });
+                              setExternalLinkInput("");
+                              setImageUrlInput("");
+                              setImgLoadStatus("idle");
+                              setIsProductModalOpen(true);
+                            }}
+                            className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-4 py-1.5 rounded-full text-xs font-bold transition shadow flex items-center gap-1"
+                          >
+                            <span>+ নতুন প্রোডাক্ট</span>
+                          </button>
+                          <button
+                            onClick={() => setActiveTab("Products")}
+                            className="text-xs font-bold text-[#7a1c2b] hover:underline"
+                          >
+                            ক্যাটালগ ভিউ ({products.length}) →
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Products Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        {products
+                          .filter(p => !dashboardProductSearch || p.name.toLowerCase().includes(dashboardProductSearch.toLowerCase()) || p.category.toLowerCase().includes(dashboardProductSearch.toLowerCase()))
+                          .slice(0, 8)
+                          .map(p => (
+                            <div key={p.id} className="bg-[#fffaf5] p-3.5 rounded-2xl border border-[#f3e2d0] flex flex-col justify-between hover:border-[#7a1c2b] transition space-y-2.5">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={p.images[0] || imgSharee}
+                                  alt={p.name}
+                                  className="w-14 h-14 rounded-xl object-cover border bg-white flex-shrink-0"
+                                  onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-[10px] bg-white text-[#7a1c2b] px-2 py-0.5 rounded-full border border-[#d4a574] font-bold">
+                                    {p.category}
+                                  </span>
+                                  <h4 className="font-bold text-xs truncate mt-1 text-gray-900" title={p.name}>{p.name}</h4>
+                                  <p className="text-xs font-bold text-[#7a1c2b] mt-0.5">{p.price} ৳</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-[#ecd9c6] text-xs">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                  স্টক: {p.stock}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      setEditingProduct(p);
+                                      setProductForm({ ...p, images: p.images || [] });
+                                      setImageUrlInput(p.images[0] || "");
+                                      setExternalLinkInput(p.sourceUrl || "");
+                                      setImgLoadStatus(p.images[0] ? "loaded" : "idle");
+                                      setIsProductModalOpen(true);
+                                    }}
+                                    className="px-2.5 py-1 bg-white border border-[#d4a574] text-[#7a1c2b] rounded-full text-[11px] font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                                  >
+                                    ✏️ এডিট
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`"${p.name}" প্রোডাক্ট ডিলিট করবেন?`)) {
+                                        setProducts(prev => prev.filter(item => item.id !== p.id));
+                                        deleteDocFromCloud("products", p.id);
+                                        notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
+                                      }
+                                    }}
+                                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition text-[11px]"
+                                    title="মুছুন"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+
+                    {/* CONSOLIDATED SECTION 3: DIRECT ON-DASHBOARD ALL SETTINGS & CONFIG HUB */}
                     <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-6">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-[#f3e2d0]">
                         <div>
@@ -1961,46 +2210,19 @@
                       </div>
                     </div>
 
-                    {/* All Management Modules Grid */}
+                    {/* CONSOLIDATED SECTION 4: ADDITIONAL CONFIGURATION TOOLS */}
                     <div>
-                      <h3 className="font-bold text-lg text-[#7a1c2b] mb-4">সকল ফিচার মডিউল ও ডেডিকেটেড ম্যানেজমেন্ট</h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-bold text-lg text-[#7a1c2b] flex items-center gap-2">
+                            <span>🛠️</span>
+                            <span>অতিরিক্ত কনফিগারেশন ও প্রফেশনাল টুলস</span>
+                          </h3>
+                          <p className="text-xs text-gray-500">ব্যানার, কুপন, ক্যাটাগরি, রিভিউ, পিক্সেল ও সাইটম্যাপ পরিচালনা করুন</p>
+                        </div>
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        
-                        {/* Module 1: Orders */}
-                        <div 
-                          onClick={() => setActiveTab("Orders")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
-                              📦
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">অর্ডার ব্যবস্থাপনা</h4>
-                            <p className="text-xs text-gray-500 mt-1">স্ট্যাটাস পরিবর্তন, চালান প্রিন্ট ও কুরিয়ার বুকিং</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {orders.length} টি অর্ডার →
-                          </span>
-                        </div>
-
-                        {/* Module 2: Products */}
-                        <div 
-                          onClick={() => setActiveTab("Products")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
-                              👗
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">প্রোডাক্ট ক্যাটালগ</h4>
-                            <p className="text-xs text-gray-500 mt-1">পণ্য যোগ, অন্য সাইটের লিঙ্ক ইমপোর্ট ও স্টক</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {products.length} টি পণ্য →
-                          </span>
-                        </div>
-
-                        {/* Module 3: Categories */}
+                        {/* Module 1: Categories */}
                         <div 
                           onClick={() => setActiveTab("Categories")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
@@ -3227,6 +3449,35 @@
                     <h3 className="text-2xl font-bold text-[#7a1c2b]">স্টোর, লোগো, হেডার ও ফুটার পূর্ণাঙ্গ সেটিংস</h3>
                     <p className="text-xs text-gray-500 mt-1">আপনার ব্র্যান্ড নাম, লোগো, ফ্যাভিকন, নোটিশ বার এবং যোগাযোগের তথ্য পরিবর্তন করুন</p>
                   </div>
+                </div>
+
+                {/* Configuration Sub-Navigation Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-hide text-xs font-bold border-b border-[#f3e2d0]">
+                  {[
+                    { id: "General", label: "⚙️ ব্র্যান্ড ও থিম", active: true },
+                    { id: "Banners", label: `🖼️ ব্যানার (${banners.length})` },
+                    { id: "Categories", label: `🏷️ ক্যাটাগরি (${categories.length})` },
+                    { id: "Coupons", label: `🎟️ কুপন (${coupons.length})` },
+                    { id: "Reviews", label: `⭐ রিভিউ (${reviews.length})` },
+                    { id: "Header", label: "🔝 হেডার" },
+                    { id: "Footer", label: "🔻 ফুটার" },
+                    { id: "Courier", label: "🚚 কুরিয়ার" },
+                    { id: "Pixel", label: "📈 পিক্সেল" },
+                    { id: "SEO", label: "🔍 এসইও" },
+                    { id: "Backup", label: "💾 ব্যাকআপ" }
+                  ].map(sub => (
+                    <button
+                      key={sub.id}
+                      onClick={() => setActiveTab(sub.id)}
+                      className={`px-3 py-1.5 rounded-full whitespace-nowrap transition flex items-center gap-1 ${
+                        sub.active
+                          ? "bg-[#7a1c2b] text-white shadow-xs font-bold"
+                          : "bg-[#fffaf5] text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
+                      }`}
+                    >
+                      {sub.label}
+                    </button>
+                  ))}
                 </div>
                 
                 <div className="space-y-6">
