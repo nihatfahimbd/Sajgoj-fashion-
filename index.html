@@ -721,6 +721,8 @@
       // Combo Pack Modal & Form State
       const [isComboModalOpen, setIsComboModalOpen] = useState(false);
       const [editingCombo, setEditingCombo] = useState(null);
+      const [comboCategoryFilter, setComboCategoryFilter] = useState("All");
+      const [selectedProductIdsForCombo, setSelectedProductIdsForCombo] = useState([]);
       const [comboForm, setComboForm] = useState({
         title: "",
         subtitle: "",
@@ -748,21 +750,41 @@
       };
 
       // Combo Pack Helpers & Cart Operations
-      const handleOpenNewComboModal = () => {
+      const handleOpenNewComboModal = (preselectedIds = []) => {
         setEditingCombo(null);
+        const ids = Array.isArray(preselectedIds) ? preselectedIds : [];
+        const bundledProds = ids.map(id => products.find(p => p.id === id)).filter(Boolean);
+        const origSum = bundledProds.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+
+        let initialTitle = "";
+        let initialSubtitle = "";
+        if (bundledProds.length > 0) {
+          initialTitle = bundledProds.map(p => p.name).slice(0, 2).join(" + ") + " স্পেশাল কম্বো";
+          initialSubtitle = `এক্সক্লুসিভ বান্ডেল অফার (${bundledProds.length} টি প্রিমিয়াম পণ্য একসাথে)`;
+        }
+
         setComboForm({
-          title: "",
-          subtitle: "",
-          description: "",
-          productIds: [],
-          comboPrice: 0,
+          title: initialTitle,
+          subtitle: initialSubtitle,
+          description: bundledProds.length > 0 
+            ? `এই বিশেষ কম্বো প্যাকে পাচ্ছেন: ${bundledProds.map(p => p.name).join(", ")}। একসাথে অর্ডার করলে পাচ্ছেন অবিশ্বাস্য ছাড়!` 
+            : "",
+          productIds: ids,
+          comboPrice: origSum > 0 ? Math.round(origSum * 0.85) : 0,
           badge: "সেরা অফার 🔥",
-          image: "",
+          image: bundledProds[0]?.images?.[0] || "",
           active: true,
-          stock: 5
+          stock: 10
         });
         setComboProductSearch("");
+        setComboCategoryFilter("All");
         setIsComboModalOpen(true);
+      };
+
+      const toggleProductSelectionForCombo = (productId) => {
+        setSelectedProductIdsForCombo(prev => 
+          prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
+        );
       };
 
       const handleOpenEditComboModal = (combo) => {
@@ -779,6 +801,7 @@
           stock: combo.stock !== undefined ? combo.stock : 5
         });
         setComboProductSearch("");
+        setComboCategoryFilter("All");
         setIsComboModalOpen(true);
       };
 
@@ -1276,6 +1299,86 @@
         w.document.close();
       };
 
+      // WhatsApp Order Share & Quick Follow-up Helper Functions
+      const generateOrderWhatsAppMessage = (order) => {
+        if (!order) return "";
+        const storeName = config.storeName || "SAJGOJ FASHION";
+        const itemsList = (order.items || []).map((it, idx) => {
+          const comboNote = it.isCombo ? " [🎁 কম্বো প্যাক]" : "";
+          const unitPrice = it.price || 0;
+          const qty = it.qty || 1;
+          return `  ${idx + 1}. *${it.name}*${comboNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
+        }).join("\n");
+
+        return `🛍️ *${storeName} - অর্ডার কনফার্মেশন ও বিবরণী* 🛍️
+━━━━━━━━━━━━━━━━━━
+নমস্কার/সালাম *${order.customer || order.customerName || "সম্মানিত ক্রেতা"}*,
+আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। নিচে আপনার অর্ডারের পূর্ণাঙ্গ বিবরণ দেওয়া হলো:
+
+📋 *অর্ডার নম্বর:* #${order.id}
+📅 *অর্ডার তারিখ:* ${order.date || "আজ"}
+📌 *বর্তমান স্ট্যাটাস:* ${order.status === "Pending" ? "⏳ পেন্ডিং (যাচাইাধীন)" : order.status === "Confirmed" ? "✅ কনফার্মড" : order.status === "Shipped" ? "🚚 কুরিয়ারে হস্তান্তর হয়েছে" : order.status === "Delivered" ? "🎉 ডেলিভারি সম্পন্ন" : order.status}
+
+📦 *অর্ডারকৃত পণ্যসমূহ:*
+${itemsList || "  কোনো আইটেম নেই"}
+
+──────────────────
+💰 পণ্যের মূল্য (সাবটোটাল): ${order.subtotal || order.total || 0} ৳
+🚚 ডেলিভারি চার্জ: ${order.deliveryCharge === 0 ? "ফ্রি (Free)" : `${order.deliveryCharge || 0} ৳`}
+${order.discount ? `🎁 স্পেশাল ডিসকাউন্ট: -${order.discount} ৳\n` : ""}${order.couponCode ? `🎟️ কুপন কোড: ${order.couponCode}\n` : ""}💵 *সর্বমোট প্রদেয় বিল:* *${order.total || 0} ৳*
+💳 পেমেন্ট মাধ্যম: *${order.paymentMethod || "Cash on Delivery (ক্যাশ অন ডেলিভারি)"}*
+
+📍 *ডেলিভারি ঠিকানা:*
+${order.address || ""}${order.thana ? `, ${order.thana}` : ""}${order.district ? `, ${order.district}` : ""}
+📞 কন্টাক্ট নম্বর: ${order.phone || order.customerPhone || ""}
+${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং কোড: *${order.trackingId}*\n` : ""}
+যে কোনো জিজ্ঞাসা বা পণ্য সংক্রান্ত প্রয়োজনে আমাদের সাথে সরাসরি যোগাযোগ করতে পারেন:
+📞 হেল্পলাইন: ${config.phone || "018051198888"}
+💬 WhatsApp: ${config.whatsapp || "88018051198888"}
+
+আমাদের সাথে কেনাকাটা করার জন্য আপনাকে আন্তরিক ধন্যবাদ! 👑`;
+      };
+
+      const shareOrderToWhatsApp = (order) => {
+        if (!order) return;
+        const rawPhone = (order.phone || order.customerPhone || "").replace(/\D/g, "");
+        let formattedPhone = rawPhone;
+        if (formattedPhone.startsWith("01") && formattedPhone.length === 11) {
+          formattedPhone = "88" + formattedPhone;
+        } else if (formattedPhone.startsWith("1") && formattedPhone.length === 10) {
+          formattedPhone = "880" + formattedPhone;
+        }
+
+        const message = generateOrderWhatsAppMessage(order);
+        const encoded = encodeURIComponent(message);
+        const waUrl = formattedPhone 
+          ? `https://wa.me/${formattedPhone}?text=${encoded}` 
+          : `https://api.whatsapp.com/send?text=${encoded}`;
+
+        window.open(waUrl, "_blank");
+        notify(`অর্ডার #${order.id} এর WhatsApp মেসেজ ওপেন হচ্ছে... 💬`);
+      };
+
+      const copyWhatsAppMessage = (order) => {
+        if (!order) return;
+        const msg = generateOrderWhatsAppMessage(order);
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(msg);
+          } else {
+            const el = document.createElement("textarea");
+            el.value = msg;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand("copy");
+            document.body.removeChild(el);
+          }
+          notify("অর্ডারের হোয়াটসঅ্যাপ মেসেজ কপি হয়েছে! 📋");
+        } catch(e) {
+          notify("মেসেজ কপি করা যায়নি");
+        }
+      };
+
       // Smart Client-Side Canvas Image Compressor (<100KB per image, prevents Firestore/localStorage limits)
       const compressImage = (file, maxWidth = 1200, maxHeight = 800, quality = 0.82) => {
         return new Promise((resolve) => {
@@ -1573,7 +1676,7 @@
 
                 {/* COMBO PACK SPECIAL SHOWCASE SECTION */}
                 {combos.filter(c => c.active).length > 0 && (
-                  <div className="bg-gradient-to-br from-[#fff7f0] to-[#faeee3] p-5 sm:p-7 rounded-3xl border-2 border-[#d4a574]/40 shadow-sm space-y-4">
+                  <div id="combo-pack-showcase" className="bg-gradient-to-br from-[#fff7f0] to-[#faeee3] p-5 sm:p-7 rounded-3xl border-2 border-[#d4a574]/40 shadow-sm space-y-4 scroll-mt-24">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
@@ -1718,6 +1821,18 @@
                         <span>🌟</span>
                         <span>সকল কালেকশন</span>
                       </button>
+                      {combos.filter(c => c.active).length > 0 && (
+                        <button
+                          onClick={() => {
+                            const el = document.getElementById("combo-pack-showcase");
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition border border-amber-400 bg-gradient-to-r from-amber-100 to-rose-100 text-[#7a1c2b] hover:shadow-md flex items-center gap-2 whitespace-nowrap active:scale-95"
+                        >
+                          <span>🎁</span>
+                          <span>স্পেশাল কম্বো প্যাক ({combos.filter(c => c.active).length})</span>
+                        </button>
+                      )}
                       {categories.map(c => (
                         <button
                           key={c.id}
@@ -2045,6 +2160,13 @@
                           <span>+ নতুন প্রোডাক্ট যোগ</span>
                         </button>
                         <button 
+                          onClick={() => handleOpenNewComboModal()}
+                          className="bg-gradient-to-r from-amber-500 to-[#7a1c2b] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-extrabold shadow hover:brightness-110 transition flex items-center gap-1.5 active:scale-95"
+                          title="প্রোডাক্ট চয়েস করে নতুন কম্বো প্যাক তৈরি করুন"
+                        >
+                          <span>🎁 কম্বো প্যাক দিন</span>
+                        </button>
+                        <button 
                           onClick={() => setActiveTab("Banners")}
                           className="bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition flex items-center gap-1.5"
                         >
@@ -2084,21 +2206,39 @@
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                        <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0 flex-wrap">
                           <button
                             onClick={() => {
-                              setActiveTab("Orders");
+                              setViewInvoiceOrder(newOrderAlert);
                               setNewOrdersCount(0);
                               setNewOrderAlert(null);
                             }}
                             className="bg-white text-rose-800 hover:bg-amber-100 px-4 py-2 rounded-full text-xs font-bold transition shadow flex items-center gap-1.5"
                           >
                             <span>👁️</span>
-                            <span>অর্ডারটি দেখুন</span>
+                            <span>কনফার্মেশন ভিউ</span>
+                          </button>
+                          <button
+                            onClick={() => shareOrderToWhatsApp(newOrderAlert)}
+                            className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-3.5 py-2 rounded-full text-xs font-bold transition shadow flex items-center gap-1.5"
+                            title="হোয়াটসঅ্যাপে দ্রুত মেসেজ পাঠান"
+                          >
+                            <span>💬</span>
+                            <span>WhatsApp</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveTab("Orders");
+                              setNewOrdersCount(0);
+                              setNewOrderAlert(null);
+                            }}
+                            className="bg-black/25 hover:bg-black/40 text-white px-3 py-2 rounded-full text-xs font-bold transition"
+                          >
+                            সব অর্ডার →
                           </button>
                           <button
                             onClick={() => setNewOrderAlert(null)}
-                            className="bg-black/30 hover:bg-black/40 text-white px-3 py-2 rounded-full text-xs font-bold transition"
+                            className="bg-black/30 hover:bg-black/40 text-white px-2.5 py-2 rounded-full text-xs font-bold transition"
                             title="নোটিফিকেশন বন্ধ করুন"
                           >
                             ✕
@@ -2107,8 +2247,8 @@
                       </div>
                     )}
 
-                    {/* KPI Metrics */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* KPI Metrics: Now 5 Metrics Including Combos */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
                       <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
                         <p className="text-xs text-[#b8956a] font-semibold">মোট বিক্রয়</p>
                         <h3 className="text-2xl font-bold text-[#7a1c2b] mt-1">{totalRevenue.toLocaleString()} ৳</h3>
@@ -2129,10 +2269,64 @@
                         <h3 className="text-2xl font-bold mt-1 text-[#2c1810]">{products.length}</h3>
                         <p className="text-[11px] text-[#b8956a] mt-2 font-medium">{categories.length} টি ক্যাটাগরিতে</p>
                       </div>
-                      <div className="bg-red-50 p-5 rounded-3xl border border-red-200 shadow-sm">
+                      {/* DEDICATED KPI CARD FOR COMBOS */}
+                      <div 
+                        onClick={() => setActiveTab("Combos")}
+                        className="bg-gradient-to-br from-[#fff7f0] to-[#fdeddf] p-5 rounded-3xl border-2 border-[#d4a574] shadow-sm cursor-pointer hover:shadow-md transition group"
+                        title="কম্বো প্যাক ম্যানেজমেন্টে যান"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-[#7a1c2b] font-bold flex items-center gap-1">
+                            <span>🎁</span> কম্বো প্যাক
+                          </p>
+                          <span className="text-[10px] bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full font-bold">
+                            {combos.filter(c => c.active).length} সক্রিয়
+                          </span>
+                        </div>
+                        <h3 className="text-2xl font-bold text-[#7a1c2b] mt-1 group-hover:scale-105 transition-transform">{combos.length} টি</h3>
+                        <p className="text-[11px] text-[#b8956a] mt-2 font-semibold">পণ্য চয়েস করে বান্ডেল অফার →</p>
+                      </div>
+                      <div className="bg-red-50 p-5 rounded-3xl border border-red-200 shadow-sm col-span-2 md:col-span-1">
                         <p className="text-xs text-red-600 font-semibold">কম স্টক সতর্কতা</p>
                         <h3 className="text-2xl font-bold text-red-700 mt-1">{lowStockProducts.length}</h3>
                         <p className="text-[11px] text-red-600 mt-2 font-medium">রিস্টক প্রয়োজন</p>
+                      </div>
+                    </div>
+
+                    {/* DEDICATED DASHBOARD COMBO FEATURE HERO BANNER (আলাদা কম্বো প্যাক ড্যাশবোর্ড ফিচার) */}
+                    <div className="bg-gradient-to-r from-[#7a1c2b] via-[#8e2032] to-[#59121d] text-white p-5 sm:p-6 rounded-3xl shadow-md border-2 border-amber-400/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl flex-shrink-0 shadow-inner">
+                          🎁
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="bg-amber-400 text-[#2c1810] text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                              স্পেশাল ড্যাশবোর্ড ফিচার
+                            </span>
+                            <h3 className="text-lg sm:text-xl font-black text-white">
+                              প্রোডাক্ট চয়েস করে কাস্টম কম্বো প্যাক অফার দিন
+                            </h3>
+                          </div>
+                          <p className="text-xs sm:text-sm text-amber-100 mt-1 max-w-xl">
+                            ক্যাটালগ থেকে শাড়ি, জুয়েলারি বা অন্য যেকোনো পছন্দের পণ্য সিলেক্ট করে আকর্ষণীয় কম্বো প্যাক বানিয়ে গ্রাহকদের স্পেশাল ছাড়ে অফার দিন।
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 self-end md:self-auto flex-shrink-0 flex-wrap">
+                        <button
+                          onClick={() => handleOpenNewComboModal()}
+                          className="bg-amber-400 hover:bg-amber-300 text-[#2c1810] px-5 py-2.5 rounded-full text-xs sm:text-sm font-extrabold shadow-lg transition flex items-center gap-2 active:scale-95"
+                        >
+                          <span>+ প্রোডাক্ট চয়েস করে কম্বো বানান</span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("Combos")}
+                          className="bg-white/15 hover:bg-white/25 text-white border border-white/30 px-4 py-2.5 rounded-full text-xs font-bold transition"
+                        >
+                          কম্বো হাব ({combos.length}) →
+                        </button>
                       </div>
                     </div>
 
@@ -2209,13 +2403,13 @@
                                   <div className="text-xs text-gray-600 flex items-center gap-2 flex-wrap">
                                     <span>📍 {o.district ? `${o.district}, ` : ''}{o.address || "ঠিকানা"}</span>
                                     <span className="text-gray-300">•</span>
-                                    <span className="font-semibold text-gray-700">পণ্য: {o.items?.map(it => `${it.name} (${it.quantity}x)`).join(", ") || `${o.items?.length || 1} টি আইটেম`}</span>
+                                    <span className="font-semibold text-gray-700">পণ্য: {o.items?.map(it => `${it.name} (${it.quantity || it.qty || 1}x)`).join(", ") || `${o.items?.length || 1} টি আইটেম`}</span>
                                     <span className="text-gray-300">•</span>
                                     <span className="font-bold text-[#7a1c2b] text-sm">{o.totalAmount || o.total || 0} ৳</span>
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 self-end md:self-center">
+                                <div className="flex items-center gap-2 self-end md:self-center flex-wrap">
                                   {/* Direct Status Selector */}
                                   <select 
                                     value={o.status}
@@ -2230,13 +2424,29 @@
                                   >
                                     <option value="Pending">⏳ পেন্ডিং</option>
                                     <option value="Confirmed">✅ কনফার্মড</option>
-                                    <option value="Shipped">🚚 শিফট / কুরিয়ারে</option>
+                                    <option value="Shipped">🚚 কুরিয়ারে</option>
                                     <option value="Delivered">🎉 ডেলিভার্ড</option>
                                     <option value="Cancelled">❌ বাতিল</option>
                                   </select>
 
                                   <button
-                                    onClick={() => printInvoice(o)}
+                                    onClick={() => setViewInvoiceOrder(o)}
+                                    className="px-2.5 py-1.5 rounded-full bg-white border border-[#d4a574] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition text-xs font-bold shadow-xs flex items-center gap-1"
+                                    title="কনফার্মেশন ও মেমো ভিউ"
+                                  >
+                                    <span>👁️</span>
+                                    <span className="hidden sm:inline">ভিউ</span>
+                                  </button>
+                                  <button
+                                    onClick={() => shareOrderToWhatsApp(o)}
+                                    className="px-2.5 py-1.5 rounded-full bg-[#25D366] text-white hover:bg-[#20bd5a] transition text-xs font-bold shadow-xs flex items-center gap-1"
+                                    title="হোয়াটসঅ্যাপে অর্ডার ডিটেইলস পাঠান"
+                                  >
+                                    <span>💬</span>
+                                    <span className="hidden sm:inline">WhatsApp</span>
+                                  </button>
+                                  <button
+                                    onClick={() => printInvoiceWindow(o)}
                                     className="p-1.5 rounded-full bg-white border border-[#f3e2d0] text-gray-700 hover:bg-[#7a1c2b] hover:text-white transition text-xs shadow-xs"
                                     title="চালান প্রিন্ট"
                                   >
@@ -2329,6 +2539,13 @@
                                   স্টক: {p.stock}
                                 </span>
                                 <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenNewComboModal([p.id])}
+                                    className="px-2 py-1 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-[10px] font-bold hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
+                                    title="এই প্রোডাক্ট দিয়ে কম্বো প্যাক তৈরি শুরু করুন"
+                                  >
+                                    🎁 কম্বো
+                                  </button>
                                   <button
                                     onClick={() => {
                                       setEditingProduct(p);
@@ -3043,29 +3260,70 @@
                       <p className="text-xs text-[#b8956a]">পণ্য যোগ, অন্য সাইটের লিংক থেকে ইমপোর্ট ও স্টক ম্যানেজমেন্ট</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => {
-                      setEditingProduct(null);
-                      setProductForm({ 
-                        name: "", 
-                        price: 0, 
-                        stock: 5, 
-                        category: categories[0]?.name || "শাড়ি", 
-                        images: [], 
-                        sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
-                        description: "",
-                        sourceUrl: ""
-                      });
-                      setExternalLinkInput("");
-                      setImageUrlInput("");
-                      setImgLoadStatus("idle");
-                      setIsProductModalOpen(true);
-                    }}
-                    className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] flex items-center gap-2"
-                  >
-                    <span>+ নতুন প্রোডাক্ট অ্যাড করুন</span>
-                  </button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button 
+                      onClick={() => handleOpenNewComboModal(selectedProductIdsForCombo)}
+                      className="bg-gradient-to-r from-amber-500 to-[#7a1c2b] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:brightness-110 flex items-center gap-1.5 transition active:scale-95"
+                      title="নির্বাচিত পণ্যগুলো দিয়ে নতুন কম্বো প্যাক বানান"
+                    >
+                      <span>🎁</span>
+                      <span>কম্বো প্যাক তৈরি {selectedProductIdsForCombo.length > 0 ? `(${selectedProductIdsForCombo.length})` : ''}</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setEditingProduct(null);
+                        setProductForm({ 
+                          name: "", 
+                          price: 0, 
+                          stock: 5, 
+                          category: categories[0]?.name || "শাড়ি", 
+                          images: [], 
+                          sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
+                          description: "",
+                          sourceUrl: ""
+                        });
+                        setExternalLinkInput("");
+                        setImageUrlInput("");
+                        setImgLoadStatus("idle");
+                        setIsProductModalOpen(true);
+                      }}
+                      className="bg-[#7a1c2b] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] flex items-center gap-2"
+                    >
+                      <span>+ নতুন প্রোডাক্ট</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* MULTI-PRODUCT COMBO BUILDER STRIP */}
+                {selectedProductIdsForCombo.length > 0 && (
+                  <div className="bg-gradient-to-r from-[#7a1c2b] via-[#8e2032] to-[#59121d] text-white p-4 rounded-3xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn border-2 border-amber-400">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🎁</span>
+                      <div>
+                        <p className="text-xs sm:text-sm font-black">
+                          {selectedProductIdsForCombo.length} টি পণ্য কম্বো বানানোর জন্য সিলেক্ট করেছেন!
+                        </p>
+                        <p className="text-[11px] text-amber-200">
+                          নির্বাচিত পণ্য: {selectedProductIdsForCombo.map(id => products.find(p => p.id === id)?.name).filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                      <button
+                        onClick={() => handleOpenNewComboModal(selectedProductIdsForCombo)}
+                        className="bg-amber-400 hover:bg-amber-300 text-[#2c1810] px-4 py-2 rounded-full text-xs font-black shadow transition flex items-center gap-1.5 active:scale-95"
+                      >
+                        <span>🎁 এই পণ্যগুলো দিয়ে কম্বো তৈরি করুন →</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedProductIdsForCombo([])}
+                        className="bg-black/25 hover:bg-black/40 text-white px-3 py-2 rounded-full text-xs font-bold transition"
+                      >
+                        ক্লিয়ার করুন
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Product Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -3109,7 +3367,19 @@
                           <span className="text-[11px] text-gray-400">ম্যানুয়াল আপলোড</span>
                         )}
 
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => toggleProductSelectionForCombo(p.id)}
+                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold transition flex items-center gap-1 ${
+                              selectedProductIdsForCombo.includes(p.id)
+                                ? "bg-[#7a1c2b] text-white shadow-xs"
+                                : "bg-[#fffaf5] text-[#7a1c2b] border border-[#d4a574] hover:bg-amber-50"
+                            }`}
+                            title="কম্বো প্যাক বানাতে সিলেক্ট করুন"
+                          >
+                            <span>{selectedProductIdsForCombo.includes(p.id) ? "✓ কম্বোতে সিলেক্টেড" : "+ কম্বোতে যোগ"}</span>
+                          </button>
                           <button 
                             onClick={() => {
                               setEditingProduct(p);
@@ -3122,7 +3392,7 @@
                               setImgLoadStatus(p.images[0] ? "loaded" : "idle");
                               setIsProductModalOpen(true);
                             }}
-                            className="px-3 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                            className="px-2.5 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
                           >
                             ✏️ এডিট
                           </button>
@@ -3134,7 +3404,7 @@
                                 notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
                               }
                             }}
-                            className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
+                            className="px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
                           >
                             🗑️ মুছুন
                           </button>
@@ -3225,9 +3495,13 @@
                               <a href={`tel:${o.phone}`} className="bg-white border px-2.5 py-1 rounded-full text-[11px] font-bold text-green-700 hover:bg-green-50">
                                 📞 কল করুন
                               </a>
-                              <a href={`https://wa.me/88${o.phone.replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(o.customer)},%20regarding%20your%20SAJGOJ%20FASHION%20Order%20${o.id}`} target="_blank" className="bg-[#25D366] text-white px-2.5 py-1 rounded-full text-[11px] font-bold">
+                              <button 
+                                onClick={() => shareOrderToWhatsApp(o)} 
+                                className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs flex items-center gap-1 transition"
+                                title="হোয়াটসঅ্যাপে বিস্তারিত পাঠান"
+                              >
                                 💬 WhatsApp
-                              </a>
+                              </button>
                             </div>
                           </div>
 
@@ -3281,15 +3555,31 @@
                           </div>
                         </div>
 
-                        {/* Action Buttons: Invoice, Steadfast, Pathao, Delete */}
+                        {/* Action Buttons: Confirmation View, Share to WhatsApp, Invoice, Steadfast, Pathao, Delete */}
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#f3e2d0]">
                           <div className="flex flex-wrap gap-2">
                             <button 
-                              onClick={() => printInvoiceWindow(o)}
+                              onClick={() => setViewInvoiceOrder(o)}
                               className="px-4 py-2 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition shadow-sm flex items-center gap-1.5"
+                              title="অর্ডার কনফার্মেশন ও বিবরণী দেখুন"
+                            >
+                              <span>👁️</span>
+                              <span>কনফার্মেশন ভিউ</span>
+                            </button>
+                            <button 
+                              onClick={() => shareOrderToWhatsApp(o)}
+                              className="px-4 py-2 bg-[#25D366] text-white rounded-full text-xs font-bold hover:bg-[#20bd5a] transition shadow-sm flex items-center gap-1.5"
+                              title="হোয়াটসঅ্যাপে প্রি-ফিল্ড অর্ডার ডিটেইলস পাঠান"
+                            >
+                              <span>💬</span>
+                              <span>Share to WhatsApp</span>
+                            </button>
+                            <button 
+                              onClick={() => printInvoiceWindow(o)}
+                              className="px-4 py-2 bg-[#fff8f0] border border-[#d4a574] text-gray-700 rounded-full text-xs font-bold hover:bg-gray-100 transition shadow-sm flex items-center gap-1.5"
                             >
                               <span>🧾</span>
-                              <span>চালান / মেমো প্রিন্ট</span>
+                              <span>চালান প্রিন্ট</span>
                             </button>
                             <button 
                               onClick={() => dispatchCourier(o.id, "Steadfast")}
@@ -5082,6 +5372,215 @@
           )}
 
           {/* ========================================================= */}
+          {/* ADMIN ORDER CONFIRMATION & DETAILS VIEW MODAL (WITH SHARE TO WHATSAPP) */}
+          {/* ========================================================= */}
+          {viewInvoiceOrder && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 sm:p-8 border shadow-2xl animate-fadeIn">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-5 pb-3 border-b border-[#f3e2d0]">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xl">📋</span>
+                      <h3 className="font-extrabold text-lg sm:text-xl text-[#7a1c2b]">
+                        অর্ডার কনফার্মেশন ও বিবরণী
+                      </h3>
+                      <span className="font-mono font-bold text-xs bg-[#fff8f0] text-[#7a1c2b] px-3 py-1 rounded-full border border-[#d4a574]">
+                        #{viewInvoiceOrder.id}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      অর্ডার তারিখ: <span className="font-bold text-gray-700">{viewInvoiceOrder.date || "আজ"}</span> • পেমেন্ট: <span className="font-bold text-[#7a1c2b]">{viewInvoiceOrder.paymentMethod}</span>
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setViewInvoiceOrder(null)} 
+                    className="w-8 h-8 rounded-full bg-[#fff8f0] border border-[#f3e2d0] flex items-center justify-center font-bold text-gray-500 hover:text-black hover:bg-gray-100 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-5">
+                  {/* TOP ACTION BAR: SHARE TO WHATSAPP & PRINT INVOICE */}
+                  <div className="bg-gradient-to-r from-emerald-50 via-[#fff8f0] to-emerald-50 p-4 sm:p-5 rounded-3xl border-2 border-emerald-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#25D366] animate-ping"></span>
+                        <h4 className="font-bold text-sm text-gray-900">হোয়াটসঅ্যাপে সরাসরি কনফার্মেশন পাঠান</h4>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        এক ক্লিকে সকল পণ্যের নাম, দাম, মোট বিল ও ডেলিভারি ঠিকানাসহ অটো মেসেজ তৈরি হবে
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                      <button
+                        onClick={() => shareOrderToWhatsApp(viewInvoiceOrder)}
+                        className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 active:scale-95"
+                        title="গ্রাহকের নম্বরে প্রি-ফিল্ড মেসেজ পাঠান"
+                      >
+                        <span className="text-base">💬</span>
+                        <span>Share to WhatsApp</span>
+                      </button>
+                      <button
+                        onClick={() => copyWhatsAppMessage(viewInvoiceOrder)}
+                        className="bg-white border border-[#d4a574] text-[#2c1810] px-3.5 py-2.5 rounded-full text-xs font-bold hover:bg-[#fffaf5] transition shadow-xs"
+                        title="মেসেজ টেক্সট কপি করুন"
+                      >
+                        📋 কপি
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Customer & Delivery Information Card */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="bg-[#fffaf5] p-4 rounded-2xl border border-[#f3e2d0] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">👤 গ্রাহক বিবরণী</span>
+                        <a href={`tel:${viewInvoiceOrder.phone}`} className="text-green-700 font-bold hover:underline flex items-center gap-1">
+                          <span>📞</span> <span>কল করুন</span>
+                        </a>
+                      </div>
+                      <p className="text-sm font-bold text-gray-900">{viewInvoiceOrder.customer || viewInvoiceOrder.customerName || "N/A"}</p>
+                      <p className="text-gray-600 font-mono">মোবাইল: <span className="font-bold text-gray-800">{viewInvoiceOrder.phone || viewInvoiceOrder.customerPhone || "N/A"}</span></p>
+                    </div>
+
+                    <div className="bg-[#fffaf5] p-4 rounded-2xl border border-[#f3e2d0] space-y-2">
+                      <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px] block">📍 ডেলিভারি ঠিকানা</span>
+                      <p className="text-gray-800 leading-relaxed font-medium">
+                        {viewInvoiceOrder.address || ""}{viewInvoiceOrder.thana ? `, ${viewInvoiceOrder.thana}` : ""}{viewInvoiceOrder.district ? `, ${viewInvoiceOrder.district}` : ""}
+                      </p>
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#f3e2d0]/60 text-[11px]">
+                        <span className="text-gray-500">স্ট্যাটাস:</span>
+                        <select
+                          value={viewInvoiceOrder.status}
+                          onChange={(e) => {
+                            const newSt = e.target.value;
+                            updateOrderStatus(viewInvoiceOrder.id, newSt);
+                            setViewInvoiceOrder(prev => ({ ...prev, status: newSt }));
+                          }}
+                          className="font-bold bg-white border rounded-full px-2.5 py-0.5 text-xs outline-none cursor-pointer"
+                        >
+                          <option value="Pending">⏳ Pending</option>
+                          <option value="Confirmed">✅ Confirmed</option>
+                          <option value="Shipped">🚚 Shipped</option>
+                          <option value="Delivered">🎉 Delivered</option>
+                          <option value="Cancelled">❌ Cancelled</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ordered Items List */}
+                  <div className="bg-white rounded-2xl border border-[#f3e2d0] p-4 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-[#f3e2d0]">
+                      <h4 className="font-bold text-xs uppercase tracking-wider text-gray-600">
+                        📦 অর্ডারকৃত পণ্যসমূহ ({viewInvoiceOrder.items?.length || 0} টি)
+                      </h4>
+                      <span className="text-xs text-gray-400">পরিমাণ ও মূল্য</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {(viewInvoiceOrder.items || []).map((it, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-3 bg-[#fffaf5] p-2.5 rounded-xl border border-[#f3e2d0]">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img 
+                              src={it.image || imgSharee} 
+                              alt={it.name} 
+                              className="w-11 h-11 rounded-lg object-cover border bg-white flex-shrink-0"
+                              onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-gray-900 truncate" title={it.name}>{it.name}</p>
+                              {it.isCombo && (
+                                <span className="inline-block bg-[#d4a574] text-[#2c1810] text-[9px] font-bold px-2 py-0.2 rounded-full mt-0.5">
+                                  🎁 কম্বো প্যাক বান্ডেল
+                                </span>
+                              )}
+                              <p className="text-[11px] text-gray-500">{it.price} ৳ × {it.qty || 1} টি</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-[#7a1c2b] flex-shrink-0">
+                            {(it.price || 0) * (it.qty || 1)} ৳
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Invoice Pricing Summary */}
+                    <div className="pt-3 border-t border-[#f3e2d0] space-y-1.5 text-xs">
+                      <div className="flex justify-between text-gray-600">
+                        <span>পণ্যের মোট মূল্য (সাবটোটাল):</span>
+                        <span>{viewInvoiceOrder.subtotal || viewInvoiceOrder.total || 0} ৳</span>
+                      </div>
+                      <div className="flex justify-between text-gray-600">
+                        <span>ডেলিভারি চার্জ:</span>
+                        <span>{viewInvoiceOrder.deliveryCharge === 0 ? "ফ্রি (Free)" : `${viewInvoiceOrder.deliveryCharge || 0} ৳`}</span>
+                      </div>
+                      {viewInvoiceOrder.discount > 0 && (
+                        <div className="flex justify-between text-green-700 font-bold">
+                          <span>ছাড় ({viewInvoiceOrder.couponCode || "প্রোমো"}):</span>
+                          <span>- {viewInvoiceOrder.discount} ৳</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm sm:text-base font-extrabold text-[#7a1c2b] pt-2 border-t border-[#d4a574]">
+                        <span>সর্বমোট প্রদেয় বিল:</span>
+                        <span>{viewInvoiceOrder.total || 0} ৳</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Message Preview Box */}
+                  <div className="bg-[#f0fdf4] p-4 rounded-2xl border border-emerald-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                        <span>💬</span> <span>হোয়াটসঅ্যাপ মেসেজ প্রিভিউ (গ্রাহক যা পাবেন):</span>
+                      </span>
+                      <button
+                        onClick={() => copyWhatsAppMessage(viewInvoiceOrder)}
+                        className="text-[11px] font-bold text-emerald-700 hover:underline"
+                      >
+                        টেক্সট কপি করুন
+                      </button>
+                    </div>
+                    <pre className="bg-white p-3 rounded-xl border border-emerald-200 text-[11px] text-gray-700 font-mono whitespace-pre-wrap max-h-44 overflow-y-auto leading-relaxed shadow-inner">
+                      {generateOrderWhatsAppMessage(viewInvoiceOrder)}
+                    </pre>
+                  </div>
+
+                  {/* Modal Bottom Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#f3e2d0]">
+                    <button
+                      onClick={() => printInvoiceWindow(viewInvoiceOrder)}
+                      className="px-5 py-2.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1.5 shadow-sm"
+                    >
+                      <span>🖨️</span>
+                      <span>মেমো প্রিন্ট করুন</span>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => shareOrderToWhatsApp(viewInvoiceOrder)}
+                        className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition flex items-center gap-1.5"
+                      >
+                        <span>💬</span>
+                        <span>Share to WhatsApp</span>
+                      </button>
+                      <button
+                        onClick={() => setViewInvoiceOrder(null)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-full text-xs font-bold transition"
+                      >
+                        বন্ধ করুন
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
           {/* PRODUCT DETAILS MODAL (WITH MULTI-IMAGE CAROUSEL) */}
           {/* ========================================================= */}
           {viewProduct && (
@@ -5712,9 +6211,31 @@
                 </div>
 
                 <div className="space-y-4">
-                  {/* Basic Info */}
+                  {/* Basic Info with Auto-Naming Helper */}
                   <div>
-                    <label className="text-xs font-semibold text-gray-700">কম্বো প্যাকের নাম *</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-gray-700">কম্বো প্যাকের নাম *</label>
+                      {comboForm.productIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const prods = comboForm.productIds.map(id => products.find(p => p.id === id)).filter(Boolean);
+                            const namePart = prods.map(p => p.name).slice(0, 2).join(" + ");
+                            setComboForm(prev => ({
+                              ...prev,
+                              title: `${namePart} স্পেশাল কম্বো`,
+                              subtitle: `এক্সক্লুসিভ বান্ডেল অফার (${prods.length} টি প্রিমিয়াম পণ্য একসাথে)`,
+                              description: `এই কম্বো প্যাকে অন্তর্ভুক্ত রয়েছে: ${prods.map(p => p.name).join(", ")}। একসাথে অর্ডার করলে পাচ্ছেন বিশেষ আকর্ষণীয় মূল্য!`
+                            }));
+                            notify("নির্বাচিত পণ্য অনুযায়ী নাম ও বিবরণ সেট করা হয়েছে! ✨");
+                          }}
+                          className="text-[11px] text-[#7a1c2b] font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>✨</span>
+                          <span>পণ্য অনুযায়ী অটো-নাম দিন</span>
+                        </button>
+                      )}
+                    </div>
                     <input 
                       type="text" 
                       value={comboForm.title} 
@@ -5735,25 +6256,58 @@
                     />
                   </div>
 
-                  {/* MULTI-PRODUCT SELECTION HUB (প্রোডাক্ট চয়েস করার অপশন) */}
+                  {/* MULTI-PRODUCT SELECTION HUB (ক্যাটেগরি ভিত্তিক প্রোডাক্ট চয়েস হাব) */}
                   <div className="p-4 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
                         <label className="text-xs font-bold text-[#7a1c2b] flex items-center gap-1.5">
                           <span>📦</span>
-                          <span>কম্বোর অন্তর্ভুক্ত প্রোডাক্ট নির্বাচন করুন * (কমপক্ষে ২টি)</span>
+                          <span>পছন্দমত প্রোডাক্ট নির্বাচন করুন * (কমপক্ষে ২টি)</span>
                         </label>
-                        <p className="text-[11px] text-gray-500">যেকোনো প্রোডাক্টের ওপর ক্লিক করে সিলেক্ট বা আনসিলেক্ট করুন</p>
+                        <p className="text-[11px] text-gray-500">ক্যাটাগরি ফিল্টার করে শাড়ি, জুয়েলারি বা যেকোনো পণ্য ক্লিক করে নির্বাচন করুন</p>
                       </div>
-                      <span className="text-xs font-bold bg-[#7a1c2b] text-white px-3 py-1 rounded-full self-start sm:self-auto">
+                      <span className="text-xs font-bold bg-[#7a1c2b] text-white px-3 py-1 rounded-full self-start sm:self-auto shadow-xs">
                         নির্বাচিত: {comboForm.productIds.length} টি
                       </span>
+                    </div>
+
+                    {/* Category Filter Pills in Modal */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                      <button
+                        type="button"
+                        onClick={() => setComboCategoryFilter("All")}
+                        className={`text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap transition border ${
+                          comboCategoryFilter === "All"
+                            ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-xs"
+                            : "bg-white text-gray-700 border-[#ecd9c6] hover:bg-gray-100"
+                        }`}
+                      >
+                        সব পণ্য ({products.length})
+                      </button>
+                      {categories.map(c => {
+                        const count = products.filter(p => p.category === c.name).length;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setComboCategoryFilter(c.name)}
+                            className={`text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap transition border flex items-center gap-1 ${
+                              comboCategoryFilter === c.name
+                                ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-xs"
+                                : "bg-white text-gray-700 border-[#ecd9c6] hover:bg-gray-100"
+                            }`}
+                          >
+                            <span>{c.icon || "✨"}</span>
+                            <span>{c.name} ({count})</span>
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Search inside catalog */}
                     <input 
                       type="text"
-                      placeholder="🔍 প্রোডাক্টের নাম বা ক্যাটাগরি দিয়ে খুঁজুন..."
+                      placeholder="🔍 প্রোডাক্টের নাম, কোড বা SKU দিয়ে খুঁজুন..."
                       value={comboProductSearch}
                       onChange={(e) => setComboProductSearch(e.target.value)}
                       className="w-full bg-white border border-[#ecd9c6] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
@@ -5762,7 +6316,15 @@
                     {/* Products Grid to Choose From */}
                     <div className="max-h-56 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
                       {products
-                        .filter(p => !comboProductSearch || p.name.toLowerCase().includes(comboProductSearch.toLowerCase()) || p.category.toLowerCase().includes(comboProductSearch.toLowerCase()))
+                        .filter(p => {
+                          const matchesCat = comboCategoryFilter === "All" || p.category === comboCategoryFilter;
+                          const q = comboProductSearch.toLowerCase();
+                          const matchesSearch = !comboProductSearch || 
+                            p.name.toLowerCase().includes(q) || 
+                            (p.category && p.category.toLowerCase().includes(q)) ||
+                            (p.sku && p.sku.toLowerCase().includes(q));
+                          return matchesCat && matchesSearch;
+                        })
                         .map(p => {
                           const isSelected = comboForm.productIds.includes(p.id);
                           return (
@@ -5791,7 +6353,7 @@
                                 <div className="min-w-0">
                                   <p className="text-xs font-bold text-gray-900 truncate" title={p.name}>{p.name}</p>
                                   <p className="text-[11px] text-gray-500">
-                                    <span className="text-[#7a1c2b] font-semibold">{p.category}</span> • স্টক: {p.stock} টি
+                                    <span className="text-[#7a1c2b] font-semibold">{p.category}</span> {p.sku ? `• SKU: ${p.sku}` : ''} • স্টক: {p.stock} টি
                                   </p>
                                 </div>
                               </div>
@@ -5813,7 +6375,7 @@
                             if (!p) return null;
                             return (
                               <React.Fragment key={p.id}>
-                                <div className="flex items-center gap-1.5 bg-white border border-[#d4a574] rounded-full pl-1 pr-2.5 py-0.5 text-[11px] font-semibold text-gray-800 flex-shrink-0">
+                                <div className="flex items-center gap-1.5 bg-white border border-[#d4a574] rounded-full pl-1 pr-2.5 py-0.5 text-[11px] font-semibold text-gray-800 flex-shrink-0 shadow-xs">
                                   <img src={p.images[0] || imgSharee} alt={p.name} className="w-5 h-5 rounded-full object-cover" />
                                   <span className="truncate max-w-[120px]">{p.name}</span>
                                   <span className="text-[#7a1c2b] font-bold">({p.price} ৳)</span>
@@ -5829,7 +6391,7 @@
                     )}
                   </div>
 
-                  {/* PRICING & SAVINGS LIVE CALCULATION */}
+                  {/* PRICING & SAVINGS LIVE CALCULATION WITH QUICK DISCOUNT BUTTONS */}
                   {(() => {
                     const originalTotal = comboForm.productIds.reduce((sum, id) => {
                       const p = products.find(prod => prod.id === id);
@@ -5864,6 +6426,30 @@
                             />
                           </div>
                         </div>
+
+                        {/* Quick Discount Presets */}
+                        {originalTotal > 0 && (
+                          <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                            <span className="text-[11px] text-gray-600 font-semibold">সহজ ছাড়:</span>
+                            {[10, 15, 20, 25, 30].map(pct => {
+                              const calcPrice = Math.round(originalTotal * (1 - pct / 100));
+                              return (
+                                <button
+                                  key={pct}
+                                  type="button"
+                                  onClick={() => setComboForm(prev => ({ ...prev, comboPrice: calcPrice }))}
+                                  className={`text-[11px] px-2.5 py-0.5 rounded-full border transition font-bold ${
+                                    currentComboPrice === calcPrice
+                                      ? "bg-[#7a1c2b] text-white border-[#7a1c2b]"
+                                      : "bg-white border-[#d4a574] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white"
+                                  }`}
+                                >
+                                  {pct}% ছাড় ({calcPrice} ৳)
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
 
                         {/* Calculated Savings banner */}
                         {originalTotal > 0 && currentComboPrice > 0 && (
