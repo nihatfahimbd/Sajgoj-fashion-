@@ -111,3 +111,18 @@ data class ProductReview(
   val verified: Boolean = true
 )
 
+data class ComboPack(
+  val id: String = "",
+  val title: String = "",
+  val subtitle: String = "",
+  val description: String = "",
+  val badge: String = "স্পেশাল কম্বো",
+  val imageUrl: String = "",
+  val productIds: List<String> = emptyList(),
+  val regularPrice: Int = 0,
+  val comboPrice: Int = 0,
+  val savings: Int = 0,
+  val isActive: Boolean = true,
+  val stock: Int = 5
+)
+

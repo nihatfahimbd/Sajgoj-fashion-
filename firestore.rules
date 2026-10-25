@@ -32,6 +32,11 @@ service cloud.firestore {
     match /reviews/{reviewId} {
       allow read, write: if true;
     }
+
+    // Combo packs collection: bundled products with special offer pricing
+    match /combos/{comboId} {
+      allow read, write: if true;
+    }
     
     // Store configuration (store, courier, pixel, seo, header, footer)
     match /config/{configDoc} {

@@ -205,6 +205,41 @@
       }
     ];
 
+    const initialCombos = [
+      {
+        id: "combo-1",
+        title: "রয়্যাল ব্রাইডাল সাজ কম্বো",
+        subtitle: "কাতান ডিজাইনার শাড়ি + রাজওয়াড়ি কুন্দন চোকার সেট",
+        description: "বিয়ে ও জমকালো রিসেপশনের জন্য রাজকীয় পূর্ণাঙ্গ ব্রাইডাল কম্বো প্যাক। একসাথে নিলে পাচ্ছেন আকর্ষণীয় ছাড়!",
+        productIds: ["p1", "p2"],
+        originalPrice: 6499,
+        comboPrice: 5499,
+        savings: 1000,
+        discountPercent: 15,
+        badge: "সেরা অফার 🔥",
+        image: banner1,
+        active: true,
+        stock: 5,
+        createdAt: 1729000000000
+      },
+      {
+        id: "combo-2",
+        title: "এলিগ্যান্ট গোল্ডেন ম্যাচ কম্বো",
+        subtitle: "সিটি গোল্ড বালা সেট + রুবি স্টোন ক্রিস্টাল ব্রেসলেট",
+        description: "দৈনন্দিন ও উৎসবের সাজে আভিজাত্যের ছোঁয়া। হাত ভর্তি প্রিমিয়াম জুয়েলারি কম্বো আকর্ষণীয় মূল্যে।",
+        productIds: ["p3", "p4"],
+        originalPrice: 2140,
+        comboPrice: 1790,
+        savings: 350,
+        discountPercent: 16,
+        badge: "জনপ্রিয় কম্বো ⭐",
+        image: banner2,
+        active: true,
+        stock: 8,
+        createdAt: 1729100000000
+      }
+    ];
+
     const initialStoreConfig = {
       storeName: "SAJGOJ FASHION",
       primaryColor: "#7a1c2b",
@@ -315,6 +350,7 @@
 
       // Main Reactive States
       const [products, setProducts] = useState(() => getStored("products", initialProducts));
+      const [combos, setCombos] = useState(() => getStored("combos", initialCombos));
       const [reviews, setReviews] = useState(() => getStored("reviews", initialReviews));
       const [categories, setCategories] = useState(() => getStored("categories", initialCategories));
       const [orders, setOrders] = useState(() => getStored("orders", initialOrders));
@@ -327,6 +363,7 @@
 
       // Persistent Local Storage Sync
       useEffect(() => setStored("products", products), [products]);
+      useEffect(() => setStored("combos", combos), [combos]);
       useEffect(() => setStored("reviews", reviews), [reviews]);
       useEffect(() => setStored("categories", categories), [categories]);
       useEffect(() => setStored("orders", orders), [orders]);
@@ -526,9 +563,25 @@
           }
         }, (err) => console.warn("Reviews sync error:", err));
 
+        // 8. Combos Subscription
+        const unsubCombos = firestoreDb.collection("combos").onSnapshot((snapshot) => {
+          if (!isMounted) return;
+          if (!snapshot.empty) {
+            const list = [];
+            snapshot.forEach(doc => list.push(doc.data()));
+            list.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+            setCombos(list);
+            setStored("combos", list);
+          } else {
+            console.log("Seeding combos to Firestore...");
+            initialCombos.forEach(c => firestoreDb.collection("combos").doc(c.id).set(c));
+          }
+        }, (err) => console.warn("Combos sync error:", err));
+
         return () => {
           isMounted = false;
           unsubProducts();
+          unsubCombos();
           unsubCategories();
           unsubOrders();
           unsubCoupons();
@@ -665,6 +718,23 @@
       const [editingBanner, setEditingBanner] = useState(null);
       const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
 
+      // Combo Pack Modal & Form State
+      const [isComboModalOpen, setIsComboModalOpen] = useState(false);
+      const [editingCombo, setEditingCombo] = useState(null);
+      const [comboForm, setComboForm] = useState({
+        title: "",
+        subtitle: "",
+        description: "",
+        productIds: [],
+        comboPrice: 0,
+        badge: "সেরা অফার 🔥",
+        image: "",
+        active: true,
+        stock: 5
+      });
+      const [comboProductSearch, setComboProductSearch] = useState("");
+      const comboImgFileRef = useRef(null);
+
       const fileInputRef = useRef(null);
       const productImgFileRef = useRef(null);
       const logoFileRef = useRef(null);
@@ -675,6 +745,171 @@
       const notify = (msg) => {
         setToast(msg);
         setTimeout(() => setToast(null), 3500);
+      };
+
+      // Combo Pack Helpers & Cart Operations
+      const handleOpenNewComboModal = () => {
+        setEditingCombo(null);
+        setComboForm({
+          title: "",
+          subtitle: "",
+          description: "",
+          productIds: [],
+          comboPrice: 0,
+          badge: "সেরা অফার 🔥",
+          image: "",
+          active: true,
+          stock: 5
+        });
+        setComboProductSearch("");
+        setIsComboModalOpen(true);
+      };
+
+      const handleOpenEditComboModal = (combo) => {
+        setEditingCombo(combo);
+        setComboForm({
+          title: combo.title || "",
+          subtitle: combo.subtitle || "",
+          description: combo.description || "",
+          productIds: combo.productIds ? [...combo.productIds] : [],
+          comboPrice: combo.comboPrice || 0,
+          badge: combo.badge || "সেরা অফার 🔥",
+          image: combo.image || "",
+          active: combo.active !== undefined ? combo.active : true,
+          stock: combo.stock !== undefined ? combo.stock : 5
+        });
+        setComboProductSearch("");
+        setIsComboModalOpen(true);
+      };
+
+      const handleToggleProductInCombo = (productId) => {
+        setComboForm(prev => {
+          const exists = prev.productIds.includes(productId);
+          const updatedIds = exists 
+            ? prev.productIds.filter(id => id !== productId)
+            : [...prev.productIds, productId];
+          
+          const sumOrig = updatedIds.reduce((sum, id) => {
+            const p = products.find(prod => prod.id === id);
+            return sum + (p ? Number(p.price) : 0);
+          }, 0);
+
+          const suggestedComboPrice = (prev.comboPrice > 0 && prev.productIds.length > 0)
+            ? prev.comboPrice 
+            : Math.round(sumOrig * 0.85);
+
+          return {
+            ...prev,
+            productIds: updatedIds,
+            comboPrice: suggestedComboPrice
+          };
+        });
+      };
+
+      const handleSaveCombo = async () => {
+        if (!comboForm.title.trim()) {
+          notify("কম্বো প্যাকের নাম আবশ্যক!");
+          return;
+        }
+        if (comboForm.productIds.length < 2) {
+          notify("কম্বো প্যাক তৈরির জন্য ক্যাটালগ থেকে কমপক্ষে ২টি প্রোডাক্ট সিলেক্ট করুন!");
+          return;
+        }
+        if (!comboForm.comboPrice || comboForm.comboPrice <= 0) {
+          notify("কম্বো প্যাকের বিশেষ অফার মূল্য দিন!");
+          return;
+        }
+
+        const sumOrig = comboForm.productIds.reduce((sum, id) => {
+          const p = products.find(prod => prod.id === id);
+          return sum + (p ? Number(p.price) : 0);
+        }, 0);
+        const savings = Math.max(0, sumOrig - comboForm.comboPrice);
+        const discountPercent = sumOrig > 0 ? Math.round((savings / sumOrig) * 100) : 0;
+
+        const firstSelectedProduct = products.find(p => p.id === comboForm.productIds[0]);
+        const mainImage = comboForm.image || firstSelectedProduct?.images?.[0] || banner1;
+
+        if (editingCombo) {
+          const updated = {
+            ...editingCombo,
+            ...comboForm,
+            originalPrice: sumOrig,
+            savings,
+            discountPercent,
+            image: mainImage
+          };
+          const updatedCombos = combos.map(c => c.id === editingCombo.id ? updated : c);
+          setCombos(updatedCombos);
+          setStored("combos", updatedCombos);
+          await syncDocToCloud("combos", editingCombo.id, updated);
+          notify(`"${comboForm.title}" কম্বো প্যাক সফলভাবে আপডেট হয়েছে! ✅`);
+        } else {
+          const newComboId = "combo-" + Date.now();
+          const newCombo = {
+            id: newComboId,
+            ...comboForm,
+            originalPrice: sumOrig,
+            savings,
+            discountPercent,
+            image: mainImage,
+            createdAt: Date.now()
+          };
+          const updatedCombos = [newCombo, ...combos];
+          setCombos(updatedCombos);
+          setStored("combos", updatedCombos);
+          await syncDocToCloud("combos", newComboId, newCombo);
+          notify(`"${comboForm.title}" নতুন কম্বো প্যাক সফলভাবে তৈরি হয়েছে! 🎁`);
+        }
+        setIsComboModalOpen(false);
+      };
+
+      const handleDeleteCombo = async (comboId) => {
+        if (confirm("আপনি কি এই কম্বো প্যাকটি মুছে ফেলতে চান?")) {
+          const updated = combos.filter(c => c.id !== comboId);
+          setCombos(updated);
+          setStored("combos", updated);
+          await deleteDocFromCloud("combos", comboId);
+          notify("কম্বো প্যাক মুছে ফেলা হয়েছে!");
+        }
+      };
+
+      const handleToggleComboActive = async (combo) => {
+        const updated = { ...combo, active: !combo.active };
+        const updatedCombos = combos.map(c => c.id === combo.id ? updated : c);
+        setCombos(updatedCombos);
+        setStored("combos", updatedCombos);
+        await syncDocToCloud("combos", combo.id, { active: updated.active });
+        notify(`কম্বো প্যাক "${combo.title}" ${updated.active ? "সক্রিয় (Active)" : "নিষ্ক্রিয় (Inactive)"} করা হয়েছে!`);
+      };
+
+      const addComboToCart = (combo) => {
+        if (combo.stock <= 0) {
+          notify("দুঃখিত, এই কম্বো প্যাকটি স্টক আউট!");
+          return;
+        }
+        const bundledProducts = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
+        const comboItem = {
+          id: combo.id,
+          name: combo.title,
+          price: combo.comboPrice,
+          originalPrice: combo.originalPrice,
+          images: [combo.image || (bundledProducts[0]?.images?.[0]) || imgSharee],
+          isCombo: true,
+          bundledProducts: bundledProducts.map(p => ({ id: p.id, name: p.name, price: p.price, image: p.images?.[0] })),
+          stock: combo.stock,
+          qty: 1
+        };
+
+        setCart(prev => {
+          const existing = prev.find(item => item.id === combo.id);
+          if (existing) {
+            return prev.map(item => item.id === combo.id ? { ...item, qty: item.qty + 1 } : item);
+          }
+          return [...prev, comboItem];
+        });
+        setIsCartOpen(true);
+        notify(`🎉 "${combo.title}" কম্বো প্যাক কার্টে যুক্ত হয়েছে!`);
       };
 
       // Quick Copy Coupon Code for Marketing Campaigns
@@ -1175,6 +1410,7 @@
 
       const adminTabs = [
         { id: "Dashboard", label: "ড্যাশবোর্ড", icon: "📊" },
+        { id: "Combos", label: "কম্বো প্যাক", icon: "🎁" },
         { id: "Products", label: "প্রোডাক্টস", icon: "👗" },
         { id: "Orders", label: "অর্ডারস", icon: "📦" },
         { id: "Categories", label: "ক্যাটাগরি", icon: "🏷️" },
@@ -1280,10 +1516,7 @@
             <div className="flex-1 flex flex-col">
               {/* Storefront Main View */}
               <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
-                {/* 1. STOREFRONT VIEW */}
-            {/* ========================================================= */}
-            {activeTab === "Storefront" && (
-              <div className="space-y-8 animate-fadeIn">
+                <div className="space-y-8 animate-fadeIn">
                 {/* Mobile Search */}
                 {config.header.showSearch && (
                   <div className="md:hidden">
@@ -1335,6 +1568,134 @@
                         ))}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* COMBO PACK SPECIAL SHOWCASE SECTION */}
+                {combos.filter(c => c.active).length > 0 && (
+                  <div className="bg-gradient-to-br from-[#fff7f0] to-[#faeee3] p-5 sm:p-7 rounded-3xl border-2 border-[#d4a574]/40 shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🎁</span>
+                          <h3 className="font-extrabold text-xl sm:text-2xl text-[#7a1c2b] tracking-tight">
+                            স্পেশাল কম্বো প্যাক অফার
+                          </h3>
+                          <span className="bg-[#7a1c2b] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                            সীমিত সময়ের অফার 🔥
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#b8956a] mt-0.5 font-medium">
+                          একসাথে কিনুন আকর্ষণীয় ডিজাইনার বান্ডেল এবং জিতে নিন বিশাল ছাড়!
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-[#7a1c2b] bg-white px-3 py-1 rounded-full border border-[#d4a574]">
+                        {combos.filter(c => c.active).length} টি অফার সক্রিয়
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      {combos.filter(c => c.active).map(combo => {
+                        const bundledItems = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
+                        return (
+                          <div 
+                            key={combo.id}
+                            className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
+                          >
+                            <div>
+                              {/* Combo Header Image / Banner */}
+                              <div className="h-44 sm:h-52 w-full relative overflow-hidden bg-gray-100">
+                                <img 
+                                  src={combo.image || (bundledItems[0]?.images?.[0]) || banner1} 
+                                  alt={combo.title} 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                  onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                                <span className="absolute top-3 left-3 bg-[#7a1c2b] text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                                  {combo.badge || "সেরা অফার 🔥"}
+                                </span>
+                                {combo.savings > 0 && (
+                                  <span className="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-black px-3 py-1 rounded-full shadow">
+                                    সাশ্রয় {combo.savings.toLocaleString()} ৳ {combo.discountPercent ? `(-${combo.discountPercent}%)` : ''}
+                                  </span>
+                                )}
+                                <div className="absolute bottom-3 left-3 right-3 text-white">
+                                  <h4 className="font-extrabold text-base sm:text-lg leading-snug drop-shadow">{combo.title}</h4>
+                                  <p className="text-xs text-amber-200 truncate drop-shadow">{combo.subtitle}</p>
+                                </div>
+                              </div>
+
+                              {/* Bundled Items Thumbnails Preview */}
+                              <div className="p-4 sm:p-5 space-y-3">
+                                <div>
+                                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <span>📦</span> <span>কম্বোতে অন্তর্ভুক্ত পণ্যসমূহ ({bundledItems.length} টি):</span>
+                                  </p>
+                                  <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-hide">
+                                    {bundledItems.map((prod, idx) => (
+                                      <React.Fragment key={prod.id || idx}>
+                                        <div className="flex items-center gap-2 bg-[#fffaf5] border border-[#f3e2d0] rounded-2xl p-1.5 pr-3 flex-shrink-0 max-w-[210px]">
+                                          <img 
+                                            src={prod.images?.[0] || imgSharee} 
+                                            alt={prod.name} 
+                                            className="w-10 h-10 rounded-xl object-cover border flex-shrink-0 bg-white"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                          />
+                                          <div className="min-w-0">
+                                            <p className="text-[11px] font-bold text-gray-800 truncate" title={prod.name}>{prod.name}</p>
+                                            <p className="text-[10px] text-[#7a1c2b] font-bold">{prod.price} ৳</p>
+                                          </div>
+                                        </div>
+                                        {idx < bundledItems.length - 1 && (
+                                          <span className="text-[#d4a574] font-black text-sm flex-shrink-0">+</span>
+                                        )}
+                                      </React.Fragment>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {combo.description && (
+                                  <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                                    {combo.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Price & 1-Click Order Button */}
+                            <div className="p-4 sm:p-5 pt-0 border-t border-[#f3e2d0]/60 mt-2 flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">কম্বো অফার মূল্য</p>
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-xl sm:text-2xl font-black text-[#7a1c2b]">
+                                    {combo.comboPrice.toLocaleString()} ৳
+                                  </span>
+                                  {combo.originalPrice > combo.comboPrice && (
+                                    <span className="text-xs sm:text-sm text-gray-400 line-through">
+                                      {combo.originalPrice.toLocaleString()} ৳
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => addComboToCart(combo)}
+                                disabled={combo.stock <= 0}
+                                className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5 ${
+                                  combo.stock > 0 
+                                    ? "bg-[#7a1c2b] text-white hover:bg-[#681727] active:scale-95" 
+                                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                }`}
+                              >
+                                <span>🛒</span>
+                                <span>{combo.stock > 0 ? "কম্বো অর্ডার করুন" : "স্টক শেষ"}</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -1470,9 +1831,6 @@
                   )}
                 </div>
               </div>
-            )}
-
-            {/* ========================================================= */}
               </main>
               
               {/* Storefront Footer */}
@@ -1579,6 +1937,18 @@
                       >
                         <span>📊</span>
                         <span>অল-ইন-ওয়ান ড্যাশবোর্ড</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("Combos")}
+                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
+                          activeTab === "Combos"
+                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
+                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
+                        }`}
+                      >
+                        <span>🎁</span>
+                        <span>কম্বো প্যাক ({combos.length})</span>
                       </button>
 
                       <button
@@ -1992,473 +2362,428 @@
                       </div>
                     </div>
 
-                    {/* CONSOLIDATED SECTION 3: DIRECT ON-DASHBOARD ALL SETTINGS & CONFIG HUB */}
-                    <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-6">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-[#f3e2d0]">
+                    {/* DEDICATED SECTION: COMBO PACK MANAGEMENT (কম্বো প্যাক অফার হাব) */}
+                    <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-5">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#f3e2d0]">
                         <div>
-                          <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b] flex items-center gap-2">
-                            <span>⚙️</span>
-                            <span>স্টোর সেটিংস ও লাইভ কনফিগারেশন হাব</span>
-                          </h3>
-                          <p className="text-xs text-gray-500 mt-1">
-                            ড্যাশবোর্ড থেকেই সরাসরি ব্র্যান্ড কালার, লোগো, নোটিশ বার, ডেলিভারি চার্জ ও ফোন নম্বর পরিবর্তন ও সেভ করুন
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎁</span>
+                            <h3 className="text-lg sm:text-xl font-bold text-[#7a1c2b]">কম্বো প্যাক ও বান্ডেল অফার কন্ট্রোল হাব</h3>
+                            <span className="bg-[#7a1c2b] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                              PRO FEATURE
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            ক্যাটালগের একাধিক পণ্য চয়েস করে বান্ডেল তৈরি করুন এবং বিশেষ কম্বো মূল্যে গ্রাহকদের অফার দিন
                           </p>
                         </div>
-                        <button
-                          onClick={() => {
-                            syncDocToCloud("config", "store", config);
-                            notify("সমস্ত সেটিংস ক্লাউডে সফলভাবে সংরক্ষিত হয়েছে! ✅");
-                          }}
-                          className="bg-[#7a1c2b] hover:bg-[#681727] text-white px-6 py-2.5 rounded-full text-xs font-bold transition shadow flex items-center gap-1.5"
-                        >
-                          <span>💾</span>
-                          <span>সেটিংস সেভ করুন (Save)</span>
-                        </button>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={handleOpenNewComboModal}
+                            className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-4 py-2 rounded-full text-xs font-bold transition shadow flex items-center gap-1.5"
+                          >
+                            <span>+ নতুন কম্বো প্যাক তৈরি</span>
+                          </button>
+                          <button
+                            onClick={() => setActiveTab("Combos")}
+                            className="text-xs font-bold text-[#7a1c2b] hover:underline"
+                          >
+                            সকল কম্বো ({combos.length}) →
+                          </button>
+                        </div>
                       </div>
 
-                      {/* 1. Theme Settings (ব্র্যান্ড কালার কাস্টমাইজেশন) */}
-                      <div className="p-5 sm:p-6 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f3e2d0]">
-                          <div>
-                            <h4 className="font-extrabold text-base sm:text-lg text-[#7a1c2b] flex items-center gap-2">
-                              <span>🎨</span>
-                              <span>Theme Settings (থিম সেটিংস) — প্রাইমারি ব্র্যান্ড কালার</span>
-                            </h4>
-                            <p className="text-xs text-gray-600 mt-0.5">
-                              ব্র্যান্ডের মূল কালার (ডিফল্ট: <code className="font-mono font-bold text-[#7a1c2b] bg-white px-1.5 py-0.5 rounded border">#7a1c2b</code>) পরিবর্তন করুন। CSS Variables (<code className="font-mono text-[11px] bg-white px-1.5 py-0.5 rounded">--primary-color</code>) এর মাধ্যমে তাৎক্ষণিকভাবে পুরো স্টোরফ্রন্টের সকল বাটন, টেক্সট ও হাইলাইট স্বয়ংক্রিয়ভাবে আপডেট হবে।
-                            </p>
-                          </div>
-                          <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border shadow-xs flex items-center gap-2 self-start sm:self-auto bg-white flex-shrink-0" style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}>
-                            <span className="w-3 h-3 rounded-full shadow-xs" style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}></span>
-                            <span className="font-mono uppercase">{config.primaryColor || "#7a1c2b"}</span>
-                          </span>
+                      {/* Quick Summary Strip */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase">মোট কম্বো</p>
+                          <p className="text-lg font-bold text-[#7a1c2b]">{combos.length} টি</p>
                         </div>
+                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase">সক্রিয় অফার</p>
+                          <p className="text-lg font-bold text-emerald-700">{combos.filter(c => c.active).length} টি</p>
+                        </div>
+                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase">সর্বোচ্চ সাশ্রয়</p>
+                          <p className="text-lg font-bold text-amber-700">
+                            {Math.max(...combos.map(c => c.savings || 0), 0).toLocaleString()} ৳
+                          </p>
+                        </div>
+                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase">ক্লাউড সিঙ্ক</p>
+                          <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> লাইভ কার্যকর
+                          </p>
+                        </div>
+                      </div>
 
-                        <div className="grid md:grid-cols-2 gap-4">
-                          {/* Color Picker, Hex Input & Reset */}
-                          <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] space-y-3">
-                            <label className="text-xs font-bold text-gray-700 block">কাস্টম কালার পিকার ও হেক্স কোড</label>
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-12 h-12 rounded-2xl overflow-hidden border-2 shadow-sm flex-shrink-0 cursor-pointer" style={{ borderColor: config.primaryColor || '#7a1c2b' }}>
-                                <input 
-                                  type="color" 
-                                  value={config.primaryColor || "#7a1c2b"} 
-                                  onChange={(e) => {
-                                    const newCol = e.target.value;
-                                    setConfig(prev => ({ ...prev, primaryColor: newCol }));
+                      {/* Combos Grid on Dashboard */}
+                      {combos.length === 0 ? (
+                        <div className="text-center py-10 bg-[#fffaf5] rounded-2xl border border-dashed border-[#d4a574]/40 p-6">
+                          <p className="text-3xl mb-2">🎁</p>
+                          <h4 className="font-bold text-sm text-gray-700">এখনো কোনো কম্বো প্যাক তৈরি করা হয়নি</h4>
+                          <p className="text-xs text-gray-400 mt-1">প্রোডাক্ট সিলেক্ট করে আকর্ষণীয় কম্বো প্যাক অফার চালু করুন।</p>
+                          <button
+                            onClick={handleOpenNewComboModal}
+                            className="mt-3 bg-[#7a1c2b] text-white px-5 py-2 rounded-full text-xs font-bold shadow hover:bg-[#681727]"
+                          >
+                            + প্রথম কম্বো প্যাক বানান
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {combos.map(combo => {
+                            const bundled = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
+                            return (
+                              <div 
+                                key={combo.id}
+                                className="bg-[#fffaf5] p-4 rounded-2xl border border-[#f3e2d0] hover:border-[#7a1c2b] transition flex flex-col justify-between space-y-3"
+                              >
+                                <div className="space-y-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-3">
+                                      <img 
+                                        src={combo.image || bundled[0]?.images?.[0] || banner1} 
+                                        alt={combo.title} 
+                                        className="w-14 h-14 rounded-xl object-cover border bg-white flex-shrink-0"
+                                        onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
+                                      />
+                                      <div>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="text-[10px] bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full font-bold">
+                                            {combo.badge || "কম্বো"}
+                                          </span>
+                                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${combo.active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
+                                            {combo.active ? "● সক্রিয়" : "○ নিষ্ক্রিয়"}
+                                          </span>
+                                        </div>
+                                        <h4 className="font-bold text-sm text-gray-900 mt-1">{combo.title}</h4>
+                                        <p className="text-xs text-gray-500 truncate">{combo.subtitle}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Included Products List Preview */}
+                                  <div className="bg-white p-2.5 rounded-xl border border-[#f3e2d0] space-y-1">
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase">পছন্দ করা পণ্য ({bundled.length} টি):</p>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {bundled.map(p => (
+                                        <span key={p.id} className="text-[11px] bg-[#fffaf5] border px-2 py-0.5 rounded-md text-gray-700 font-medium">
+                                          {p.name} ({p.price} ৳)
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Pricing Calculation Preview */}
+                                  <div className="flex items-center justify-between text-xs pt-1">
+                                    <div>
+                                      <span className="text-gray-400 line-through text-[11px] mr-1.5">{combo.originalPrice} ৳</span>
+                                      <span className="text-sm font-bold text-[#7a1c2b]">{combo.comboPrice} ৳</span>
+                                    </div>
+                                    {combo.savings > 0 && (
+                                      <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px]">
+                                        সাশ্রয়: {combo.savings} ৳ (-{combo.discountPercent}%)
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Controls */}
+                                <div className="flex items-center justify-between pt-2 border-t border-[#ecd9c6] text-xs">
+                                  <button
+                                    onClick={() => handleToggleComboActive(combo)}
+                                    className={`px-3 py-1 rounded-full text-[11px] font-bold border transition ${
+                                      combo.active 
+                                        ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100" 
+                                        : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
+                                    }`}
+                                  >
+                                    {combo.active ? "হোমপেজে সক্রিয় ✓" : "নিষ্ক্রিয় করুন"}
+                                  </button>
+
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      onClick={() => handleOpenEditComboModal(combo)}
+                                      className="px-2.5 py-1 bg-white border border-[#d4a574] text-[#7a1c2b] rounded-full text-[11px] font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                                    >
+                                      ✏️ এডিট
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteCombo(combo.id)}
+                                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition text-[11px]"
+                                      title="মুছুন"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CONSOLIDATED SECTION 3: THEME SETTINGS (BRAND COLOR CUSTOMIZATION) */}
+                    <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#f3e2d0]">
+                        <div>
+                          <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b] flex items-center gap-2">
+                            <span>🎨</span>
+                            <span>Theme Settings (থিম সেটিংস) — প্রাইমারি ব্র্যান্ড কালার</span>
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            ব্র্যান্ডের মূল কালার (ডিফল্ট: <code className="font-mono font-bold text-[#7a1c2b] bg-[#fffaf5] px-1.5 py-0.5 rounded border border-[#f3e2d0]">#7a1c2b</code>) পরিবর্তন করুন। CSS Variables (<code className="font-mono text-[11px] bg-[#fffaf5] px-1.5 py-0.5 rounded">--primary-color</code>) এর মাধ্যমে তাৎক্ষণিকভাবে পুরো স্টোরফ্রন্টের সকল বাটন, টেক্সট ও হাইলাইট স্বয়ংক্রিয়ভাবে আপডেট হবে।
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border shadow-xs flex items-center gap-2 self-start sm:self-auto bg-white flex-shrink-0" style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}>
+                          <span className="w-3 h-3 rounded-full shadow-xs" style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}></span>
+                          <span className="font-mono uppercase">{config.primaryColor || "#7a1c2b"}</span>
+                        </span>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* Color Picker, Hex Input & Reset */}
+                        <div className="bg-[#fffaf5] p-5 rounded-2xl border border-[#f3e2d0] space-y-3.5">
+                          <label className="text-xs font-bold text-gray-700 block">কাস্টম কালার পিকার ও হেক্স কোড</label>
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-12 h-12 rounded-2xl overflow-hidden border-2 shadow-sm flex-shrink-0 cursor-pointer" style={{ borderColor: config.primaryColor || '#7a1c2b' }}>
+                              <input 
+                                type="color" 
+                                value={config.primaryColor || "#7a1c2b"} 
+                                onChange={(e) => {
+                                  const newCol = e.target.value;
+                                  setConfig(prev => ({ ...prev, primaryColor: newCol }));
+                                  document.documentElement.style.setProperty('--primary-color', newCol);
+                                  document.documentElement.style.setProperty('--maroon', newCol);
+                                }}
+                                onBlur={(e) => handleThemeColorUpdate(e.target.value)}
+                                className="absolute -inset-4 w-20 h-20 cursor-pointer opacity-100"
+                                title="কালার পছন্দ করুন"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <input 
+                                type="text" 
+                                placeholder="#7a1c2b" 
+                                value={config.primaryColor || "#7a1c2b"} 
+                                onChange={(e) => {
+                                  const newCol = e.target.value;
+                                  setConfig(prev => ({ ...prev, primaryColor: newCol }));
+                                  if (/^#[0-9A-Fa-f]{6}$/.test(newCol)) {
                                     document.documentElement.style.setProperty('--primary-color', newCol);
                                     document.documentElement.style.setProperty('--maroon', newCol);
-                                  }}
-                                  onBlur={(e) => handleThemeColorUpdate(e.target.value)}
-                                  className="absolute -inset-4 w-20 h-20 cursor-pointer opacity-100"
-                                  title="কালার পছন্দ করুন"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <input 
-                                  type="text" 
-                                  placeholder="#7a1c2b" 
-                                  value={config.primaryColor || "#7a1c2b"} 
-                                  onChange={(e) => {
-                                    const newCol = e.target.value;
-                                    setConfig(prev => ({ ...prev, primaryColor: newCol }));
-                                    if (/^#[0-9A-Fa-f]{6}$/.test(newCol)) {
-                                      document.documentElement.style.setProperty('--primary-color', newCol);
-                                      document.documentElement.style.setProperty('--maroon', newCol);
-                                    }
-                                  }}
-                                  onBlur={(e) => {
-                                    if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
-                                      handleThemeColorUpdate(e.target.value);
-                                    }
-                                  }}
-                                  className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs font-mono font-bold outline-none uppercase focus:border-[#7a1c2b]" 
-                                />
-                                <p className="text-[10px] text-gray-400 mt-1">যেকোনো ভ্যালিড হেক্স কোড লিখুন বা কালার আইকনে ট্যাপ করুন</p>
-                              </div>
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                                    handleThemeColorUpdate(e.target.value);
+                                  }
+                                }}
+                                className="w-full bg-white border rounded-full px-4 py-2 text-xs font-mono font-bold outline-none uppercase focus:border-[#7a1c2b]" 
+                              />
+                              <p className="text-[10px] text-gray-400 mt-1">যেকোনো ভ্যালিড হেক্স কোড লিখুন বা কালার আইকনে ট্যাপ করুন</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleThemeColorUpdate("#7a1c2b")}
+                              className="text-xs text-[#7a1c2b] font-bold hover:underline px-2.5 py-1.5 rounded-full bg-white border border-[#f3e2d0] shadow-xs"
+                              title="ডিফল্ট মেরুন কালারে ফিরুন"
+                            >
+                              রিসেট ↺
+                            </button>
+                          </div>
+
+                          {/* Live Component Preview */}
+                          <div className="pt-2.5 border-t border-[#f3e2d0]">
+                            <p className="text-[11px] font-bold text-gray-500 mb-2">লাইভ স্টোরফ্রন্ট প্রিভিউ:</p>
+                            <div className="flex items-center gap-2 flex-wrap">
                               <button
                                 type="button"
-                                onClick={() => handleThemeColorUpdate("#7a1c2b")}
-                                className="text-xs text-[#7a1c2b] font-bold hover:underline px-2 py-1 rounded bg-[#fffaf5] border border-[#f3e2d0]"
-                                title="ডিফল্ট মেরুন কালারে ফিরুন"
+                                className="text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs transition"
+                                style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}
                               >
-                                রিসেট ↺
+                                অর্ডার বাটন
                               </button>
-                            </div>
-
-                            {/* Live Component Preview */}
-                            <div className="pt-2 border-t border-[#f3e2d0]">
-                              <p className="text-[11px] font-bold text-gray-500 mb-2">লাইভ স্টোরফ্রন্ট প্রিভিউ:</p>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <button
-                                  type="button"
-                                  className="text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs transition"
-                                  style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}
-                                >
-                                  অর্ডার বাটন
-                                </button>
-                                <span
-                                  className="px-2.5 py-1 rounded-full text-xs font-bold border"
-                                  style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}
-                                >
-                                  ৩৫০০ ৳ (প্রাইস ট্যাগ)
-                                </span>
-                                <span
-                                  className="text-[11px] font-bold underline"
-                                  style={{ color: config.primaryColor || '#7a1c2b' }}
-                                >
-                                  বিস্তারিত দেখুন →
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* 1-Click Luxury Presets */}
-                          <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] space-y-3">
-                            <label className="text-xs font-bold text-gray-700 block">১-ক্লিক লাক্সারি ব্র্যান্ড প্রিসেট</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { name: "Royal Maroon", color: "#7a1c2b", label: "রয়্যাল মেরুন (ডিফল্ট)" },
-                                { name: "Emerald Green", color: "#064e3b", label: "এমারেল্ড গ্রিন" },
-                                { name: "Sapphire Blue", color: "#1e3a8a", label: "স্যাফায়ার ব্লু" },
-                                { name: "Velvet Purple", color: "#4c1d95", label: "ভেলভেট পার্পল" },
-                                { name: "Rose Ruby", color: "#9f1239", label: "রোজ রুবি" },
-                                { name: "Midnight Noir", color: "#18181b", label: "মিডনাইট ব্ল্যাক" },
-                                { name: "Royal Gold", color: "#b45309", label: "রয়্যাল গোল্ড" }
-                              ].map((preset) => (
-                                <button
-                                  key={preset.color}
-                                  type="button"
-                                  onClick={() => handleThemeColorUpdate(preset.color)}
-                                  className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border text-left ${
-                                    (config.primaryColor || "#7a1c2b").toLowerCase() === preset.color.toLowerCase()
-                                      ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                                      : "border-gray-200 bg-[#fffaf5] text-gray-700 hover:border-gray-400"
-                                  }`}
-                                >
-                                  <span className="w-3 h-3 rounded-full flex-shrink-0 shadow-xs" style={{ backgroundColor: preset.color }}></span>
-                                  <span className="truncate">{preset.label}</span>
-                                </button>
-                              ))}
+                              <span
+                                className="px-2.5 py-1 rounded-full text-xs font-bold border"
+                                style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}
+                              >
+                                ৩৫০০ ৳ (প্রাইস ট্যাগ)
+                              </span>
+                              <span
+                                className="text-[11px] font-bold underline"
+                                style={{ color: config.primaryColor || '#7a1c2b' }}
+                              >
+                                বিস্তারিত দেখুন →
+                              </span>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* 2. Store Profile & Logo */}
-                      <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-4">
-                        <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">২. স্টোর নাম, ট্যাগলাইন ও লোগো</h4>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-xs font-semibold">স্টোরের নাম</label>
-                            <input 
-                              type="text" 
-                              value={config.storeName} 
-                              onChange={(e) => setConfig({ ...config, storeName: e.target.value })}
-                              className="w-full bg-white border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs font-semibold">ট্যাগলাইন (স্লোগান)</label>
-                            <input 
-                              type="text" 
-                              value={config.tagline} 
-                              onChange={(e) => setConfig({ ...config, tagline: e.target.value })}
-                              className="w-full bg-white border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
-                            />
+                        {/* 1-Click Luxury Presets */}
+                        <div className="bg-[#fffaf5] p-5 rounded-2xl border border-[#f3e2d0] space-y-3">
+                          <label className="text-xs font-bold text-gray-700 block">১-ক্লিক লাক্সারি ব্র্যান্ড প্রিসেট</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { name: "Royal Maroon", color: "#7a1c2b", label: "রয়্যাল মেরুন (ডিফল্ট)" },
+                              { name: "Emerald Green", color: "#064e3b", label: "এমারেল্ড গ্রিন" },
+                              { name: "Sapphire Blue", color: "#1e3a8a", label: "স্যাফায়ার ব্লু" },
+                              { name: "Velvet Purple", color: "#4c1d95", label: "ভেলভেট পার্পল" },
+                              { name: "Rose Ruby", color: "#9f1239", label: "রোজ রুবি" },
+                              { name: "Midnight Noir", color: "#18181b", label: "মিডনাইট ব্ল্যাক" },
+                              { name: "Royal Gold", color: "#b45309", label: "রয়্যাল গোল্ড" }
+                            ].map((preset) => (
+                              <button
+                                key={preset.color}
+                                type="button"
+                                onClick={() => handleThemeColorUpdate(preset.color)}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border text-left ${
+                                  (config.primaryColor || "#7a1c2b").toLowerCase() === preset.color.toLowerCase()
+                                    ? "border-gray-900 bg-gray-900 text-white shadow-sm"
+                                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+                                }`}
+                              >
+                                <span className="w-3 h-3 rounded-full flex-shrink-0 shadow-xs" style={{ backgroundColor: preset.color }}></span>
+                                <span className="truncate">{preset.label}</span>
+                              </button>
+                            ))}
                           </div>
                         </div>
-
-                        <div className="grid md:grid-cols-2 gap-4 pt-1">
-                          {/* Logo Upload / URL */}
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-semibold">স্টোর লোগো</label>
-                            <div className="flex items-center gap-3">
-                              {config.logo ? (
-                                <img src={config.logo} alt="Logo" className="w-12 h-12 rounded-xl object-cover border bg-white p-1" />
-                              ) : (
-                                <div className="w-12 h-12 rounded-xl bg-[#7a1c2b] text-white flex items-center justify-center text-xl">👑</div>
-                              )}
-                              <div className="flex-1 space-y-1">
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  ref={logoFileRef} 
-                                  onChange={(e) => handleImageUpload(e, (dataUrl) => handleLogoUpdate(dataUrl), 'logo')} 
-                                  className="hidden" 
-                                />
-                                <div className="flex gap-2">
-                                  <button 
-                                    type="button" 
-                                    onClick={() => logoFileRef.current?.click()} 
-                                    className="bg-[#7a1c2b] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold hover:bg-[#681727] shadow"
-                                  >
-                                    📷 আপলোড
-                                  </button>
-                                  <input 
-                                    type="text" 
-                                    placeholder="অথবা লোগো URL..." 
-                                    value={config.logo} 
-                                    onChange={(e) => setConfig({ ...config, logo: e.target.value })}
-                                    onBlur={(e) => { if (e.target.value) handleLogoUpdate(e.target.value); }}
-                                    className="flex-1 bg-white border rounded-full px-3 py-1 text-xs outline-none" 
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Favicon Upload / URL */}
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-semibold">ওয়েবসাইট ফ্যাভিকন</label>
-                            <div className="flex items-center gap-3">
-                              {config.favicon ? (
-                                <img src={config.favicon} alt="Favicon" className="w-10 h-10 rounded-lg object-contain border p-1 bg-white" />
-                              ) : (
-                                <div className="w-10 h-10 rounded-lg bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold">ICO</div>
-                              )}
-                              <div className="flex-1 space-y-1">
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  ref={faviconFileRef} 
-                                  onChange={(e) => handleImageUpload(e, (dataUrl) => handleFaviconUpdate(dataUrl), 'favicon')} 
-                                  className="hidden" 
-                                />
-                                <div className="flex gap-2">
-                                  <button 
-                                    type="button" 
-                                    onClick={() => faviconFileRef.current?.click()} 
-                                    className="bg-[#2c1810] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold hover:bg-black shadow"
-                                  >
-                                    🌐 আপলোড
-                                  </button>
-                                  <input 
-                                    type="text" 
-                                    placeholder="অথবা ফ্যাভিকন URL..." 
-                                    value={config.favicon} 
-                                    onChange={(e) => setConfig({ ...config, favicon: e.target.value })}
-                                    onBlur={(e) => { if (e.target.value) handleFaviconUpdate(e.target.value); }}
-                                    className="flex-1 bg-white border rounded-full px-3 py-1 text-xs outline-none" 
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 3. Notice Bar & Delivery Charges Grid */}
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {/* Notice Bar */}
-                        <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৩. টপ নোটিশ বার</h4>
-                            <label className="flex items-center gap-1.5 font-bold text-xs text-[#7a1c2b] cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                checked={config.announcement.enabled} 
-                                onChange={(e) => setConfig({ ...config, announcement: { ...config.announcement, enabled: e.target.checked } })} 
-                                className="w-4 h-4 accent-[#7a1c2b]"
-                              />
-                              চালু রাখুন
-                            </label>
-                          </div>
-                          <input 
-                            type="text" 
-                            placeholder="অ্যানাউন্সমেন্ট টেক্সট লিখুন..." 
-                            value={config.announcement.text} 
-                            onChange={(e) => setConfig({ ...config, announcement: { ...config.announcement, text: e.target.value } })}
-                            className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
-                          />
-                        </div>
-
-                        {/* Delivery Charges */}
-                        <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
-                          <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৪. কুরিয়ার ডেলিভারি চার্জ</h4>
-                          <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <label className="text-[11px] font-semibold text-gray-600 block">ঢাকার ভিতরে</label>
-                              <input 
-                                type="number" 
-                                value={config.deliveryInsideDhaka !== undefined ? config.deliveryInsideDhaka : 60} 
-                                onChange={(e) => setConfig({ ...config, deliveryInsideDhaka: Number(e.target.value) })}
-                                className="w-full bg-white border rounded-full px-3 py-1.5 text-xs outline-none mt-1" 
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[11px] font-semibold text-gray-600 block">ঢাকার বাইরে</label>
-                              <input 
-                                type="number" 
-                                value={config.deliveryOutsideDhaka !== undefined ? config.deliveryOutsideDhaka : 120} 
-                                onChange={(e) => setConfig({ ...config, deliveryOutsideDhaka: Number(e.target.value) })}
-                                className="w-full bg-white border rounded-full px-3 py-1.5 text-xs outline-none mt-1" 
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[11px] font-semibold text-gray-600 block">ফ্রি ডেলিভারি</label>
-                              <input 
-                                type="number" 
-                                value={config.freeDeliveryThreshold !== undefined ? config.freeDeliveryThreshold : 2000} 
-                                onChange={(e) => setConfig({ ...config, freeDeliveryThreshold: Number(e.target.value) })}
-                                className="w-full bg-white border rounded-full px-3 py-1.5 text-xs outline-none mt-1" 
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 4. Contact & Hotline Info */}
-                      <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
-                        <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৫. হেল্পলাইন ও কন্টাক্ট ইনফো</h4>
-                        <div className="grid md:grid-cols-3 gap-3">
-                          <div>
-                            <label className="text-xs font-semibold">হটলাইন ফোন নম্বর</label>
-                            <input 
-                              type="text" 
-                              value={config.phone} 
-                              onChange={(e) => setConfig({ ...config, phone: e.target.value })}
-                              className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none mt-1" 
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs font-semibold">WhatsApp হেল্পলাইন নম্বর</label>
-                            <input 
-                              type="text" 
-                              value={config.whatsapp} 
-                              onChange={(e) => setConfig({ ...config, whatsapp: e.target.value })}
-                              className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none mt-1" 
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs font-semibold">শোরুম / দোকানের ঠিকানা</label>
-                            <input 
-                              type="text" 
-                              value={config.address} 
-                              onChange={(e) => setConfig({ ...config, address: e.target.value })}
-                              className="w-full bg-white border rounded-full px-4 py-2 text-xs outline-none mt-1" 
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="pt-2 flex justify-end">
-                        <button 
-                          onClick={() => {
-                            syncDocToCloud("config", "store", config);
-                            notify("ড্যাশবোর্ড সেটিংস সফলভাবে ক্লাউডে সংরক্ষিত হয়েছে! ✅");
-                          }} 
-                          className="bg-[#7a1c2b] text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-[#681727] transition"
-                        >
-                          সমস্ত ড্যাশবোর্ড সেটিংস সেভ করুন (Save All Settings)
-                        </button>
                       </div>
                     </div>
 
-                    {/* CONSOLIDATED SECTION 4: ADDITIONAL CONFIGURATION TOOLS */}
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
+                    {/* CONSOLIDATED SECTION 4: STREAMLINED CONFIGURATION TOOLS HUB */}
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                           <h3 className="font-bold text-lg text-[#7a1c2b] flex items-center gap-2">
                             <span>🛠️</span>
-                            <span>অতিরিক্ত কনফিগারেশন ও প্রফেশনাল টুলস</span>
+                            <span>স্টোর কনফিগারেশন ও ম্যানেজমেন্ট হাব</span>
                           </h3>
-                          <p className="text-xs text-gray-500">ব্যানার, কুপন, ক্যাটাগরি, রিভিউ, পিক্সেল ও সাইটম্যাপ পরিচালনা করুন</p>
+                          <p className="text-xs text-gray-500">ব্যানার, কুপন, ক্যাটাগরি, রিভিউ, পিক্সেল, কুরিয়ার ও ব্যাকআপ সেটিংস</p>
                         </div>
+                        <button
+                          onClick={() => setActiveTab("General")}
+                          className="text-xs font-bold text-[#7a1c2b] bg-white px-3.5 py-1.5 rounded-full border border-[#f3e2d0] hover:bg-[#7a1c2b] hover:text-white transition shadow-xs flex items-center gap-1.5"
+                        >
+                          <span>⚙️</span>
+                          <span>পূর্ণাঙ্গ স্টোর ইনফো ও কনফিগ →</span>
+                        </button>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                        {/* Module 0: Combos */}
+                        <div 
+                          onClick={() => setActiveTab("Combos")} 
+                          className="bg-white p-5 rounded-3xl border-2 border-[#d4a574] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
+                              🎁
+                            </div>
+                            <h4 className="font-bold text-sm text-[#2c1810]">কম্বো প্যাক অফার</h4>
+                            <p className="text-xs text-gray-500 mt-1">প্রোডাক্ট বান্ডেল ও বিশেষ মূল্য নির্ধারণ</p>
+                          </div>
+                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                            {combos.length} টি কম্বো প্যাক →
+                          </span>
+                        </div>
+
                         {/* Module 1: Categories */}
                         <div 
                           onClick={() => setActiveTab("Categories")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
                         >
                           <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
                               🏷️
                             </div>
                             <h4 className="font-bold text-sm text-[#2c1810]">ক্যাটাগরি সেটিংস</h4>
-                            <p className="text-xs text-gray-500 mt-1">নতুন ক্যাটাগরি তৈরি ও আইকন সেট</p>
+                            <p className="text-xs text-gray-500 mt-1">নতুন ক্যাটাগরি তৈরি ও সাজানো</p>
                           </div>
                           <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
                             {categories.length} টি ক্যাটাগরি →
                           </span>
                         </div>
 
-                        {/* Module 4: Coupons */}
+                        {/* Module 2: Coupons */}
                         <div 
                           onClick={() => setActiveTab("Coupons")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
                         >
                           <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
                               🎟️
                             </div>
                             <h4 className="font-bold text-sm text-[#2c1810]">কুপন ও ছাড়</h4>
-                            <p className="text-xs text-gray-500 mt-1">ডিসকাউন্ট কোড, শতাংশ বা ফ্ল্যাট ছাড়</p>
+                            <p className="text-xs text-gray-500 mt-1">ডিসকাউন্ট কোড ও অফার তৈরি</p>
                           </div>
                           <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
                             {coupons.length} টি কুপন →
                           </span>
                         </div>
 
-                        {/* Module 5: Reviews */}
-                        <div 
-                          onClick={() => setActiveTab("Reviews")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
-                              ⭐
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">কাস্টমার রিভিউ</h4>
-                            <p className="text-xs text-gray-500 mt-1">গ্রাহকদের ফিডব্যাক, রেটিং ও মডারেশন</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {reviews.length} টি রিভিউ →
-                          </span>
-                        </div>
-
-                        {/* Module 6: Banners */}
+                        {/* Module 3: Banners */}
                         <div 
                           onClick={() => setActiveTab("Banners")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
                         >
                           <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
                               🖼️
                             </div>
                             <h4 className="font-bold text-sm text-[#2c1810]">ব্যানার ও স্লাইডার</h4>
-                            <p className="text-xs text-gray-500 mt-1">হোমপেজ ব্যানার, টাইটেল, ছবি ও বাটন এডিট</p>
+                            <p className="text-xs text-gray-500 mt-1">হোমপেজ ব্যানার, ছবি ও অফার টেক্সট</p>
                           </div>
                           <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
                             {banners.length} টি ব্যানার →
                           </span>
                         </div>
 
-                        {/* Module 7: Courier API */}
+                        {/* Module 4: Reviews */}
+                        <div 
+                          onClick={() => setActiveTab("Reviews")} 
+                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
+                              ⭐
+                            </div>
+                            <h4 className="font-bold text-sm text-[#2c1810]">কাস্টমার রিভিউ</h4>
+                            <p className="text-xs text-gray-500 mt-1">গ্রাহকদের ফিডব্যাক ও রেটিং</p>
+                          </div>
+                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
+                            {reviews.length} টি রিভিউ →
+                          </span>
+                        </div>
+
+                        {/* Module 5: Courier API */}
                         <div 
                           onClick={() => setActiveTab("Courier")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
                         >
                           <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
                               🚚
                             </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">কুরিয়ার ইন্টিগ্রেশন</h4>
-                            <p className="text-xs text-gray-500 mt-1">Steadfast ও Pathao API সংযোগ</p>
+                            <h4 className="font-bold text-sm text-[#2c1810]">কুরিয়ার ও ডেলিভারি</h4>
+                            <p className="text-xs text-gray-500 mt-1">Steadfast ও Pathao API ও চার্জ</p>
                           </div>
                           <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            কুরিয়ার কনফিগার →
+                            কুরিয়ার সেটআপ →
                           </span>
                         </div>
 
-                        {/* Module 8: Pixel */}
+                        {/* Module 6: Pixel */}
                         <div 
                           onClick={() => setActiveTab("Pixel")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
                         >
                           <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
                               📈
                             </div>
                             <h4 className="font-bold text-sm text-[#2c1810]">ফেসবুক পিক্সেল</h4>
@@ -2469,30 +2794,30 @@
                           </span>
                         </div>
 
-                        {/* Module 9: SEO */}
+                        {/* Module 7: SEO */}
                         <div 
                           onClick={() => setActiveTab("SEO")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
                         >
                           <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
                               🔍
                             </div>
                             <h4 className="font-bold text-sm text-[#2c1810]">এসইও ও সাইটম্যাপ</h4>
-                            <p className="text-xs text-gray-500 mt-1">Google সার্চ ইনডেক্স ও sitemap.xml</p>
+                            <p className="text-xs text-gray-500 mt-1">Google সার্চ ইনডেক্স ও মেটা ট্যাগ</p>
                           </div>
                           <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
                             এসইও অপশন →
                           </span>
                         </div>
 
-                        {/* Module 10: Backup */}
+                        {/* Module 8: Backup */}
                         <div 
                           onClick={() => setActiveTab("Backup")} 
                           className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
                         >
                           <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
                               💾
                             </div>
                             <h4 className="font-bold text-sm text-[#2c1810]">ডাটাবেজ ব্যাকআপ</h4>
@@ -2502,45 +2827,202 @@
                             ব্যাকআপ সেন্টার →
                           </span>
                         </div>
-
-                        {/* Module 11: Header */}
-                        <div 
-                          onClick={() => setActiveTab("Header")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
-                              🔝
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">হেডার ও নোটিশ বার</h4>
-                            <p className="text-xs text-gray-500 mt-1">অ্যানাউন্সমেন্ট, সার্চ ও কার্ট টগল</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            হেডার কন্ট্রোল →
-                          </span>
-                        </div>
-
-                        {/* Module 12: Footer */}
-                        <div 
-                          onClick={() => setActiveTab("Footer")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3">
-                              🔻
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">ফুটার সেটিংস</h4>
-                            <p className="text-xs text-gray-500 mt-1">ব্র্যান্ডের পরিচিতি, সোশ্যাল মিডিয়া ও কপিরাইট</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            ফুটার এডিট →
-                          </span>
-                        </div>
-
                       </div>
                     </div>
                   </div>
                 )}
+
+            {/* ========================================================= */}
+            {/* 2.5. COMBOS TAB (FULL DEDICATED MANAGEMENT & PRODUCT PICKER) */}
+            {/* ========================================================= */}
+            {activeTab === "Combos" && (
+              <div className="space-y-6 animate-fadeIn">
+                {/* Header Card */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
+                      title="ড্যাশবোর্ডে ফিরে যান"
+                    >
+                      ← ড্যাশবোর্ড
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🎁</span>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">কম্বো প্যাক ও বান্ডেল ম্যানেজমেন্ট ({combos.length})</h3>
+                      </div>
+                      <p className="text-xs text-[#b8956a] mt-0.5">ক্যাটালগ থেকে পছন্দমত প্রোডাক্ট দিয়ে আকর্ষণীয় বান্ডেল ও বিশেষ মূল্য নির্ধারণ করুন</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button 
+                      onClick={handleOpenNewComboModal}
+                      className="bg-[#7a1c2b] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] flex items-center gap-1.5 transition"
+                    >
+                      <span>+ নতুন কম্বো প্যাক তৈরি করুন</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("Storefront")}
+                      className="bg-[#fffaf5] text-[#7a1c2b] border border-[#d4a574] px-4 py-2.5 rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                    >
+                      🛍️ হোমপেজে দেখুন
+                    </button>
+                  </div>
+                </div>
+
+                {/* Combos List Grid */}
+                {combos.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8 shadow-sm">
+                    <p className="text-5xl mb-3">🎁</p>
+                    <h4 className="font-bold text-lg text-gray-700">কোন কম্বো প্যাক তৈরি করা হয়নি</h4>
+                    <p className="text-xs text-gray-400 mt-1 max-w-md mx-auto">
+                      পছন্দমত শাড়ি ও জুয়েলারি বা একাধিক প্রোডাক্ট বান্ডেল তৈরি করে আকর্ষণীয় ছাড়ে অফার দিন। এতে স্টোরের এভারেজ অর্ডার ভ্যালু (AOV) অনেক বেড়ে যাবে!
+                    </p>
+                    <button 
+                      onClick={handleOpenNewComboModal}
+                      className="mt-5 bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:bg-[#681727] transition"
+                    >
+                      + প্রথম কম্বো প্যাক তৈরি করুন
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {combos.map(combo => {
+                      const bundledItems = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
+                      return (
+                        <div 
+                          key={combo.id}
+                          className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between"
+                        >
+                          <div>
+                            {/* Card Top: Banner & Status */}
+                            <div className="h-44 sm:h-52 relative overflow-hidden bg-gray-100">
+                              <img 
+                                src={combo.image || bundledItems[0]?.images?.[0] || banner1} 
+                                alt={combo.title} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"></div>
+                              <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
+                                <span className="bg-[#7a1c2b] text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                                  {combo.badge || "সেরা অফার 🔥"}
+                                </span>
+                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold shadow ${combo.active ? 'bg-emerald-500 text-white' : 'bg-gray-700 text-gray-200'}`}>
+                                  {combo.active ? "● লাইভ সক্রিয়" : "○ নিষ্ক্রিয়"}
+                                </span>
+                              </div>
+                              <span className="absolute top-3 right-3 bg-black/60 backdrop-blur text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                                স্টক: {combo.stock} টি
+                              </span>
+                              <div className="absolute bottom-3 left-3 right-3 text-white">
+                                <h4 className="font-extrabold text-base sm:text-lg leading-tight drop-shadow">{combo.title}</h4>
+                                <p className="text-xs text-amber-200 drop-shadow">{combo.subtitle}</p>
+                              </div>
+                            </div>
+
+                            {/* Card Body: Bundled Products Details */}
+                            <div className="p-5 space-y-4">
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    অন্তর্ভুক্ত পণ্যসমূহ ({bundledItems.length} টি)
+                                  </span>
+                                  <span className="text-xs text-[#b8956a]">
+                                    মোট সাধারণ মূল্য: {combo.originalPrice.toLocaleString()} ৳
+                                  </span>
+                                </div>
+                                <div className="space-y-2">
+                                  {bundledItems.map((prod, idx) => (
+                                    <div key={prod.id || idx} className="flex items-center justify-between gap-3 bg-[#fffaf5] p-2.5 rounded-2xl border border-[#f3e2d0]">
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <img 
+                                          src={prod.images?.[0] || imgSharee} 
+                                          alt={prod.name} 
+                                          className="w-11 h-11 rounded-xl object-cover border bg-white flex-shrink-0"
+                                          onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                        />
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-bold text-gray-800 truncate" title={prod.name}>{prod.name}</p>
+                                          <p className="text-[11px] text-gray-400">ক্যাটাগরি: {prod.category} | স্টক: {prod.stock}</p>
+                                        </div>
+                                      </div>
+                                      <span className="text-xs font-bold text-[#7a1c2b] flex-shrink-0">
+                                        {prod.price} ৳
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {combo.description && (
+                                <p className="text-xs text-gray-600 bg-gray-50 p-3 rounded-2xl border leading-relaxed">
+                                  {combo.description}
+                                </p>
+                              )}
+
+                              {/* Pricing & Savings calculation box */}
+                              <div className="bg-[#fff8f0] p-3.5 rounded-2xl border border-[#d4a574]/40 flex items-center justify-between">
+                                <div>
+                                  <p className="text-[10px] text-gray-500 uppercase font-bold">কম্বো স্পেশাল অফার রেট</p>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-black text-[#7a1c2b]">{combo.comboPrice.toLocaleString()} ৳</span>
+                                    {combo.originalPrice > combo.comboPrice && (
+                                      <span className="text-xs text-gray-400 line-through">{combo.originalPrice.toLocaleString()} ৳</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {combo.savings > 0 && (
+                                  <div className="text-right">
+                                    <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300 block">
+                                      সাশ্রয়: {combo.savings.toLocaleString()} ৳
+                                    </span>
+                                    <span className="text-[10px] text-emerald-600 font-bold mt-0.5 block">
+                                      {combo.discountPercent}% ছাড়!
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Footer Card Actions */}
+                          <div className="p-5 pt-0 border-t border-[#f3e2d0] mt-1 flex items-center justify-between gap-2">
+                            <button
+                              onClick={() => handleToggleComboActive(combo)}
+                              className={`px-4 py-2 rounded-full text-xs font-bold border transition ${
+                                combo.active 
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100" 
+                                  : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
+                              }`}
+                            >
+                              {combo.active ? "✓ হোমপেজে সক্রিয় রয়েছে" : "○ নিষ্ক্রিয় (লুকানো)"}
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleOpenEditComboModal(combo)}
+                                className="px-4 py-2 bg-[#fffaf5] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1"
+                              >
+                                <span>✏️ এডিট</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCombo(combo.id)}
+                                className="px-3 py-2 bg-red-50 text-red-600 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
+                                title="মুছে ফেলুন"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ========================================================= */}
             {/* 3. PRODUCTS TAB (WITH EXTERNAL SOURCE LINK TRACKING) */}
@@ -3597,7 +4079,7 @@
             {/* ========================================================= */}
             {/* 11. GENERAL SETTINGS */}
             {/* ========================================================= */}
-            {(activeTab === "General" || activeTab === "Settings") && (
+            {(activeTab === "General" || activeTab === "Settings" || activeTab === "Footer") && (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
                 <div className="flex items-center gap-2.5">
                   <button 
@@ -4382,109 +4864,8 @@
               </div>
             )}
 
-            {/* ========================================================= */}
-            {/* FOOTER SETTINGS TAB */}
-            {/* ========================================================= */}
-            {activeTab === "Footer" && (
-              <div className="space-y-6 animate-fadeIn">
-                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <button 
-                      onClick={() => setActiveTab("Dashboard")}
-                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
-                      title="ড্যাশবোর্ডে ফিরে যান"
-                    >
-                      ← ড্যাশবোর্ড
-                    </button>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#7a1c2b]">ফুটার ও সোশ্যাল মিডিয়া সেটিংস</h3>
-                      <p className="text-xs text-gray-500">ওয়েবসাইটের নিচে ব্র্যান্ডের বিবরণ, সোশ্যাল লিঙ্ক ও পেমেন্ট ব্যাজ</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="text-xs font-semibold">ফুটার পরিচিতি (About Store)</label>
-                    <textarea 
-                      rows="2" 
-                      value={config.footer.about} 
-                      onChange={(e) => setConfig({ ...config, footer: { ...config.footer, about: e.target.value } })}
-                      className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-xs outline-none mt-1 focus:border-[#7a1c2b]" 
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                    <div>
-                      <label className="text-xs font-semibold">Facebook লিঙ্ক</label>
-                      <input 
-                        type="text" 
-                        value={config.footer.fb} 
-                        onChange={(e) => setConfig({ ...config, footer: { ...config.footer, fb: e.target.value } })}
-                        className="w-full bg-[#fffaf5] border rounded-full px-3 py-2 text-xs outline-none mt-1" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold">Instagram লিঙ্ক</label>
-                      <input 
-                        type="text" 
-                        value={config.footer.insta} 
-                        onChange={(e) => setConfig({ ...config, footer: { ...config.footer, insta: e.target.value } })}
-                        className="w-full bg-[#fffaf5] border rounded-full px-3 py-2 text-xs outline-none mt-1" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold">YouTube লিঙ্ক</label>
-                      <input 
-                        type="text" 
-                        value={config.footer.youtube} 
-                        onChange={(e) => setConfig({ ...config, footer: { ...config.footer, youtube: e.target.value } })}
-                        className="w-full bg-[#fffaf5] border rounded-full px-3 py-2 text-xs outline-none mt-1" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold">TikTok লিঙ্ক</label>
-                      <input 
-                        type="text" 
-                        value={config.footer.tiktok || ''} 
-                        onChange={(e) => setConfig({ ...config, footer: { ...config.footer, tiktok: e.target.value } })}
-                        className="w-full bg-[#fffaf5] border rounded-full px-3 py-2 text-xs outline-none mt-1" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <p className="text-xs font-bold text-[#7a1c2b] mb-2">ফুটার পেমেন্ট ব্যাজ টগল:</p>
-                    <div className="flex flex-wrap gap-4 text-xs">
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked={config.footer.bkash} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, bkash: e.target.checked } })} className="accent-[#7a1c2b]" /> bKash
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked={config.footer.nagad} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, nagad: e.target.checked } })} className="accent-[#7a1c2b]" /> Nagad
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked={config.footer.rocket} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, rocket: e.target.checked } })} className="accent-[#7a1c2b]" /> Rocket
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked={config.footer.cod} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, cod: e.target.checked } })} className="accent-[#7a1c2b]" /> Cash on Delivery
-                      </label>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      syncDocToCloud("config", "store", config);
-                      notify("ফুটার সেটিংস ক্লাউডে সংরক্ষিত হয়েছে! ✅");
-                    }} 
-                    className="bg-[#7a1c2b] text-white px-7 py-2.5 rounded-full text-xs font-bold hover:bg-[#681727] shadow"
-                  >
-                    ফুটার সেটিংস সংরক্ষণ করুন
-                  </button>
-                </div>
-              </div>
-            )}
-
                 </main>
               </div>
-            </div>
           )}
 {/* CART DRAWER */}
           {/* ========================================================= */}
@@ -4514,7 +4895,22 @@
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-xs sm:text-sm truncate">{item.name}</p>
-                          <p className="text-xs text-[#7a1c2b] font-bold mt-0.5">{item.price} ৳</p>
+                          {item.isCombo && (
+                            <span className="inline-block bg-[#d4a574] text-[#2c1810] text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5">
+                              🎁 কম্বো প্যাক বান্ডেল
+                            </span>
+                          )}
+                          {item.bundledProducts && item.bundledProducts.length > 0 && (
+                            <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                              অন্তর্ভুক্ত: {item.bundledProducts.map(p => p.name).join(" + ")}
+                            </p>
+                          )}
+                          <p className="text-xs text-[#7a1c2b] font-bold mt-0.5">
+                            {item.price} ৳
+                            {item.originalPrice && item.originalPrice > item.price && (
+                              <span className="line-through text-gray-400 font-normal text-[11px] ml-1.5">{item.originalPrice} ৳</span>
+                            )}
+                          </p>
                           <div className="flex items-center gap-3 mt-2">
                             <button onClick={() => updateCartQty(item.id, -1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">-</button>
                             <span className="text-xs font-bold">{item.qty}</span>
@@ -5287,6 +5683,317 @@
                     className="w-full bg-[#7a1c2b] text-white py-3.5 rounded-full font-bold text-sm shadow-lg hover:bg-[#681727] transition"
                   >
                     প্রোডাক্ট সংরক্ষণ করুন (Save Product)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* COMBO PACK CREATION & EDIT MODAL (MULTI-PRODUCT PICKER) */}
+          {/* ========================================================= */}
+          {isComboModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 sm:p-8 border shadow-2xl animate-fadeIn">
+                <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#f3e2d0]">
+                  <div>
+                    <h3 className="font-bold text-lg sm:text-xl text-[#7a1c2b] flex items-center gap-2">
+                      <span>🎁</span>
+                      <span>{editingCombo ? "কম্বো প্যাক সম্পাদনা করুন" : "নতুন কম্বো প্যাক তৈরি করুন"}</span>
+                    </h3>
+                    <p className="text-xs text-gray-500">ক্যাটালগ থেকে প্রোডাক্ট চয়েস করে বিশেষ ছাড়ে বান্ডেল অফার তৈরি করুন</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsComboModalOpen(false)} 
+                    className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold text-gray-500 hover:text-black hover:bg-gray-100 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Basic Info */}
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">কম্বো প্যাকের নাম *</label>
+                    <input 
+                      type="text" 
+                      value={comboForm.title} 
+                      onChange={(e) => setComboForm({ ...comboForm, title: e.target.value })}
+                      placeholder="যেমন: রয়্যাল ব্রাইডাল সাজ কম্বো"
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">সাবটাইটেল / বান্ডেল হাইলাইট</label>
+                    <input 
+                      type="text" 
+                      value={comboForm.subtitle} 
+                      onChange={(e) => setComboForm({ ...comboForm, subtitle: e.target.value })}
+                      placeholder="যেমন: ডিজাইনার কাতান শাড়ি + রাজওয়াড়ি কুন্দন চোকার"
+                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  {/* MULTI-PRODUCT SELECTION HUB (প্রোডাক্ট চয়েস করার অপশন) */}
+                  <div className="p-4 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="text-xs font-bold text-[#7a1c2b] flex items-center gap-1.5">
+                          <span>📦</span>
+                          <span>কম্বোর অন্তর্ভুক্ত প্রোডাক্ট নির্বাচন করুন * (কমপক্ষে ২টি)</span>
+                        </label>
+                        <p className="text-[11px] text-gray-500">যেকোনো প্রোডাক্টের ওপর ক্লিক করে সিলেক্ট বা আনসিলেক্ট করুন</p>
+                      </div>
+                      <span className="text-xs font-bold bg-[#7a1c2b] text-white px-3 py-1 rounded-full self-start sm:self-auto">
+                        নির্বাচিত: {comboForm.productIds.length} টি
+                      </span>
+                    </div>
+
+                    {/* Search inside catalog */}
+                    <input 
+                      type="text"
+                      placeholder="🔍 প্রোডাক্টের নাম বা ক্যাটাগরি দিয়ে খুঁজুন..."
+                      value={comboProductSearch}
+                      onChange={(e) => setComboProductSearch(e.target.value)}
+                      className="w-full bg-white border border-[#ecd9c6] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                    />
+
+                    {/* Products Grid to Choose From */}
+                    <div className="max-h-56 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
+                      {products
+                        .filter(p => !comboProductSearch || p.name.toLowerCase().includes(comboProductSearch.toLowerCase()) || p.category.toLowerCase().includes(comboProductSearch.toLowerCase()))
+                        .map(p => {
+                          const isSelected = comboForm.productIds.includes(p.id);
+                          return (
+                            <div 
+                              key={p.id}
+                              onClick={() => handleToggleProductInCombo(p.id)}
+                              className={`p-2.5 rounded-2xl border cursor-pointer transition flex items-center justify-between gap-3 ${
+                                isSelected 
+                                  ? "bg-white border-[#7a1c2b] ring-2 ring-[#7a1c2b]/30 shadow-sm" 
+                                  : "bg-white/80 border-[#ecd9c6] hover:border-gray-400"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <input 
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}} 
+                                  className="w-4 h-4 accent-[#7a1c2b] flex-shrink-0 cursor-pointer"
+                                />
+                                <img 
+                                  src={p.images[0] || imgSharee} 
+                                  alt={p.name} 
+                                  className="w-10 h-10 rounded-xl object-cover border flex-shrink-0 bg-white"
+                                  onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-gray-900 truncate" title={p.name}>{p.name}</p>
+                                  <p className="text-[11px] text-gray-500">
+                                    <span className="text-[#7a1c2b] font-semibold">{p.category}</span> • স্টক: {p.stock} টি
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-xs font-bold text-[#7a1c2b] flex-shrink-0 bg-[#fffaf5] px-2.5 py-1 rounded-full border border-[#f3e2d0]">
+                                {p.price} ৳
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+
+                    {/* Selected Products Strip */}
+                    {comboForm.productIds.length > 0 && (
+                      <div className="pt-2 border-t border-[#f3e2d0]">
+                        <p className="text-[11px] font-bold text-gray-600 mb-1.5">নির্বাচিত পণ্যের বান্ডেল প্রিভিউ:</p>
+                        <div className="flex items-center gap-2 overflow-x-auto py-1">
+                          {comboForm.productIds.map((id, idx) => {
+                            const p = products.find(prod => prod.id === id);
+                            if (!p) return null;
+                            return (
+                              <React.Fragment key={p.id}>
+                                <div className="flex items-center gap-1.5 bg-white border border-[#d4a574] rounded-full pl-1 pr-2.5 py-0.5 text-[11px] font-semibold text-gray-800 flex-shrink-0">
+                                  <img src={p.images[0] || imgSharee} alt={p.name} className="w-5 h-5 rounded-full object-cover" />
+                                  <span className="truncate max-w-[120px]">{p.name}</span>
+                                  <span className="text-[#7a1c2b] font-bold">({p.price} ৳)</span>
+                                </div>
+                                {idx < comboForm.productIds.length - 1 && (
+                                  <span className="text-[#d4a574] font-black text-xs flex-shrink-0">+</span>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* PRICING & SAVINGS LIVE CALCULATION */}
+                  {(() => {
+                    const originalTotal = comboForm.productIds.reduce((sum, id) => {
+                      const p = products.find(prod => prod.id === id);
+                      return sum + (p ? Number(p.price) : 0);
+                    }, 0);
+                    const currentComboPrice = Number(comboForm.comboPrice) || 0;
+                    const liveSavings = Math.max(0, originalTotal - currentComboPrice);
+                    const liveDiscountPercent = originalTotal > 0 ? Math.round((liveSavings / originalTotal) * 100) : 0;
+
+                    return (
+                      <div className="bg-[#fff8f0] p-4 rounded-3xl border border-[#d4a574]/40 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600 block">
+                              পণ্যগুলোর সাধারণ যোগফল (Original Total)
+                            </label>
+                            <div className="text-lg font-bold text-gray-700 mt-1 bg-white border rounded-full px-4 py-2">
+                              {originalTotal.toLocaleString()} ৳
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-xs font-semibold text-[#7a1c2b] block">
+                              কম্বো অফার মূল্য (টাকা) *
+                            </label>
+                            <input 
+                              type="number" 
+                              value={comboForm.comboPrice || ''} 
+                              onChange={(e) => setComboForm({ ...comboForm, comboPrice: Number(e.target.value) })}
+                              placeholder={originalTotal > 0 ? `${Math.round(originalTotal * 0.85)}` : "5499"}
+                              className="w-full bg-white border border-[#7a1c2b] rounded-full px-4 py-2 text-sm font-bold text-[#7a1c2b] outline-none mt-1 focus:ring-2 focus:ring-[#7a1c2b]/20"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Calculated Savings banner */}
+                        {originalTotal > 0 && currentComboPrice > 0 && (
+                          <div className="flex items-center justify-between text-xs pt-1 border-t border-[#f3e2d0]">
+                            <span className="text-gray-600">গ্রাহকের সর্বমোট সাশ্রয়:</span>
+                            <span className="font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full">
+                              সাশ্রয়: {liveSavings.toLocaleString()} ৳ ({liveDiscountPercent}% ডিসকাউন্ট)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Stock & Promotional Badge */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">স্টক পরিমাণ *</label>
+                      <input 
+                        type="number" 
+                        value={comboForm.stock} 
+                        onChange={(e) => setComboForm({ ...comboForm, stock: Number(e.target.value) })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">অফার ব্যাজ (Badge)</label>
+                      <input 
+                        type="text" 
+                        value={comboForm.badge} 
+                        onChange={(e) => setComboForm({ ...comboForm, badge: e.target.value })}
+                        placeholder="যেমন: সেরা অফার 🔥"
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick Badge Presets */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] text-gray-500 font-semibold">ব্যাজ প্রিসেট:</span>
+                    {["সেরা অফার 🔥", "লিমিটেড স্টক ⚡", "ব্রাইডাল স্পেশাল 👑", "জনপ্রিয় কম্বো ⭐", "ঈদ স্পেশাল 🌙"].map(b => (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setComboForm(prev => ({ ...prev, badge: b }))}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+                          comboForm.badge === b ? "bg-[#7a1c2b] text-white border-[#7a1c2b]" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom Banner / Image Upload */}
+                  <div className="p-4 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#7a1c2b]">কম্বোর মূল ব্যানার / কভার ছবি (অপশনাল)</label>
+                      <span className="text-[10px] text-gray-500">খালি রাখলে প্রথম প্রোডাক্টের ছবি ব্যবহার হবে</span>
+                    </div>
+
+                    {comboForm.image && (
+                      <div className="h-32 rounded-2xl overflow-hidden border relative bg-gray-100">
+                        <img src={comboForm.image} alt="Combo Cover" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setComboForm(prev => ({ ...prev, image: "" }))}
+                          className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <input 
+                        type="url"
+                        placeholder="ছবির সরাসরি লিঙ্ক (https://...)..."
+                        value={comboForm.image || ''}
+                        onChange={(e) => setComboForm({ ...comboForm, image: e.target.value })}
+                        className="flex-1 bg-white border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                      />
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        ref={comboImgFileRef}
+                        onChange={(e) => handleImageUpload(e, (dataUrl) => setComboForm(prev => ({ ...prev, image: dataUrl })), 'banner')}
+                        className="hidden"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => comboImgFileRef.current?.click()}
+                        className="bg-[#d4a574] text-[#2c1810] px-4 py-2 rounded-full text-xs font-bold hover:bg-white border transition shadow-sm whitespace-nowrap"
+                      >
+                        📷 ছবি আপলোড
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">কম্বো প্যাকের বিবরণ / অফার মেসেজ</label>
+                    <textarea 
+                      rows="2" 
+                      value={comboForm.description} 
+                      onChange={(e) => setComboForm({ ...comboForm, description: e.target.value })}
+                      placeholder="এই কম্বো প্যাকটি কেন সেরা এবং গ্রাহক কী কী সুবিধা পাবেন..."
+                      className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  {/* Active Toggle */}
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer pt-1">
+                    <input 
+                      type="checkbox" 
+                      checked={comboForm.active} 
+                      onChange={(e) => setComboForm({ ...comboForm, active: e.target.checked })}
+                      className="w-4 h-4 accent-[#7a1c2b]"
+                    />
+                    <span>হোমপেজ ও স্টোরফ্রন্টে এই কম্বো অফারটি সক্রিয় (Active) রাখুন</span>
+                  </label>
+
+                  {/* Submit Button */}
+                  <button 
+                    type="button"
+                    onClick={handleSaveCombo}
+                    className="w-full bg-[#7a1c2b] text-white py-3.5 rounded-full font-bold text-sm shadow-lg hover:bg-[#681727] transition mt-2"
+                  >
+                    কম্বো প্যাক সংরক্ষণ করুন (Save Combo Pack)
                   </button>
                 </div>
               </div>
