@@ -1523,6 +1523,50 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
         }
       };
 
+      // Real XML Sitemap Generator for Google Search Console & SEO indexing
+      const generateSitemap = () => {
+        try {
+          const baseUrl = (seo && seo.canonicalUrl) ? seo.canonicalUrl.replace(/\/+$/, "") : "https://sajgojfashion.netlify.app";
+          const today = new Date().toISOString().split("T")[0];
+          
+          let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+          xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+          
+          // Homepage
+          xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+          
+          // Products
+          (products || []).forEach(p => {
+            if (p && p.id) {
+              xml += `  <url>\n    <loc>${baseUrl}/#product-${p.id}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+            }
+          });
+
+          // Combos
+          (combos || []).forEach(c => {
+            if (c && c.id) {
+              xml += `  <url>\n    <loc>${baseUrl}/#combo-${c.id}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+            }
+          });
+          
+          xml += `</urlset>`;
+
+          const blob = new Blob([xml], { type: "application/xml" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "sitemap.xml";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          notify("sitemap.xml সফলভাবে তৈরি ও ডাউনলোড হয়েছে! 🗺️");
+        } catch(e) {
+          console.error("Sitemap error:", e);
+          notify("সাইটম্যাপ তৈরিতে সমস্যা হয়েছে");
+        }
+      };
+
       // Smart Client-Side Canvas Image Compressor (<100KB per image, prevents Firestore/localStorage limits)
       const compressImage = (file, maxWidth = 1200, maxHeight = 800, quality = 0.82) => {
         return new Promise((resolve) => {
@@ -2182,83 +2226,57 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   </div>
                 </div>
 
-                {/* HORIZONTAL ADMIN NAV TABS BAR - CLEAN, STREAMLINED & NON-REDUNDANT */}
+                {/* HORIZONTAL ADMIN NAV TABS BAR - COMPREHENSIVE, DIRECT ACCESS TO EVERY FEATURE */}
                 <div className="border-t border-[#f3e2d0] bg-[#fffaf5] px-4">
                   <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 overflow-x-auto py-2.5 scrollbar-hide text-xs font-bold">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setActiveTab("Dashboard")}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                          activeTab === "Dashboard"
-                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
-                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
-                        }`}
-                      >
-                        <span>📊</span>
-                        <span>অল-ইন-ওয়ান ড্যাশবোর্ড</span>
-                      </button>
-
-                      <button
-                        onClick={() => setActiveTab("Combos")}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                          activeTab === "Combos"
-                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
-                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
-                        }`}
-                      >
-                        <span>🎁</span>
-                        <span>কম্বো প্যাক ({combos.length})</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setActiveTab("Orders");
-                          setNewOrdersCount(0);
-                          setNewOrderAlert(null);
-                        }}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 relative ${
-                          activeTab === "Orders"
-                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
-                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
-                        }`}
-                      >
-                        <span>📦</span>
-                        <span>অর্ডার ট্র্যাকিং ({orders.length})</span>
-                        {newOrdersCount > 0 && (
-                          <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-xs">
-                            +{newOrdersCount} NEW
-                          </span>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => setActiveTab("Products")}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                          activeTab === "Products"
-                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
-                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
-                        }`}
-                      >
-                        <span>👗</span>
-                        <span>প্রোডাক্ট ক্যাটালগ ({products.length})</span>
-                      </button>
-
-                      <button
-                        onClick={() => setActiveTab("General")}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                          activeTab === "General" || activeTab === "Settings" || activeTab === "Admin"
-                            ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
-                            : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
-                        }`}
-                      >
-                        <span>⚙️</span>
-                        <span>স্টোর কনফিগারেশন হাব</span>
-                      </button>
-                    </div>
-
-                    <div className="hidden md:flex items-center gap-2 text-[11px] text-[#7a1c2b] bg-white px-3.5 py-1.5 rounded-full border border-[#f3e2d0] shadow-xs">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      <span className="font-semibold">একক ইউনিফাইড ইন্টারফেস সক্রিয়</span>
+                    <div className="flex items-center gap-1.5 flex-nowrap">
+                      {[
+                        { id: "Dashboard", label: "ড্যাশবোর্ড", icon: "📊" },
+                        { id: "Combos", label: "কম্বো প্যাক", icon: "🎁", count: combos.length },
+                        { id: "Orders", label: "অর্ডার ট্র্যাকিং", icon: "📦", count: orders.length, alert: newOrdersCount > 0 ? `+${newOrdersCount}` : null },
+                        { id: "Products", label: "প্রোডাক্টস", icon: "👗", count: products.length },
+                        { id: "Categories", label: "ক্যাটাগরি", icon: "🏷️", count: categories.length },
+                        { id: "Coupons", label: "কুপন কোড", icon: "🎟️", count: coupons.length },
+                        { id: "Banners", label: "ব্যানার", icon: "🖼️", count: banners.length },
+                        { id: "Reviews", label: "রিভিউ", icon: "⭐", count: reviews.length },
+                        { id: "Courier", label: "কুরিয়ার", icon: "🚚" },
+                        { id: "Pixel", label: "পিক্সেল", icon: "📈" },
+                        { id: "SEO", label: "এসইও ও সাইটম্যাপ", icon: "🌐" },
+                        { id: "General", label: "স্টোর ও থিম সেটিংস", icon: "⚙️" },
+                        { id: "Backup", label: "ডাটাবেজ ব্যাকআপ", icon: "💾" }
+                      ].map(tab => {
+                        const isActive = activeTab === tab.id || (tab.id === "General" && (activeTab === "Settings" || activeTab === "Admin" || activeTab === "Footer" || activeTab === "Header"));
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => {
+                              setActiveTab(tab.id);
+                              if (tab.id === "Orders") {
+                                setNewOrdersCount(0);
+                                setNewOrderAlert(null);
+                              }
+                            }}
+                            className={`px-3.5 py-2 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
+                              isActive
+                                ? "bg-[#7c1d2a] text-white shadow font-extrabold scale-[1.02]"
+                                : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
+                            }`}
+                          >
+                            <span>{tab.icon}</span>
+                            <span>{tab.label}</span>
+                            {tab.count !== undefined && (
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isActive ? 'bg-white/25 text-white' : 'bg-[#fff0e6] text-[#7a1c2b] border border-[#f3e2d0]'}`}>
+                                {tab.count}
+                              </span>
+                            )}
+                            {tab.alert && (
+                              <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full animate-bounce shadow-xs">
+                                {tab.alert}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -2723,296 +2741,62 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       </div>
                     </div>
 
-                    {/* DEDICATED SECTION: COMBO PACK MANAGEMENT (কম্বো প্যাক অফার হাব) */}
-                    <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-5">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#f3e2d0]">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">🎁</span>
-                            <h3 className="text-lg sm:text-xl font-bold text-[#7a1c2b]">কম্বো প্যাক ও বান্ডেল অফার কন্ট্রোল হাব</h3>
-                            <span className="bg-[#7a1c2b] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                              PRO FEATURE
-                            </span>
+                    {/* DASHBOARD QUICK ACTION & HIGHLIGHTS BAR */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Combos Quick Highlight */}
+                      <div className="bg-gradient-to-br from-[#fffaf5] to-amber-50/60 p-5 rounded-3xl border border-[#d4a574]/60 shadow-sm flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-2xl shadow-inner border border-amber-200">
+                            🎁
                           </div>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            ক্যাটালগের একাধিক পণ্য চয়েস করে বান্ডেল তৈরি করুন এবং বিশেষ কম্বো মূল্যে গ্রাহকদের অফার দিন
-                          </p>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm text-[#2c1810]">কম্বো প্যাক অফার হাব</h4>
+                              <span className="text-[10px] bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full font-bold">
+                                {combos.length} টি সক্রিয়
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-0.5">প্রোডাক্ট বান্ডেল ও বিশেষ মূল্য নির্ধারণ</p>
+                          </div>
                         </div>
-
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={handleOpenNewComboModal}
-                            className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-4 py-2 rounded-full text-xs font-bold transition shadow flex items-center gap-1.5"
+                            className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-xs"
                           >
-                            <span>+ নতুন কম্বো প্যাক তৈরি</span>
+                            + নতুন কম্বো
                           </button>
                           <button
                             onClick={() => setActiveTab("Combos")}
-                            className="text-xs font-bold text-[#7a1c2b] hover:underline"
+                            className="bg-white border border-[#d4a574] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-xs"
                           >
-                            সকল কম্বো ({combos.length}) →
+                            তালিকা দেখুন →
                           </button>
                         </div>
                       </div>
 
-                      {/* Quick Summary Strip */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
-                          <p className="text-[10px] text-gray-500 font-bold uppercase">মোট কম্বো</p>
-                          <p className="text-lg font-bold text-[#7a1c2b]">{combos.length} টি</p>
-                        </div>
-                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
-                          <p className="text-[10px] text-gray-500 font-bold uppercase">সক্রিয় অফার</p>
-                          <p className="text-lg font-bold text-emerald-700">{combos.filter(c => c.active).length} টি</p>
-                        </div>
-                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
-                          <p className="text-[10px] text-gray-500 font-bold uppercase">সর্বোচ্চ সাশ্রয়</p>
-                          <p className="text-lg font-bold text-amber-700">
-                            {Math.max(...combos.map(c => c.savings || 0), 0).toLocaleString()} ৳
-                          </p>
-                        </div>
-                        <div className="bg-[#fffaf5] p-3 rounded-2xl border border-[#f3e2d0]">
-                          <p className="text-[10px] text-gray-500 font-bold uppercase">ক্লাউড সিঙ্ক</p>
-                          <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> লাইভ কার্যকর
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Combos Grid on Dashboard */}
-                      {combos.length === 0 ? (
-                        <div className="text-center py-10 bg-[#fffaf5] rounded-2xl border border-dashed border-[#d4a574]/40 p-6">
-                          <p className="text-3xl mb-2">🎁</p>
-                          <h4 className="font-bold text-sm text-gray-700">এখনো কোনো কম্বো প্যাক তৈরি করা হয়নি</h4>
-                          <p className="text-xs text-gray-400 mt-1">প্রোডাক্ট সিলেক্ট করে আকর্ষণীয় কম্বো প্যাক অফার চালু করুন।</p>
-                          <button
-                            onClick={handleOpenNewComboModal}
-                            className="mt-3 bg-[#7a1c2b] text-white px-5 py-2 rounded-full text-xs font-bold shadow hover:bg-[#681727]"
-                          >
-                            + প্রথম কম্বো প্যাক বানান
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {combos.map(combo => {
-                            const bundled = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
-                            return (
-                              <div 
-                                key={combo.id}
-                                className="bg-[#fffaf5] p-4 rounded-2xl border border-[#f3e2d0] hover:border-[#7a1c2b] transition flex flex-col justify-between space-y-3"
-                              >
-                                <div className="space-y-2">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex items-center gap-3">
-                                      <img 
-                                        src={combo.image || bundled[0]?.images?.[0] || banner1} 
-                                        alt={combo.title} 
-                                        className="w-14 h-14 rounded-xl object-cover border bg-white flex-shrink-0"
-                                        onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
-                                      />
-                                      <div>
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span className="text-[10px] bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full font-bold">
-                                            {combo.badge || "কম্বো"}
-                                          </span>
-                                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${combo.active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
-                                            {combo.active ? "● সক্রিয়" : "○ নিষ্ক্রিয়"}
-                                          </span>
-                                        </div>
-                                        <h4 className="font-bold text-sm text-gray-900 mt-1">{combo.title}</h4>
-                                        <p className="text-xs text-gray-500 truncate">{combo.subtitle}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Included Products List Preview */}
-                                  <div className="bg-white p-2.5 rounded-xl border border-[#f3e2d0] space-y-1">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase">পছন্দ করা পণ্য ({bundled.length} টি):</p>
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      {bundled.map(p => (
-                                        <span key={p.id} className="text-[11px] bg-[#fffaf5] border px-2 py-0.5 rounded-md text-gray-700 font-medium">
-                                          {p.name} ({p.price} ৳)
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  {/* Pricing Calculation Preview */}
-                                  <div className="flex items-center justify-between text-xs pt-1">
-                                    <div>
-                                      <span className="text-gray-400 line-through text-[11px] mr-1.5">{combo.originalPrice} ৳</span>
-                                      <span className="text-sm font-bold text-[#7a1c2b]">{combo.comboPrice} ৳</span>
-                                    </div>
-                                    {combo.savings > 0 && (
-                                      <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px]">
-                                        সাশ্রয়: {combo.savings} ৳ (-{combo.discountPercent}%)
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Controls */}
-                                <div className="flex items-center justify-between pt-2 border-t border-[#ecd9c6] text-xs">
-                                  <button
-                                    onClick={() => handleToggleComboActive(combo)}
-                                    className={`px-3 py-1 rounded-full text-[11px] font-bold border transition ${
-                                      combo.active 
-                                        ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100" 
-                                        : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
-                                    }`}
-                                  >
-                                    {combo.active ? "হোমপেজে সক্রিয় ✓" : "নিষ্ক্রিয় করুন"}
-                                  </button>
-
-                                  <div className="flex items-center gap-1.5">
-                                    <button
-                                      onClick={() => handleOpenEditComboModal(combo)}
-                                      className="px-2.5 py-1 bg-white border border-[#d4a574] text-[#7a1c2b] rounded-full text-[11px] font-bold hover:bg-[#7a1c2b] hover:text-white transition"
-                                    >
-                                      ✏️ এডিট
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteCombo(combo.id)}
-                                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition text-[11px]"
-                                      title="মুছুন"
-                                    >
-                                      🗑️
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* CONSOLIDATED SECTION 3: THEME SETTINGS (BRAND COLOR CUSTOMIZATION) */}
-                    <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#f3e2d0]">
-                        <div>
-                          <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b] flex items-center gap-2">
-                            <span>🎨</span>
-                            <span>Theme Settings (থিম সেটিংস) — প্রাইমারি ব্র্যান্ড কালার</span>
-                          </h3>
-                          <p className="text-xs text-gray-500 mt-1">
-                            ব্র্যান্ডের মূল কালার (ডিফল্ট: <code className="font-mono font-bold text-[#7a1c2b] bg-[#fffaf5] px-1.5 py-0.5 rounded border border-[#f3e2d0]">#7a1c2b</code>) পরিবর্তন করুন। CSS Variables (<code className="font-mono text-[11px] bg-[#fffaf5] px-1.5 py-0.5 rounded">--primary-color</code>) এর মাধ্যমে তাৎক্ষণিকভাবে পুরো স্টোরফ্রন্টের সকল বাটন, টেক্সট ও হাইলাইট স্বয়ংক্রিয়ভাবে আপডেট হবে।
-                          </p>
-                        </div>
-                        <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border shadow-xs flex items-center gap-2 self-start sm:self-auto bg-white flex-shrink-0" style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}>
-                          <span className="w-3 h-3 rounded-full shadow-xs" style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}></span>
-                          <span className="font-mono uppercase">{config.primaryColor || "#7a1c2b"}</span>
-                        </span>
-                      </div>
-
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {/* Color Picker, Hex Input & Reset */}
-                        <div className="bg-[#fffaf5] p-5 rounded-2xl border border-[#f3e2d0] space-y-3.5">
-                          <label className="text-xs font-bold text-gray-700 block">কাস্টম কালার পিকার ও হেক্স কোড</label>
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-12 h-12 rounded-2xl overflow-hidden border-2 shadow-sm flex-shrink-0 cursor-pointer" style={{ borderColor: config.primaryColor || '#7a1c2b' }}>
-                              <input 
-                                type="color" 
-                                value={config.primaryColor || "#7a1c2b"} 
-                                onChange={(e) => {
-                                  const newCol = e.target.value;
-                                  setConfig(prev => ({ ...prev, primaryColor: newCol }));
-                                  document.documentElement.style.setProperty('--primary-color', newCol);
-                                  document.documentElement.style.setProperty('--maroon', newCol);
-                                }}
-                                onBlur={(e) => handleThemeColorUpdate(e.target.value)}
-                                className="absolute -inset-4 w-20 h-20 cursor-pointer opacity-100"
-                                title="কালার পছন্দ করুন"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <input 
-                                type="text" 
-                                placeholder="#7a1c2b" 
-                                value={config.primaryColor || "#7a1c2b"} 
-                                onChange={(e) => {
-                                  const newCol = e.target.value;
-                                  setConfig(prev => ({ ...prev, primaryColor: newCol }));
-                                  if (/^#[0-9A-Fa-f]{6}$/.test(newCol)) {
-                                    document.documentElement.style.setProperty('--primary-color', newCol);
-                                    document.documentElement.style.setProperty('--maroon', newCol);
-                                  }
-                                }}
-                                onBlur={(e) => {
-                                  if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
-                                    handleThemeColorUpdate(e.target.value);
-                                  }
-                                }}
-                                className="w-full bg-white border rounded-full px-4 py-2 text-xs font-mono font-bold outline-none uppercase focus:border-[#7a1c2b]" 
-                              />
-                              <p className="text-[10px] text-gray-400 mt-1">যেকোনো ভ্যালিড হেক্স কোড লিখুন বা কালার আইকনে ট্যাপ করুন</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleThemeColorUpdate("#7a1c2b")}
-                              className="text-xs text-[#7a1c2b] font-bold hover:underline px-2.5 py-1.5 rounded-full bg-white border border-[#f3e2d0] shadow-xs"
-                              title="ডিফল্ট মেরুন কালারে ফিরুন"
-                            >
-                              রিসেট ↺
-                            </button>
+                      {/* Theme & Brand Color Quick Highlight */}
+                      <div className="bg-gradient-to-br from-[#fffaf5] to-rose-50/40 p-5 rounded-3xl border border-[#f3e2d0] shadow-sm flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner border" style={{ backgroundColor: config.primaryColor || '#7a1c2b', color: '#fff' }}>
+                            🎨
                           </div>
-
-                          {/* Live Component Preview */}
-                          <div className="pt-2.5 border-t border-[#f3e2d0]">
-                            <p className="text-[11px] font-bold text-gray-500 mb-2">লাইভ স্টোরফ্রন্ট প্রিভিউ:</p>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <button
-                                type="button"
-                                className="text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs transition"
-                                style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}
-                              >
-                                অর্ডার বাটন
-                              </button>
-                              <span
-                                className="px-2.5 py-1 rounded-full text-xs font-bold border"
-                                style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}
-                              >
-                                ৩৫০০ ৳ (প্রাইস ট্যাগ)
-                              </span>
-                              <span
-                                className="text-[11px] font-bold underline"
-                                style={{ color: config.primaryColor || '#7a1c2b' }}
-                              >
-                                বিস্তারিত দেখুন →
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm text-[#2c1810]">ব্র্যান্ড থিম কালার</h4>
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border bg-white" style={{ borderColor: config.primaryColor || '#7a1c2b', color: config.primaryColor || '#7a1c2b' }}>
+                                {config.primaryColor || "#7a1c2b"}
                               </span>
                             </div>
+                            <p className="text-xs text-gray-500 mt-0.5">লোগো, নোটিশ, ব্যানার ও থিম সেটিংস</p>
                           </div>
                         </div>
-
-                        {/* 1-Click Luxury Presets */}
-                        <div className="bg-[#fffaf5] p-5 rounded-2xl border border-[#f3e2d0] space-y-3">
-                          <label className="text-xs font-bold text-gray-700 block">১-ক্লিক লাক্সারি ব্র্যান্ড প্রিসেট</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {[
-                              { name: "Royal Maroon", color: "#7a1c2b", label: "রয়্যাল মেরুন (ডিফল্ট)" },
-                              { name: "Emerald Green", color: "#064e3b", label: "এমারেল্ড গ্রিন" },
-                              { name: "Sapphire Blue", color: "#1e3a8a", label: "স্যাফায়ার ব্লু" },
-                              { name: "Velvet Purple", color: "#4c1d95", label: "ভেলভেট পার্পল" },
-                              { name: "Rose Ruby", color: "#9f1239", label: "রোজ রুবি" },
-                              { name: "Midnight Noir", color: "#18181b", label: "মিডনাইট ব্ল্যাক" },
-                              { name: "Royal Gold", color: "#b45309", label: "রয়্যাল গোল্ড" }
-                            ].map((preset) => (
-                              <button
-                                key={preset.color}
-                                type="button"
-                                onClick={() => handleThemeColorUpdate(preset.color)}
-                                className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border text-left ${
-                                  (config.primaryColor || "#7a1c2b").toLowerCase() === preset.color.toLowerCase()
-                                    ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
-                                }`}
-                              >
-                                <span className="w-3 h-3 rounded-full flex-shrink-0 shadow-xs" style={{ backgroundColor: preset.color }}></span>
-                                <span className="truncate">{preset.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                        <button
+                          onClick={() => setActiveTab("General")}
+                          className="bg-white border border-[#ecd9c6] hover:bg-[#7a1c2b] hover:text-white text-gray-700 px-4 py-2 rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5 whitespace-nowrap"
+                        >
+                          <span>⚙️ থিম ও লোগো সেটিংস →</span>
+                        </button>
                       </div>
                     </div>
 
@@ -4436,12 +4220,13 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
             )}
 
             {/* ========================================================= */}
-            {/* 10. SEO & SITEMAP TAB */}
+            {/* 10. SEO & SITEMAP TAB - COMPREHENSIVE GOOGLE OPTIMIZATION SUITE */}
             {/* ========================================================= */}
             {activeTab === "SEO" && (
-              <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div className="flex items-center gap-2.5">
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#f3e2d0]">
+                  <div className="flex items-center gap-3">
                     <button 
                       onClick={() => setActiveTab("Dashboard")}
                       className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
@@ -4450,61 +4235,198 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       ← ড্যাশবোর্ড
                     </button>
                     <div>
-                      <h3 className="text-xl font-bold text-[#7a1c2b]">সার্চ ইঞ্জিন অপটিমাইজেশন (SEO)</h3>
-                      <p className="text-xs text-gray-500">Google সার্চ ইনডেক্সিং, মেটা ট্যাগ এবং সাইটম্যাপ কনফিগারেশন</p>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">সার্চ ইঞ্জিন অপটিমাইজেশন (SEO ও সাইটম্যাপ)</h3>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                          Google Ready ✓
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">Google সার্চ ইনডেক্সিং, মেটা ট্যাগ, সোশ্যাল শেয়ার কার্ড এবং সাইটম্যাপ কনফিগারেশন</p>
                     </div>
                   </div>
-                  <button onClick={generateSitemap} className="bg-[#2c1810] text-white px-6 py-2.5 rounded-full text-xs font-semibold hover:bg-black shadow flex items-center gap-1.5">
-                    <span>🗺️</span>
-                    <span>sitemap.xml ডাউনলোড করুন</span>
-                  </button>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button 
+                      type="button"
+                      onClick={generateSitemap} 
+                      className="bg-[#2c1810] hover:bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95"
+                    >
+                      <span>🗺️</span>
+                      <span>sitemap.xml ডাউনলোড</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={async () => {
+                        setStored("seo", seo);
+                        await syncDocToCloud("config", "seo", seo);
+                        notify("এসইও ও মেটা সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅");
+                      }} 
+                      className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-md transition active:scale-95 flex items-center gap-1.5"
+                    >
+                      <span>💾</span>
+                      <span>এসইও তথ্য সেভ করুন</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-4 max-w-2xl">
-                  <div>
-                    <label className="text-xs font-semibold">Meta Site Title (গুগলে প্রদর্শিত টাইটেল)</label>
-                    <input 
-                      type="text" 
-                      value={seo.siteTitle} 
-                      onChange={(e) => setSeo({ ...seo, siteTitle: e.target.value })}
-                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
-                    />
+                {/* 1. Real-time Google SERP Preview Card */}
+                <div className="bg-[#fffdfa] p-5 rounded-2xl border-2 border-dashed border-[#d4a574]/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <span>🔍</span>
+                      <span>গুগল সার্চ রেজাল্ট লাইভ প্রিভিউ (Google Desktop & Mobile SERP Preview)</span>
+                    </span>
+                    <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                      লাইভ প্রিভিউ
+                    </span>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold">Meta Description (বর্ণনা)</label>
-                    <textarea 
-                      rows="3" 
-                      value={seo.metaDescription} 
-                      onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
-                      className="w-full bg-[#fffaf5] border rounded-2xl p-3.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
-                    />
+
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm max-w-2xl font-sans">
+                    <div className="flex items-center gap-2 text-xs text-[#202124] mb-1">
+                      <div className="w-5 h-5 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-[10px] font-bold">
+                        {config.storeName ? config.storeName.charAt(0) : "S"}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xs text-[#202124]">{config.storeName || "SAJGOJ FASHION"}</span>
+                        <span className="text-[11px] text-[#5f6368] font-mono truncate max-w-sm">
+                          {seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}
+                        </span>
+                      </div>
+                    </div>
+                    <h4 className="text-lg font-medium text-[#1a0dab] hover:underline cursor-pointer leading-tight mb-1">
+                      {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee Collection"}
+                    </h4>
+                    <p className="text-xs text-[#4d5156] leading-relaxed line-clamp-2">
+                      {seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন। ক্যাশ অন ডেলিভারি ও দ্রুততম হোম ডেলিভারি।"}
+                    </p>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold">Meta Keywords (কমা দিয়ে লিখুন)</label>
-                    <input 
-                      type="text" 
-                      value={seo.metaKeywords} 
-                      onChange={(e) => setSeo({ ...seo, metaKeywords: e.target.value })}
-                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
-                    />
+                  <p className="text-[11px] text-gray-500">
+                    💡 গুগল সার্চ রেজাল্টে গ্রাহকরা আপনার ওয়েবসাইট এভাবেই দেখতে পাবেন। সঠিক কি-ওয়ার্ড ও আকর্ষণীয় মেটা ডেসক্রিপশন বেশি ভিজিটর ও সেলস বৃদ্ধি করে।
+                  </p>
+                </div>
+
+                {/* 2. SEO Form Fields */}
+                <div className="grid md:grid-cols-2 gap-6 pt-2">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-gray-700">Meta Site Title (গুগল সার্চ টাইটেল)</label>
+                        <span className={`text-[10px] font-mono font-bold ${((seo?.siteTitle || "").length >= 40 && (seo?.siteTitle || "").length <= 60) ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
+                          {(seo?.siteTitle || "").length} / ৬০ অক্ষর
+                        </span>
+                      </div>
+                      <input 
+                        type="text" 
+                        value={seo?.siteTitle || ""} 
+                        onChange={(e) => setSeo({ ...seo, siteTitle: e.target.value })}
+                        placeholder="যেমন: SAJGOJ FASHION - Premium Jewelry & Sharee"
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs" 
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">৫০ থেকে ৬০ অক্ষরের মধ্যে টাইটেল রাখলে গুগলে সম্পূর্ণ দৃশ্যমান থাকে</p>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-gray-700">Meta Description (গুগল সার্চ বিবরণ)</label>
+                        <span className={`text-[10px] font-mono font-bold ${((seo?.metaDescription || "").length >= 100 && (seo?.metaDescription || "").length <= 160) ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
+                          {(seo?.metaDescription || "").length} / ১৬০ অক্ষর
+                        </span>
+                      </div>
+                      <textarea 
+                        rows="3" 
+                        value={seo?.metaDescription || ""} 
+                        onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
+                        placeholder="আপনার স্টোর সম্পর্কে ১-২ লাইনের বিবরণ যা গুগলে লিঙ্কের নিচে দেখা যাবে..."
+                        className="w-full bg-[#fffaf5] border rounded-2xl p-3.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs resize-none" 
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">১০০ থেকে ১৬০ অক্ষরের মধ্যে সুন্দর বিবরণ গ্রাহকদের বেশি ক্লিক করতে উৎসাহিত করে</p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">Meta Keywords (সার্চ ট্যাগ - কমা দিয়ে লিখুন)</label>
+                      <input 
+                        type="text" 
+                        value={seo?.metaKeywords || ""} 
+                        onChange={(e) => setSeo({ ...seo, metaKeywords: e.target.value })}
+                        placeholder="sajgoj, sharee bd, bridal choker, jewelry, eid collection"
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs" 
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold">Canonical Site URL</label>
-                    <input 
-                      type="text" 
-                      value={seo.canonicalUrl} 
-                      onChange={(e) => setSeo({ ...seo, canonicalUrl: e.target.value })}
-                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 font-mono focus:border-[#7a1c2b]" 
-                    />
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">Canonical Site URL (মূল ডোমেইন লিঙ্ক)</label>
+                      <input 
+                        type="text" 
+                        value={seo?.canonicalUrl || ""} 
+                        onChange={(e) => setSeo({ ...seo, canonicalUrl: e.target.value })}
+                        placeholder="https://sajgojfashion.netlify.app"
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 font-mono focus:border-[#7a1c2b] shadow-xs" 
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">সার্চ ইঞ্জিন ডুপ্লিকেট কন্টেন্ট এড়াতে এই লিঙ্কটি অগ্রাধিকার দেয়</p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">Robots Meta Tag (ইনডেক্সিং নির্দেশনা)</label>
+                      <select
+                        value={seo?.robots || "index, follow"}
+                        onChange={(e) => setSeo({ ...seo, robots: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs cursor-pointer"
+                      >
+                        <option value="index, follow">index, follow (প্রস্তাবিত - গুগলে সম্পূর্ণ ইনডেক্স হবে)</option>
+                        <option value="noindex, follow">noindex, follow (গুগলে দেখাবে না কিন্তু লিঙ্ক ফলো করবে)</option>
+                        <option value="index, nofollow">index, nofollow (গুগলে ইনডেক্স হবে কিন্তু লিঙ্ক ফলো করবে না)</option>
+                        <option value="noindex, nofollow">noindex, nofollow (সার্চ ইঞ্জিন থেকে সম্পূর্ণ গোপন)</option>
+                      </select>
+                    </div>
+
+                    {/* Sitemap Statistics Card */}
+                    <div className="bg-[#fffaf5] p-4 rounded-2xl border border-[#f3e2d0] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#7a1c2b]">XML সাইটম্যাপ স্ট্যাটাস:</span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          স্বয়ংক্রিয় তৈরি ✓
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                        <div className="bg-white p-2 rounded-xl border border-[#f3e2d0]">
+                          <span className="text-xs text-gray-500 block">পণ্য লিঙ্ক</span>
+                          <span className="text-sm font-bold text-[#7a1c2b]">{products.length} টি</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-xl border border-[#f3e2d0]">
+                          <span className="text-xs text-gray-500 block">কম্বো লিঙ্ক</span>
+                          <span className="text-sm font-bold text-[#7a1c2b]">{combos.length} টি</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-xl border border-[#f3e2d0]">
+                          <span className="text-xs text-gray-500 block">ক্যাটাগরি</span>
+                          <span className="text-sm font-bold text-[#7a1c2b]">{categories.length} টি</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 text-center pt-1">
+                        উপরে "sitemap.xml ডাউনলোড" বাটনে ক্লিক করে Google Search Console-এ জমা দিতে পারবেন।
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Button Footer */}
+                <div className="pt-4 border-t border-[#f3e2d0] flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2 text-xs text-emerald-700 font-semibold">
+                    <span>✓</span>
+                    <span>Firebase ক্লাউড ও ডিভাইসে রিয়েলটাইম সিঙ্ক সক্রিয়</span>
                   </div>
                   <button 
-                    onClick={() => {
-                      syncDocToCloud("config", "seo", seo);
-                      notify("SEO সেটিংস ক্লাউডে সেভ হয়েছে! ✅");
+                    type="button"
+                    onClick={async () => {
+                      setStored("seo", seo);
+                      await syncDocToCloud("config", "seo", seo);
+                      notify("এসইও তথ্য সফলভাবে ক্লাউড ও ডিভাইসে সংরক্ষিত হয়েছে! ✅");
                     }} 
-                    className="bg-[#7a1c2b] text-white px-8 py-3 rounded-full text-sm font-semibold shadow hover:bg-[#681727]"
+                    className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-8 py-3 rounded-full text-sm font-bold shadow-md hover:shadow-lg transition active:scale-95 flex items-center gap-2"
                   >
-                    এসইও তথ্য সেভ করুন
+                    <span>💾</span>
+                    <span>সমস্ত এসইও সেটিংস সংরক্ষণ করুন (Save SEO Settings)</span>
                   </button>
                 </div>
               </div>
