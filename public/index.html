@@ -329,6 +329,27 @@
     };
 
     // =========================================================
+    // REWARD POINTS & TIERED VIP MEMBERSHIP INITIAL CONFIGURATION
+    // 100 points = 1 Taka (Configurable by admin)
+    // 6 VIP Tiers: Bronze, Silver, Gold, Diamond, Platinum, Platinum Elite
+    // =========================================================
+    const initialLoyaltyConfig = {
+      enabled: true,
+      pointsRate: 100, // ১০০ পয়েন্ট = ১ টাকা (কাস্টমাইজযোগ্য)
+      spendPerPoint: 10, // প্রতি ১০ টাকা কেনাকাটায় ১ পয়েন্ট অর্জন
+      minRedeemPoints: 100, // রিডিম করতে ন্যূনতম ১০০ পয়েন্ট
+      maxRedeemPercent: 50, // অর্ডারে পয়েন্ট দিয়ে সর্বোচ্চ ৫০% পরিশোধ
+      tiers: [
+        { id: "bronze", name: "Bronze", nameBn: "ব্রোঞ্জ মেম্বার", icon: "🥉", badgeColor: "bg-amber-100 text-amber-800 border-amber-300", minSpend: 0, discountPercent: 0, perks: "স্বাগত মেম্বারশিপ ও প্রতিটি কেনাকাটায় রিওয়ার্ড পয়েন্ট অর্জন" },
+        { id: "silver", name: "Silver", nameBn: "সিলভার মেম্বার", icon: "🥈", badgeColor: "bg-slate-100 text-slate-800 border-slate-300", minSpend: 3000, discountPercent: 5, perks: "৫% স্পেশাল মেম্বারশিপ ছাড় + রিওয়ার্ড পয়েন্ট" },
+        { id: "gold", name: "Gold", nameBn: "গোল্ড মেম্বার", icon: "🥇", badgeColor: "bg-yellow-100 text-yellow-800 border-yellow-300", minSpend: 7000, discountPercent: 8, perks: "৮% স্পেশাল ভিআইপি ডিসকাউন্ট + প্রায়োরিটি ডেলিভারি" },
+        { id: "diamond", name: "Diamond", nameBn: "ডায়মন্ড মেম্বার", icon: "💎", badgeColor: "bg-cyan-100 text-cyan-800 border-cyan-300", minSpend: 15000, discountPercent: 10, perks: "১০% ফ্ল্যাট ডিসকাউন্ট + বিশেষ উপহার" },
+        { id: "platinum", name: "Platinum", nameBn: "প্লাটিনাম মেম্বার", icon: "👑", badgeColor: "bg-purple-100 text-purple-800 border-purple-300", minSpend: 3000, discountPercent: 12, perks: "১২% প্রিমিয়াম ভিআইপি ডিসকাউন্ট + ফ্রি এক্সপ্রেস ডেলিভারি" },
+        { id: "platinum_elite", name: "Platinum Elite", nameBn: "প্লাটিনাম এলিট", icon: "⚜️", badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-400", minSpend: 50000, discountPercent: 15, perks: "১৫% এক্সক্লুসিভ এলিট ডিসকাউন্ট + লাইফটাইম ভিআইপি কেয়ার" }
+      ]
+    };
+
+    // =========================================================
     // INDEXEDDB MULTI-TIER PERSISTENCE HELPER (Zero 5MB Quota Limits)
     // =========================================================
     const idbStore = {
@@ -485,12 +506,22 @@
       const [courier, setCourier] = useState(() => getStored("courier", initialCourierConfig));
       const [pixel, setPixel] = useState(() => getStored("pixel", initialPixelConfig));
       const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
+      const [loyalty, setLoyalty] = useState(() => getStored("loyalty", initialLoyaltyConfig));
+      const [loyaltyCustomerMap, setLoyaltyCustomerMap] = useState(() => getStored("loyalty_customers", {}));
+      const [isVipClubModalOpen, setIsVipClubModalOpen] = useState(false);
+      const [vipLookupPhone, setVipLookupPhone] = useState("");
+      const [vipLookupResult, setVipLookupResult] = useState(null);
+      const [redeemPointsChecked, setRedeemPointsChecked] = useState(false);
+      const [loyaltySearchQuery, setLoyaltySearchQuery] = useState("");
+      const [adjustPointsModal, setAdjustPointsModal] = useState(null);
+      const [adjustPointsInput, setAdjustPointsInput] = useState("");
+      const [adjustPointsNote, setAdjustPointsNote] = useState("");
 
       // Asynchronous Hydration from IndexedDB on startup (recovers large images/banners if localStorage was truncated)
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
-          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo"];
+          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers"];
           for (const k of keys) {
             try {
               const val = await idbStore.get(k);
@@ -506,6 +537,8 @@
                 else if (k === "courier") setCourier(val);
                 else if (k === "pixel") setPixel(val);
                 else if (k === "seo") setSeo(val);
+                else if (k === "loyalty") setLoyalty(prev => ({ ...prev, ...val }));
+                else if (k === "loyalty_customers") setLoyaltyCustomerMap(val);
               }
             } catch(e) {}
           }
@@ -526,6 +559,8 @@
       useEffect(() => setStored("courier", courier), [courier]);
       useEffect(() => setStored("pixel", pixel), [pixel]);
       useEffect(() => setStored("seo", seo), [seo]);
+      useEffect(() => setStored("loyalty", loyalty), [loyalty]);
+      useEffect(() => setStored("loyalty_customers", loyaltyCustomerMap), [loyaltyCustomerMap]);
 
       // Firebase Firestore Cloud Sync Status & Helpers
       const [cloudSyncStatus, setCloudSyncStatus] = useState("connecting"); // "connected", "syncing", "offline"
@@ -755,8 +790,32 @@
           }
         }, (err) => console.warn("Combos sync error:", err));
 
+        // 9. Loyalty & VIP Membership Subscription
+        const unsubLoyalty = firestoreDb.collection("config").doc("loyalty").onSnapshot((doc) => {
+          if (!isMounted) return;
+          if (doc.exists) {
+            const remoteData = doc.data();
+            setLoyalty(prev => ({ ...prev, ...remoteData }));
+            setStored("loyalty", { ...getStored("loyalty", initialLoyaltyConfig), ...remoteData });
+          } else {
+            const currentLoyalty = getStored("loyalty", initialLoyaltyConfig);
+            firestoreDb.collection("config").doc("loyalty").set(currentLoyalty);
+          }
+        }, (err) => console.warn("Loyalty sync error:", err));
+
+        const unsubLoyaltyCust = firestoreDb.collection("config").doc("loyalty_customers").onSnapshot((doc) => {
+          if (!isMounted) return;
+          if (doc.exists) {
+            const remoteData = doc.data();
+            setLoyaltyCustomerMap(prev => ({ ...prev, ...remoteData }));
+            setStored("loyalty_customers", remoteData);
+          }
+        }, (err) => console.warn("Loyalty customers sync error:", err));
+
         return () => {
           isMounted = false;
+          unsubLoyalty();
+          unsubLoyaltyCust();
           unsubProducts();
           unsubCombos();
           unsubCategories();
@@ -1247,6 +1306,98 @@
         notify("গ্যালারিতে নতুন ছবি যুক্ত হয়েছে! 🖼️");
       };
 
+      // Customer Loyalty & VIP Membership Helper Functions
+      const normalizePhone = (phone) => {
+        if (!phone) return "";
+        let clean = String(phone).replace(/\D/g, "");
+        if (clean.startsWith("880")) clean = clean.slice(2);
+        else if (clean.startsWith("88")) clean = clean.slice(2);
+        return clean;
+      };
+
+      const getCustomerLoyalty = (rawPhone) => {
+        const phone = normalizePhone(rawPhone);
+        const tiers = [...(loyalty?.tiers || initialLoyaltyConfig.tiers)].sort((a,b) => (a.minSpend || 0) - (b.minSpend || 0));
+        const defaultTier = tiers[0] || initialLoyaltyConfig.tiers[0];
+
+        if (!phone || phone.length < 10) {
+          return {
+            phone: rawPhone || "",
+            customerName: "",
+            totalSpend: 0,
+            orderCount: 0,
+            earnedPoints: 0,
+            redeemedPoints: 0,
+            manualPoints: 0,
+            availablePoints: 0,
+            currentTier: defaultTier,
+            nextTier: tiers[1] || null,
+            spendNeeded: tiers[1] ? Math.max(0, tiers[1].minSpend) : 0,
+            progressPercent: 0
+          };
+        }
+
+        const custOrders = (orders || []).filter(o => {
+          const oPhone = normalizePhone(o.phone || o.customerPhone);
+          return oPhone === phone && o.status !== "Cancelled";
+        });
+
+        const totalSpend = custOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+        const orderCount = custOrders.length;
+
+        let recordedEarned = 0;
+        let recordedRedeemed = 0;
+        custOrders.forEach(o => {
+          if (o.pointsEarned !== undefined && o.pointsEarned !== null) {
+            recordedEarned += Number(o.pointsEarned) || 0;
+          } else {
+            const spendRate = Number(loyalty?.spendPerPoint) || 10;
+            recordedEarned += Math.floor((Number(o.subtotal || o.total) || 0) / spendRate);
+          }
+          if (o.pointsRedeemed !== undefined && o.pointsRedeemed !== null) {
+            recordedRedeemed += Number(o.pointsRedeemed) || 0;
+          }
+        });
+
+        const manualAdj = Number(loyaltyCustomerMap?.[phone]?.manualPoints) || 0;
+        const availablePoints = Math.max(0, recordedEarned - recordedRedeemed + manualAdj);
+
+        let currentTier = defaultTier;
+        let nextTier = null;
+
+        for (let i = tiers.length - 1; i >= 0; i--) {
+          if (totalSpend >= (Number(tiers[i].minSpend) || 0)) {
+            currentTier = tiers[i];
+            nextTier = tiers[i + 1] || null;
+            break;
+          }
+        }
+
+        let spendNeeded = 0;
+        let progressPercent = 100;
+        if (nextTier) {
+          const range = (Number(nextTier.minSpend) || 0) - (Number(currentTier.minSpend) || 0);
+          const currentProgress = totalSpend - (Number(currentTier.minSpend) || 0);
+          spendNeeded = Math.max(0, (Number(nextTier.minSpend) || 0) - totalSpend);
+          progressPercent = range > 0 ? Math.min(100, Math.max(0, Math.round((currentProgress / range) * 100))) : 100;
+        }
+
+        return {
+          phone,
+          customerName: custOrders[0]?.customer || custOrders[0]?.customerName || "",
+          totalSpend,
+          orderCount,
+          earnedPoints: recordedEarned,
+          redeemedPoints: recordedRedeemed,
+          manualPoints: manualAdj,
+          availablePoints,
+          currentTier,
+          nextTier,
+          spendNeeded,
+          progressPercent
+        };
+      };
+
       // Cart Functions
       const addToCart = (product, qty = 1) => {
         if (product.stock <= 0) {
@@ -1302,7 +1453,33 @@
           discountAmount = appliedCoupon.value;
         }
       }
-      const cartGrandTotal = Math.max(0, cartSubtotal - discountAmount) + deliveryCharge;
+
+      // Member Tier & Loyalty Discount Computation
+      const detectedLoyalty = getCustomerLoyalty(checkoutForm.phone);
+      const isLoyaltyEnabled = Boolean(loyalty?.enabled);
+      const customerTier = detectedLoyalty.currentTier;
+      const tierDiscountPercent = isLoyaltyEnabled ? (Number(customerTier.discountPercent) || 0) : 0;
+      const tierDiscountAmount = tierDiscountPercent > 0 ? Math.round((cartSubtotal * tierDiscountPercent) / 100) : 0;
+
+      // Points Redemption Computation (100 points = 1 Taka by default)
+      const pointsConversionRate = Number(loyalty?.pointsRate) || 100;
+      const maxRedeemLimitPercent = Number(loyalty?.maxRedeemPercent) || 50;
+      const minPointsNeeded = Number(loyalty?.minRedeemPoints) || 100;
+      const maxPointsRedeemableInTaka = Math.floor((cartSubtotal * maxRedeemLimitPercent) / 100);
+      const customerPointsInTaka = Math.floor((detectedLoyalty.availablePoints || 0) / pointsConversionRate);
+      
+      const canRedeemPoints = isLoyaltyEnabled && (detectedLoyalty.availablePoints || 0) >= minPointsNeeded && customerPointsInTaka > 0;
+      const pointsDiscountAmount = (canRedeemPoints && redeemPointsChecked) 
+        ? Math.min(customerPointsInTaka, maxPointsRedeemableInTaka) 
+        : 0;
+      const pointsRedeemedCount = pointsDiscountAmount * pointsConversionRate;
+
+      // Points to be earned on this order
+      const spendPerPointRate = Number(loyalty?.spendPerPoint) || 10;
+      const pointsEarnedThisOrder = isLoyaltyEnabled ? Math.floor(cartSubtotal / spendPerPointRate) : 0;
+
+      const totalDiscounts = discountAmount + tierDiscountAmount + pointsDiscountAmount;
+      const cartGrandTotal = Math.max(0, cartSubtotal - totalDiscounts) + deliveryCharge;
 
       // Apply Coupon
       const handleApplyCoupon = () => {
@@ -1341,8 +1518,16 @@
           address: checkoutForm.address,
           total: cartGrandTotal,
           subtotal: cartSubtotal,
-          discount: discountAmount,
+          discount: totalDiscounts,
+          couponDiscount: discountAmount,
           couponCode: appliedCoupon ? appliedCoupon.code : "",
+          memberTier: customerTier.name,
+          memberTierBn: customerTier.nameBn,
+          tierDiscountPercent: tierDiscountPercent,
+          tierDiscount: tierDiscountAmount,
+          pointsRedeemed: pointsRedeemedCount,
+          pointsDiscount: pointsDiscountAmount,
+          pointsEarned: pointsEarnedThisOrder,
           deliveryCharge,
           paymentMethod: checkoutForm.paymentMethod,
           status: "Pending",
@@ -1378,6 +1563,7 @@
         setIsCartOpen(false);
         setAppliedCoupon(null);
         setCouponInput("");
+        setRedeemPointsChecked(false);
         notify(`ধন্যবাদ ${checkoutForm.name}! আপনার অর্ডার সফল হয়েছে (ID: #${newOrderId}) 🎉`);
       };
 
@@ -1530,7 +1716,7 @@ ${itemsList || "  কোনো আইটেম নেই"}
 ──────────────────
 💰 পণ্যের মূল্য (সাবটোটাল): ${order.subtotal || order.total || 0} ৳
 🚚 ডেলিভারি চার্জ: ${order.deliveryCharge === 0 ? "ফ্রি (Free)" : `${order.deliveryCharge || 0} ৳`}
-${order.discount ? `🎁 স্পেশাল ডিসকাউন্ট: -${order.discount} ৳\n` : ""}${order.couponCode ? `🎟️ কুপন কোড: ${order.couponCode}\n` : ""}💵 *সর্বমোট প্রদেয় বিল:* *${order.total || 0} ৳*
+${order.memberTierBn ? `👑 ভিআইপি স্ট্যাটাস: *${order.memberTierBn}*\n` : ""}${order.tierDiscount ? `✨ মেম্বারশিপ ছাড় (${order.tierDiscountPercent || 0}%): -${order.tierDiscount} ৳\n` : ""}${order.pointsRedeemed ? `🪙 রিওয়ার্ড পয়েন্ট ব্যবহার: -${order.pointsDiscount || 0} ৳ (${order.pointsRedeemed} পয়েন্ট)\n` : ""}${order.couponCode ? `🎟️ কুপন ছাড় (${order.couponCode}): -${order.couponDiscount || order.discount || 0} ৳\n` : (!order.tierDiscount && !order.pointsRedeemed && order.discount ? `🎁 স্পেশাল ডিসকাউন্ট: -${order.discount} ৳\n` : "")}${order.pointsEarned ? `🎉 এই অর্ডারে অর্জিত পয়েন্ট: +${order.pointsEarned} রিওয়ার্ড পয়েন্ট\n` : ""}💵 *সর্বমোট প্রদেয় বিল:* *${order.total || 0} ৳*
 💳 পেমেন্ট মাধ্যম: *${order.paymentMethod || "Cash on Delivery (ক্যাশ অন ডেলিভারি)"}*
 
 📍 *ডেলিভারি ঠিকানা:*
@@ -1830,6 +2016,14 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
               <div className="flex items-center gap-2">
                 {activeTab === "Storefront" ? (
                   <>
+                    <button 
+                      onClick={() => setIsVipClubModalOpen(true)}
+                      className="bg-gradient-to-r from-amber-500 via-amber-600 to-[#7a1c2b] text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow hover:brightness-110 transition flex items-center gap-1.5 active:scale-95"
+                      title="ভিআইপি মেম্বারশিপ ও রিওয়ার্ড ক্লাব"
+                    >
+                      <span>👑</span>
+                      <span className="hidden sm:inline">VIP ক্লাব</span>
+                    </button>
                     <button 
                       onClick={() => setIsCartOpen(true)}
                       className="relative bg-[#7a1c2b] text-white px-3.5 sm:px-4 py-2 rounded-full flex items-center gap-2 text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] transition"
@@ -2404,12 +2598,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       {/* 5. System Configurations */}
                       <button
                         onClick={() => {
-                          if (!["Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab)) {
-                            setActiveTab("Courier");
+                          if (!["Loyalty", "Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab)) {
+                            setActiveTab("Loyalty");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab)
+                          ["Loyalty", "Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
@@ -2477,10 +2671,11 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   )}
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR SYSTEM CONFIGURATIONS) */}
-                  {["Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab) && (
+                  {["Loyalty", "Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">সিস্টেম কনফিগারেশন:</span>
                       {[
+                        { id: "Loyalty", label: "👑 মেম্বারশিপ ও রিওয়ার্ড (VIP ক্লাব)" },
                         { id: "Courier", label: "🚚 কুরিয়ার ইন্টিগ্রেশন (Steadfast / Pathao)" },
                         { id: "Pixel", label: "📈 ফেসবুক পিক্সেল ও CAPI" },
                         { id: "SEO", label: "🌐 এসইও ও সাইটম্যাপ" },
@@ -2551,6 +2746,13 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           title="প্রোডাক্ট চয়েস করে নতুন কম্বো প্যাক তৈরি করুন"
                         >
                           <span>🎁 কম্বো প্যাক দিন</span>
+                        </button>
+                        <button 
+                          onClick={() => setActiveTab("Loyalty")}
+                          className="bg-gradient-to-r from-amber-400 to-yellow-600 text-stone-950 px-4 py-2.5 rounded-full text-xs sm:text-sm font-extrabold shadow hover:brightness-110 transition flex items-center gap-1.5 active:scale-95"
+                          title="রিওয়ার্ড পয়েন্ট ও ৬টি ভিআইপি মেম্বারশিপ লেভেল সেটআপ করুন"
+                        >
+                          <span>👑 মেম্বারশিপ সেটিংস</span>
                         </button>
                         <button 
                           onClick={() => setActiveTab("Banners")}
@@ -4389,6 +4591,461 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
             )}
 
             {/* ========================================================= */}
+            {/* 7.5 VIP MEMBERSHIP & REWARD POINTS CONTROL HUB */}
+            {/* ========================================================= */}
+            {activeTab === "Loyalty" && (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-8 shadow-sm animate-fadeIn">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#f3e2d0]">
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
+                      title="ড্যাশবোর্ডে ফিরে যান"
+                    >
+                      ← ড্যাশবোর্ড
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl sm:text-2xl font-black text-[#7a1c2b]">👑 ভিআইপি মেম্বারশিপ ও রিওয়ার্ড পয়েন্ট হাব</h3>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${loyalty?.enabled ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-gray-100 text-gray-600'}`}>
+                          {loyalty?.enabled ? "● সিস্টেম সক্রিয়" : "○ নিষ্ক্রিয়"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#b8956a] mt-0.5">
+                        ৬টি মেম্বারশিপ লেভেল, স্পেশাল % ডিসকাউন্ট, পয়েন্ট কনভার্সন রেট এবং কাস্টমার ব্যালেন্স ম্যানেজমেন্ট
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setIsVipClubModalOpen(true)}
+                      className="bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] hover:bg-[#7a1c2b] hover:text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5"
+                    >
+                      <span>👁️</span>
+                      <span>গ্রাহক ভিউ প্রিভিউ</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setStored("loyalty", loyalty);
+                        await syncDocToCloud("config", "loyalty", loyalty);
+                        notify("👑 ভিআইপি মেম্বারশিপ ও রিওয়ার্ড পয়েন্ট সেটিংস ক্লাউডে সেভ হয়েছে! ✅");
+                      }}
+                      className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-1.5 active:scale-95"
+                    >
+                      <span>💾</span>
+                      <span>সমস্ত মেম্বারশিপ সেটিংস সেভ করুন</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 1. REWARD POINTS CONVERSION RATE & RULES */}
+                <div className="p-6 bg-gradient-to-br from-amber-50 via-[#fffaf5] to-orange-50 rounded-3xl border-2 border-amber-300 shadow-sm space-y-5">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-[#7a1c2b] text-white flex items-center justify-center text-2xl shadow">
+                        🪙
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-base text-[#2c1810]">রিওয়ার্ড পয়েন্ট কনভার্সন রেট ও আর্নিং রুলস</h4>
+                        <p className="text-xs text-gray-600">পয়েন্ট টু টাকা এক্সচেঞ্জ রেট এবং রিডিম পলিসি ম্যানুয়ালি সেট করুন</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={Boolean(loyalty?.enabled)} 
+                        onChange={(e) => setLoyalty(prev => ({ ...prev, enabled: e.target.checked }))} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-amber-600 peer-checked:to-[#7a1c2b]"></div>
+                      <span className="ml-2 text-xs font-bold text-gray-700">চালু রাখুন</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                    {/* Points per 1 BDT */}
+                    <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs">
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        কত পয়েন্টে ১ টাকা ছাড়? *
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={loyalty?.pointsRate !== undefined ? loyalty.pointsRate : 100}
+                          onChange={(e) => setLoyalty(prev => ({ ...prev, pointsRate: Math.max(1, Number(e.target.value)) }))}
+                          className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
+                        />
+                        <span className="text-xs font-bold text-gray-500 whitespace-nowrap">পয়েন্ট</span>
+                      </div>
+                      <p className="text-[10px] text-emerald-700 font-semibold mt-1">
+                        ✓ ডিফল্ট: ১০০ পয়েন্ট = ১ টাকা
+                      </p>
+                    </div>
+
+                    {/* Spend for 1 Point */}
+                    <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs">
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        কত টাকা কেনাকাটায় ১ পয়েন্ট অর্জন? *
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={loyalty?.spendPerPoint !== undefined ? loyalty.spendPerPoint : 10}
+                          onChange={(e) => setLoyalty(prev => ({ ...prev, spendPerPoint: Math.max(1, Number(e.target.value)) }))}
+                          className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
+                        />
+                        <span className="text-xs font-bold text-gray-500 whitespace-nowrap">টাকা</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        যেমন: ১০ ৳ খরচ করলে ১টি পয়েন্ট
+                      </p>
+                    </div>
+
+                    {/* Min Redeem Points */}
+                    <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs">
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        ন্যূনতম রিডিম পয়েন্ট *
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={loyalty?.minRedeemPoints !== undefined ? loyalty.minRedeemPoints : 100}
+                          onChange={(e) => setLoyalty(prev => ({ ...prev, minRedeemPoints: Math.max(0, Number(e.target.value)) }))}
+                          className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
+                        />
+                        <span className="text-xs font-bold text-gray-500 whitespace-nowrap">পয়েন্ট</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        চেকআউটে পয়েন্ট ব্যবহারের সর্বনিম্ন লিমিট
+                      </p>
+                    </div>
+
+                    {/* Max Redeem Percent */}
+                    <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs">
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        সর্বোচ্চ কত % পয়েন্ট দিয়ে পরিশোধযোগ্য?
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={loyalty?.maxRedeemPercent !== undefined ? loyalty.maxRedeemPercent : 50}
+                          onChange={(e) => setLoyalty(prev => ({ ...prev, maxRedeemPercent: Math.min(100, Math.max(1, Number(e.target.value))) }))}
+                          className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
+                        />
+                        <span className="text-xs font-bold text-gray-500 whitespace-nowrap">%</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        অর্ডার বিলের সর্বোচ্চ ছাড় সীমা (ডিফল্ট: ৫০%)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Formula Preview Pill */}
+                  <div className="bg-white/90 p-3.5 rounded-2xl border border-amber-200 text-xs text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">💡</span>
+                      <span>
+                        <strong>লাইভ পলিসি সূত্র:</strong> গ্রাহক <strong>১,০০০ ৳</strong> এর শপিং করলে পাবেন <strong>{Math.floor(1000 / (loyalty?.spendPerPoint || 10))} রিওয়ার্ড পয়েন্ট</strong>। পরবর্তীতে <strong>১,০০০ পয়েন্ট</strong> ব্যবহার করলে পাবেন <strong>{Math.floor(1000 / (loyalty?.pointsRate || 100))} ৳</strong> ফ্ল্যাট ক্যাশব্যাক ছাড়।
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. 6 VIP MEMBERSHIP TIERS MANAGEMENT */}
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="font-extrabold text-base text-[#7a1c2b] flex items-center gap-2">
+                        <span>👑</span>
+                        <span>৬টি ভিআইপি মেম্বারশিপ টায়ার, আপগ্রেড অ্যামাউন্ট ও স্পেশাল % ডিসকাউন্ট</span>
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Bronze, Silver, Gold, Diamond, Platinum এবং Platinum Elite এর জন্য আজীবন কেনাকাটা এমাউন্ট ও ডিসকাউন্ট % কনফিগার করুন
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold bg-[#fff8f0] text-[#7a1c2b] px-3 py-1 rounded-full border border-[#d4a574]">
+                      মোট ৬ টি টায়ার লেভেল
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(loyalty?.tiers || initialLoyaltyConfig.tiers).map((tier, idx) => (
+                      <div 
+                        key={tier.id} 
+                        className="bg-[#fffdfa] rounded-2xl p-5 border-2 border-[#f3e2d0] hover:border-[#d4a574] transition space-y-3.5 shadow-xs relative overflow-hidden"
+                      >
+                        {/* Tier Title Bar */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-3xl p-1.5 rounded-xl bg-white border border-[#f3e2d0] shadow-xs">
+                              {tier.icon}
+                            </span>
+                            <div>
+                              <h5 className="font-extrabold text-sm text-[#2c1810]">
+                                {tier.nameBn || tier.name}
+                              </h5>
+                              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400">
+                                Level {idx + 1}: {tier.name}
+                              </span>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.badgeColor || 'bg-gray-100 text-gray-800'}`}>
+                            {tier.discountPercent}% ছাড়
+                          </span>
+                        </div>
+
+                        {/* Upgrade Spend Amount & Discount % Fields */}
+                        <div className="grid grid-cols-2 gap-3 pt-1">
+                          <div>
+                            <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                              আপগ্রেড এমাউন্ট (৳) *
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={tier.minSpend}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setLoyalty(prev => ({
+                                  ...prev,
+                                  tiers: prev.tiers.map(t => t.id === tier.id ? { ...t, minSpend: val } : t)
+                                }));
+                              }}
+                              className="w-full bg-white border rounded-xl px-3 py-2 text-xs font-bold font-mono outline-none focus:border-[#7a1c2b]"
+                              placeholder="0"
+                            />
+                            <span className="text-[9px] text-gray-400 mt-0.5 block">
+                              {idx === 0 ? "সাধারণ এন্ট্রি (০ ৳)" : `ন্যূনতম ${tier.minSpend} ৳ খরচ`}
+                            </span>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                              স্পেশাল ডিসকাউন্ট (%) *
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={tier.discountPercent}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setLoyalty(prev => ({
+                                  ...prev,
+                                  tiers: prev.tiers.map(t => t.id === tier.id ? { ...t, discountPercent: val } : t)
+                                }));
+                              }}
+                              className="w-full bg-white border rounded-xl px-3 py-2 text-xs font-bold font-mono outline-none focus:border-[#7a1c2b]"
+                              placeholder="0"
+                            />
+                            <span className="text-[9px] text-emerald-700 font-semibold mt-0.5 block">
+                              {tier.discountPercent > 0 ? `অর্ডারে ${tier.discountPercent}% ফ্ল্যাট ছাড়` : "কোনো অতিরিক্ত ছাড় নেই"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Perks / Benefits */}
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                            মেম্বারশিপ সুবিধা / পারকস বিবরণ
+                          </label>
+                          <input
+                            type="text"
+                            value={tier.perks || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setLoyalty(prev => ({
+                                ...prev,
+                                tiers: prev.tiers.map(t => t.id === tier.id ? { ...t, perks: val } : t)
+                              }));
+                            }}
+                            className="w-full bg-white border rounded-xl px-3 py-1.5 text-xs outline-none focus:border-[#7a1c2b]"
+                            placeholder="যেমন: ১০% মেম্বারশিপ ডিসকাউন্ট + ফ্রি উপহার"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setStored("loyalty", loyalty);
+                        await syncDocToCloud("config", "loyalty", loyalty);
+                        notify("৬টি ভিআইপি মেম্বারশিপ টায়ার ও ডিসকাউন্ট সফলভাবে সংরক্ষিত হয়েছে! ✅");
+                      }}
+                      className="bg-[#7a1c2b] text-white px-8 py-3 rounded-full text-xs sm:text-sm font-bold shadow-md hover:bg-[#681727] transition flex items-center gap-2"
+                    >
+                      <span>💾</span>
+                      <span>মেম্বারশিপ টায়ার ও ডিসকাউন্ট সংরক্ষণ করুন</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. CUSTOMER LOYALTY & VIP DIRECTORY */}
+                <div className="p-6 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <h4 className="font-extrabold text-base text-[#2c1810] flex items-center gap-2">
+                        <span>👥</span>
+                        <span>কাস্টমার মেম্বারশিপ ও রিওয়ার্ড ব্যালেন্স ডিরেক্টরি</span>
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        গ্রাহকদের মোট কেনাকাটা, বর্তমান ভিআইপি টায়ার, রিওয়ার্ড পয়েন্ট ও ম্যানুয়াল পয়েন্ট অ্যাডজাস্টমেন্ট
+                      </p>
+                    </div>
+
+                    {/* Search by phone or name */}
+                    <div className="w-full sm:w-72 relative">
+                      <input
+                        type="text"
+                        value={loyaltySearchQuery}
+                        onChange={(e) => setLoyaltySearchQuery(e.target.value)}
+                        placeholder="মোবাইল বা নাম দিয়ে খুঁজুন..."
+                        className="w-full bg-white border border-[#d4a574] rounded-full px-4 py-2 text-xs outline-none pl-8 focus:border-[#7a1c2b]"
+                      />
+                      <span className="absolute left-3 top-2.5 text-xs text-gray-400">🔍</span>
+                      {loyaltySearchQuery && (
+                        <button onClick={() => setLoyaltySearchQuery("")} className="absolute right-3 top-2.5 text-xs text-gray-400 hover:text-black">✕</button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Customer Aggregated List */}
+                  {(() => {
+                    // Extract unique phones from orders
+                    const phoneMap = {};
+                    (orders || []).forEach(o => {
+                      const p = normalizePhone(o.phone || o.customerPhone);
+                      if (p && p.length >= 10) {
+                        if (!phoneMap[p]) {
+                          phoneMap[p] = { phone: p, name: o.customer || o.customerName || "ক্রেতা" };
+                        }
+                      }
+                    });
+
+                    // Also include phones from manual adjustments
+                    Object.keys(loyaltyCustomerMap || {}).forEach(p => {
+                      if (!phoneMap[p]) {
+                        phoneMap[p] = { phone: p, name: loyaltyCustomerMap[p]?.name || "গ্রাহক" };
+                      }
+                    });
+
+                    const customerList = Object.values(phoneMap).map(c => getCustomerLoyalty(c.phone));
+                    customerList.sort((a,b) => b.totalSpend - a.totalSpend);
+
+                    const filteredCusts = customerList.filter(c => {
+                      if (!loyaltySearchQuery) return true;
+                      const q = loyaltySearchQuery.toLowerCase();
+                      return c.phone.includes(q) || (c.customerName || "").toLowerCase().includes(q);
+                    });
+
+                    if (filteredCusts.length === 0) {
+                      return (
+                        <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-[#f3e2d0] p-6">
+                          <span className="text-3xl">👑</span>
+                          <p className="font-bold text-sm text-gray-700 mt-2">কোনো কাস্টমার ডাটা পাওয়া যায়নি</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            নতুন অর্ডার প্লেস হলে স্বয়ংক্রিয়ভাবে কাস্টমারদের ভিআইপি মেম্বারশিপ ও পয়েন্ট হিসাব এখানে যুক্ত হবে।
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs bg-white rounded-2xl overflow-hidden border border-[#f3e2d0]">
+                          <thead>
+                            <tr className="bg-[#f8ede3] text-[#7a1c2b] font-bold border-b border-[#f3e2d0]">
+                              <th className="p-3.5">গ্রাহক ও মোবাইল</th>
+                              <th className="p-3.5">মোট কেনাকাটা</th>
+                              <th className="p-3.5">সফল অর্ডার</th>
+                              <th className="p-3.5">ভিআইপি টায়ার</th>
+                              <th className="p-3.5">রিওয়ার্ড পয়েন্ট ব্যালেন্স</th>
+                              <th className="p-3.5 text-right">অ্যাকশন</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#f3e2d0]/60">
+                            {filteredCusts.slice(0, 30).map(c => {
+                              const pointsInTaka = Math.floor(c.availablePoints / (loyalty?.pointsRate || 100));
+                              return (
+                                <tr key={c.phone} className="hover:bg-[#fffdfa] transition">
+                                  <td className="p-3.5">
+                                    <div className="font-bold text-gray-900">{c.customerName || "সম্মানিত ক্রেতা"}</div>
+                                    <div className="font-mono text-[11px] text-[#7a1c2b]">{c.phone}</div>
+                                  </td>
+                                  <td className="p-3.5 font-bold font-mono text-gray-900">
+                                    {c.totalSpend.toLocaleString()} ৳
+                                  </td>
+                                  <td className="p-3.5 text-gray-700 font-semibold">
+                                    {c.orderCount} টি
+                                  </td>
+                                  <td className="p-3.5">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-[11px] shadow-xs border bg-[#fff8f0] text-[#7a1c2b] border-[#d4a574]">
+                                      <span>{c.currentTier?.icon || "👑"}</span>
+                                      <span>{c.currentTier?.nameBn || c.currentTier?.name}</span>
+                                      {c.currentTier?.discountPercent > 0 && (
+                                        <span className="text-[10px] bg-[#7a1c2b] text-white px-1.5 py-0.2 rounded-full font-black">
+                                          {c.currentTier.discountPercent}%
+                                        </span>
+                                      )}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-extrabold text-[#7a1c2b] text-sm font-mono">
+                                        {c.availablePoints}
+                                      </span>
+                                      <span className="text-gray-500 text-[11px]">
+                                        (= {pointsInTaka} ৳ ছাড়)
+                                      </span>
+                                    </div>
+                                    {c.manualPoints !== 0 && (
+                                      <span className="text-[10px] text-amber-800 font-medium">
+                                        (ম্যানুয়াল অ্যাডজাস্টমেন্ট: {c.manualPoints > 0 ? `+${c.manualPoints}` : c.manualPoints})
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="p-3.5 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setAdjustPointsModal({
+                                          phone: c.phone,
+                                          name: c.customerName,
+                                          currentPoints: c.availablePoints
+                                        });
+                                        setAdjustPointsInput("");
+                                        setAdjustPointsNote("");
+                                      }}
+                                      className="px-3 py-1.5 rounded-full text-xs font-bold border border-[#7a1c2b] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition shadow-xs"
+                                    >
+                                      পয়েন্ট সমন্বয় ±
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
             {/* 8. COURIER SETTINGS TAB */}
             {/* ========================================================= */}
             {activeTab === "Courier" && (
@@ -5714,7 +6371,14 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold">মোবাইল নম্বর * (১১ ডিজিট)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold">মোবাইল নম্বর * (১১ ডিজিট)</label>
+                      {isLoyaltyEnabled && (
+                        <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                          👑 VIP মেম্বার সুবিধা সংযুক্ত
+                        </span>
+                      )}
+                    </div>
                     <input 
                       type="tel" 
                       required 
@@ -5723,6 +6387,78 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })} 
                       className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
                     />
+
+                    {/* LIVE VIP MEMBERSHIP & REWARD POINTS CARD */}
+                    {isLoyaltyEnabled && normalizePhone(checkoutForm.phone).length >= 10 && (
+                      <div className="mt-2.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/70 p-3.5 rounded-2xl border-2 border-amber-300 shadow-sm space-y-2.5 animate-fadeIn">
+                        <div className="flex items-center justify-between flex-wrap gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{customerTier.icon || "👑"}</span>
+                            <div>
+                              <span className="text-xs font-extrabold text-[#7a1c2b] flex items-center gap-1">
+                                <span>{customerTier.nameBn || customerTier.name}</span>
+                                {tierDiscountPercent > 0 && (
+                                  <span className="bg-[#7a1c2b] text-white text-[10px] font-black px-2 py-0.2 rounded-full">
+                                    {tierDiscountPercent}% স্পেশাল ছাড়
+                                  </span>
+                                )}
+                              </span>
+                              <p className="text-[10px] text-gray-600">
+                                আজীবন কেনাকাটা: <strong className="text-[#2c1810]">{detectedLoyalty.totalSpend} ৳</strong> ({detectedLoyalty.orderCount}টি সফল অর্ডার)
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsVipClubModalOpen(true)}
+                            className="text-[10px] text-[#7a1c2b] font-bold hover:underline"
+                          >
+                            টায়ার সুবিধা ↗
+                          </button>
+                        </div>
+
+                        {/* Points Redemption Checkbox */}
+                        {canRedeemPoints ? (
+                          <div className="pt-2 border-t border-amber-200 flex items-start gap-2.5">
+                            <input
+                              type="checkbox"
+                              id="redeemPointsCheck"
+                              checked={redeemPointsChecked}
+                              onChange={(e) => setRedeemPointsChecked(e.target.checked)}
+                              className="w-4 h-4 mt-0.5 accent-[#7a1c2b] cursor-pointer"
+                            />
+                            <label htmlFor="redeemPointsCheck" className="text-xs text-gray-800 cursor-pointer flex-1">
+                              <span className="font-bold text-[#7a1c2b]">
+                                রিওয়ার্ড পয়েন্ট ব্যবহার করুন ({pointsConversionRate} পয়েন্ট = ১ টাকা)
+                              </span>
+                              <span className="block text-[11px] text-gray-600 mt-0.5">
+                                আপনার ব্যালেন্স: <strong>{detectedLoyalty.availablePoints} পয়েন্ট</strong> (= {customerPointsInTaka} ৳)। 
+                                {redeemPointsChecked ? (
+                                  <strong className="text-emerald-700 ml-1">✓ {pointsDiscountAmount} ৳ ক্যাশ ছাড় প্রযোজ্য হচ্ছে!</strong>
+                                ) : (
+                                  <span className="text-[#b45309] ml-1">ক্লিক করে এখনই {Math.min(customerPointsInTaka, maxPointsRedeemableInTaka)} ৳ পর্যন্ত ছাড় নিন!</span>
+                                )}
+                              </span>
+                            </label>
+                          </div>
+                        ) : (
+                          <div className="pt-1.5 border-t border-amber-200 text-[11px] text-gray-600 flex items-center justify-between">
+                            <span>🪙 রিওয়ার্ড পয়েন্ট ব্যালেন্স: <strong>{detectedLoyalty.availablePoints} পয়েন্ট</strong> (= {customerPointsInTaka} ৳)</span>
+                            <span className="text-[10px] text-amber-800">ন্যূনতম {minPointsNeeded} পয়েন্ট হলে রিডিমযোগ্য</span>
+                          </div>
+                        )}
+
+                        {/* Teaser for points earned on current order */}
+                        {pointsEarnedThisOrder > 0 && (
+                          <div className="bg-white/80 px-2.5 py-1.5 rounded-xl border border-amber-200 text-[11px] text-amber-900 font-semibold flex items-center justify-between">
+                            <span>✨ এই অর্ডার সফল হলে আপনি পাবেন:</span>
+                            <span className="bg-amber-100 text-amber-900 text-[11px] font-black px-2 py-0.5 rounded-full border border-amber-300">
+                              +{pointsEarnedThisOrder} রিওয়ার্ড পয়েন্ট
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -5799,16 +6535,36 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <span>সাবটোটাল</span>
                       <span>{cartSubtotal} ৳</span>
                     </div>
+
+                    {/* Member Tier Special Discount */}
+                    {tierDiscountAmount > 0 && (
+                      <div className="flex justify-between text-[#7a1c2b] font-bold">
+                        <span>👑 {customerTier.nameBn || customerTier.name} স্পেশাল ছাড় ({tierDiscountPercent}%):</span>
+                        <span>- {tierDiscountAmount} ৳</span>
+                      </div>
+                    )}
+
+                    {/* Reward Points Discount */}
+                    {pointsDiscountAmount > 0 && (
+                      <div className="flex justify-between text-amber-800 font-bold">
+                        <span>🪙 রিওয়ার্ড পয়েন্ট ছাড় ({pointsRedeemedCount} পয়েন্ট):</span>
+                        <span>- {pointsDiscountAmount} ৳</span>
+                      </div>
+                    )}
+
+                    {/* Coupon Discount */}
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-green-700 font-semibold">
-                        <span>ডিসকাউন্ট</span>
+                        <span>🎟️ কুপন ছাড় ({appliedCoupon ? appliedCoupon.code : ""}):</span>
                         <span>- {discountAmount} ৳</span>
                       </div>
                     )}
+
                     <div className="flex justify-between">
                       <span>ডেলিভারি চার্জ</span>
                       <span>{deliveryCharge === 0 ? "ফ্রি (Free)" : `${deliveryCharge} ৳`}</span>
                     </div>
+
                     <div className="flex justify-between text-base font-bold text-[#7a1c2b] pt-2 border-t border-[#d4a574]">
                       <span>সর্বমোট প্রদেয়</span>
                       <span>{cartGrandTotal} ৳</span>
@@ -6041,7 +6797,243 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
           )}
 
           {/* ========================================================= */}
-          {/* PRODUCT DETAILS MODAL (WITH MULTI-IMAGE CAROUSEL) */}
+                    {/* ========================================================= */}
+          {/* STOREFRONT VIP MEMBERSHIP & REWARD CLUB MODAL */}
+          {/* ========================================================= */}
+          {isVipClubModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 sm:p-8 border shadow-2xl animate-fadeIn space-y-6">
+                <div className="flex justify-between items-start pb-4 border-b border-[#f3e2d0]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-[#7a1c2b] text-white flex items-center justify-center text-2xl shadow">
+                      👑
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-lg sm:text-xl text-[#7a1c2b]">
+                        সাজগোজ ভিআইপি মেম্বারশিপ ও রিওয়ার্ড ক্লাব
+                      </h3>
+                      <p className="text-xs text-[#b8956a]">
+                        প্রতিটি অর্ডারে রিওয়ার্ড পয়েন্ট অর্জন করুন ও স্পেশাল আজীবন ভিআইপি মেম্বারশিপ ছাড় উপভোগ করুন
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => { setIsVipClubModalOpen(false); setVipLookupResult(null); }} 
+                    className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold text-gray-600 hover:text-black"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* 1. Customer Loyalty Quick Phone Lookup */}
+                <div className="p-5 bg-gradient-to-r from-amber-50 via-orange-50 to-[#fffaf5] rounded-3xl border-2 border-amber-300 space-y-3">
+                  <h4 className="font-bold text-xs sm:text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                    <span>🔍</span>
+                    <span>আপনার ভিআইপি মেম্বারশিপ ও পয়েন্ট ব্যালেন্স চেক করুন:</span>
+                  </h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      value={vipLookupPhone}
+                      onChange={(e) => setVipLookupPhone(e.target.value)}
+                      placeholder="আপনার মোবাইল নম্বর (যেমন: 01XXXXXXXXX)"
+                      className="flex-1 bg-white border border-[#d4a574] rounded-full px-5 py-2.5 text-xs sm:text-sm outline-none focus:border-[#7a1c2b]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const res = getCustomerLoyalty(vipLookupPhone);
+                        setVipLookupResult(res);
+                      }}
+                      className="bg-[#7a1c2b] hover:bg-[#681727] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow transition"
+                    >
+                      চেক করুন
+                    </button>
+                  </div>
+
+                  {/* Lookup Result Card */}
+                  {vipLookupResult && (
+                    <div className="mt-3 bg-white p-4 rounded-2xl border border-amber-300 space-y-2.5 animate-fadeIn">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{vipLookupResult.currentTier?.icon || "👑"}</span>
+                          <div>
+                            <span className="text-xs font-bold text-gray-500 block">বর্তমান স্ট্যাটাস:</span>
+                            <span className="font-extrabold text-sm text-[#7a1c2b]">
+                              {vipLookupResult.currentTier?.nameBn || vipLookupResult.currentTier?.name}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-gray-500 block">রিওয়ার্ড পয়েন্ট:</span>
+                          <span className="font-extrabold text-base text-amber-900 font-mono">
+                            {vipLookupResult.availablePoints} পয়েন্ট
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-bold block">
+                            (= {Math.floor(vipLookupResult.availablePoints / (loyalty?.pointsRate || 100))} ৳ ক্যাশব্যাক)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress to next tier */}
+                      {vipLookupResult.nextTier ? (
+                        <div className="pt-2 border-t border-gray-100 space-y-1">
+                          <div className="flex justify-between text-[11px] font-semibold text-gray-600">
+                            <span>পরবর্তী টায়ার: <strong>{vipLookupResult.nextTier.nameBn}</strong> ({vipLookupResult.nextTier.discountPercent}% ছাড়)</span>
+                            <span>আর প্রয়োজন: <strong className="text-[#7a1c2b]">{vipLookupResult.spendNeeded} ৳</strong></span>
+                          </div>
+                          <div className="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-amber-500 to-[#7a1c2b] h-full transition-all duration-500" 
+                              style={{ width: `${vipLookupResult.progressPercent}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-emerald-800 font-bold pt-1 border-t border-gray-100">
+                          ⚜️ অভিনন্দন! আপনি আমাদের সর্বোচ্চ মেম্বারশিপ "প্লাটিনাম এলিট" স্তরে রয়েছেন।
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. All 6 VIP Tiers Showcase */}
+                <div className="space-y-3">
+                  <h4 className="font-extrabold text-sm text-[#7a1c2b] uppercase tracking-wider">
+                    ভিআইপি মেম্বারশিপ লেভেল ও সুবিধাসমূহ
+                  </h4>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {(loyalty?.tiers || initialLoyaltyConfig.tiers).map((tier, idx) => (
+                      <div 
+                        key={tier.id}
+                        className="bg-[#fffdfa] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 hover:border-[#d4a574] transition"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{tier.icon}</span>
+                            <div>
+                              <h5 className="font-extrabold text-xs text-[#2c1810]">{tier.nameBn}</h5>
+                              <span className="text-[10px] text-gray-400 font-mono">লেভেল {idx + 1} ({tier.name})</span>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${tier.badgeColor || 'bg-gray-100 text-gray-800'}`}>
+                            {tier.discountPercent > 0 ? `${tier.discountPercent}% ছাড়` : "ওয়েলকাম"}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-gray-600 flex items-center justify-between border-t border-[#f3e2d0]/60 pt-2">
+                          <span>ন্যূনতম কেনাকাটা:</span>
+                          <strong className="text-[#7a1c2b] font-mono">{tier.minSpend.toLocaleString()} ৳</strong>
+                        </div>
+                        <p className="text-[11px] text-gray-500 leading-tight">
+                          ✨ {tier.perks || "বিশেষ ডিসকাউন্ট সুবিধা"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Reward Points Conversion Explainer */}
+                <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] text-xs text-gray-700 space-y-1.5">
+                  <span className="font-bold text-[#7a1c2b] block">🪙 রিওয়ার্ড পয়েন্ট ব্যবহারের নিয়মাবলী:</span>
+                  <p>• প্রতিটি কেনাকাটায় প্রতি <strong>{loyalty?.spendPerPoint || 10} টাকায় ১ পয়েন্ট</strong> অর্জন করবেন।</p>
+                  <p>• চেকআউটের সময় প্রতি <strong>{loyalty?.pointsRate || 100} পয়েন্ট সমান ১ টাকা</strong> সরাসরি ক্যাশ ডিসকাউন্ট হিসেবে ব্যবহার করতে পারবেন।</p>
+                  <p>• ন্যূনতম {loyalty?.minRedeemPoints || 100} পয়েন্ট ব্যালেন্স থাকলেই চেকআউটে এক ক্লিকে পয়েন্ট রিডিম করা যায়।</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* ADMIN MANUAL POINTS ADJUSTMENT MODAL */}
+          {/* ========================================================= */}
+          {adjustPointsModal && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-md p-6 border shadow-2xl animate-fadeIn space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-[#f3e2d0]">
+                  <div>
+                    <h3 className="font-bold text-base text-[#7a1c2b]">কাস্টমার রিওয়ার্ড পয়েন্ট সমন্বয়</h3>
+                    <p className="text-xs text-gray-500">গ্রাহক: {adjustPointsModal.name} ({adjustPointsModal.phone})</p>
+                  </div>
+                  <button onClick={() => setAdjustPointsModal(null)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="bg-[#fffaf5] p-3 rounded-2xl border text-xs">
+                    <span className="text-gray-500">বর্তমান পয়েন্ট ব্যালেন্স:</span>
+                    <strong className="text-base text-[#7a1c2b] block font-mono mt-0.5">{adjustPointsModal.currentPoints} পয়েন্ট</strong>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 block mb-1">
+                      পয়েন্ট সংখ্যা যোগ বা বিয়োগ করুন (পজিটিভ সংখ্যা যোগ, নেগেটিভ সংখ্যা বিয়োগ):
+                    </label>
+                    <input
+                      type="number"
+                      value={adjustPointsInput}
+                      onChange={(e) => setAdjustPointsInput(e.target.value)}
+                      placeholder="যেমন: +100 অথবা -50"
+                      className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-sm font-mono font-bold outline-none focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 block mb-1">নোট / কারণ (অপশনাল):</label>
+                    <input
+                      type="text"
+                      value={adjustPointsNote}
+                      onChange={(e) => setAdjustPointsNote(e.target.value)}
+                      placeholder="যেমন: স্পেশাল ঈদ গিফট পয়েন্ট"
+                      className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-[#f3e2d0]">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const delta = Number(adjustPointsInput);
+                      if (isNaN(delta) || delta === 0) {
+                        notify("সঠিক পয়েন্ট সংখ্যা লিখুন!");
+                        return;
+                      }
+                      const ph = adjustPointsModal.phone;
+                      const cur = loyaltyCustomerMap[ph]?.manualPoints || 0;
+                      const updatedMap = {
+                        ...loyaltyCustomerMap,
+                        [ph]: {
+                          ...loyaltyCustomerMap[ph],
+                          phone: ph,
+                          name: adjustPointsModal.name,
+                          manualPoints: cur + delta,
+                          lastNote: adjustPointsNote || "ম্যানুয়াল সমন্বয়",
+                          updatedAt: new Date().toISOString()
+                        }
+                      };
+                      setLoyaltyCustomerMap(updatedMap);
+                      setStored("loyalty_customers", updatedMap);
+                      await syncDocToCloud("config", "loyalty_customers", updatedMap);
+                      notify(`গ্রাহক ${ph}-এর জন্য ${delta > 0 ? `+${delta}` : delta} পয়েন্ট সফলভাবে আপডেট হয়েছে! ✅`);
+                      setAdjustPointsModal(null);
+                    }}
+                    className="flex-1 bg-[#7a1c2b] text-white py-2.5 rounded-full text-xs font-bold shadow hover:bg-[#681727]"
+                  >
+                    পয়েন্ট সেভ করুন
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdjustPointsModal(null)}
+                    className="px-4 py-2.5 border rounded-full text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                  >
+                    বাতিল
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+{/* PRODUCT DETAILS MODAL (WITH MULTI-IMAGE CAROUSEL) */}
           {/* ========================================================= */}
           {viewProduct && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
