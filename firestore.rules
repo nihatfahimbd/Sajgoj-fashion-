@@ -42,5 +42,10 @@ service cloud.firestore {
     match /config/{configDoc} {
       allow read, write: if true;
     }
+
+    // Customer accounts
+    match /customers/{customerId} {
+      allow read, write: if true;
+    }
   }
 }

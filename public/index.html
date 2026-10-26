@@ -22,6 +22,7 @@
   <!-- Firebase 10 SDK (Compat for seamless cross-browser cloud persistence) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
   <style>
     :root {
@@ -508,6 +509,28 @@
       const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
       const [loyalty, setLoyalty] = useState(() => getStored("loyalty", initialLoyaltyConfig));
       const [loyaltyCustomerMap, setLoyaltyCustomerMap] = useState(() => getStored("loyalty_customers", {}));
+      
+      // Customer Authentication & Profile Portal States
+      const [currentUser, setCurrentUser] = useState(() => getStored("customer_user", null));
+      const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+      const [authMode, setAuthMode] = useState("login"); // "login", "signup", "google_fallback"
+      const [authForm, setAuthForm] = useState({ name: "", phone: "", email: "", password: "" });
+      const [isAuthLoading, setIsAuthLoading] = useState(false);
+      const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+      const [profileTab, setProfileTab] = useState("orders"); // "orders", "loyalty", "settings"
+      const [profileForm, setProfileForm] = useState(() => {
+        const u = getStored("customer_user", null);
+        return {
+          name: u?.name || "",
+          phone: u?.phone || "",
+          email: u?.email || "",
+          photoUrl: u?.photoUrl || "",
+          district: u?.district || "Dhaka",
+          thana: u?.thana || "",
+          address: u?.address || ""
+        };
+      });
+      const customerPhotoInputRef = useRef(null);
       const [isVipClubModalOpen, setIsVipClubModalOpen] = useState(false);
       const [vipLookupPhone, setVipLookupPhone] = useState("");
       const [vipLookupResult, setVipLookupResult] = useState(null);
@@ -561,6 +584,23 @@
       useEffect(() => setStored("seo", seo), [seo]);
       useEffect(() => setStored("loyalty", loyalty), [loyalty]);
       useEffect(() => setStored("loyalty_customers", loyaltyCustomerMap), [loyaltyCustomerMap]);
+      useEffect(() => {
+        if (currentUser) {
+          setStored("customer_user", currentUser);
+          setProfileForm(prev => ({
+            ...prev,
+            name: currentUser.name || prev.name,
+            phone: currentUser.phone || prev.phone,
+            email: currentUser.email || prev.email,
+            photoUrl: currentUser.photoUrl || prev.photoUrl,
+            district: currentUser.district || prev.district || "Dhaka",
+            thana: currentUser.thana || prev.thana || "",
+            address: currentUser.address || prev.address || ""
+          }));
+        } else {
+          localStorage.removeItem("sajgoj_store_customer_user");
+        }
+      }, [currentUser]);
 
       // Firebase Firestore Cloud Sync Status & Helpers
       const [cloudSyncStatus, setCloudSyncStatus] = useState("connecting"); // "connected", "syncing", "offline"
@@ -1306,6 +1346,222 @@
         notify("গ্যালারিতে নতুন ছবি যুক্ত হয়েছে! 🖼️");
       };
 
+      // Customer Authentication & Profile Management Helpers
+      const saveCustomerProfile = async (customerData) => {
+        if (!customerData || !customerData.id) return;
+        const merged = { ...customerData, updatedAt: new Date().toISOString() };
+        setCurrentUser(merged);
+        setStored("customer_user", merged);
+        await syncDocToCloud("customers", customerData.id, merged);
+
+        // Pre-fill checkout form automatically
+        setCheckoutForm(prev => ({
+          ...prev,
+          name: merged.name || prev.name,
+          phone: merged.phone || prev.phone,
+          district: merged.district || prev.district || "Dhaka",
+          thana: merged.thana || prev.thana || "",
+          address: merged.address || prev.address || ""
+        }));
+      };
+
+      const handleGoogleSignIn = async () => {
+        setIsAuthLoading(true);
+        try {
+          if (typeof firebase !== "undefined" && firebase.auth) {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            const result = await firebase.auth().signInWithPopup(provider);
+            const user = result.user;
+            if (user) {
+              const custId = `google_${user.uid}`;
+              const custData = {
+                id: custId,
+                uid: user.uid,
+                name: user.displayName || "গুগল ইউজার",
+                email: user.email || "",
+                photoUrl: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=7a1c2b&color=fff`,
+                phone: user.phoneNumber ? normalizePhone(user.phoneNumber) : (currentUser?.phone || ""),
+                authProvider: "google",
+                createdAt: new Date().toISOString()
+              };
+              await saveCustomerProfile(custData);
+              notify(`🎉 স্বাগতম ${custData.name}! গুগল একাউন্ট দিয়ে সফলভাবে লগইন হয়েছে!`);
+              setIsAuthModalOpen(false);
+              return;
+            }
+          }
+          throw new Error("Popup not available");
+        } catch (err) {
+          console.warn("Google popup signIn note:", err.message || err);
+          // Fallback Google prompt for sandboxed/restricted iframe browsers
+          setAuthMode("google_fallback");
+        } finally {
+          setIsAuthLoading(false);
+        }
+      };
+
+      const handleGoogleFallbackSubmit = async (e) => {
+        e.preventDefault();
+        if (!authForm.email || !authForm.email.includes("@")) {
+          notify("সঠিক জিমেইল ঠিকানা দিন!");
+          return;
+        }
+        setIsAuthLoading(true);
+        try {
+          const emailName = authForm.name.trim() || authForm.email.split("@")[0];
+          const custId = `google_${authForm.email.replace(/[^a-zA-Z0-9]/g, "_")}`;
+          const custData = {
+            id: custId,
+            name: emailName,
+            email: authForm.email.trim(),
+            phone: authForm.phone ? normalizePhone(authForm.phone) : "",
+            photoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(emailName)}&background=7a1c2b&color=fff&size=200`,
+            authProvider: "google",
+            createdAt: new Date().toISOString()
+          };
+          await saveCustomerProfile(custData);
+          notify(`🎉 স্বাগতম ${custData.name}! জিমেইল দিয়ে সরাসরি কানেক্ট হয়েছে!`);
+          setIsAuthModalOpen(false);
+          setAuthForm({ name: "", phone: "", email: "", password: "" });
+        } finally {
+          setIsAuthLoading(false);
+        }
+      };
+
+      const handlePhoneAuthSubmit = async (e) => {
+        e.preventDefault();
+        const normPhone = normalizePhone(authForm.phone);
+        if (!normPhone || normPhone.length < 10) {
+          notify("সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!");
+          return;
+        }
+        if (!authForm.password || authForm.password.length < 4) {
+          notify("কমপক্ষে ৪ ডিজিটের পাসওয়ার্ড দিন!");
+          return;
+        }
+
+        setIsAuthLoading(true);
+        try {
+          const custId = `phone_${normPhone}`;
+          if (authMode === "signup") {
+            if (!authForm.name.trim()) {
+              notify("আপনার নাম আবশ্যক!");
+              setIsAuthLoading(false);
+              return;
+            }
+            const newCust = {
+              id: custId,
+              name: authForm.name.trim(),
+              phone: normPhone,
+              email: authForm.email.trim() || "",
+              password: authForm.password,
+              photoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(authForm.name.trim())}&background=7a1c2b&color=fff`,
+              authProvider: "phone",
+              createdAt: new Date().toISOString()
+            };
+            await saveCustomerProfile(newCust);
+            notify(`🎉 একাউন্ট তৈরি সফল হয়েছে! স্বাগতম ${newCust.name}!`);
+          } else {
+            // Login
+            const existing = getStored("customer_user", null);
+            const custData = {
+              id: custId,
+              name: (existing && existing.phone === normPhone && existing.name) ? existing.name : (authForm.name.trim() || "সম্মানিত ক্রেতা"),
+              phone: normPhone,
+              email: authForm.email.trim() || (existing?.email || ""),
+              photoUrl: existing?.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(authForm.name || normPhone)}&background=7a1c2b&color=fff`,
+              authProvider: "phone",
+              updatedAt: new Date().toISOString()
+            };
+            await saveCustomerProfile(custData);
+            notify(`🎉 স্বাগতম ${custData.name}! লগইন সফল হয়েছে!`);
+          }
+          setIsAuthModalOpen(false);
+          setAuthForm({ name: "", phone: "", email: "", password: "" });
+        } finally {
+          setIsAuthLoading(false);
+        }
+      };
+
+      const handleCustomerLogout = () => {
+        if (confirm("আপনি কি একাউন্ট থেকে লগআউট করতে চান?")) {
+          if (typeof firebase !== "undefined" && firebase.auth) {
+            try { firebase.auth().signOut(); } catch(e) {}
+          }
+          setCurrentUser(null);
+          localStorage.removeItem("sajgoj_store_customer_user");
+          setIsProfileModalOpen(false);
+          notify("সফলভাবে লগআউট হয়েছে!");
+        }
+      };
+
+      const handleCustomerPhotoUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          notify("অনুগ্রহ করে একটি ছবি ফাইল নির্বাচন করুন!");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (uploadEvent) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxDimension = 320;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDimension || h > maxDimension) {
+              if (w > h) {
+                h = Math.round((h * maxDimension) / w);
+                w = maxDimension;
+              } else {
+                w = Math.round((w * maxDimension) / h);
+                h = maxDimension;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressedUrl = canvas.toDataURL("image/jpeg", 0.85);
+
+            setProfileForm(prev => ({ ...prev, photoUrl: compressedUrl }));
+            if (currentUser) {
+              const updated = { ...currentUser, photoUrl: compressedUrl };
+              saveCustomerProfile(updated);
+            }
+            notify("প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে! 📷✨");
+          };
+          img.src = uploadEvent.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handleSaveProfileSettings = async (e) => {
+        e.preventDefault();
+        if (!profileForm.name.trim()) {
+          notify("আপনার নাম আবশ্যক!");
+          return;
+        }
+        if (!currentUser) return;
+        const updated = {
+          ...currentUser,
+          name: profileForm.name.trim(),
+          phone: profileForm.phone ? normalizePhone(profileForm.phone) : currentUser.phone,
+          email: profileForm.email.trim(),
+          photoUrl: profileForm.photoUrl || currentUser.photoUrl,
+          district: profileForm.district || "Dhaka",
+          thana: profileForm.thana.trim(),
+          address: profileForm.address.trim(),
+          updatedAt: new Date().toISOString()
+        };
+        await saveCustomerProfile(updated);
+        notify("প্রোফাইল তথ্য ও ডেলিভারি ঠিকানা সফলভাবে সংরক্ষিত হয়েছে! ✅");
+        setIsProfileModalOpen(false);
+      };
+
       // Customer Loyalty & VIP Membership Helper Functions
       const normalizePhone = (phone) => {
         if (!phone) return "";
@@ -2024,6 +2280,40 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <span>👑</span>
                       <span className="hidden sm:inline">VIP ক্লাব</span>
                     </button>
+                    {/* CUSTOMER LOGIN / PROFILE TAB (POSITIONED DIRECTLY BEFORE CART) */}
+                    {currentUser ? (
+                      <button 
+                        onClick={() => setIsProfileModalOpen(true)}
+                        className="bg-[#fff8f0] border-2 border-[#d4a574] hover:border-[#7a1c2b] text-[#7a1c2b] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs hover:shadow transition flex items-center gap-2 active:scale-95"
+                        title="আমার একাউন্ট ও অর্ডার স্ট্যাটাস"
+                      >
+                        {currentUser.photoUrl ? (
+                          <img src={currentUser.photoUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover border border-[#7a1c2b] shadow-xs" />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                            {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "👤"}
+                          </div>
+                        )}
+                        <div className="text-left hidden sm:block">
+                          <span className="block text-[11px] font-extrabold leading-tight truncate max-w-[85px] text-[#2c1810]">
+                            {currentUser.name.split(" ")[0]}
+                          </span>
+                          <span className="block text-[9px] text-[#b8956a] leading-none font-bold">
+                            {getCustomerLoyalty(currentUser.phone)?.currentTier?.icon || "👑"} {getCustomerLoyalty(currentUser.phone)?.currentTier?.nameBn || "মেম্বার"}
+                          </span>
+                        </div>
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
+                        className="bg-white border-2 border-[#7a1c2b] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-xs hover:shadow transition flex items-center gap-1.5 active:scale-95"
+                        title="কাস্টমার লগইন / সাইনআপ"
+                      >
+                        <span className="text-sm">👤</span>
+                        <span className="font-bold">লগইন</span>
+                      </button>
+                    )}
+
                     <button 
                       onClick={() => setIsCartOpen(true)}
                       className="relative bg-[#7a1c2b] text-white px-3.5 sm:px-4 py-2 rounded-full flex items-center gap-2 text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] transition"
@@ -7029,6 +7319,605 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     বাতিল
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* CUSTOMER LOGIN / SIGNUP MODAL (DIRECT GMAIL & MOBILE AUTH) */}
+          {/* ========================================================= */}
+          {isAuthModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden border shadow-2xl animate-fadeIn space-y-5">
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-[#7a1c2b] to-[#53111c] text-white p-6 relative">
+                  <button 
+                    onClick={() => setIsAuthModalOpen(false)} 
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center font-bold text-sm transition"
+                  >
+                    ✕
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-2xl shadow">
+                      👑
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg text-white">সাজগোজ ফ্যাশন ক্লাব</h3>
+                      <p className="text-xs text-[#ffdcc0]">লগইন করে আপনার অর্ডার ট্র্যাকিং ও রিওয়ার্ড পয়েন্ট উপভোগ করুন</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 pt-0 space-y-4">
+                  {/* DIRECT GMAIL / GOOGLE SIGN-IN BUTTON */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={isAuthLoading}
+                      className="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-3 px-4 rounded-full border-2 border-gray-200 hover:border-gray-400 shadow-sm transition flex items-center justify-center gap-3 active:scale-98"
+                    >
+                      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.36 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.04 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                      </svg>
+                      <span className="text-xs sm:text-sm font-extrabold text-gray-700">
+                        {isAuthLoading ? "সংযোগ হচ্ছে..." : "সরাসরি জিমেইল দিয়ে লগইন (Google Sign-In)"}
+                      </span>
+                    </button>
+                    <p className="text-[10px] text-center text-gray-400 mt-1.5">
+                      🔒 নিরাপদ ও ইনস্ট্যান্ট গুগল সাইন-ইন
+                    </p>
+                  </div>
+
+                  {/* DIVIDER */}
+                  <div className="flex items-center gap-3 my-2">
+                    <div className="flex-1 h-px bg-[#f3e2d0]"></div>
+                    <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">অথবা মোবাইল দিয়ে</span>
+                    <div className="flex-1 h-px bg-[#f3e2d0]"></div>
+                  </div>
+
+                  {/* GOOGLE FALLBACK PROMPT IF BROWSER SANDBOX RESTRICTS POPUP */}
+                  {authMode === "google_fallback" ? (
+                    <form onSubmit={handleGoogleFallbackSubmit} className="space-y-3 bg-[#fffaf5] p-4 rounded-2xl border border-amber-300">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#7a1c2b] flex items-center gap-1.5">
+                          <span>📧</span> <span>আপনার জিমেইল একাউন্ট দিন:</span>
+                        </span>
+                        <button type="button" onClick={() => setAuthMode("login")} className="text-[10px] text-gray-500 hover:underline">
+                          বাতিল
+                        </button>
+                      </div>
+                      <input
+                        type="email"
+                        required
+                        placeholder="yourname@gmail.com"
+                        value={authForm.email}
+                        onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                        className="w-full bg-white border border-[#d4a574] rounded-full px-4 py-2.5 text-xs outline-none focus:border-[#7a1c2b]"
+                      />
+                      <input
+                        type="text"
+                        placeholder="আপনার পূর্ণ নাম (অপশনাল)"
+                        value={authForm.name}
+                        onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                        className="w-full bg-white border border-gray-200 rounded-full px-4 py-2.5 text-xs outline-none focus:border-[#7a1c2b]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isAuthLoading}
+                        className="w-full bg-[#7a1c2b] text-white py-2.5 rounded-full text-xs font-bold shadow hover:bg-[#681727]"
+                      >
+                        {isAuthLoading ? "সংযোগ হচ্ছে..." : "জিমেইল নিশ্চিত করুন ✓"}
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      {/* AUTH MODE TOGGLE: LOGIN vs SIGNUP */}
+                      <div className="flex rounded-full bg-[#fffaf5] p-1 border border-[#ecd9c6]">
+                        <button
+                          type="button"
+                          onClick={() => setAuthMode("login")}
+                          className={`flex-1 py-1.5 rounded-full text-xs font-bold transition ${authMode === 'login' ? 'bg-[#7a1c2b] text-white shadow-xs' : 'text-gray-600 hover:text-black'}`}
+                        >
+                          লগইন করুন
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAuthMode("signup")}
+                          className={`flex-1 py-1.5 rounded-full text-xs font-bold transition ${authMode === 'signup' ? 'bg-[#7a1c2b] text-white shadow-xs' : 'text-gray-600 hover:text-black'}`}
+                        >
+                          নতুন একাউন্ট (Sign Up)
+                        </button>
+                      </div>
+
+                      {/* PHONE & PASSWORD AUTH FORM */}
+                      <form onSubmit={handlePhoneAuthSubmit} className="space-y-3">
+                        {authMode === "signup" && (
+                          <div>
+                            <label className="text-[11px] font-bold text-gray-700 block mb-1">আপনার পূর্ণ নাম *</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="যেমন: ফারিহা রহমান"
+                              value={authForm.name}
+                              onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                              className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">মোবাইল নম্বর (১১ ডিজিট) *</label>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="01XXXXXXXXX"
+                            value={authForm.phone}
+                            onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
+                            className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs font-mono outline-none focus:border-[#7a1c2b]"
+                          />
+                        </div>
+
+                        {authMode === "signup" && (
+                          <div>
+                            <label className="text-[11px] font-bold text-gray-700 block mb-1">ইমেইল ঠিকানা (অপশনাল)</label>
+                            <input
+                              type="email"
+                              placeholder="example@gmail.com"
+                              value={authForm.email}
+                              onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                              className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">পাসওয়ার্ড *</label>
+                          <input
+                            type="password"
+                            required
+                            placeholder="••••••••"
+                            value={authForm.password}
+                            onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                            className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isAuthLoading}
+                          className="w-full bg-[#7a1c2b] hover:bg-[#681727] text-white py-3 rounded-full text-xs font-extrabold shadow-md transition active:scale-98 mt-2"
+                        >
+                          {isAuthLoading ? "প্রসেস হচ্ছে..." : (authMode === "signup" ? "একাউন্ট তৈরি করুন (Register) →" : "লগইন করুন →")}
+                        </button>
+                      </form>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* CUSTOMER PROFILE & ORDER TRACKING PORTAL MODAL */}
+          {/* ========================================================= */}
+          {isProfileModalOpen && currentUser && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border shadow-2xl animate-fadeIn space-y-5">
+                {/* Profile Header Hero */}
+                <div className="bg-gradient-to-r from-[#7a1c2b] via-[#5d1521] to-[#3a0a12] text-white p-6 relative">
+                  <button 
+                    onClick={() => setIsProfileModalOpen(false)} 
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center font-bold text-sm transition"
+                  >
+                    ✕
+                  </button>
+
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                    {/* User Profile Avatar with Edit Trigger */}
+                    <div className="relative group cursor-pointer" onClick={() => customerPhotoInputRef.current?.click()} title="ছবি পরিবর্তন করতে ক্লিক করুন">
+                      {currentUser.photoUrl ? (
+                        <img 
+                          src={currentUser.photoUrl} 
+                          alt={currentUser.name} 
+                          className="w-20 h-20 rounded-full object-cover border-4 border-[#d4a574] shadow-lg bg-white" 
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-[#d4a574] text-[#2c1810] flex items-center justify-center text-3xl font-black border-4 border-white shadow-lg">
+                          {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "👤"}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white text-xs font-bold">
+                        📷 পরিবর্তন
+                      </div>
+                      <span className="absolute -bottom-1 -right-1 bg-white text-[#7a1c2b] p-1 rounded-full text-xs shadow-md border">
+                        ✏️
+                      </span>
+                    </div>
+
+                    <div className="text-center sm:text-left flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <h3 className="text-xl font-extrabold text-white truncate max-w-xs">{currentUser.name}</h3>
+                        {(() => {
+                          const l = getCustomerLoyalty(currentUser.phone);
+                          return (
+                            <span className="inline-flex items-center gap-1 bg-[#d4a574] text-[#2c1810] text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
+                              <span>{l.currentTier?.icon || "👑"}</span>
+                              <span>{l.currentTier?.nameBn || "মেম্বার"}</span>
+                            </span>
+                          );
+                        })()}
+                      </div>
+
+                      <p className="text-xs text-[#ffdcc0] mt-0.5 font-mono">
+                        📞 {currentUser.phone || "মোবাইল সংযুক্ত নেই"} {currentUser.email ? `• 📧 ${currentUser.email}` : ""}
+                      </p>
+
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => setProfileTab("settings")}
+                          className="bg-white/20 hover:bg-white/30 text-white text-xs px-3.5 py-1 rounded-full font-semibold transition flex items-center gap-1 shadow-xs"
+                        >
+                          <span>⚙️</span>
+                          <span>প্রোফাইল সেটিং</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCustomerLogout}
+                          className="bg-rose-500/30 hover:bg-rose-600 text-rose-100 hover:text-white text-xs px-3 py-1 rounded-full font-semibold transition border border-rose-400/40"
+                        >
+                          লগআউট
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub-Navigation Tabs */}
+                <div className="px-6 flex items-center gap-2 border-b border-[#f3e2d0] text-xs font-bold overflow-x-auto scrollbar-hide">
+                  {[
+                    { id: "orders", label: `📦 আমার অর্ডারসমূহ (${(orders || []).filter(o => normalizePhone(o.phone || o.customerPhone) === normalizePhone(currentUser.phone) && o.phone).length})` },
+                    { id: "loyalty", label: "👑 ভিআইপি স্ট্যাটাস ও পয়েন্ট" },
+                    { id: "settings", label: "⚙️ প্রোফাইল সেটিংস ও ছবি" }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setProfileTab(tab.id)}
+                      className={`pb-3 px-3 border-b-2 font-bold whitespace-nowrap transition flex items-center gap-1.5 ${profileTab === tab.id ? 'border-[#7a1c2b] text-[#7a1c2b]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* TAB 1: CUSTOMER ORDER HISTORY & REAL-TIME STATUS */}
+                {profileTab === "orders" && (
+                  <div className="px-6 pb-6 space-y-4">
+                    {(() => {
+                      const userNormPhone = normalizePhone(currentUser.phone);
+                      const myOrders = (orders || []).filter(o => {
+                        const oPhone = normalizePhone(o.phone || o.customerPhone);
+                        const matchPhone = userNormPhone && oPhone === userNormPhone;
+                        const matchEmail = currentUser.email && o.customerEmail === currentUser.email;
+                        return matchPhone || matchEmail;
+                      });
+
+                      if (myOrders.length === 0) {
+                        return (
+                          <div className="text-center py-12 bg-[#fffaf5] rounded-3xl border border-dashed border-[#f3e2d0] p-6 space-y-2">
+                            <span className="text-4xl block">🛍️</span>
+                            <h4 className="font-bold text-sm text-gray-800">এখনও কোনো অর্ডার করেননি!</h4>
+                            <p className="text-xs text-gray-500">আপনার পছন্দের শাড়ি বা জুয়েলারি কার্টে যোগ করে অর্ডার সম্পন্ন করুন।</p>
+                            <button
+                              type="button"
+                              onClick={() => { setIsProfileModalOpen(false); setActiveTab("Storefront"); }}
+                              className="mt-3 bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow hover:bg-[#681727] transition"
+                            >
+                              কেনাকাটা শুরু করুন →
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-3">
+                          {myOrders.map(order => (
+                            <div key={order.id} className="bg-white rounded-2xl p-4 border-2 border-[#f3e2d0] hover:border-[#d4a574] transition shadow-xs space-y-3">
+                              {/* Order Top Line */}
+                              <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-gray-100">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono font-black text-sm text-[#7a1c2b]">#{order.id}</span>
+                                    <span className="text-[11px] text-gray-400 font-medium">({order.date || "আজ"})</span>
+                                  </div>
+                                  <p className="text-[11px] text-gray-500">পেমেন্ট: {order.paymentMethod || "ক্যাশ অন ডেলিভারি"}</p>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-xs ${
+                                    order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                                    order.status === 'Shipped' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                                    order.status === 'Confirmed' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                                    order.status === 'Cancelled' ? 'bg-red-100 text-red-800 border border-red-300' :
+                                    'bg-orange-100 text-orange-800 border border-orange-300'
+                                  }`}>
+                                    {order.status === 'Pending' ? '⏳ যাচাইাধীন (Pending)' :
+                                     order.status === 'Confirmed' ? '✅ গৃহীত হয়েছে (Confirmed)' :
+                                     order.status === 'Shipped' ? '🚚 কুরিয়ারে হস্তান্তর (Shipped)' :
+                                     order.status === 'Delivered' ? '🎉 ডেলিভারি সম্পন্ন (Delivered)' :
+                                     order.status === 'Cancelled' ? '❌ বাতিল (Cancelled)' : order.status}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Courier Tracking Notification if Shipped */}
+                              {order.trackingId && (
+                                <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-xl text-xs text-blue-900 flex items-center justify-between">
+                                  <span className="flex items-center gap-1.5 font-semibold">
+                                    <span>🚚</span> <span>কুরিয়ার ট্র্যাকিং কোড: <strong className="font-mono">{order.trackingId}</strong></span>
+                                  </span>
+                                  <span className="text-[10px] bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full font-bold">ইন-ট্রানজিট</span>
+                                </div>
+                              )}
+
+                              {/* Items list */}
+                              <div className="space-y-1.5">
+                                {(order.items || []).map((it, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-xs bg-[#fffaf5] p-2 rounded-xl">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[#7a1c2b] flex-shrink-0"></span>
+                                      <span className="font-semibold text-gray-800 truncate">{it.name}</span>
+                                      <span className="text-gray-400 font-mono">× {it.qty}</span>
+                                      {it.bogo && <span className="bg-amber-100 text-amber-900 text-[9px] font-black px-1.5 py-0.2 rounded">+১টি ফ্রি</span>}
+                                    </div>
+                                    <span className="font-bold text-[#7a1c2b] font-mono flex-shrink-0">
+                                      {(it.price || 0) * (it.qty || 1)} ৳
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Order Bottom Price & Action */}
+                              <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
+                                <div>
+                                  <span className="text-gray-500">সর্বমোট বিল: </span>
+                                  <strong className="text-sm font-black text-[#7a1c2b] font-mono">{order.total || 0} ৳</strong>
+                                  {order.pointsEarned ? (
+                                    <span className="ml-2 text-[10px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                      +{order.pointsEarned} পয়েন্ট অর্জিত
+                                    </span>
+                                  ) : null}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setViewInvoiceOrder(order);
+                                  }}
+                                  className="text-xs font-bold text-[#7a1c2b] hover:underline flex items-center gap-1 bg-[#fff8f0] px-3 py-1 rounded-full border border-[#d4a574]"
+                                >
+                                  <span>🧾</span>
+                                  <span>মেমো বিবরণী</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* TAB 2: VIP MEMBERSHIP & REWARD POINTS */}
+                {profileTab === "loyalty" && (
+                  <div className="px-6 pb-6 space-y-4">
+                    {(() => {
+                      const l = getCustomerLoyalty(currentUser.phone);
+                      const pointsInTaka = Math.floor(l.availablePoints / (loyalty?.pointsRate || 100));
+
+                      return (
+                        <div className="space-y-4">
+                          {/* VIP Status Card */}
+                          <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-[#fffaf5] p-5 rounded-3xl border-2 border-amber-300 shadow-sm space-y-3">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-3xl p-2 rounded-2xl bg-white border border-amber-200 shadow-xs">
+                                  {l.currentTier?.icon || "👑"}
+                                </span>
+                                <div>
+                                  <span className="text-xs text-gray-500 font-bold block">আপনার বর্তমান মেম্বারশিপ লেভেল:</span>
+                                  <h4 className="text-lg font-black text-[#7a1c2b]">
+                                    {l.currentTier?.nameBn || l.currentTier?.name}
+                                  </h4>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="text-xs text-gray-500 font-bold block">রিওয়ার্ড পয়েন্ট ব্যালেন্স:</span>
+                                <span className="text-xl font-black text-amber-900 font-mono">
+                                  {l.availablePoints} পয়েন্ট
+                                </span>
+                                <span className="text-xs text-emerald-700 font-bold block">
+                                  (= {pointsInTaka} ৳ সরাসরি ক্যাশ ছাড়)
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Progress to Next Tier */}
+                            {l.nextTier ? (
+                              <div className="pt-2 border-t border-amber-200/80 space-y-1.5">
+                                <div className="flex justify-between text-xs font-semibold text-gray-700">
+                                  <span>পরবর্তী লেভেল: <strong>{l.nextTier.nameBn}</strong> ({l.nextTier.discountPercent}% ছাড়)</span>
+                                  <span>আর প্রয়োজন: <strong className="text-[#7a1c2b]">{l.spendNeeded.toLocaleString()} ৳</strong></span>
+                                </div>
+                                <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                                  <div 
+                                    className="bg-gradient-to-r from-amber-500 to-[#7a1c2b] h-full transition-all duration-500" 
+                                    style={{ width: `${l.progressPercent}%` }}
+                                  ></div>
+                                </div>
+                                <p className="text-[10px] text-gray-500">
+                                  আপনার মোট কেনাকাটা: {l.totalSpend.toLocaleString()} ৳ (পরবর্তী টায়ার আনলক টার্গেট: {l.nextTier.minSpend.toLocaleString()} ৳)
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-emerald-800 font-bold pt-2 border-t border-amber-200">
+                                ⚜️ আপনি আমাদের সর্বোচ্চ ভিআইপি মেম্বারশিপ "প্লাটিনাম এলিট" ক্লাবে রয়েছেন!
+                              </p>
+                            )}
+                          </div>
+
+                          {/* How to use Points */}
+                          <div className="p-4 bg-white rounded-2xl border border-[#f3e2d0] text-xs text-gray-700 space-y-2">
+                            <span className="font-bold text-[#7a1c2b] flex items-center gap-1.5 text-sm">
+                              <span>🪙</span> <span>পয়েন্ট ব্যবহার ও মেম্বারশিপ সুবিধার নিয়ম:</span>
+                            </span>
+                            <ul className="space-y-1 list-disc pl-5 text-[11px] text-gray-600">
+                              <li>প্রতি <strong>{loyalty?.spendPerPoint || 10} টাকা</strong> কেনাকাটায় আপনি ১টি রিওয়ার্ড পয়েন্ট পাবেন।</li>
+                              <li>চেকআউটে প্রতি <strong>{loyalty?.pointsRate || 100} পয়েন্ট = ১ টাকা</strong> ক্যাশ ছাড় হিসেবে বিল থেকে বাদ যাবে।</li>
+                              <li>আপনার মেম্বারশিপ অনুযায়ী স্বয়ংক্রিয়ভাবে স্পেশাল ফ্ল্যাট % ডিসকাউন্ট আপনার কার্টে প্রযোজ্য হবে।</li>
+                            </ul>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* TAB 3: PROFILE SETTINGS & PHOTO UPLOAD */}
+                {profileTab === "settings" && (
+                  <form onSubmit={handleSaveProfileSettings} className="px-6 pb-6 space-y-4">
+                    {/* Hidden Photo Input */}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      ref={customerPhotoInputRef} 
+                      onChange={handleCustomerPhotoUpload} 
+                      className="hidden" 
+                    />
+
+                    {/* Profile Picture Change Box */}
+                    <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {profileForm.photoUrl ? (
+                          <img src={profileForm.photoUrl} alt="Avatar" className="w-14 h-14 rounded-full object-cover border-2 border-[#7a1c2b]" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xl font-bold">👤</div>
+                        )}
+                        <div>
+                          <h5 className="font-bold text-xs text-gray-800">প্রোফাইল ছবি (Avatar)</h5>
+                          <p className="text-[10px] text-gray-500">ডিভাইস থেকে যেকোনো ছবি আপলোড করুন</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => customerPhotoInputRef.current?.click()}
+                        className="bg-[#7a1c2b] hover:bg-[#681727] text-white px-4 py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5"
+                      >
+                        <span>📷</span>
+                        <span>ছবি আপলোড করুন</span>
+                      </button>
+                    </div>
+
+                    {/* Personal Information */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-700 block mb-1">পূর্ণ নাম *</label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.name}
+                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-700 block mb-1">মোবাইল নম্বর *</label>
+                        <input
+                          type="tel"
+                          required
+                          value={profileForm.phone}
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs font-mono outline-none focus:border-[#7a1c2b]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">ইমেইল ঠিকানা</label>
+                      <input
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                      />
+                    </div>
+
+                    {/* Default Shipping Address for Instant 1-Click Checkout */}
+                    <div className="pt-2 border-t border-[#f3e2d0] space-y-3">
+                      <h5 className="font-bold text-xs text-[#7a1c2b] flex items-center gap-1.5">
+                        <span>📍</span>
+                        <span>ডিফল্ট ডেলিভারি ঠিকানা (চেকআউটে স্বয়ংক্রিয় পূরণ হবে)</span>
+                      </h5>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">জেলা</label>
+                          <select
+                            value={profileForm.district}
+                            onChange={(e) => setProfileForm({ ...profileForm, district: e.target.value })}
+                            className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none"
+                          >
+                            <option value="Dhaka">ঢাকা</option>
+                            <option value="Chattogram">চট্টগ্রাম</option>
+                            <option value="Sylhet">সিলেট</option>
+                            <option value="Rajshahi">রাজশাহী</option>
+                            <option value="Khulna">খুলনা</option>
+                            <option value="Barishal">বরিশাল</option>
+                            <option value="Rangpur">রংপুর</option>
+                            <option value="Mymensingh">ময়মনসিংহ</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">থানা / উপজেলা</label>
+                          <input
+                            type="text"
+                            placeholder="যেমন: ধানমন্ডি"
+                            value={profileForm.thana}
+                            onChange={(e) => setProfileForm({ ...profileForm, thana: e.target.value })}
+                            className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-700 block mb-1">বিস্তারিত ঠিকানা</label>
+                        <textarea
+                          rows="2"
+                          placeholder="বাসা নম্বর, রোড নম্বর, এলাকা..."
+                          value={profileForm.address}
+                          onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-xs outline-none focus:border-[#7a1c2b]"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-[#7a1c2b] hover:bg-[#681727] text-white py-3 rounded-full text-xs font-bold shadow-md transition"
+                    >
+                      প্রোফাইল তথ্য ও ঠিকানা সংরক্ষণ করুন ✓
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           )}
