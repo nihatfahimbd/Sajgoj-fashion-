@@ -84,6 +84,29 @@
       accent-color: var(--primary-color) !important;
     }
   </style>
+
+  <!-- Instant Head Script: Pre-applies saved brand color and favicon immediately to eliminate any flash of demo styling on page reload -->
+  <script>
+    (function() {
+      try {
+        var raw = localStorage.getItem("sajgoj_store_config");
+        if (raw) {
+          var cfg = JSON.parse(raw);
+          if (cfg && cfg.primaryColor) {
+            document.documentElement.style.setProperty('--primary-color', cfg.primaryColor);
+            document.documentElement.style.setProperty('--maroon', cfg.primaryColor);
+          }
+          if (cfg && cfg.favicon) {
+            var link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            link.type = 'image/x-icon';
+            link.rel = 'shortcut icon';
+            link.href = cfg.favicon;
+            document.getElementsByTagName('head')[0].appendChild(link);
+          }
+        }
+      } catch(e) {}
+    })();
+  </script>
 </head>
 <body class="bg-[#fffaf5] text-[#2c1810] min-h-screen">
   <div id="root"></div>
@@ -306,6 +329,66 @@
     };
 
     // =========================================================
+    // INDEXEDDB MULTI-TIER PERSISTENCE HELPER (Zero 5MB Quota Limits)
+    // =========================================================
+    const idbStore = {
+      dbPromise: null,
+      init() {
+        if (this.dbPromise) return this.dbPromise;
+        this.dbPromise = new Promise((resolve) => {
+          if (typeof indexedDB === "undefined") return resolve(null);
+          try {
+            const req = indexedDB.open("sajgoj_fashion_db", 1);
+            req.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains("store_data")) {
+                db.createObjectStore("store_data");
+              }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = (e) => {
+              console.warn("IndexedDB open error:", e);
+              resolve(null);
+            };
+          } catch(e) {
+            resolve(null);
+          }
+        });
+        return this.dbPromise;
+      },
+      async get(key) {
+        try {
+          const db = await this.init();
+          if (!db) return null;
+          return new Promise((resolve) => {
+            try {
+              const tx = db.transaction("store_data", "readonly");
+              const store = tx.objectStore("store_data");
+              const req = store.get(key);
+              req.onsuccess = () => resolve(req.result || null);
+              req.onerror = () => resolve(null);
+            } catch(e) { resolve(null); }
+          });
+        } catch(e) { return null; }
+      },
+      async set(key, val) {
+        try {
+          const db = await this.init();
+          if (!db) return false;
+          return new Promise((resolve) => {
+            try {
+              const tx = db.transaction("store_data", "readwrite");
+              const store = tx.objectStore("store_data");
+              const req = store.put(val, key);
+              req.onsuccess = () => resolve(true);
+              req.onerror = () => resolve(false);
+            } catch(e) { resolve(false); }
+          });
+        } catch(e) { return false; }
+      }
+    };
+
+    // =========================================================
     // FIREBASE FIRESTORE CLOUD PERSISTENCE INITIALIZATION
     // =========================================================
     const firebaseConfig = {
@@ -321,15 +404,26 @@
     let firestoreDb = null;
     try {
       if (typeof firebase !== "undefined") {
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
-        }
+        const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
         try {
-          firestoreDb = firebase.app().firestore(FIRESTORE_DATABASE_ID);
-          console.log("Firestore connected to database:", FIRESTORE_DATABASE_ID);
+          // Firebase Compat v10: Delegate retrieval for named Firestore database
+          if (app._delegate && app._delegate.container) {
+            const dbDelegate = app._delegate.container.getProvider("firestore").getImmediate({
+              identifier: FIRESTORE_DATABASE_ID
+            });
+            const CompatFirestore = app.firestore().constructor;
+            firestoreDb = new CompatFirestore(app, dbDelegate);
+            console.log("Firestore successfully connected to named database:", FIRESTORE_DATABASE_ID);
+          } else {
+            firestoreDb = app.firestore(FIRESTORE_DATABASE_ID);
+          }
         } catch(e1) {
-          console.warn("Fallback to default database:", e1);
-          firestoreDb = firebase.firestore();
+          console.warn("Direct delegate init note, attempting compat fallback:", e1);
+          try {
+            firestoreDb = app.firestore(FIRESTORE_DATABASE_ID);
+          } catch(e2) {
+            firestoreDb = firebase.firestore();
+          }
         }
       }
     } catch(e) {
@@ -337,15 +431,22 @@
     }
 
     function App() {
-      // LocalStorage Helper with fallback
+      // LocalStorage & IndexedDB Multi-tier Helper
       const getStored = (key, defaultVal) => {
         try {
           const item = localStorage.getItem("sajgoj_store_" + key);
           return item ? JSON.parse(item) : defaultVal;
         } catch(e) { return defaultVal; }
       };
+
       const setStored = (key, val) => {
-        try { localStorage.setItem("sajgoj_store_" + key, JSON.stringify(val)); } catch(e) {}
+        try {
+          localStorage.setItem("sajgoj_store_" + key, JSON.stringify(val));
+        } catch(e) {
+          console.warn("localStorage quota exceeded for " + key + ", saving to IndexedDB...", e);
+        }
+        // Always persist to IndexedDB asynchronously (handles large high-res images, logos, banners)
+        idbStore.set(key, val);
       };
 
       // Main Reactive States
@@ -360,6 +461,34 @@
       const [courier, setCourier] = useState(() => getStored("courier", initialCourierConfig));
       const [pixel, setPixel] = useState(() => getStored("pixel", initialPixelConfig));
       const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
+
+      // Asynchronous Hydration from IndexedDB on startup (recovers large images/banners if localStorage was truncated)
+      useEffect(() => {
+        let isMounted = true;
+        async function hydrateFromIndexedDB() {
+          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo"];
+          for (const k of keys) {
+            try {
+              const val = await idbStore.get(k);
+              if (val && isMounted) {
+                if (k === "config") setConfig(prev => ({ ...prev, ...val }));
+                else if (k === "banners") setBanners(val);
+                else if (k === "products") setProducts(val);
+                else if (k === "combos") setCombos(val);
+                else if (k === "categories") setCategories(val);
+                else if (k === "orders") setOrders(val);
+                else if (k === "coupons") setCoupons(val);
+                else if (k === "reviews") setReviews(val);
+                else if (k === "courier") setCourier(val);
+                else if (k === "pixel") setPixel(val);
+                else if (k === "seo") setSeo(val);
+              }
+            } catch(e) {}
+          }
+        }
+        hydrateFromIndexedDB();
+        return () => { isMounted = false; };
+      }, []);
 
       // Persistent Local Storage Sync
       useEffect(() => setStored("products", products), [products]);
@@ -430,8 +559,9 @@
             setCloudSyncStatus("connected");
             setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
           } else {
-            console.log("Seeding products to Firestore...");
-            initialProducts.forEach(p => firestoreDb.collection("products").doc(p.id).set(p));
+            console.log("Seeding products to Firestore from local state...");
+            const currentProds = getStored("products", initialProducts);
+            currentProds.forEach(p => firestoreDb.collection("products").doc(p.id).set(p));
             setCloudSyncStatus("connected");
           }
         }, (err) => {
@@ -448,7 +578,8 @@
             setCategories(list);
             setStored("categories", list);
           } else {
-            initialCategories.forEach(c => firestoreDb.collection("categories").doc(c.id).set(c));
+            const currentCats = getStored("categories", initialCategories);
+            currentCats.forEach(c => firestoreDb.collection("categories").doc(c.id).set(c));
           }
         }, (err) => console.warn("Categories sync error:", err));
 
@@ -476,7 +607,8 @@
               isInitialOrdersLoad.current = false;
             }
           } else {
-            initialOrders.forEach(o => firestoreDb.collection("orders").doc(o.id).set(o));
+            const currentOrders = getStored("orders", initialOrders);
+            currentOrders.forEach(o => firestoreDb.collection("orders").doc(o.id).set(o));
             isInitialOrdersLoad.current = false;
           }
         }, (err) => console.warn("Orders sync error:", err));
@@ -490,7 +622,8 @@
             setCoupons(list);
             setStored("coupons", list);
           } else {
-            initialCoupons.forEach(c => firestoreDb.collection("coupons").doc(c.id).set(c));
+            const currentCoupons = getStored("coupons", initialCoupons);
+            currentCoupons.forEach(c => firestoreDb.collection("coupons").doc(c.id).set(c));
           }
         }, (err) => console.warn("Coupons sync error:", err));
 
@@ -504,7 +637,8 @@
             setBanners(list);
             setStored("banners", list);
           } else {
-            initialBanners.forEach(b => firestoreDb.collection("banners").doc(b.id).set(b));
+            const currentBanners = getStored("banners", initialBanners);
+            currentBanners.forEach(b => firestoreDb.collection("banners").doc(b.id).set(b));
           }
         }, (err) => console.warn("Banners sync error:", err));
 
@@ -512,40 +646,48 @@
         const unsubStore = firestoreDb.collection("config").doc("store").onSnapshot((doc) => {
           if (!isMounted) return;
           if (doc.exists) {
-            setConfig(doc.data());
-            setStored("config", doc.data());
+            const remoteData = doc.data();
+            setConfig(prev => ({ ...prev, ...remoteData }));
+            setStored("config", { ...getStored("config", initialStoreConfig), ...remoteData });
           } else {
-            firestoreDb.collection("config").doc("store").set(initialStoreConfig);
+            const currentConfig = getStored("config", initialStoreConfig);
+            firestoreDb.collection("config").doc("store").set(currentConfig);
           }
         }, (err) => console.warn("Config sync error:", err));
 
         const unsubCourier = firestoreDb.collection("config").doc("courier").onSnapshot((doc) => {
           if (!isMounted) return;
           if (doc.exists) {
-            setCourier(doc.data());
-            setStored("courier", doc.data());
+            const remoteData = doc.data();
+            setCourier(prev => ({ ...prev, ...remoteData }));
+            setStored("courier", { ...getStored("courier", initialCourierConfig), ...remoteData });
           } else {
-            firestoreDb.collection("config").doc("courier").set(initialCourierConfig);
+            const currentCourier = getStored("courier", initialCourierConfig);
+            firestoreDb.collection("config").doc("courier").set(currentCourier);
           }
         }, (err) => console.warn("Courier sync error:", err));
 
         const unsubPixel = firestoreDb.collection("config").doc("pixel").onSnapshot((doc) => {
           if (!isMounted) return;
           if (doc.exists) {
-            setPixel(doc.data());
-            setStored("pixel", doc.data());
+            const remoteData = doc.data();
+            setPixel(prev => ({ ...prev, ...remoteData }));
+            setStored("pixel", { ...getStored("pixel", initialPixelConfig), ...remoteData });
           } else {
-            firestoreDb.collection("config").doc("pixel").set(initialPixelConfig);
+            const currentPixel = getStored("pixel", initialPixelConfig);
+            firestoreDb.collection("config").doc("pixel").set(currentPixel);
           }
         }, (err) => console.warn("Pixel sync error:", err));
 
         const unsubSeo = firestoreDb.collection("config").doc("seo").onSnapshot((doc) => {
           if (!isMounted) return;
           if (doc.exists) {
-            setSeo(doc.data());
-            setStored("seo", doc.data());
+            const remoteData = doc.data();
+            setSeo(prev => ({ ...prev, ...remoteData }));
+            setStored("seo", { ...getStored("seo", initialSeoConfig), ...remoteData });
           } else {
-            firestoreDb.collection("config").doc("seo").set(initialSeoConfig);
+            const currentSeo = getStored("seo", initialSeoConfig);
+            firestoreDb.collection("config").doc("seo").set(currentSeo);
           }
         }, (err) => console.warn("Seo sync error:", err));
 
@@ -559,7 +701,8 @@
             setReviews(list);
             setStored("reviews", list);
           } else {
-            initialReviews.forEach(r => firestoreDb.collection("reviews").doc(r.id).set(r));
+            const currentReviews = getStored("reviews", initialReviews);
+            currentReviews.forEach(r => firestoreDb.collection("reviews").doc(r.id).set(r));
           }
         }, (err) => console.warn("Reviews sync error:", err));
 
@@ -573,8 +716,9 @@
             setCombos(list);
             setStored("combos", list);
           } else {
-            console.log("Seeding combos to Firestore...");
-            initialCombos.forEach(c => firestoreDb.collection("combos").doc(c.id).set(c));
+            console.log("Seeding combos to Firestore from local state...");
+            const currentCombos = getStored("combos", initialCombos);
+            currentCombos.forEach(c => firestoreDb.collection("combos").doc(c.id).set(c));
           }
         }, (err) => console.warn("Combos sync error:", err));
 
@@ -4838,9 +4982,10 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   </div>
 
                   <button 
-                    onClick={() => {
-                      syncDocToCloud("config", "store", config);
-                      notify("স্টোর, লোগো, হেডার ও ফুটার সেটিংস ক্লাউডে সেভ হয়েছে! ✅");
+                    onClick={async () => {
+                      setStored("config", config);
+                      await syncDocToCloud("config", "store", config);
+                      notify("স্টোর, লোগো, হেডার ও ফুটার সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅");
                     }} 
                     className="bg-[#7a1c2b] text-white px-10 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-[#681727] transition"
                   >
