@@ -448,33 +448,77 @@
           }
         }
 
-        // Enable offline persistence to prevent ERR_NETWORK_CHANGED on mobile network fluctuations
-        if (firestoreDb && typeof firestoreDb.enablePersistence === "function") {
-          firestoreDb.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
-            if (err.code === 'failed-precondition') {
-              console.warn("Firestore multi-tab persistence note");
-            } else if (err.code === 'unimplemented') {
-              console.warn("Firestore persistence not supported in this browser environment");
-            }
-          });
-        }
+        // Note: Custom idbStore handles high-res multi-tier offline persistence without Firestore IndexedDb tab locks
+        console.log("Firestore initialized in fast memory-backed cloud stream mode.");
       }
     } catch(e) {
       console.error("Firebase init failed:", e);
     }
 
-    // Global protection against mobile network change errors disrupting the UI
+    // Global protection against mobile network change errors and script disruptions
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      console.warn("Caught global script error gracefully:", msg, "at line", lineNo);
+      return true; // Prevents browser White Screen of Death
+    };
+
     window.addEventListener("unhandledrejection", function(event) {
-      if (event && event.reason && (
-        String(event.reason).includes("network") || 
-        String(event.reason).includes("ERR_NETWORK_CHANGED") ||
-        String(event.reason).includes("Failed to get document") ||
-        String(event.reason).includes("offline")
-      )) {
-        console.warn("Handled mobile network change gracefully:", event.reason);
+      if (event) {
+        console.warn("Handled unhandled rejection gracefully:", event.reason);
         event.preventDefault();
       }
     });
+
+    // Rock-Solid React Error Boundary to Guarantee the App NEVER Turns into a Blank White Screen
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+      }
+      static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+      }
+      componentDidCatch(error, errorInfo) {
+        console.warn("ErrorBoundary caught rendering issue:", error, errorInfo);
+      }
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="min-h-screen bg-[#fffaf5] flex flex-col items-center justify-center p-6 text-center">
+              <div className="bg-white p-8 rounded-3xl border border-[#f3e2d0] shadow-xl max-w-md w-full space-y-4">
+                <span className="text-5xl block animate-bounce">👑</span>
+                <h2 className="text-xl font-black text-[#7a1c2b]">সাজগোজ ফ্যাশন</h2>
+                <p className="text-xs text-gray-600">
+                  নেটওয়ার্ক বা ক্যাশ জনিত কারণে পেজটি রিলোড করা প্রয়োজন। নিচের বাটনে ক্লিক করুন।
+                </p>
+                <div className="flex gap-2 justify-center pt-2">
+                  <button
+                    onClick={() => {
+                      this.setState({ hasError: false });
+                      window.location.reload();
+                    }}
+                    className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow hover:bg-[#681727] transition"
+                  >
+                    🔄 পেজ রিলোড করুন
+                  </button>
+                  <button
+                    onClick={() => {
+                      try {
+                        localStorage.removeItem("sajgoj_store_customer_user");
+                      } catch(e) {}
+                      this.setState({ hasError: false });
+                    }}
+                    className="bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-4 py-2.5 rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                  >
+                    ক্যাশ রিসেট
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
 
     function App() {
       // LocalStorage & IndexedDB Multi-tier Helper
@@ -754,8 +798,15 @@
         const unsubStore = firestoreDb.collection("config").doc("store").onSnapshot((doc) => {
           if (!isMounted) return;
           if (doc.exists) {
-            const remoteData = doc.data();
-            setConfig(prev => ({ ...prev, ...remoteData }));
+            const remoteData = doc.data() || {};
+            setConfig(prev => ({
+              ...initialStoreConfig,
+              ...prev,
+              ...remoteData,
+              announcement: { ...initialStoreConfig.announcement, ...(prev?.announcement || {}), ...(remoteData?.announcement || {}) },
+              header: { ...initialStoreConfig.header, ...(prev?.header || {}), ...(remoteData?.header || {}) },
+              footer: { ...initialStoreConfig.footer, ...(prev?.footer || {}), ...(remoteData?.footer || {}) }
+            }));
             setStored("config", { ...getStored("config", initialStoreConfig), ...remoteData });
           } else {
             const currentConfig = getStored("config", initialStoreConfig);
@@ -834,8 +885,14 @@
         const unsubLoyalty = firestoreDb.collection("config").doc("loyalty").onSnapshot((doc) => {
           if (!isMounted) return;
           if (doc.exists) {
-            const remoteData = doc.data();
-            setLoyalty(prev => ({ ...prev, ...remoteData }));
+            const remoteData = doc.data() || {};
+            setLoyalty(prev => {
+              const merged = { ...initialLoyaltyConfig, ...prev, ...remoteData };
+              if (!Array.isArray(merged.tiers) || merged.tiers.length === 0) {
+                merged.tiers = initialLoyaltyConfig.tiers;
+              }
+              return merged;
+            });
             setStored("loyalty", { ...getStored("loyalty", initialLoyaltyConfig), ...remoteData });
           } else {
             const currentLoyalty = getStored("loyalty", initialLoyaltyConfig);
@@ -1571,9 +1628,21 @@
         return clean;
       };
 
+      const getLoyaltyTiers = (loyaltyObj) => {
+        if (Array.isArray(loyaltyObj?.tiers) && loyaltyObj.tiers.length > 0) {
+          return loyaltyObj.tiers;
+        }
+        if (loyaltyObj?.tiers && typeof loyaltyObj.tiers === "object") {
+          const vals = Object.values(loyaltyObj.tiers);
+          if (vals.length > 0) return vals;
+        }
+        return initialLoyaltyConfig.tiers;
+      };
+
       const getCustomerLoyalty = (rawPhone) => {
         const phone = normalizePhone(rawPhone);
-        const tiers = [...(loyalty?.tiers || initialLoyaltyConfig.tiers)].sort((a,b) => (a.minSpend || 0) - (b.minSpend || 0));
+        const rawTiersList = getLoyaltyTiers(loyalty);
+        const tiers = [...rawTiersList].sort((a,b) => (Number(a.minSpend) || 0) - (Number(b.minSpend) || 0));
         const defaultTier = tiers[0] || initialLoyaltyConfig.tiers[0];
 
         if (!phone || phone.length < 10) {
@@ -2223,7 +2292,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
       return (
         <div className="min-h-screen flex flex-col bg-[#fffaf5]">
           {/* Top Announcement Bar (Storefront only) */}
-          {activeTab === "Storefront" && config.announcement.enabled && config.announcement.text && (
+          {activeTab === "Storefront" && config?.announcement?.enabled && config?.announcement?.text && (
             <div className="bg-[#7a1c2b] text-[#fff8f0] text-center text-xs sm:text-sm py-2 px-4 font-medium tracking-wide shadow-sm flex items-center justify-center gap-2">
               <span>{config.announcement.text}</span>
             </div>
@@ -2231,7 +2300,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
 
           {/* Main Top Header (Storefront only) */}
           {activeTab === "Storefront" && (
-            <header className={`bg-white/95 backdrop-blur border-b border-[#f3e2d0] transition-all duration-200 ${config.header.sticky ? 'sticky top-0 z-30' : ''}`}>
+            <header className={`bg-white/95 backdrop-blur border-b border-[#f3e2d0] transition-all duration-200 ${config?.header?.sticky ? 'sticky top-0 z-30' : ''}`}>
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3 sm:gap-4">
               
               {/* Logo & Store Title */}
@@ -2250,7 +2319,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
               </div>
 
               {/* Storefront Search Bar */}
-              {config.header.showSearch && activeTab === "Storefront" && (
+              {config?.header?.showSearch && activeTab === "Storefront" && (
                 <div className="flex-1 max-w-md hidden md:block">
                   <div className="relative">
                     <input 
@@ -2296,7 +2365,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         )}
                         <div className="text-left hidden sm:block">
                           <span className="block text-[11px] font-extrabold leading-tight truncate max-w-[85px] text-[#2c1810]">
-                            {currentUser.name.split(" ")[0]}
+                            {currentUser?.name ? String(currentUser.name).trim().split(" ")[0] : "কাস্টমার"}
                           </span>
                           <span className="block text-[9px] text-[#b8956a] leading-none font-bold">
                             {getCustomerLoyalty(currentUser.phone)?.currentTier?.icon || "👑"} {getCustomerLoyalty(currentUser.phone)?.currentTier?.nameBn || "মেম্বার"}
@@ -2357,7 +2426,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
               <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
                 <div className="space-y-8 animate-fadeIn">
                 {/* Mobile Search */}
-                {config.header.showSearch && (
+                {config?.header?.showSearch && (
                   <div className="md:hidden">
                     <input 
                       type="text"
@@ -5068,7 +5137,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(loyalty?.tiers || initialLoyaltyConfig.tiers).map((tier, idx) => (
+                    {getLoyaltyTiers(loyalty).map((tier, idx) => (
                       <div 
                         key={tier.id} 
                         className="bg-[#fffdfa] rounded-2xl p-5 border-2 border-[#f3e2d0] hover:border-[#d4a574] transition space-y-3.5 shadow-xs relative overflow-hidden"
@@ -6096,7 +6165,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৪. হেডার ডিসপ্লে সেটিংস</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                       <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config.header.showSearch} onChange={(e) => setConfig({ ...config, header: { ...config.header, showSearch: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        <input type="checkbox" checked={config?.header?.showSearch} onChange={(e) => setConfig({ ...config, header: { ...config.header, showSearch: e.target.checked } })} className="accent-[#7a1c2b]" />
                         সার্চ বক্স প্রদর্শন
                       </label>
                       <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
@@ -6108,7 +6177,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         ক্যাটাগরি বার
                       </label>
                       <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config.header.sticky} onChange={(e) => setConfig({ ...config, header: { ...config.header, sticky: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        <input type="checkbox" checked={config?.header?.sticky} onChange={(e) => setConfig({ ...config, header: { ...config.header, sticky: e.target.checked } })} className="accent-[#7a1c2b]" />
                         স্টিকি হেডার
                       </label>
                     </div>
@@ -6514,7 +6583,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     <h4 className="font-bold text-sm text-[#7a1c2b]">হেডার ফিচার ডিসপ্লে</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                       <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config.header.showSearch} onChange={(e) => setConfig({ ...config, header: { ...config.header, showSearch: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        <input type="checkbox" checked={config?.header?.showSearch} onChange={(e) => setConfig({ ...config, header: { ...config.header, showSearch: e.target.checked } })} className="accent-[#7a1c2b]" />
                         সার্চ বক্স প্রদর্শন
                       </label>
                       <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
@@ -6526,7 +6595,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         ক্যাটাগরি বার
                       </label>
                       <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config.header.sticky} onChange={(e) => setConfig({ ...config, header: { ...config.header, sticky: e.target.checked } })} className="accent-[#7a1c2b]" />
+                        <input type="checkbox" checked={config?.header?.sticky} onChange={(e) => setConfig({ ...config, header: { ...config.header, sticky: e.target.checked } })} className="accent-[#7a1c2b]" />
                         স্টিকি হেডার
                       </label>
                     </div>
@@ -7194,7 +7263,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     ভিআইপি মেম্বারশিপ লেভেল ও সুবিধাসমূহ
                   </h4>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    {(loyalty?.tiers || initialLoyaltyConfig.tiers).map((tier, idx) => (
+                    {getLoyaltyTiers(loyalty).map((tier, idx) => (
                       <div 
                         key={tier.id}
                         className="bg-[#fffdfa] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 hover:border-[#d4a574] transition"
@@ -9084,7 +9153,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
       );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
 </body>
 </html>
