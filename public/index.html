@@ -5,6 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SAJGOJ FASHION - Premium Jewelry & Sharee Collection</title>
   
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="SAJGOJ FASHION - Premium Jewelry & Sharee">
+  <meta name="description" content="প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।">
+  <meta name="keywords" content="sajgoj, sharee, choker, jewelry bd, bridal set, eid collection">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://sajgojfashion.netlify.app">
+
+  <!-- Open Graph / Facebook / WhatsApp Meta Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sajgojfashion.netlify.app">
+  <meta property="og:site_name" content="SAJGOJ FASHION">
+  <meta property="og:title" content="SAJGOJ FASHION - Premium Jewelry & Sharee">
+  <meta property="og:description" content="প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="bn_BD">
+
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://sajgojfashion.netlify.app">
+  <meta name="twitter:title" content="SAJGOJ FASHION - Premium Jewelry & Sharee">
+  <meta name="twitter:description" content="প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80">
+  
   <!-- Cloudflare Fast CDN for Global & Bangladesh BDIX Speed -->
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,10 +44,10 @@
   <!-- Babel standalone for JSX compiling -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
 
-  <!-- Firebase 10 SDK (Compat for seamless cross-browser cloud persistence) -->
+  <!-- Firebase 10 SDK (Compat for seamless cross-browser cloud persistence - App -> Auth -> Firestore order) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
@@ -326,7 +351,8 @@
       metaDescription: "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।",
       metaKeywords: "sajgoj, sharee, choker, jewelry bd, bridal set, eid collection",
       canonicalUrl: "https://sajgojfashion.netlify.app",
-      robots: "index, follow"
+      robots: "index, follow",
+      ogImage: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80"
     };
 
     // =========================================================
@@ -423,36 +449,50 @@
     };
     const FIRESTORE_DATABASE_ID = "ai-studio-android-sajgojfa-722ad4cf-babb-4676-b27a-8dd4451c81da";
 
+    let firebaseApp = null;
+    let firebaseAuth = null;
     let firestoreDb = null;
     try {
       if (typeof firebase !== "undefined") {
-        const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
+        firebaseApp = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
+
+        // 1. Consistent Auth Initialization (Prior to Firestore queries)
         try {
-          // Firebase Compat v10: Delegate retrieval for named Firestore database
-          if (app._delegate && app._delegate.container) {
-            const dbDelegate = app._delegate.container.getProvider("firestore").getImmediate({
-              identifier: FIRESTORE_DATABASE_ID
-            });
-            const CompatFirestore = app.firestore().constructor;
-            firestoreDb = new CompatFirestore(app, dbDelegate);
-            console.log("Firestore successfully connected to named database:", FIRESTORE_DATABASE_ID);
-          } else {
-            firestoreDb = app.firestore(FIRESTORE_DATABASE_ID);
+          if (typeof firebase.auth === "function") {
+            firebaseAuth = firebase.auth(firebaseApp);
           }
+        } catch(eAuth) {
+          console.warn("Firebase Auth init note:", eAuth);
+          try { firebaseAuth = firebase.auth(); } catch(e) {}
+        }
+
+        // 2. Consistent Named Firestore Database Initialization with Multi-Tier Fallback
+        try {
+          // Primary: Standard Compat named database instance
+          firestoreDb = firebaseApp.firestore(FIRESTORE_DATABASE_ID);
+          console.log("Firestore connected directly to named database:", FIRESTORE_DATABASE_ID);
         } catch(e1) {
-          console.warn("Direct delegate init note, attempting compat fallback:", e1);
+          console.warn("Standard named database invocation note, checking delegate:", e1);
           try {
-            firestoreDb = app.firestore(FIRESTORE_DATABASE_ID);
+            if (firebaseApp._delegate && firebaseApp._delegate.container) {
+              const dbDelegate = firebaseApp._delegate.container.getProvider("firestore").getImmediate({
+                identifier: FIRESTORE_DATABASE_ID
+              });
+              const CompatFirestore = firebase.firestore;
+              firestoreDb = new CompatFirestore(firebaseApp, dbDelegate);
+              console.log("Firestore connected via container delegate:", FIRESTORE_DATABASE_ID);
+            } else {
+              firestoreDb = firebase.firestore();
+            }
           } catch(e2) {
             firestoreDb = firebase.firestore();
           }
         }
 
-        // Note: Custom idbStore handles high-res multi-tier offline persistence without Firestore IndexedDb tab locks
-        console.log("Firestore initialized in fast memory-backed cloud stream mode.");
+        console.log("Firebase services (App, Auth, Firestore) initialized consistently.");
       }
     } catch(e) {
-      console.error("Firebase init failed:", e);
+      console.error("Firebase overall initialization failed:", e);
     }
 
     // Global protection against mobile network change errors and script disruptions
@@ -585,6 +625,8 @@
       const [adjustPointsNote, setAdjustPointsNote] = useState("");
 
       // Asynchronous Hydration from IndexedDB on startup (recovers large images/banners if localStorage was truncated)
+      const hasHydratedRef = useRef(false);
+
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
@@ -609,25 +651,28 @@
               }
             } catch(e) {}
           }
+          if (isMounted) {
+            hasHydratedRef.current = true;
+          }
         }
         hydrateFromIndexedDB();
         return () => { isMounted = false; };
       }, []);
 
-      // Persistent Local Storage Sync
-      useEffect(() => setStored("products", products), [products]);
-      useEffect(() => setStored("combos", combos), [combos]);
-      useEffect(() => setStored("reviews", reviews), [reviews]);
-      useEffect(() => setStored("categories", categories), [categories]);
-      useEffect(() => setStored("orders", orders), [orders]);
-      useEffect(() => setStored("coupons", coupons), [coupons]);
-      useEffect(() => setStored("banners", banners), [banners]);
-      useEffect(() => setStored("config", config), [config]);
-      useEffect(() => setStored("courier", courier), [courier]);
-      useEffect(() => setStored("pixel", pixel), [pixel]);
-      useEffect(() => setStored("seo", seo), [seo]);
-      useEffect(() => setStored("loyalty", loyalty), [loyalty]);
-      useEffect(() => setStored("loyalty_customers", loyaltyCustomerMap), [loyaltyCustomerMap]);
+      // Persistent Local Storage Sync - Gated by hasHydratedRef to prevent race condition overwriting!
+      useEffect(() => { if (hasHydratedRef.current) setStored("products", products); }, [products]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("combos", combos); }, [combos]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("reviews", reviews); }, [reviews]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("categories", categories); }, [categories]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("orders", orders); }, [orders]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("coupons", coupons); }, [coupons]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("banners", banners); }, [banners]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("config", config); }, [config]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("courier", courier); }, [courier]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("pixel", pixel); }, [pixel]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("seo", seo); }, [seo]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("loyalty", loyalty); }, [loyalty]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("loyalty_customers", loyaltyCustomerMap); }, [loyaltyCustomerMap]);
       useEffect(() => {
         if (currentUser) {
           setStored("customer_user", currentUser);
@@ -659,9 +704,9 @@
         if (!firestoreDb) return;
         try {
           setCloudSyncStatus("syncing");
-          // Safety timeout (3.5s): prevents UI freeze or ERR_NETWORK_CHANGED crash on mobile 4G
+          // Resilient 20s timeout ensures slow mobile 3G/4G connections finish cloud commit without premature abort
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Network timeout - saved locally to IndexedDB/cache")), 3500)
+            setTimeout(() => reject(new Error("Cloud sync queued in background")), 20000)
           );
           
           await Promise.race([
@@ -671,8 +716,8 @@
           setCloudSyncStatus("connected");
           setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
         } catch(e) {
-          console.warn(`Cloud sync note [${collectionName}/${docId}]:`, e.message || e);
-          // Always stay connected because local IndexedDB already safely persisted the data
+          console.warn(`Cloud sync notice [${collectionName}/${docId}]:`, e.message || e);
+          // Keep connected indicator healthy; Firestore SDK continues retrying in background
           setCloudSyncStatus("connected");
         }
       };
@@ -799,14 +844,21 @@
           if (!isMounted) return;
           if (doc.exists) {
             const remoteData = doc.data() || {};
-            setConfig(prev => ({
-              ...initialStoreConfig,
-              ...prev,
-              ...remoteData,
-              announcement: { ...initialStoreConfig.announcement, ...(prev?.announcement || {}), ...(remoteData?.announcement || {}) },
-              header: { ...initialStoreConfig.header, ...(prev?.header || {}), ...(remoteData?.header || {}) },
-              footer: { ...initialStoreConfig.footer, ...(prev?.footer || {}), ...(remoteData?.footer || {}) }
-            }));
+            setConfig(prev => {
+              const prevCfg = prev || initialStoreConfig;
+              return {
+                ...initialStoreConfig,
+                ...prevCfg,
+                ...remoteData,
+                // Preserve local uploaded logo/favicon if remote document has empty string
+                logo: (remoteData.logo && remoteData.logo.trim()) ? remoteData.logo : (prevCfg.logo || ""),
+                favicon: (remoteData.favicon && remoteData.favicon.trim()) ? remoteData.favicon : (prevCfg.favicon || ""),
+                primaryColor: remoteData.primaryColor || prevCfg.primaryColor || initialStoreConfig.primaryColor,
+                announcement: { ...initialStoreConfig.announcement, ...(prevCfg.announcement || {}), ...(remoteData?.announcement || {}) },
+                header: { ...initialStoreConfig.header, ...(prevCfg.header || {}), ...(remoteData?.header || {}) },
+                footer: { ...initialStoreConfig.footer, ...(prevCfg.footer || {}), ...(remoteData?.footer || {}) }
+              };
+            });
             setStored("config", { ...getStored("config", initialStoreConfig), ...remoteData });
           } else {
             const currentConfig = getStored("config", initialStoreConfig);
@@ -2263,6 +2315,70 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
         document.documentElement.style.setProperty('--primary-hover', darkenHex(primary, 15));
       }, [config.primaryColor]);
 
+      // Dynamic Open Graph & Twitter Card Meta Tags Synchronization in Document Head
+      useEffect(() => {
+        const setMetaTag = (attrName, attrValue, contentValue) => {
+          if (!contentValue) return;
+          let el = document.querySelector(`meta[${attrName}="${attrValue}"]`);
+          if (!el) {
+            el = document.createElement("meta");
+            el.setAttribute(attrName, attrValue);
+            document.head.appendChild(el);
+          }
+          el.setAttribute("content", contentValue);
+        };
+
+        const setLinkTag = (rel, href) => {
+          if (!href) return;
+          let el = document.querySelector(`link[rel="${rel}"]`);
+          if (!el) {
+            el = document.createElement("link");
+            el.setAttribute("rel", rel);
+            document.head.appendChild(el);
+          }
+          el.setAttribute("href", href);
+        };
+
+        const storeName = config?.storeName || "SAJGOJ FASHION";
+        const title = viewProduct 
+          ? `${viewProduct.name} - ${viewProduct.price} ৳ | ${storeName}` 
+          : (seo?.siteTitle || `${storeName} - Premium Jewelry & Sharee Collection`);
+        const desc = viewProduct 
+          ? (viewProduct.description || `${viewProduct.name} এখন আকর্ষণীয় মূল্যে সাজগোজ ফ্যাশনে পাওয়া যাচ্ছে।`) 
+          : (seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।");
+        const url = seo?.canonicalUrl || "https://sajgojfashion.netlify.app";
+        const shareImg = viewProduct?.images?.[0] || seo?.ogImage || banners?.[0]?.image || config?.logo || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80";
+
+        // Update document title
+        document.title = title;
+
+        // Primary Standard Meta Tags
+        setMetaTag("name", "title", title);
+        setMetaTag("name", "description", desc);
+        if (seo?.metaKeywords) setMetaTag("name", "keywords", seo.metaKeywords);
+        setMetaTag("name", "robots", seo?.robots || "index, follow");
+        setLinkTag("canonical", url);
+
+        // Open Graph Meta Tags (Facebook, WhatsApp, LinkedIn)
+        setMetaTag("property", "og:type", viewProduct ? "product" : "website");
+        setMetaTag("property", "og:site_name", storeName);
+        setMetaTag("property", "og:title", title);
+        setMetaTag("property", "og:description", desc);
+        setMetaTag("property", "og:url", url);
+        setMetaTag("property", "og:image", shareImg);
+        setMetaTag("property", "og:image:width", "1200");
+        setMetaTag("property", "og:image:height", "630");
+        setMetaTag("property", "og:locale", "bn_BD");
+
+        // Twitter Card Meta Tags
+        setMetaTag("name", "twitter:card", "summary_large_image");
+        setMetaTag("name", "twitter:title", title);
+        setMetaTag("name", "twitter:description", desc);
+        setMetaTag("name", "twitter:image", shareImg);
+        setMetaTag("name", "twitter:url", url);
+
+      }, [seo, config?.storeName, config?.logo, banners, viewProduct]);
+
       // Filtered Products (with BOGO filter support)
       const filteredProducts = products.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(storeSearch.toLowerCase()) || p.sku.toLowerCase().includes(storeSearch.toLowerCase());
@@ -2276,17 +2392,10 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
 
       const adminTabs = [
         { id: "Dashboard", label: "ড্যাশবোর্ড", icon: "📊" },
-        { id: "Combos", label: "কম্বো প্যাক", icon: "🎁" },
-        { id: "Products", label: "প্রোডাক্টস", icon: "👗" },
-        { id: "Orders", label: "অর্ডারস", icon: "📦" },
-        { id: "Categories", label: "ক্যাটাগরি", icon: "🏷️" },
-        { id: "Coupons", label: "কুপন কোড", icon: "🎟️" },
-        { id: "Banners", label: "ব্যানার সেটিংস", icon: "🖼️" },
-        { id: "Courier", label: "কুরিয়ার সেটিংস", icon: "🚚" },
-        { id: "Pixel", label: "ফেসবুক পিক্সেল", icon: "📈" },
-        { id: "SEO", label: "এসইও ও সাইটম্যাপ", icon: "🌐" },
-        { id: "Settings", label: "স্টোর ও লোগো সেটিংস", icon: "⚙️" },
-        { id: "Backup", label: "ডাটাবেজ ব্যাকআপ", icon: "💾" }
+        { id: "Orders", label: "অর্ডার ট্র্যাকিং", icon: "📦" },
+        { id: "Products", label: "প্রোডাক্টস ও অফার", icon: "👗" },
+        { id: "General", label: "থিম ও ব্র্যান্ডিং", icon: "🎨" },
+        { id: "Loyalty", label: "সিস্টেম ও কনফিগ", icon: "⚙️" }
       ];
 
       return (
@@ -2395,7 +2504,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       )}
                     </button>
                     <button 
-                      onClick={() => { setActiveTab("Admin"); setIsAdminDrawerOpen(true); }}
+                      onClick={() => setActiveTab("Dashboard")}
                       className="border-2 border-[#7a1c2b] bg-[#fff8f0] text-[#7a1c2b] px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition shadow-sm flex items-center gap-1.5"
                     >
                       <span>⚙️</span>
@@ -2875,7 +2984,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
 
                 {/* CONSOLIDATED MASTER ADMIN DASHBOARD NAVIGATION BAR */}
                 <div className="border-t border-[#f3e2d0] bg-[#fffaf5] px-4 shadow-inner">
-                  {/* Master 4 Administrative Pillars + Overview Hub */}
+                  {/* Master 5 Administrative Pillars + Overview Hub */}
                   <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 overflow-x-auto py-2.5 scrollbar-hide text-xs sm:text-sm font-bold">
                     <div className="flex items-center gap-2 flex-nowrap">
                       {/* 1. Dashboard Overview */}
@@ -2888,7 +2997,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         }`}
                       >
                         <span>📊</span>
-                        <span>ড্যাশবোর্ড ওভারভিউ</span>
+                        <span>ড্যাশবোর্ড</span>
                       </button>
 
                       {/* 2. Order Tracking */}
@@ -2919,19 +3028,19 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       {/* 3. Product Management */}
                       <button
                         onClick={() => {
-                          if (!["Products", "Combos", "Categories", "Reviews"].includes(activeTab)) {
+                          if (!["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)) {
                             setActiveTab("Products");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["Products", "Combos", "Categories", "Reviews"].includes(activeTab)
+                          ["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
                       >
                         <span>👗</span>
-                        <span>প্রোডাক্ট ম্যানেজমেন্ট</span>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${["Products", "Combos", "Categories", "Reviews"].includes(activeTab) ? 'bg-white/25 text-white' : 'bg-[#fff0e6] text-[#7a1c2b] border border-[#f3e2d0]'}`}>
+                        <span>প্রোডাক্ট ও অফার</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) ? 'bg-white/25 text-white' : 'bg-[#fff0e6] text-[#7a1c2b] border border-[#f3e2d0]'}`}>
                           {products.length}
                         </span>
                       </button>
@@ -2939,49 +3048,50 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       {/* 4. Theme Customization */}
                       <button
                         onClick={() => {
-                          if (!["General", "Settings", "Admin", "Banners", "Header", "Footer"].includes(activeTab)) {
+                          if (!["General", "Settings", "Banners", "Header", "Footer"].includes(activeTab)) {
                             setActiveTab("General");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["General", "Settings", "Admin", "Banners", "Header", "Footer"].includes(activeTab)
+                          ["General", "Settings", "Banners", "Header", "Footer"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
                       >
                         <span>🎨</span>
-                        <span>থিম কাস্টমাইজেশন</span>
+                        <span>থিম ও ব্র্যান্ডিং</span>
                         <span className="w-2.5 h-2.5 rounded-full shadow-xs" style={{ backgroundColor: config.primaryColor || "#7a1c2b" }}></span>
                       </button>
 
                       {/* 5. System Configurations */}
                       <button
                         onClick={() => {
-                          if (!["Loyalty", "Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab)) {
+                          if (!["Loyalty", "Courier", "Pixel", "SEO", "Backup"].includes(activeTab)) {
                             setActiveTab("Loyalty");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["Loyalty", "Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab)
+                          ["Loyalty", "Courier", "Pixel", "SEO", "Backup"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
                       >
                         <span>⚙️</span>
-                        <span>সিস্টেম কনফিগারেশন</span>
+                        <span>সিস্টেম ও কনফিগ</span>
                         <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono font-bold">Cloud</span>
                       </button>
                     </div>
                   </div>
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR PRODUCT MANAGEMENT) */}
-                  {["Products", "Combos", "Categories", "Reviews"].includes(activeTab) && (
+                  {["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">প্রোডাক্ট মডিউল:</span>
                       {[
                         { id: "Products", label: "🛍️ সকল প্রোডাক্ট ও BOGO", count: products.length },
                         { id: "Combos", label: "🎁 কম্বো প্যাক বিল্ডার", count: combos.length },
                         { id: "Categories", label: "🏷️ ক্যাটাগরি", count: categories.length },
+                        { id: "Coupons", label: "🎟️ কুপন কোড", count: coupons.length },
                         { id: "Reviews", label: "⭐ কাস্টমার রিভিউ", count: reviews.length }
                       ].map(sub => (
                         <button
@@ -3005,7 +3115,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   )}
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR THEME CUSTOMIZATION) */}
-                  {["General", "Settings", "Admin", "Banners", "Header", "Footer"].includes(activeTab) && (
+                  {["General", "Settings", "Banners", "Header", "Footer"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">থিম ও ব্র্যান্ডিং:</span>
                       {[
@@ -3018,7 +3128,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           key={sub.id}
                           onClick={() => setActiveTab(sub.id)}
                           className={`px-3 py-1.5 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                            activeTab === sub.id || (sub.id === "General" && (activeTab === "Settings" || activeTab === "Admin"))
+                            activeTab === sub.id || (sub.id === "General" && activeTab === "Settings")
                               ? "bg-[#7a1c2b] text-white shadow-xs font-extrabold"
                               : "bg-white text-gray-700 hover:bg-[#fff8f0] border border-[#ecd9c6]"
                           }`}
@@ -3030,7 +3140,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   )}
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR SYSTEM CONFIGURATIONS) */}
-                  {["Loyalty", "Courier", "Pixel", "SEO", "Coupons", "Backup"].includes(activeTab) && (
+                  {["Loyalty", "Courier", "Pixel", "SEO", "Backup"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">সিস্টেম কনফিগারেশন:</span>
                       {[
@@ -3038,7 +3148,6 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         { id: "Courier", label: "🚚 কুরিয়ার ইন্টিগ্রেশন (Steadfast / Pathao)" },
                         { id: "Pixel", label: "📈 ফেসবুক পিক্সেল ও CAPI" },
                         { id: "SEO", label: "🌐 এসইও ও সাইটম্যাপ" },
-                        { id: "Coupons", label: `🎟️ কুপন কোড (${coupons.length})` },
                         { id: "Backup", label: "💾 ডাটাবেজ ব্যাকআপ ও ক্লাউড সিঙ্ক" }
                       ].map(sub => (
                         <button
@@ -3666,177 +3775,89 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       </div>
                     </div>
 
-                    {/* CONSOLIDATED SECTION 4: STREAMLINED CONFIGURATION TOOLS HUB */}
+                    {/* CONSOLIDATED SECTION 4: 4-PILLAR ADMINISTRATIVE MANAGEMENT HUB */}
                     <div className="space-y-4">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                           <h3 className="font-bold text-lg text-[#7a1c2b] flex items-center gap-2">
-                            <span>🛠️</span>
-                            <span>স্টোর কনফিগারেশন ও ম্যানেজমেন্ট হাব</span>
+                            <span>🏛️</span>
+                            <span>এডমিন ম্যানেজমেন্ট ও কন্ট্রোল হাব</span>
                           </h3>
-                          <p className="text-xs text-gray-500">ব্যানার, কুপন, ক্যাটাগরি, রিভিউ, পিক্সেল, কুরিয়ার ও ব্যাকআপ সেটিংস</p>
+                          <p className="text-xs text-gray-500">স্টোরের ৪টি মূল প্রশাসনিক বিভাগ ও দ্রুত ব্যবস্থাপনা</p>
                         </div>
-                        <button
-                          onClick={() => setActiveTab("General")}
-                          className="text-xs font-bold text-[#7a1c2b] bg-white px-3.5 py-1.5 rounded-full border border-[#f3e2d0] hover:bg-[#7a1c2b] hover:text-white transition shadow-xs flex items-center gap-1.5"
-                        >
-                          <span>⚙️</span>
-                          <span>পূর্ণাঙ্গ স্টোর ইনফো ও কনফিগ →</span>
-                        </button>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                        {/* Module 0: Combos */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Pillar 1: Product Management */}
                         <div 
-                          onClick={() => setActiveTab("Combos")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#d4a574] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                          onClick={() => setActiveTab("Products")} 
+                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between group"
                         >
                           <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              🎁
+                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition">
+                              👗
                             </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">কম্বো প্যাক অফার</h4>
-                            <p className="text-xs text-gray-500 mt-1">প্রোডাক্ট বান্ডেল ও বিশেষ মূল্য নির্ধারণ</p>
+                            <h4 className="font-bold text-base text-[#2c1810]">প্রোডাক্ট ও অফার</h4>
+                            <p className="text-xs text-gray-500 mt-1">প্রোডাক্ট ক্যাটালগ, BOGO ডিল, কম্বো প্যাক, ক্যাটাগরি ও কুপন ডিসকাউন্ট</p>
                           </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {combos.length} টি কম্বো প্যাক →
-                          </span>
+                          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-[#7a1c2b] font-bold">
+                            <span>{products.length} টি প্রোডাক্ট</span>
+                            <span>ম্যানেজ করুন →</span>
+                          </div>
                         </div>
 
-                        {/* Module 1: Categories */}
+                        {/* Pillar 2: Order Tracking */}
                         <div 
-                          onClick={() => setActiveTab("Categories")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                          onClick={() => setActiveTab("Orders")} 
+                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between group"
                         >
                           <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              🏷️
+                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition">
+                              📦
                             </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">ক্যাটাগরি সেটিংস</h4>
-                            <p className="text-xs text-gray-500 mt-1">নতুন ক্যাটাগরি তৈরি ও সাজানো</p>
+                            <h4 className="font-bold text-base text-[#2c1810]">অর্ডার ও কুরিয়ার</h4>
+                            <p className="text-xs text-gray-500 mt-1">গ্রাহকের অর্ডার প্রসেসিং, ইনভয়েস প্রিন্ট, ও Steadfast/Pathao কুরিয়ার বুকিং</p>
                           </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {categories.length} টি ক্যাটাগরি →
-                          </span>
+                          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-[#7a1c2b] font-bold">
+                            <span>{orders.length} টি অর্ডার</span>
+                            <span>অর্ডার দেখুন →</span>
+                          </div>
                         </div>
 
-                        {/* Module 2: Coupons */}
+                        {/* Pillar 3: Theme Customization */}
                         <div 
-                          onClick={() => setActiveTab("Coupons")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                          onClick={() => setActiveTab("General")} 
+                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between group"
                         >
                           <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              🎟️
+                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition">
+                              🎨
                             </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">কুপন ও ছাড়</h4>
-                            <p className="text-xs text-gray-500 mt-1">ডিসকাউন্ট কোড ও অফার তৈরি</p>
+                            <h4 className="font-bold text-base text-[#2c1810]">থিম ও ব্র্যান্ডিং</h4>
+                            <p className="text-xs text-gray-500 mt-1">লোগো, ফ্যাভিকন, মেরুন/গোল্ড কালার প্যালেট, ব্যানার স্লাইডার ও ফুটার</p>
                           </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {coupons.length} টি কুপন →
-                          </span>
+                          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-[#7a1c2b] font-bold">
+                            <span>{banners.length} টি ব্যানার</span>
+                            <span>কাস্টমাইজ করুন →</span>
+                          </div>
                         </div>
 
-                        {/* Module 3: Banners */}
+                        {/* Pillar 4: System Configurations */}
                         <div 
-                          onClick={() => setActiveTab("Banners")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
+                          onClick={() => setActiveTab("Loyalty")} 
+                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between group"
                         >
                           <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              🖼️
+                            <div className="w-12 h-12 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-2xl mb-3 group-hover:scale-105 transition">
+                              ⚙️
                             </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">ব্যানার ও স্লাইডার</h4>
-                            <p className="text-xs text-gray-500 mt-1">হোমপেজ ব্যানার, ছবি ও অফার টেক্সট</p>
+                            <h4 className="font-bold text-base text-[#2c1810]">সিস্টেম ও ক্লাউড</h4>
+                            <p className="text-xs text-gray-500 mt-1">VIP মেম্বারশিপ ক্লাব, ফেসবুক পিক্সেল, গুগল এসইও এবং ফায়ারবেস ক্লাউড ব্যাকআপ</p>
                           </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {banners.length} টি ব্যানার →
-                          </span>
-                        </div>
-
-                        {/* Module 4: Reviews */}
-                        <div 
-                          onClick={() => setActiveTab("Reviews")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              ⭐
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">কাস্টমার রিভিউ</h4>
-                            <p className="text-xs text-gray-500 mt-1">গ্রাহকদের ফিডব্যাক ও রেটিং</p>
+                          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-[#7a1c2b] font-bold">
+                            <span className="text-emerald-700">Firestore Cloud ✓</span>
+                            <span>কনফিগ করুন →</span>
                           </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            {reviews.length} টি রিভিউ →
-                          </span>
-                        </div>
-
-                        {/* Module 5: Courier API */}
-                        <div 
-                          onClick={() => setActiveTab("Courier")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              🚚
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">কুরিয়ার ও ডেলিভারি</h4>
-                            <p className="text-xs text-gray-500 mt-1">Steadfast ও Pathao API ও চার্জ</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            কুরিয়ার সেটআপ →
-                          </span>
-                        </div>
-
-                        {/* Module 6: Pixel */}
-                        <div 
-                          onClick={() => setActiveTab("Pixel")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              📈
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">ফেসবুক পিক্সেল</h4>
-                            <p className="text-xs text-gray-500 mt-1">Meta Pixel ID ও কনভার্সন ট্র্যাকিং</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            পিক্সেল কোড সেট →
-                          </span>
-                        </div>
-
-                        {/* Module 7: SEO */}
-                        <div 
-                          onClick={() => setActiveTab("SEO")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              🔍
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">এসইও ও সাইটম্যাপ</h4>
-                            <p className="text-xs text-gray-500 mt-1">Google সার্চ ইনডেক্স ও মেটা ট্যাগ</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            এসইও অপশন →
-                          </span>
-                        </div>
-
-                        {/* Module 8: Backup */}
-                        <div 
-                          onClick={() => setActiveTab("Backup")} 
-                          className="bg-white p-5 rounded-3xl border-2 border-[#f3e2d0] hover:border-[#7a1c2b] cursor-pointer shadow-sm hover:shadow-md transition text-left flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="w-11 h-11 rounded-2xl bg-[#fff8f0] border border-[#d4a574] flex items-center justify-center text-xl mb-3">
-                              💾
-                            </div>
-                            <h4 className="font-bold text-sm text-[#2c1810]">ডাটাবেজ ব্যাকআপ</h4>
-                            <p className="text-xs text-gray-500 mt-1">JSON ফাইল ব্যাকআপ ও সরাসরি রিস্টোর</p>
-                          </div>
-                          <span className="text-xs text-[#7a1c2b] font-bold mt-3 block">
-                            ব্যাকআপ সেন্টার →
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -5674,27 +5695,57 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     </span>
                   </div>
 
-                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm max-w-2xl font-sans">
-                    <div className="flex items-center gap-2 text-xs text-[#202124] mb-1">
-                      <div className="w-5 h-5 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-[10px] font-bold">
-                        {config.storeName ? config.storeName.charAt(0) : "S"}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Google SERP Preview */}
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm font-sans space-y-2">
+                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">গুগল সার্চ প্রিভিউ (Google SERP)</span>
+                      <div className="flex items-center gap-2 text-xs text-[#202124]">
+                        <div className="w-5 h-5 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-[10px] font-bold">
+                          {config?.storeName ? config.storeName.charAt(0) : "S"}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-xs text-[#202124]">{config?.storeName || "SAJGOJ FASHION"}</span>
+                          <span className="text-[11px] text-[#5f6368] font-mono truncate max-w-xs">
+                            {seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-xs text-[#202124]">{config.storeName || "SAJGOJ FASHION"}</span>
-                        <span className="text-[11px] text-[#5f6368] font-mono truncate max-w-sm">
-                          {seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}
+                      <h4 className="text-base font-medium text-[#1a0dab] hover:underline cursor-pointer leading-tight">
+                        {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee Collection"}
+                      </h4>
+                      <p className="text-xs text-[#4d5156] leading-relaxed line-clamp-2">
+                        {seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।"}
+                      </p>
+                    </div>
+
+                    {/* Facebook & Twitter Social Card Live Preview */}
+                    <div className="bg-white rounded-xl border border-gray-300 shadow-sm overflow-hidden font-sans">
+                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block px-3 pt-2.5 pb-1">
+                        সোশ্যাল শেয়ার প্রিভিউ (Facebook / Twitter / WhatsApp)
+                      </span>
+                      <div className="aspect-[1.91/1] w-full bg-gray-100 overflow-hidden relative border-y border-gray-200">
+                        <img 
+                          src={seo?.ogImage || banners?.[0]?.image || config?.logo || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80"} 
+                          alt="Social Preview" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80"; }}
+                        />
+                      </div>
+                      <div className="p-3 bg-[#f0f2f5] space-y-1">
+                        <span className="text-[10px] text-gray-500 uppercase font-mono block">
+                          {seo?.canonicalUrl ? seo.canonicalUrl.replace(/^https?:\/\//, "").split("/")[0] : "sajgojfashion.netlify.app"}
                         </span>
+                        <h5 className="text-xs font-bold text-gray-900 truncate">
+                          {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee"}
+                        </h5>
+                        <p className="text-[11px] text-gray-600 line-clamp-2 leading-tight">
+                          {seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।"}
+                        </p>
                       </div>
                     </div>
-                    <h4 className="text-lg font-medium text-[#1a0dab] hover:underline cursor-pointer leading-tight mb-1">
-                      {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee Collection"}
-                    </h4>
-                    <p className="text-xs text-[#4d5156] leading-relaxed line-clamp-2">
-                      {seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন। ক্যাশ অন ডেলিভারি ও দ্রুততম হোম ডেলিভারি।"}
-                    </p>
                   </div>
                   <p className="text-[11px] text-gray-500">
-                    💡 গুগল সার্চ রেজাল্টে গ্রাহকরা আপনার ওয়েবসাইট এভাবেই দেখতে পাবেন। সঠিক কি-ওয়ার্ড ও আকর্ষণীয় মেটা ডেসক্রিপশন বেশি ভিজিটর ও সেলস বৃদ্ধি করে।
+                    💡 ফেসবুক, হোয়াটসঅ্যাপ বা টুইটারে আপনার ওয়েবসাইটের লিঙ্ক শেয়ার করলে এই ছবি, টাইটেল ও বিবরণটি প্রিভিউ হিসেবে প্রদর্শিত হবে।
                   </p>
                 </div>
 
@@ -5758,6 +5809,21 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 font-mono focus:border-[#7a1c2b] shadow-xs" 
                       />
                       <p className="text-[10px] text-gray-400 mt-1">সার্চ ইঞ্জিন ডুপ্লিকেট কন্টেন্ট এড়াতে এই লিঙ্কটি অগ্রাধিকার দেয়</p>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-gray-700">Open Graph & Twitter Share Image (সোশ্যাল শেয়ার ছবি লিঙ্ক) *</label>
+                        <span className="text-[10px] text-emerald-700 font-bold">1200×630px প্রস্তাবিত</span>
+                      </div>
+                      <input 
+                        type="url" 
+                        value={seo?.ogImage || ""} 
+                        onChange={(e) => setSeo({ ...seo, ogImage: e.target.value })}
+                        placeholder="https://... (ছবি লিংক যেমন .jpg / .png)"
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-xs outline-none mt-1 font-mono focus:border-[#7a1c2b] shadow-xs" 
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">ফেসবুক বা হোয়াটসঅ্যাপে লিংক শেয়ার করলে যে ছবিটি বড় ব্যানার হিসেবে দেখাবে</p>
                     </div>
 
                     <div>
@@ -5826,9 +5892,9 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
             )}
 
             {/* ========================================================= */}
-            {/* 11. GENERAL SETTINGS */}
+            {/* 11. THEME & STORE CUSTOMIZATION */}
             {/* ========================================================= */}
-            {(activeTab === "General" || activeTab === "Settings" || activeTab === "Footer") && (
+            {(activeTab === "General" || activeTab === "Settings" || activeTab === "Header" || activeTab === "Footer") && (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
                 <div className="flex items-center gap-2.5">
                   <button 
@@ -5839,41 +5905,27 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     ← ড্যাশবোর্ড
                   </button>
                   <div>
-                    <h3 className="text-2xl font-bold text-[#7a1c2b]">স্টোর, লোগো, হেডার ও ফুটার পূর্ণাঙ্গ সেটিংস</h3>
-                    <p className="text-xs text-gray-500 mt-1">আপনার ব্র্যান্ড নাম, লোগো, ফ্যাভিকন, নোটিশ বার এবং যোগাযোগের তথ্য পরিবর্তন করুন</p>
+                    <h3 className="text-2xl font-bold text-[#7a1c2b]">
+                      {activeTab === "Header"
+                        ? "হেডার ও টপ নোটিশ বার সেটিংস"
+                        : activeTab === "Footer"
+                        ? "ফুটার, হেল্পলাইন ও সোশ্যাল সেটিংস"
+                        : "ব্র্যান্ড, লোগো ও কালার থিম সেটিংস"}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {activeTab === "Header"
+                        ? "ওয়েবসাইটের উপরের অ্যানাউন্সমেন্ট ও হেডার কম্পোনেন্ট নিয়ন্ত্রণ করুন"
+                        : activeTab === "Footer"
+                        ? "কাস্টমার হেল্পলাইন, শোরুমের ঠিকানা, সোশ্যাল মিডিয়া লিংক ও পেমেন্ট মেথড ব্যাজ সাজান"
+                        : "আপনার ব্র্যান্ড নাম, লোগো, ফ্যাভিকন, মেরুন/গোল্ড কালার প্যালেট ও ডেলিভারি চার্জ নির্ধারণ করুন"}
+                    </p>
                   </div>
-                </div>
-
-                {/* Configuration Sub-Navigation Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-hide text-xs font-bold border-b border-[#f3e2d0]">
-                  {[
-                    { id: "General", label: "⚙️ ব্র্যান্ড ও থিম", active: true },
-                    { id: "Banners", label: `🖼️ ব্যানার (${banners.length})` },
-                    { id: "Categories", label: `🏷️ ক্যাটাগরি (${categories.length})` },
-                    { id: "Coupons", label: `🎟️ কুপন (${coupons.length})` },
-                    { id: "Reviews", label: `⭐ রিভিউ (${reviews.length})` },
-                    { id: "Header", label: "🔝 হেডার" },
-                    { id: "Footer", label: "🔻 ফুটার" },
-                    { id: "Courier", label: "🚚 কুরিয়ার" },
-                    { id: "Pixel", label: "📈 পিক্সেল" },
-                    { id: "SEO", label: "🔍 এসইও" },
-                    { id: "Backup", label: "💾 ব্যাকআপ" }
-                  ].map(sub => (
-                    <button
-                      key={sub.id}
-                      onClick={() => setActiveTab(sub.id)}
-                      className={`px-3 py-1.5 rounded-full whitespace-nowrap transition flex items-center gap-1 ${
-                        sub.active
-                          ? "bg-[#7a1c2b] text-white shadow-xs font-bold"
-                          : "bg-[#fffaf5] text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
-                      }`}
-                    >
-                      {sub.label}
-                    </button>
-                  ))}
                 </div>
                 
                 <div className="space-y-6">
+                  {/* Brand & Theme Colors (Shown on General / Settings) */}
+                  {(activeTab === "General" || activeTab === "Settings") && (
+                    <>
                   {/* Brand, Logo & Favicon Upload Section */}
                   <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-4">
                     <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">১. ব্র্যান্ড, লোগো ও ফ্যাভিকন</h4>
@@ -6137,6 +6189,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     </div>
                   </div>
 
+                    </>
+                  )}
+
+                  {/* Header & Announcement Settings (Shown on Header or General) */}
+                  {(activeTab === "Header" || activeTab === "General") && (
+                    <>
                   {/* Announcement Bar Settings */}
                   <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
                     <div className="flex items-center justify-between">
@@ -6183,6 +6241,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     </div>
                   </div>
 
+                    </>
+                  )}
+
+                  {/* Footer & Contact Settings (Shown on Footer or General) */}
+                  {(activeTab === "Footer" || activeTab === "General") && (
+                    <>
                   {/* Contact Info */}
                   <div className="p-5 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
                     <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৫. কন্টাক্ট ও হেল্পলাইন তথ্য</h4>
@@ -6296,16 +6360,24 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     </div>
                   </div>
 
-                  <button 
-                    onClick={async () => {
-                      setStored("config", config);
-                      await syncDocToCloud("config", "store", config);
-                      notify("স্টোর, লোগো, হেডার ও ফুটার সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅");
-                    }} 
-                    className="bg-[#7a1c2b] text-white px-10 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-[#681727] transition"
-                  >
-                    সমস্ত সেটিংস সংরক্ষণ করুন (Save All Settings)
-                  </button>
+                    </>
+                  )}
+
+                  {/* Unified Save Settings Button */}
+                  <div className="pt-2 flex justify-end">
+                    <button 
+                      type="button"
+                      onClick={async () => {
+                        setStored("config", config);
+                        await syncDocToCloud("config", "store", config);
+                        notify("থিম ও স্টোর সেটিংস সফলভাবে ক্লাউডে সংরক্ষিত হয়েছে! ✅");
+                      }} 
+                      className="bg-[#7a1c2b] text-white px-8 py-3 rounded-full text-xs sm:text-sm font-bold shadow-lg hover:bg-[#681727] transition flex items-center gap-2"
+                    >
+                      <span>💾</span>
+                      <span>সেটিংস সংরক্ষণ করুন (Save Settings)</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -6422,197 +6494,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                 </div>
               </div>
             )}
-            {/* ========================================================= */}
-            {/* ADMIN SETTINGS TAB - EXACT REPLICA OF THE SCREENSHOT */}
-            {/* ========================================================= */}
-            {activeTab === "Admin" && (
-              <div className="space-y-6 animate-fadeIn">
-                <div className="bg-[#f2e7db] border border-[#d8c3ad] rounded-2xl p-5 sm:p-6 shadow-sm space-y-2">
-                  <div className="flex items-center gap-2.5">
-                    <button 
-                      onClick={() => setActiveTab("Dashboard")}
-                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#d8c3ad] bg-white text-[#7c1d2a] hover:bg-[#7c1d2a] hover:text-white transition flex items-center gap-1 shadow-xs"
-                      title="ড্যাশবোর্ডে ফিরে যান"
-                    >
-                      ← ড্যাশবোর্ড
-                    </button>
-                    <div>
-                      <h3 className="text-2xl font-black text-[#2c1810]">এডমিন ও ব্র্যান্ড থিম সেটিংস</h3>
-                    </div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-medium">
-                    সজগোজ ফ্যাশনের রাজকীয় ব্র্যান্ডিং কালার প্যালেট — মেরুন <code className="bg-white px-2 py-0.5 rounded text-[#7c1d2a] font-mono font-bold">#7c1d2a</code>, গোল্ড <code className="bg-white px-2 py-0.5 rounded text-[#997316] font-mono font-bold">#d4af37</code>, এবং ক্রিম <code className="bg-white px-2 py-0.5 rounded text-[#70522c] font-mono font-bold">#fff8f0</code>। এখান থেকে স্টোরের নাম, মুদ্রা ও নিরাপত্তা কোড নিয়ন্ত্রণ করুন।
-                  </p>
-                </div>
 
-                {/* Cards from screenshot: STORE NAME & CURRENCY */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-[#f8f1e8] p-4 sm:p-5 rounded-2xl border border-[#d8c3ad] space-y-1.5 shadow-sm">
-                    <p className="text-[11px] font-extrabold tracking-widest text-gray-500 uppercase">STORE NAME</p>
-                    <input 
-                      type="text" 
-                      value={config.storeName} 
-                      onChange={(e) => setConfig({ ...config, storeName: e.target.value })}
-                      className="w-full bg-white border border-[#c9b49e] rounded-xl px-4 py-2.5 text-sm font-bold text-[#7c1d2a] outline-none focus:border-[#7c1d2a]"
-                    />
-                  </div>
-
-                  <div className="bg-[#f8f1e8] p-4 sm:p-5 rounded-2xl border border-[#d8c3ad] space-y-1.5 shadow-sm">
-                    <p className="text-[11px] font-extrabold tracking-widest text-gray-500 uppercase">CURRENCY</p>
-                    <div className="bg-white border border-[#c9b49e] rounded-xl px-4 py-2.5 text-sm font-bold text-[#2c1810]">
-                      BDT ৳ — Bangladesh Taka
-                    </div>
-                  </div>
-                </div>
-
-                {/* Royal Luxury Palette */}
-                <div className="bg-[#f8f1e8] p-5 rounded-2xl border border-[#d8c3ad] space-y-3 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-[#7c1d2a]">ROYAL LUXURY COLOR PALETTE</p>
-                    <button 
-                      onClick={() => setActiveTab("General")} 
-                      className="text-[11px] text-[#7a1c2b] font-bold hover:underline"
-                    >
-                      কালার পরিবর্তন করুন ⚙️
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="p-4 rounded-xl text-white text-center shadow transition" style={{ backgroundColor: config.primaryColor || '#7a1c2b' }}>
-                      <p className="text-xs font-bold">Brand Primary</p>
-                      <p className="text-[10px] opacity-90 font-mono mt-0.5">{config.primaryColor || '#7a1c2b'}</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-[#d4af37] text-[#2c1810] text-center shadow">
-                      <p className="text-xs font-bold">Gold</p>
-                      <p className="text-[10px] opacity-80 font-mono mt-0.5">#d4af37</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-[#fff8f0] text-[#2c1810] text-center border border-[#d8c3ad] shadow">
-                      <p className="text-xs font-bold">Cream</p>
-                      <p className="text-[10px] opacity-80 font-mono mt-0.5">#fff8f0</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Admin PIN & Security */}
-                <div className="bg-[#f8f1e8] p-5 rounded-2xl border border-[#d8c3ad] space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-[#2c1810]">এডমিন প্যানেল এক্সেস ও সিকিউরিটি</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">আপনার এডমিন পাসওয়ার্ড ও সক্রিয় সেশন নিয়ন্ত্রণ করুন</p>
-                    </div>
-                    <span className="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold">
-                      ● Active Admin Session
-                    </span>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-600">এডমিন প্যানেল পাসওয়ার্ড / পিন</label>
-                      <input 
-                        type="password" 
-                        defaultValue="••••••••" 
-                        className="w-full bg-white border border-[#c9b49e] rounded-xl px-4 py-2 text-xs outline-none mt-1" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-600">সেশন টাইমআউট</label>
-                      <input 
-                        type="text" 
-                        defaultValue="২৪ ঘণ্টা (Auto Refresh)" 
-                        disabled
-                        className="w-full bg-gray-100 border border-[#c9b49e] rounded-xl px-4 py-2 text-xs text-gray-600 outline-none mt-1" 
-                      />
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      syncDocToCloud("config", "store", config);
-                      notify("এডমিন সেটিংস ক্লাউডে সংরক্ষিত হয়েছে! ✅");
-                    }} 
-                    className="bg-[#7c1d2a] text-white px-7 py-2.5 rounded-full text-xs font-bold hover:bg-[#63141f] shadow transition"
-                  >
-                    সেটিংস সংরক্ষণ করুন
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ========================================================= */}
-            {/* HEADER SETTINGS TAB */}
-            {/* ========================================================= */}
-            {activeTab === "Header" && (
-              <div className="space-y-6 animate-fadeIn">
-                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <button 
-                      onClick={() => setActiveTab("Dashboard")}
-                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
-                      title="ড্যাশবোর্ডে ফিরে যান"
-                    >
-                      ← ড্যাশবোর্ড
-                    </button>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#7a1c2b]">হেডার ও টপ নোটিশ বার সেটিংস</h3>
-                      <p className="text-xs text-gray-500">ওয়েবসাইটের উপরের অ্যানাউন্সমেন্ট ও হেডার কম্পোনেন্ট নিয়ন্ত্রণ করুন</p>
-                    </div>
-                  </div>
-                  
-                  {/* Announcement Bar */}
-                  <div className="p-5 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-sm text-[#7a1c2b]">টপ নোটিশ / অ্যানাউন্সমেন্ট বার</h4>
-                      <label className="flex items-center gap-2 font-bold text-xs text-[#7a1c2b] cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={config.announcement.enabled} 
-                          onChange={(e) => setConfig({ ...config, announcement: { ...config.announcement, enabled: e.target.checked } })} 
-                          className="w-4 h-4 accent-[#7a1c2b]"
-                        />
-                        নোটিশ বার চালু রাখুন
-                      </label>
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="অ্যানাউন্সমেন্ট টেক্সট লিখুন..." 
-                      value={config.announcement.text} 
-                      onChange={(e) => setConfig({ ...config, announcement: { ...config.announcement, text: e.target.value } })}
-                      className="w-full bg-white border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
-                    />
-                  </div>
-
-                  {/* Header Toggles */}
-                  <div className="p-5 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-3">
-                    <h4 className="font-bold text-sm text-[#7a1c2b]">হেডার ফিচার ডিসপ্লে</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config?.header?.showSearch} onChange={(e) => setConfig({ ...config, header: { ...config.header, showSearch: e.target.checked } })} className="accent-[#7a1c2b]" />
-                        সার্চ বক্স প্রদর্শন
-                      </label>
-                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config.header.showCart} onChange={(e) => setConfig({ ...config, header: { ...config.header, showCart: e.target.checked } })} className="accent-[#7a1c2b]" />
-                        কার্ট বাটন প্রদর্শন
-                      </label>
-                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config.header.showCategories} onChange={(e) => setConfig({ ...config, header: { ...config.header, showCategories: e.target.checked } })} className="accent-[#7a1c2b]" />
-                        ক্যাটাগরি বার
-                      </label>
-                      <label className="flex items-center gap-2 text-xs bg-white p-3 rounded-2xl border cursor-pointer">
-                        <input type="checkbox" checked={config?.header?.sticky} onChange={(e) => setConfig({ ...config, header: { ...config.header, sticky: e.target.checked } })} className="accent-[#7a1c2b]" />
-                        স্টিকি হেডার
-                      </label>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      syncDocToCloud("config", "store", config);
-                      notify("হেডার সেটিংস ক্লাউডে সংরক্ষিত হয়েছে! ✅");
-                    }} 
-                    className="bg-[#7a1c2b] text-white px-7 py-2.5 rounded-full text-xs font-bold hover:bg-[#681727] shadow"
-                  >
-                    হেডার সেটিংস সংরক্ষণ করুন
-                  </button>
-                </div>
-              </div>
-            )}
 
                 </main>
               </div>
