@@ -561,6 +561,14 @@
     }
 
     function App() {
+      // Helper to sanitize photoUrl so unwanted default generated avatar images (like ui-avatars "0" icon) are never used
+      const sanitizePhotoUrl = (url) => {
+        if (!url || typeof url !== "string") return "";
+        const trimmed = url.trim();
+        if (trimmed.includes("ui-avatars.com")) return "";
+        return trimmed;
+      };
+
       // LocalStorage & IndexedDB Multi-tier Helper
       const getStored = (key, defaultVal) => {
         try {
@@ -595,7 +603,13 @@
       const [loyaltyCustomerMap, setLoyaltyCustomerMap] = useState(() => getStored("loyalty_customers", {}));
       
       // Customer Authentication & Profile Portal States
-      const [currentUser, setCurrentUser] = useState(() => getStored("customer_user", null));
+      const [currentUser, setCurrentUser] = useState(() => {
+        const u = getStored("customer_user", null);
+        if (u) {
+          return { ...u, photoUrl: sanitizePhotoUrl(u.photoUrl) };
+        }
+        return null;
+      });
       const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
       const [authMode, setAuthMode] = useState("login"); // "login", "signup", "google_fallback"
       const [authForm, setAuthForm] = useState({ name: "", phone: "", email: "", password: "" });
@@ -608,7 +622,7 @@
           name: u?.name || "",
           phone: u?.phone || "",
           email: u?.email || "",
-          photoUrl: u?.photoUrl || "",
+          photoUrl: sanitizePhotoUrl(u?.photoUrl),
           district: u?.district || "Dhaka",
           thana: u?.thana || "",
           address: u?.address || ""
@@ -630,7 +644,7 @@
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
-          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers"];
+          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user"];
           for (const k of keys) {
             try {
               const val = await idbStore.get(k);
@@ -648,6 +662,10 @@
                 else if (k === "seo") setSeo(val);
                 else if (k === "loyalty") setLoyalty(prev => ({ ...prev, ...val }));
                 else if (k === "loyalty_customers") setLoyaltyCustomerMap(val);
+                else if (k === "customer_user" && val) {
+                  const sanitized = { ...val, photoUrl: sanitizePhotoUrl(val.photoUrl) };
+                  setCurrentUser(sanitized);
+                }
               }
             } catch(e) {}
           }
@@ -675,16 +693,17 @@
       useEffect(() => { if (hasHydratedRef.current) setStored("loyalty_customers", loyaltyCustomerMap); }, [loyaltyCustomerMap]);
       useEffect(() => {
         if (currentUser) {
-          setStored("customer_user", currentUser);
+          const cleanUser = { ...currentUser, photoUrl: sanitizePhotoUrl(currentUser.photoUrl) };
+          setStored("customer_user", cleanUser);
           setProfileForm(prev => ({
             ...prev,
-            name: currentUser.name || prev.name,
-            phone: currentUser.phone || prev.phone,
-            email: currentUser.email || prev.email,
-            photoUrl: currentUser.photoUrl || prev.photoUrl,
-            district: currentUser.district || prev.district || "Dhaka",
-            thana: currentUser.thana || prev.thana || "",
-            address: currentUser.address || prev.address || ""
+            name: cleanUser.name || prev.name,
+            phone: cleanUser.phone || prev.phone,
+            email: cleanUser.email || prev.email,
+            photoUrl: cleanUser.photoUrl || "",
+            district: cleanUser.district || prev.district || "Dhaka",
+            thana: cleanUser.thana || prev.thana || "",
+            address: cleanUser.address || prev.address || ""
           }));
         } else {
           localStorage.removeItem("sajgoj_store_customer_user");
@@ -1489,7 +1508,7 @@
                 uid: user.uid,
                 name: user.displayName || "গুগল ইউজার",
                 email: user.email || "",
-                photoUrl: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=7a1c2b&color=fff`,
+                photoUrl: sanitizePhotoUrl(user.photoURL),
                 phone: user.phoneNumber ? normalizePhone(user.phoneNumber) : (currentUser?.phone || ""),
                 authProvider: "google",
                 createdAt: new Date().toISOString()
@@ -1525,7 +1544,7 @@
             name: emailName,
             email: authForm.email.trim(),
             phone: authForm.phone ? normalizePhone(authForm.phone) : "",
-            photoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(emailName)}&background=7a1c2b&color=fff&size=200`,
+            photoUrl: "",
             authProvider: "google",
             createdAt: new Date().toISOString()
           };
@@ -1565,7 +1584,7 @@
               phone: normPhone,
               email: authForm.email.trim() || "",
               password: authForm.password,
-              photoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(authForm.name.trim())}&background=7a1c2b&color=fff`,
+              photoUrl: "",
               authProvider: "phone",
               createdAt: new Date().toISOString()
             };
@@ -1579,7 +1598,7 @@
               name: (existing && existing.phone === normPhone && existing.name) ? existing.name : (authForm.name.trim() || "সম্মানিত ক্রেতা"),
               phone: normPhone,
               email: authForm.email.trim() || (existing?.email || ""),
-              photoUrl: existing?.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(authForm.name || normPhone)}&background=7a1c2b&color=fff`,
+              photoUrl: sanitizePhotoUrl(existing?.photoUrl),
               authProvider: "phone",
               updatedAt: new Date().toISOString()
             };
@@ -2446,35 +2465,31 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                 </div>
               )}
 
-              {/* Action Buttons: Storefront <-> Admin Switcher */}
+              {/* Action Buttons: Customer Profile & Shopping Cart */}
               <div className="flex items-center gap-2">
                 {activeTab === "Storefront" ? (
                   <>
-                    <button 
-                      onClick={() => setIsVipClubModalOpen(true)}
-                      className="bg-gradient-to-r from-amber-500 via-amber-600 to-[#7a1c2b] text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow hover:brightness-110 transition flex items-center gap-1.5 active:scale-95"
-                      title="ভিআইপি মেম্বারশিপ ও রিওয়ার্ড ক্লাব"
-                    >
-                      <span>👑</span>
-                      <span className="hidden sm:inline">VIP ক্লাব</span>
-                    </button>
-                    {/* CUSTOMER LOGIN / PROFILE TAB (POSITIONED DIRECTLY BEFORE CART) */}
+                    {/* CUSTOMER LOGIN / PROFILE TAB */}
                     {currentUser ? (
                       <button 
                         onClick={() => setIsProfileModalOpen(true)}
                         className="bg-[#fff8f0] border-2 border-[#d4a574] hover:border-[#7a1c2b] text-[#7a1c2b] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs hover:shadow transition flex items-center gap-2 active:scale-95"
-                        title="আমার একাউন্ট ও অর্ডার স্ট্যাটাস"
+                        title="আমার একাউন্ট ও প্রোফাইল"
                       >
-                        {currentUser.photoUrl ? (
-                          <img src={currentUser.photoUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover border border-[#7a1c2b] shadow-xs" />
+                        {sanitizePhotoUrl(currentUser.photoUrl) ? (
+                          <img 
+                            src={sanitizePhotoUrl(currentUser.photoUrl)} 
+                            alt="Avatar" 
+                            className="w-7 h-7 rounded-full object-cover border border-[#7a1c2b] shadow-xs" 
+                          />
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
-                            {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "👤"}
+                          <div className="w-7 h-7 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xs font-bold shadow-xs border border-[#d4a574]">
+                            👤
                           </div>
                         )}
                         <div className="text-left hidden sm:block">
                           <span className="block text-[11px] font-extrabold leading-tight truncate max-w-[85px] text-[#2c1810]">
-                            {currentUser?.name ? String(currentUser.name).trim().split(" ")[0] : "কাস্টমার"}
+                            {currentUser?.name && !currentUser.name.startsWith("0") ? String(currentUser.name).trim().split(" ")[0] : "কাস্টমার"}
                           </span>
                           <span className="block text-[9px] text-[#b8956a] leading-none font-bold">
                             {getCustomerLoyalty(currentUser.phone)?.currentTier?.icon || "👑"} {getCustomerLoyalty(currentUser.phone)?.currentTier?.nameBn || "মেম্বার"}
@@ -2492,6 +2507,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       </button>
                     )}
 
+                    {/* Cart Button */}
                     <button 
                       onClick={() => setIsCartOpen(true)}
                       className="relative bg-[#7a1c2b] text-white px-3.5 sm:px-4 py-2 rounded-full flex items-center gap-2 text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] transition"
@@ -2502,14 +2518,6 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           {cart.reduce((sum, i) => sum + i.qty, 0)}
                         </span>
                       )}
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab("Dashboard")}
-                      className="border-2 border-[#7a1c2b] bg-[#fff8f0] text-[#7a1c2b] px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition shadow-sm flex items-center gap-1.5"
-                    >
-                      <span>⚙️</span>
-                      <span className="hidden sm:inline">এডমিন ড্যাশবোর্ড</span>
-                      <span className="sm:hidden">এডমিন</span>
                     </button>
                   </>
                 ) : (
@@ -2932,8 +2940,21 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     </div>
                   </div>
                 </div>
-                <div className="max-w-7xl mx-auto text-center pt-8 mt-8 border-t border-white/10 text-xs text-gray-400">
-                  {config.footer.copyright}
+                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/10 text-xs text-gray-400 flex flex-row items-center justify-between gap-4">
+                  {/* Admin Login Button on the far left corner */}
+                  <button 
+                    onClick={() => setActiveTab("Dashboard")}
+                    className="text-gray-400 hover:text-[#d4af37] transition flex items-center gap-1.5 py-1 px-3 rounded-full border border-white/15 hover:border-[#d4af37]/60 hover:bg-white/5 text-[11px] font-semibold active:scale-95 whitespace-nowrap shadow-xs"
+                    title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
+                  >
+                    <span>⚙️</span>
+                    <span>এডমিন লগইন</span>
+                  </button>
+
+                  {/* Copyright Notice to the right/center with distance from the admin button */}
+                  <div className="text-right sm:text-center flex-1 text-gray-400">
+                    {config.footer.copyright}
+                  </div>
                 </div>
               </footer>
             </div>
@@ -7458,6 +7479,15 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
           {isProfileModalOpen && currentUser && (
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border shadow-2xl animate-fadeIn space-y-5">
+                {/* Hidden File Input for Customer Avatar Upload - ALWAYS Mounted across all tabs */}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  ref={customerPhotoInputRef} 
+                  onChange={handleCustomerPhotoUpload} 
+                  className="hidden" 
+                />
+
                 {/* Profile Header Hero */}
                 <div className="bg-gradient-to-r from-[#7a1c2b] via-[#5d1521] to-[#3a0a12] text-white p-6 relative">
                   <button 
@@ -7470,21 +7500,21 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                     {/* User Profile Avatar with Edit Trigger */}
                     <div className="relative group cursor-pointer" onClick={() => customerPhotoInputRef.current?.click()} title="ছবি পরিবর্তন করতে ক্লিক করুন">
-                      {currentUser.photoUrl ? (
+                      {sanitizePhotoUrl(currentUser.photoUrl) ? (
                         <img 
-                          src={currentUser.photoUrl} 
+                          src={sanitizePhotoUrl(currentUser.photoUrl)} 
                           alt={currentUser.name} 
                           className="w-20 h-20 rounded-full object-cover border-4 border-[#d4a574] shadow-lg bg-white" 
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-full bg-[#d4a574] text-[#2c1810] flex items-center justify-center text-3xl font-black border-4 border-white shadow-lg">
-                          {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "👤"}
+                        <div className="w-20 h-20 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-3xl font-black border-4 border-[#d4a574] shadow-lg">
+                          👤
                         </div>
                       )}
                       <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white text-xs font-bold">
                         📷 পরিবর্তন
                       </div>
-                      <span className="absolute -bottom-1 -right-1 bg-white text-[#7a1c2b] p-1 rounded-full text-xs shadow-md border">
+                      <span className="absolute -bottom-1 -right-1 bg-white text-[#7a1c2b] p-1.5 rounded-full text-xs shadow-md border border-[#d4a574]">
                         ✏️
                       </span>
                     </div>
@@ -7743,22 +7773,15 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                 {/* TAB 3: PROFILE SETTINGS & PHOTO UPLOAD */}
                 {profileTab === "settings" && (
                   <form onSubmit={handleSaveProfileSettings} className="px-6 pb-6 space-y-4">
-                    {/* Hidden Photo Input */}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      ref={customerPhotoInputRef} 
-                      onChange={handleCustomerPhotoUpload} 
-                      className="hidden" 
-                    />
+
 
                     {/* Profile Picture Change Box */}
                     <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] flex flex-col sm:flex-row items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        {profileForm.photoUrl ? (
-                          <img src={profileForm.photoUrl} alt="Avatar" className="w-14 h-14 rounded-full object-cover border-2 border-[#7a1c2b]" />
+                        {sanitizePhotoUrl(profileForm.photoUrl || currentUser.photoUrl) ? (
+                          <img src={sanitizePhotoUrl(profileForm.photoUrl || currentUser.photoUrl)} alt="Avatar" className="w-14 h-14 rounded-full object-cover border-2 border-[#7a1c2b]" />
                         ) : (
-                          <div className="w-14 h-14 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xl font-bold">👤</div>
+                          <div className="w-14 h-14 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xl font-bold border border-[#d4a574]">👤</div>
                         )}
                         <div>
                           <h5 className="font-bold text-xs text-gray-800">প্রোফাইল ছবি (Avatar)</h5>
