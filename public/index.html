@@ -306,6 +306,14 @@
         text: "🔥 Eid Special: ২০০০ টাকার অর্ডারে সারা দেশে ডেলিভারি সম্পূর্ণ ফ্রি!", 
         enabled: true 
       },
+      b2g1: {
+        enabled: true,
+        title: "Buy 2 Get 1 Free অফার",
+        subtitle: "যেকোনো ২টি পণ্য কার্টে নিলেই পাচ্ছেন ১টি প্রিমিয়াম উপহার একদম ফ্রি!",
+        minItems: 2,
+        freeProductId: "p4",
+        badgeText: "🎁 ২টি কিনলে ১টি ফ্রি"
+      },
       header: { 
         showSearch: true, 
         showCart: true, 
@@ -874,6 +882,7 @@
                 favicon: (remoteData.favicon && remoteData.favicon.trim()) ? remoteData.favicon : (prevCfg.favicon || ""),
                 primaryColor: remoteData.primaryColor || prevCfg.primaryColor || initialStoreConfig.primaryColor,
                 announcement: { ...initialStoreConfig.announcement, ...(prevCfg.announcement || {}), ...(remoteData?.announcement || {}) },
+                b2g1: { ...initialStoreConfig.b2g1, ...(prevCfg.b2g1 || {}), ...(remoteData?.b2g1 || {}) },
                 header: { ...initialStoreConfig.header, ...(prevCfg.header || {}), ...(remoteData?.header || {}) },
                 footer: { ...initialStoreConfig.footer, ...(prevCfg.footer || {}), ...(remoteData?.footer || {}) }
               };
@@ -1144,6 +1153,10 @@
       const [comboProductSearch, setComboProductSearch] = useState("");
       const comboImgFileRef = useRef(null);
 
+      // Buy 2 Get 1 Free (B2G1) Admin Search & Category Filter States
+      const [b2g1ProductSearch, setB2g1ProductSearch] = useState("");
+      const [b2g1CategoryFilter, setB2g1CategoryFilter] = useState("All");
+
       const fileInputRef = useRef(null);
       const productImgFileRef = useRef(null);
       const logoFileRef = useRef(null);
@@ -1154,6 +1167,34 @@
       const notify = (msg) => {
         setToast(msg);
         setTimeout(() => setToast(null), 3500);
+      };
+
+      // Buy 2 Get 1 Free (B2G1) Free Product Selection Handler
+      const handleSetFreeProduct = async (product) => {
+        const updatedB2g1 = {
+          ...(config.b2g1 || {}),
+          enabled: true,
+          freeProductId: product.id
+        };
+        const updatedConfig = { ...config, b2g1: updatedB2g1 };
+        setConfig(updatedConfig);
+        setStored("config", updatedConfig);
+        await syncDocToCloud("config", "store", updatedConfig);
+        notify(`🎉 "${product.name}" সফলভাবে Buy 2 Get 1 Free উপহার হিসেবে নির্ধারণ করা হয়েছে! 🎁`);
+      };
+
+      // Toggle Buy 2 Get 1 Free Offer Status
+      const handleToggleB2g1 = async () => {
+        const isCurrentlyActive = Boolean(config.b2g1?.enabled);
+        const updatedB2g1 = {
+          ...(config.b2g1 || {}),
+          enabled: !isCurrentlyActive
+        };
+        const updatedConfig = { ...config, b2g1: updatedB2g1 };
+        setConfig(updatedConfig);
+        setStored("config", updatedConfig);
+        await syncDocToCloud("config", "store", updatedConfig);
+        notify(updatedB2g1.enabled ? "Buy 2 Get 1 Free অফার সক্রিয় করা হয়েছে! 🎁" : "Buy 2 Get 1 Free অফার সাময়িক বন্ধ করা হয়েছে");
       };
 
       // Combo Pack Helpers & Cart Operations
@@ -1801,9 +1842,9 @@
           return;
         }
         setCart(prev => {
-          const existing = prev.find(item => item.id === product.id);
+          const existing = prev.find(item => item.id === product.id && !item.isFreeGift);
           if (existing) {
-            return prev.map(item => item.id === product.id ? { 
+            return prev.map(item => (item.id === product.id && !item.isFreeGift) ? { 
               ...item, 
               qty: item.qty + qty, 
               bogo: Boolean(product.bogo), 
@@ -1827,6 +1868,10 @@
       const updateCartQty = (id, delta) => {
         setCart(prev => prev.map(item => {
           if (item.id === id) {
+            if (item.isFreeGift) {
+              if (delta < 0) return null;
+              return item;
+            }
             const newQty = item.qty + delta;
             return newQty > 0 ? { ...item, qty: newQty } : null;
           }
@@ -1834,6 +1879,40 @@
         }).filter(Boolean));
       };
 
+      // Automatic Buy 2 Get 1 Free (B2G1) Gift Synchronization in Cart
+      useEffect(() => {
+        const isB2g1Active = Boolean(config?.b2g1?.enabled);
+        const minRequired = Number(config?.b2g1?.minItems) || 2;
+        const freeProdId = config?.b2g1?.freeProductId || "p4";
+        const freeProd = products.find(p => p.id === freeProdId);
+
+        const paidItems = cart.filter(it => !it.isFreeGift);
+        const totalPaidQty = paidItems.reduce((sum, it) => sum + (it.qty || 1), 0);
+        const existingGift = cart.find(it => it.isFreeGift);
+
+        if (isB2g1Active && freeProd && totalPaidQty >= minRequired) {
+          if (!existingGift || existingGift.freeGiftOriginId !== freeProd.id) {
+            const freeGiftItem = {
+              id: "free_gift_" + freeProd.id,
+              name: freeProd.name,
+              price: 0,
+              originalPrice: freeProd.price,
+              qty: 1,
+              images: freeProd.images || [imgBracelet],
+              sku: freeProd.sku || "GIFT-FREE",
+              isFreeGift: true,
+              freeGiftOriginId: freeProd.id,
+              bogo: false,
+              sourceUrl: ""
+            };
+            setCart(prev => [...prev.filter(it => !it.isFreeGift), freeGiftItem]);
+          }
+        } else if ((!isB2g1Active || totalPaidQty < minRequired || !freeProd) && existingGift) {
+          setCart(prev => prev.filter(it => !it.isFreeGift));
+        }
+      }, [cart, config?.b2g1, products]);
+
+      const paidCartQty = cart.filter(item => !item.isFreeGift).reduce((sum, item) => sum + (item.qty || 1), 0);
       const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
       const isDhaka = checkoutForm.district.includes("ঢাকা") || checkoutForm.district.includes("Dhaka");
       const freeThreshold = config.freeDeliveryThreshold || 2000;
@@ -1938,16 +2017,19 @@
             isCombo: Boolean(i.isCombo),
             bundledProducts: i.bundledProducts || [],
             bogo: Boolean(i.bogo),
-            bogoText: i.bogoText || ""
+            bogoText: i.bogoText || "",
+            isFreeGift: Boolean(i.isFreeGift),
+            freeGiftOriginId: i.freeGiftOriginId || ""
           })),
           trackingId: ""
         };
 
-        // Deduct stock
+        // Deduct stock (including for free gift)
         setProducts(prev => prev.map(p => {
-          const inCart = cart.find(c => c.id === p.id);
-          const updatedP = inCart ? { ...p, stock: Math.max(0, p.stock - inCart.qty) } : p;
-          if (inCart) syncDocToCloud("products", p.id, updatedP);
+          const inCart = cart.find(c => c.id === p.id || (c.isFreeGift && c.freeGiftOriginId === p.id));
+          const deductQty = inCart ? (inCart.qty || 1) : 0;
+          const updatedP = deductQty > 0 ? { ...p, stock: Math.max(0, p.stock - deductQty) } : p;
+          if (deductQty > 0) syncDocToCloud("products", p.id, updatedP);
           return updatedP;
         }));
 
@@ -1994,12 +2076,13 @@
         if (!w) return;
         const rows = order.items.map(it => {
           const bogoLabel = it.bogo ? `<br><span style="display:inline-block;margin-top:3px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #fde68a;">🎁 Buy 1 Get 1 Free: পেইড ${it.qty}টি + ফ্রি ${it.qty}টি = মোট ${it.qty * 2}টি</span>` : "";
+          const freeGiftLabel = it.isFreeGift ? `<br><span style="display:inline-block;margin-top:3px;background:#ecfdf5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #a7f3d0;">🎁 Buy 2 Get 1 Free উপহার (ফ্রি গিফট - ০ ৳)</span>` : "";
           const comboLabel = it.isCombo ? `<br><span style="display:inline-block;margin-top:3px;background:#f3e8ff;color:#6b21a8;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;">🎁 কম্বো প্যাক বান্ডেল</span>` : "";
           return `
           <tr>
-            <td style="padding:10px;border-bottom:1px solid #f0e0d0;">${it.name}${bogoLabel}${comboLabel}</td>
+            <td style="padding:10px;border-bottom:1px solid #f0e0d0;">${it.name}${bogoLabel}${freeGiftLabel}${comboLabel}</td>
             <td style="padding:10px;text-align:center;border-bottom:1px solid #f0e0d0;">
-              ${it.qty} টি ${it.bogo ? `<span style="font-size:10px;color:#c2410c;display:block;font-weight:bold;">(+${it.qty}টি ফ্রি)</span>` : ""}
+              ${it.qty} টি ${it.bogo ? `<span style="font-size:10px;color:#c2410c;display:block;font-weight:bold;">(+${it.qty}টি ফ্রি)</span>` : it.isFreeGift ? `<span style="font-size:10px;color:#047857;display:block;font-weight:bold;">(ফ্রি উপহার)</span>` : ""}
             </td>
             <td style="padding:10px;text-align:right;border-bottom:1px solid #f0e0d0;">${it.price} ৳</td>
             <td style="padding:10px;text-align:right;font-weight:bold;border-bottom:1px solid #f0e0d0;">${it.price * it.qty} ৳</td>
@@ -2092,9 +2175,10 @@
         const itemsList = (order.items || []).map((it, idx) => {
           const comboNote = it.isCombo ? " [🎁 কম্বো প্যাক]" : "";
           const bogoNote = it.bogo ? ` [🎁 Buy 1 Get 1 Free: পেইড ${it.qty || 1}টি + ফ্রি ${it.qty || 1}টি = মোট ${(it.qty || 1) * 2}টি]` : "";
+          const freeGiftNote = it.isFreeGift ? " [🎁 Buy 2 Get 1 Free উপহার: ০ ৳ ফ্রি গিফট]" : "";
           const unitPrice = it.price || 0;
           const qty = it.qty || 1;
-          return `  ${idx + 1}. *${it.name}*${comboNote}${bogoNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
+          return `  ${idx + 1}. *${it.name}*${comboNote}${bogoNote}${freeGiftNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
         }).join("\n");
 
         return `🛍️ *${storeName} - অর্ডার কনফার্মেশন ও বিবরণী* 🛍️
@@ -2534,6 +2618,34 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
 
             </header>
           )}
+
+          {/* Buy 2 Get 1 Free Promo Strip (Storefront only) */}
+          {activeTab === "Storefront" && config?.b2g1?.enabled && (
+            <div className="bg-gradient-to-r from-amber-600 via-rose-700 to-amber-700 text-white py-2.5 px-4 shadow-sm border-b border-amber-400/30">
+              <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs sm:text-sm">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <span className="text-base sm:text-lg animate-bounce flex-shrink-0">🎁</span>
+                  <span className="font-extrabold whitespace-nowrap">{config.b2g1.title || "Buy 2 Get 1 Free"}:</span>
+                  <span className="truncate text-amber-100">{config.b2g1.subtitle || "যেকোনো ২টি পণ্য কার্টে নিলেই ১টি উপহার সম্পূর্ণ ফ্রি!"}</span>
+                  {products.find(p => p.id === (config.b2g1.freeProductId || "p4")) && (
+                    <span className="hidden md:inline-block bg-white/20 border border-white/30 px-2.5 py-0.5 rounded-full font-bold text-[11px] whitespace-nowrap">
+                      উপহার: {products.find(p => p.id === (config.b2g1.freeProductId || "p4")).name} (০ ৳)
+                    </span>
+                  )}
+                </div>
+                <button 
+                  onClick={() => {
+                    const el = document.getElementById("products-section");
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-white text-[#7a1c2b] text-[11px] font-black px-3.5 py-1.5 rounded-full shadow hover:bg-amber-100 transition whitespace-nowrap flex-shrink-0"
+                >
+                  অফার দেখুন →
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ========================================================= */}
           {/* STOREFRONT MODE */}
           {/* ========================================================= */}
@@ -2761,6 +2873,19 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         )}
                       </button>
 
+                      {config.b2g1?.enabled && (
+                        <button
+                          onClick={() => {
+                            notify(`🎉 Buy 2 Get 1 Free অফার: যেকোনো ২টি প্রোডাক্ট কার্টে নিলেই ১টি ফ্রি উপহার আনলক হবে!`);
+                          }}
+                          className="px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition border border-emerald-400 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-900 hover:shadow-md flex items-center gap-2 whitespace-nowrap active:scale-95"
+                        >
+                          <span className="text-base">🎁</span>
+                          <span>২টি কিনলে ১টি ফ্রি অফার</span>
+                          <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black">Free Gift</span>
+                        </button>
+                      )}
+
                       {combos.filter(c => c.active).length > 0 && (
                         <button
                           onClick={() => {
@@ -2841,12 +2966,22 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                 স্টক আউট
                               </span>
                             )}
-                            {p.bogo && (
+                            {p.bogo ? (
                               <span className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 via-rose-600 to-[#7a1c2b] text-white text-[10px] sm:text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 border border-amber-200 animate-pulse">
                                 <span>🎁</span>
                                 <span>{p.bogoText || "১টি কিনলে ১টি ফ্রি"}</span>
                               </span>
-                            )}
+                            ) : config.b2g1?.enabled && (config.b2g1?.freeProductId || "p4") === p.id ? (
+                              <span className="absolute top-2 right-2 bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-[10px] sm:text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 border border-emerald-200 animate-pulse">
+                                <span>🌟</span>
+                                <span>ফ্রি উপহার প্রোডাক্ট</span>
+                              </span>
+                            ) : config.b2g1?.enabled ? (
+                              <span className="absolute top-2 right-2 bg-gradient-to-r from-amber-600 to-[#7a1c2b] text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow flex items-center gap-1">
+                                <span>🎁</span>
+                                <span>Buy 2 Get 1</span>
+                              </span>
+                            ) : null}
                             {p.sourceUrl && (
                               <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[9px] px-2 py-0.5 rounded-full">
                                 🌐 ইমপোর্ট
@@ -2869,12 +3004,21 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                               >
                                 {p.name}
                               </h4>
-                              {p.bogo && (
+                              {p.bogo ? (
                                 <div className="mt-1.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg px-2 py-0.5 flex items-center justify-between text-[10px] text-amber-900 font-bold">
                                   <span>🎁 Buy 1 Get 1 Free</span>
                                   <span className="bg-amber-200/80 text-amber-950 px-1.5 py-0.2 rounded text-[9px]">১টি ফ্রি!</span>
                                 </div>
-                              )}
+                              ) : config.b2g1?.enabled && (config.b2g1?.freeProductId || "p4") === p.id ? (
+                                <div className="mt-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-0.5 flex items-center justify-between text-[10px] text-emerald-900 font-bold">
+                                  <span>🎁 Buy 2 Get 1 Free উপহার</span>
+                                  <span className="bg-emerald-200 text-emerald-950 px-1.5 py-0.2 rounded text-[9px]">০ ৳ ফ্রি!</span>
+                                </div>
+                              ) : config.b2g1?.enabled ? (
+                                <div className="mt-1.5 bg-amber-50/70 border border-amber-200/60 rounded-lg px-2 py-0.5 flex items-center justify-between text-[10px] text-[#7a1c2b] font-medium">
+                                  <span>🎁 ২টি অর্ডারে ফ্রি গিফট প্রযোজ্য</span>
+                                </div>
+                              ) : null}
                             </div>
 
                             <div className="mt-3 pt-2.5 border-t border-[#f3e2d0] flex items-center justify-between">
@@ -3049,19 +3193,19 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       {/* 3. Product Management */}
                       <button
                         onClick={() => {
-                          if (!["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)) {
+                          if (!["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)) {
                             setActiveTab("Products");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)
+                          ["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
                       >
                         <span>👗</span>
                         <span>প্রোডাক্ট ও অফার</span>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) ? 'bg-white/25 text-white' : 'bg-[#fff0e6] text-[#7a1c2b] border border-[#f3e2d0]'}`}>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) ? 'bg-white/25 text-white' : 'bg-[#fff0e6] text-[#7a1c2b] border border-[#f3e2d0]'}`}>
                           {products.length}
                         </span>
                       </button>
@@ -3105,12 +3249,13 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   </div>
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR PRODUCT MANAGEMENT) */}
-                  {["Products", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) && (
+                  {["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">প্রোডাক্ট মডিউল:</span>
                       {[
-                        { id: "Products", label: "🛍️ সকল প্রোডাক্ট ও BOGO", count: products.length },
-                        { id: "Combos", label: "🎁 কম্বো প্যাক বিল্ডার", count: combos.length },
+                        { id: "Products", label: "🛍️ সকল প্রোডাক্ট", count: products.length },
+                        { id: "B2G1", label: "🎁 Buy 2 Get 1 Free অফার", badge: (config.b2g1?.enabled ? "সক্রিয়" : "বন্ধ") },
+                        { id: "Combos", label: "✨ কম্বো প্যাক", count: combos.length },
                         { id: "Categories", label: "🏷️ ক্যাটাগরি", count: categories.length },
                         { id: "Coupons", label: "🎟️ কুপন কোড", count: coupons.length },
                         { id: "Reviews", label: "⭐ কাস্টমার রিভিউ", count: reviews.length }
@@ -3128,6 +3273,15 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           {sub.count !== undefined && (
                             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${activeTab === sub.id ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-700'}`}>
                               {sub.count}
+                            </span>
+                          )}
+                          {sub.badge && (
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                              sub.badge === "সক্রিয়"
+                                ? (activeTab === sub.id ? 'bg-emerald-400 text-emerald-950' : 'bg-emerald-100 text-emerald-800')
+                                : (activeTab === sub.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500')
+                            }`}>
+                              {sub.badge}
                             </span>
                           )}
                         </button>
@@ -3886,6 +4040,297 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                 )}
 
             {/* ========================================================= */}
+            {/* 2.4. BUY 2 GET 1 FREE (B2G1) DEDICATED MANAGEMENT SCREEN */}
+            {/* ========================================================= */}
+            {activeTab === "B2G1" && (
+              <div className="space-y-6 animate-fadeIn">
+                {/* Header Card */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
+                      title="ড্যাশবোর্ডে ফিরে যান"
+                    >
+                      ← ড্যাশবোর্ড
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🎁</span>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">Buy 2 Get 1 Free অফার ম্যানেজমেন্ট</h3>
+                      </div>
+                      <p className="text-xs text-[#b8956a] mt-0.5">যেকোনো ২টি পণ্য অর্ডারে কাস্টমার যে প্রোডাক্টটি সম্পূর্ণ ফ্রি উপহার পাবেন তা এখান থেকে সিলেক্ট করুন</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={handleToggleB2g1}
+                      className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow transition flex items-center gap-2 ${
+                        config.b2g1?.enabled
+                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
+                    >
+                      <span>{config.b2g1?.enabled ? "🟢 অফার সক্রিয় (ON)" : "⚪ অফার বন্ধ (OFF)"}</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("Storefront")}
+                      className="bg-[#fffaf5] text-[#7a1c2b] border border-[#d4a574] px-4 py-2.5 rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                    >
+                      🛍️ স্টোরে দেখুন
+                    </button>
+                  </div>
+                </div>
+
+                {/* Spotlight: Currently Selected Free Gift */}
+                {(() => {
+                  const selectedFreeProd = products.find(p => p.id === (config.b2g1?.freeProductId || "p4"));
+                  return (
+                    <div className="bg-gradient-to-br from-amber-50 via-white to-emerald-50 rounded-3xl border-2 border-emerald-300/80 p-6 shadow-sm">
+                      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🌟</span>
+                          <div>
+                            <h4 className="font-extrabold text-base sm:text-lg text-[#7a1c2b]">বর্তমানে নির্বাচিত ফ্রি উপহার প্রোডাক্ট</h4>
+                            <p className="text-xs text-gray-500">কাস্টমার কার্টে যেকোনো ২টি আইটেম যুক্ত করলেই এই গিফট প্রোডাক্টটি ০ টাকায় যোগ হবে</p>
+                          </div>
+                        </div>
+                        <span className={`text-xs px-3 py-1 rounded-full font-black ${
+                          config.b2g1?.enabled ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {config.b2g1?.enabled ? "✓ অফার লাইভ আছে" : "অফার বন্ধ"}
+                        </span>
+                      </div>
+
+                      {selectedFreeProd ? (
+                        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-200 flex flex-col sm:flex-row items-center gap-5 shadow-xs">
+                          <img 
+                            src={selectedFreeProd.images?.[0] || imgBracelet} 
+                            alt={selectedFreeProd.name} 
+                            className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-[#d4a574] shadow-sm flex-shrink-0"
+                            onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                          />
+                          <div className="flex-1 text-center sm:text-left min-w-0">
+                            <span className="bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-2.5 py-0.5 rounded-full text-xs font-bold">
+                              {selectedFreeProd.category}
+                            </span>
+                            <h5 className="font-extrabold text-base sm:text-lg text-gray-900 mt-1 truncate">{selectedFreeProd.name}</h5>
+                            <p className="text-xs text-gray-400 font-mono mt-0.5">SKU: {selectedFreeProd.sku}</p>
+                            <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-gray-400">আসল দাম:</span>
+                                <span className="line-through text-xs font-bold text-gray-500">{selectedFreeProd.price} ৳</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-black text-xs border border-emerald-300">
+                                <span>অফার মূল্য: ০ ৳ (ফ্রি উপহার!)</span>
+                              </div>
+                              <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${selectedFreeProd.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                স্টক: {selectedFreeProd.stock} টি
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-center sm:text-right flex-shrink-0">
+                            <p className="text-[11px] text-emerald-800 font-bold">নিচের তালিকা থেকে যেকোনো</p>
+                            <p className="text-[11px] text-emerald-800 font-bold">প্রোডাক্ট ১ ক্লিকে পরিবর্তন করতে পারেন</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200 text-center text-xs text-amber-900">
+                          ⚠️ কোনো ফ্রি প্রোডাক্ট এখনও নির্বাচিত হয়নি। নিচের প্রোডাক্ট তালিকা থেকে একটি প্রোডাক্ট পছন্দ করুন!
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Product Picker Section ("free product ami select kore dibo") */}
+                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-5">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div>
+                      <h4 className="font-bold text-lg text-[#7a1c2b] flex items-center gap-2">
+                        <span>🛍️</span>
+                        <span>ফ্রি উপহার হিসেবে প্রোডাক্ট নির্বাচন করুন</span>
+                      </h4>
+                      <p className="text-xs text-gray-500">আপনার ক্যাটালগের যেকোনো প্রোডাক্টে "ফ্রি উপহার হিসেবে সিলেক্ট করুন" বাটনে চাপুন</p>
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="w-full md:w-72">
+                      <input 
+                        type="text"
+                        value={b2g1ProductSearch}
+                        onChange={(e) => setB2g1ProductSearch(e.target.value)}
+                        placeholder="প্রোডাক্ট নাম বা SKU দিয়ে খুঁজুন..."
+                        className="w-full bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Category Filter Pills */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide text-xs">
+                    <button
+                      onClick={() => setB2g1CategoryFilter("All")}
+                      className={`px-3 py-1 rounded-full whitespace-nowrap transition font-bold ${
+                        b2g1CategoryFilter === "All"
+                          ? "bg-[#7a1c2b] text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      সকল ক্যাটাগরি ({products.length})
+                    </button>
+                    {categories.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setB2g1CategoryFilter(cat.name)}
+                        className={`px-3 py-1 rounded-full whitespace-nowrap transition font-bold flex items-center gap-1 ${
+                          b2g1CategoryFilter === cat.name
+                            ? "bg-[#7a1c2b] text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Products Grid for Selection */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products
+                      .filter(p => {
+                        const matchesSearch = p.name.toLowerCase().includes(b2g1ProductSearch.toLowerCase()) || p.sku.toLowerCase().includes(b2g1ProductSearch.toLowerCase());
+                        const matchesCat = b2g1CategoryFilter === "All" ? true : p.category === b2g1CategoryFilter;
+                        return matchesSearch && matchesCat;
+                      })
+                      .map(p => {
+                        const isCurrentlySelected = (config.b2g1?.freeProductId || "p4") === p.id;
+                        return (
+                          <div 
+                            key={p.id}
+                            className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
+                              isCurrentlySelected 
+                                ? "bg-emerald-50/80 border-2 border-emerald-400 shadow-md ring-2 ring-emerald-200" 
+                                : "bg-[#fffaf5] border-[#f3e2d0] hover:border-[#d4a574] hover:shadow-sm"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <img 
+                                src={p.images?.[0] || imgSharee} 
+                                alt={p.name} 
+                                className="w-16 h-16 rounded-xl object-cover border flex-shrink-0"
+                                onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] bg-white text-[#7a1c2b] px-2 py-0.5 rounded-full border border-[#f3e2d0] font-bold">
+                                    {p.category}
+                                  </span>
+                                  {isCurrentlySelected && (
+                                    <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                                      Selected
+                                    </span>
+                                  )}
+                                </div>
+                                <h5 className="font-bold text-xs text-gray-900 mt-1 truncate" title={p.name}>{p.name}</h5>
+                                <p className="text-[10px] text-gray-400 font-mono">SKU: {p.sku}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="font-extrabold text-xs text-[#7a1c2b]">{p.price} ৳</span>
+                                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${p.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                    স্টক: {p.stock}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 pt-2.5 border-t border-[#f3e2d0]">
+                              {isCurrentlySelected ? (
+                                <button 
+                                  disabled
+                                  className="w-full bg-emerald-600 text-white py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-xs cursor-default"
+                                >
+                                  <span>✓ এটিই বর্তমান ফ্রি উপহার</span>
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => handleSetFreeProduct(p)}
+                                  className="w-full bg-gradient-to-r from-amber-600 to-[#7a1c2b] hover:from-amber-700 hover:to-[#63141f] text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow transition active:scale-95"
+                                >
+                                  <span>🎁 এটি ফ্রি উপহার হিসেবে সিলেক্ট করুন</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {/* Offer Details & Settings Form */}
+                <div className="bg-white p-6 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-4">
+                  <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">অফার কাস্টমাইজেশন ও শর্তাবলী</h4>
+                  
+                  <div className="grid sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="font-semibold text-gray-700">নূন্যতম পেইড আইটেম সংখ্যা (কার্টে কয়টি প্রোডাক্ট থাকতে হবে)</label>
+                      <input 
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={config.b2g1?.minItems || 2}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          b2g1: { ...(config.b2g1 || {}), minItems: Number(e.target.value) || 2 }
+                        })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 outline-none mt-1 focus:border-[#7a1c2b]"
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">ডিফল্ট: ২ (২টি কিনলে ১টি ফ্রি)</p>
+                    </div>
+
+                    <div>
+                      <label className="font-semibold text-gray-700">অফার শিরোনাম (Offer Title)</label>
+                      <input 
+                        type="text"
+                        value={config.b2g1?.title || "Buy 2 Get 1 Free অফার"}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          b2g1: { ...(config.b2g1 || {}), title: e.target.value }
+                        })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 outline-none mt-1 focus:border-[#7a1c2b]"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="font-semibold text-gray-700">অফার সাবটাইটেল / নোটিশ টেক্সট</label>
+                      <input 
+                        type="text"
+                        value={config.b2g1?.subtitle || "যেকোনো ২টি পণ্য কার্টে নিলেই পাচ্ছেন ১টি উপহার একদম ফ্রি!"}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          b2g1: { ...(config.b2g1 || {}), subtitle: e.target.value }
+                        })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 outline-none mt-1 focus:border-[#7a1c2b]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button 
+                      onClick={async () => {
+                        setStored("config", config);
+                        await syncDocToCloud("config", "store", config);
+                        notify("🎉 Buy 2 Get 1 Free সেটিংস সফলভাবে সেভ করা হয়েছে!");
+                      }}
+                      className="bg-[#7a1c2b] text-white px-7 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:bg-[#681727] transition flex items-center gap-2"
+                    >
+                      <span>💾</span>
+                      <span>সেটিংস সংরক্ষণ করুন</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
             {/* 2.5. COMBOS TAB (FULL DEDICATED MANAGEMENT & PRODUCT PICKER) */}
             {/* ========================================================= */}
             {activeTab === "Combos" && (
@@ -4444,6 +4889,11 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                 {it.bogo && (
                                   <span className="bg-gradient-to-r from-amber-500 to-rose-600 text-white px-2 py-0.2 rounded-full font-black text-[9px]">
                                     🎁 BOGO (+{it.qty}টি ফ্রি)
+                                  </span>
+                                )}
+                                {it.isFreeGift && (
+                                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.2 rounded-full font-black text-[9px]">
+                                    🎁 ফ্রি গিফট (০ ৳)
                                   </span>
                                 )}
                                 <span className="font-bold text-[#b8956a]">{it.price * it.qty} ৳</span>
@@ -6531,6 +6981,49 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {/* Buy 2 Get 1 Free Cart Offer Progress / Unlock Banner */}
+                  {config?.b2g1?.enabled && (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 shadow-xs">
+                      <div className="flex items-center justify-between text-xs font-bold text-[#7a1c2b] mb-1.5">
+                        <span className="flex items-center gap-1.5">
+                          <span>🎁</span>
+                          <span>{config.b2g1.title || "Buy 2 Get 1 Free অফার"}</span>
+                        </span>
+                        {paidCartQty >= (config.b2g1.minItems || 2) ? (
+                          <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
+                            ✓ ফ্রি গিফট আনলকড!
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-amber-900 font-bold bg-amber-100 px-2 py-0.5 rounded-full">
+                            {paidCartQty}/{config.b2g1.minItems || 2} টি যোগ হয়েছে
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="w-full bg-amber-200/60 rounded-full h-2 overflow-hidden mb-1.5">
+                        <div 
+                          className={`h-full transition-all duration-500 rounded-full ${
+                            paidCartQty >= (config.b2g1.minItems || 2) ? 'bg-emerald-500 w-full' : 'bg-[#7a1c2b]'
+                          }`}
+                          style={{ width: `${Math.min(100, (paidCartQty / (config.b2g1.minItems || 2)) * 100)}%` }}
+                        ></div>
+                      </div>
+
+                      <p className="text-[11px] text-gray-700 leading-tight">
+                        {paidCartQty >= (config.b2g1.minItems || 2) ? (
+                          <span>
+                            🎉 অভিনন্দন! আপনার কার্টে যুক্ত হয়েছে ফ্রি উপহার: <strong className="text-emerald-800">{products.find(p => p.id === (config.b2g1.freeProductId || "p4"))?.name || "প্রিমিয়াম গিফট"}</strong> (০ ৳)!
+                          </span>
+                        ) : (
+                          <span>
+                            ⚡ আর মাত্র <strong>{(config.b2g1.minItems || 2) - paidCartQty}টি</strong> যেকোনো পণ্য যোগ করলেই পাবেন ফ্রি উপহার: <strong>{products.find(p => p.id === (config.b2g1.freeProductId || "p4"))?.name || "প্রিমিয়াম গিফট"}</strong>!
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+
                   {cart.length === 0 ? (
                     <div className="text-center py-20 text-gray-400">
                       <p className="text-4xl mb-3">🛍️</p>
@@ -6538,7 +7031,37 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <p className="text-xs mt-1 text-gray-400">পছন্দের শাড়ি বা জুয়েলারি নির্বাচন করে অর্ডার করুন।</p>
                     </div>
                   ) : (
-                    cart.map(item => (
+                    cart.map(item => item.isFreeGift ? (
+                      <div key={item.id} className="flex gap-3 bg-emerald-50/90 p-3 rounded-2xl border-2 border-emerald-300 shadow-xs relative overflow-hidden">
+                        <span className="absolute top-0 right-0 bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-bl-lg uppercase">
+                          Free Gift 🎁
+                        </span>
+                        <img 
+                          src={item.images?.[0] || imgBracelet} 
+                          alt={item.name} 
+                          className="w-16 h-16 rounded-xl object-cover border border-emerald-200 flex-shrink-0"
+                          onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                        />
+                        <div className="flex-1 min-w-0 pr-12">
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full inline-block">
+                            🎁 Buy 2 Get 1 Free উপহার
+                          </span>
+                          <p className="font-bold text-xs sm:text-sm text-gray-900 mt-1 truncate">{item.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-emerald-700 font-black">০ ৳ (ফ্রি)</span>
+                            {item.originalPrice > 0 && (
+                              <span className="line-through text-gray-400 text-[11px] font-medium">{item.originalPrice} ৳</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                            ✓ ২টি প্রোডাক্ট অর্ডারের সাথে উপহার (পরিমাণ: ১টি)
+                          </p>
+                        </div>
+                        <div className="text-right flex flex-col justify-end">
+                          <button onClick={() => updateCartQty(item.id, -1)} className="text-[11px] text-red-500 font-semibold hover:underline">রিমুভ</button>
+                        </div>
+                      </div>
+                    ) : (
                       <div key={item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
                         <img 
                           src={item.images[0] || imgSharee} 
@@ -6793,6 +7316,17 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
 
                   {/* Summary */}
                   <div className="bg-[#fff8f0] p-4 rounded-2xl space-y-1.5 text-xs">
+                    {/* Free Gift Notification in Checkout */}
+                    {cart.some(it => it.isFreeGift) && (
+                      <div className="bg-emerald-100/90 border border-emerald-300 text-emerald-900 p-2.5 rounded-xl flex items-center justify-between font-bold mb-1 shadow-xs">
+                        <span className="flex items-center gap-1.5">
+                          <span>🎁</span>
+                          <span>Buy 2 Get 1 Free উপহার:</span>
+                        </span>
+                        <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black">০ ৳ (ফ্রি)</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
                       <span>সাবটোটাল</span>
                       <span>{cartSubtotal} ৳</span>
@@ -6974,6 +7508,11 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                               {it.bogo && (
                                 <span className="inline-block bg-gradient-to-r from-amber-500 to-rose-600 text-white text-[9px] font-black px-2 py-0.2 rounded-full mt-0.5 shadow-xs">
                                   🎁 Buy 1 Get 1 Free (+{it.qty || 1}টি ফ্রি, মোট {(it.qty || 1) * 2}টি ডেলিভারি)
+                                </span>
+                              )}
+                              {it.isFreeGift && (
+                                <span className="inline-block bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] font-black px-2 py-0.2 rounded-full mt-0.5 shadow-xs">
+                                  🎁 Buy 2 Get 1 Free উপহার (ফ্রি গিফট - ০ ৳)
                                 </span>
                               )}
                               <p className="text-[11px] text-gray-500">{it.price} ৳ × {it.qty || 1} টি</p>
@@ -7655,6 +8194,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                       <span className="font-semibold text-gray-800 truncate">{it.name}</span>
                                       <span className="text-gray-400 font-mono">× {it.qty}</span>
                                       {it.bogo && <span className="bg-amber-100 text-amber-900 text-[9px] font-black px-1.5 py-0.2 rounded">+১টি ফ্রি</span>}
+                                      {it.isFreeGift && <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.2 rounded">🎁 ফ্রি গিফট (০ ৳)</span>}
                                     </div>
                                     <span className="font-bold text-[#7a1c2b] font-mono flex-shrink-0">
                                       {(it.price || 0) * (it.qty || 1)} ৳
@@ -7962,6 +8502,22 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           </div>
                           <p className="text-[11px] text-amber-100 leading-tight">
                             এই পণ্যটি {productQty} টি কিনলে সাথে আরও {productQty} টি সম্পূর্ণ বিনামূল্যে পাবেন। অর্থাৎ পার্সেল ডেলিভারিতে মোট পাবেন <strong>{productQty * 2} টি</strong>!
+                          </p>
+                        </div>
+                      )}
+                      {!viewProduct.bogo && config.b2g1?.enabled && (
+                        <div className="mt-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-3.5 rounded-2xl shadow-md space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-xs sm:text-sm flex items-center gap-1.5">
+                              <span className="text-xl animate-bounce">🎁</span>
+                              <span>Buy 2 Get 1 Free অফার প্রযোজ্য</span>
+                            </span>
+                            <span className="bg-white text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs uppercase">
+                              Free Gift
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-emerald-100 leading-tight">
+                            যেকোনো ২টি পণ্য কার্টে নিলেই সাথে পাচ্ছেন ১টি প্রিমিয়াম উপহার একদম ফ্রি!
                           </p>
                         </div>
                       )}
