@@ -385,6 +385,74 @@
     };
 
     // =========================================================
+    // REELS / SHORT VIDEO SHOWCASE INITIAL DATA
+    // High-resolution video showcases for jewelry & sarees
+    // =========================================================
+    const initialReels = [
+      {
+        id: "reel-1",
+        title: "রাজকীয় কুন্দন চোকার ও ঝুমকা সেট আনবক্সিং ✨",
+        caption: "প্রিমিয়াম ফিনিশিং ও নিখুঁত কারুকার্যের বিয়ের স্পেশাল কালেকশন। গায়েহলুদ বা বিয়েতে পড়ার জন্য সেরা।",
+        videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-gold-necklace-41380-large.mp4",
+        poster: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
+        productId: "p1",
+        likes: 142,
+        views: "2.8k",
+        badge: "হট ট্রেন্ডিং 🔥",
+        active: true
+      },
+      {
+        id: "reel-2",
+        title: "এক্সক্লুসিভ পিওর জামদানি শাড়ি ড্র্যাপ ও লুক 🥻",
+        caption: "আসল দেশি তাঁতের বোনা জামদানি। উৎসব বা বিয়েবাড়ির সেরা রাজকীয় পছন্দ!",
+        videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-traditional-oriental-fabric-moving-slowly-41656-large.mp4",
+        poster: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+        productId: "p2",
+        likes: 236,
+        views: "5.1k",
+        badge: "বেস্টসেলার ⭐",
+        active: true
+      },
+      {
+        id: "reel-3",
+        title: "এন্টিক গোল্ড প্লেটেড রানিহার ও সীতা হার 👑",
+        caption: "রয়েল ব্রাইডাল সাজের আসল আভিজাত্য। নিখুঁত কুন্দন ও রুবি পাথরের সেটিং।",
+        videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-delicate-gold-jewelry-pieces-on-display-42044-large.mp4",
+        poster: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
+        productId: "p3",
+        likes: 189,
+        views: "3.4k",
+        badge: "ব্রাইডাল স্পেশাল 💍",
+        active: true
+      },
+      {
+        id: "reel-4",
+        title: "ডিজাইনার রেশম কাতান ও মায়াবী কাজের ওড়না ✨",
+        caption: "হাতে বোনা গর্জিয়াস শাড়ি ও ব্রাইডাল ওড়নার নিখুঁত রিয়েল ভিডিও রিভিউ।",
+        videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hands-touching-silk-textile-42004-large.mp4",
+        poster: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80",
+        productId: "p5",
+        likes: 112,
+        views: "2.1k",
+        badge: "নতুন আগমন 🌸",
+        active: true
+      }
+    ];
+
+    // =========================================================
+    // LUCKY SPIN THE WHEEL (ভাগ্যচাকা) PRIZES CONFIGURATION
+    // 6 Reward Slices: Discounts, Free Delivery & Loyalty Points
+    // =========================================================
+    const initialSpinPrizes = [
+      { id: 1, label: "৫% ছাড়", type: "coupon", value: 5, code: "SPIN5", color: "#7a1c2b", textColor: "#ffffff", icon: "🎟️" },
+      { id: 2, label: "১০০ পয়েন্ট", type: "points", value: 100, code: "", color: "#d4a574", textColor: "#2c1810", icon: "⭐" },
+      { id: 3, label: "ফ্রি ডেলিভারি", type: "free_delivery", value: 120, code: "SPINFREE", color: "#166534", textColor: "#ffffff", icon: "🚚" },
+      { id: 4, label: "১০% ছাড়", type: "coupon", value: 10, code: "SPIN10", color: "#991b1b", textColor: "#ffffff", icon: "🎁" },
+      { id: 5, label: "৫০ পয়েন্ট", type: "points", value: 50, code: "", color: "#e2b87d", textColor: "#2c1810", icon: "✨" },
+      { id: 6, label: "১৫% মেগা ছাড়", type: "coupon", value: 15, code: "SPIN15", color: "#4c0519", textColor: "#ffd700", icon: "👑" }
+    ];
+
+    // =========================================================
     // INDEXEDDB MULTI-TIER PERSISTENCE HELPER (Zero 5MB Quota Limits)
     // =========================================================
     const idbStore = {
@@ -610,6 +678,24 @@
       const [loyalty, setLoyalty] = useState(() => getStored("loyalty", initialLoyaltyConfig));
       const [loyaltyCustomerMap, setLoyaltyCustomerMap] = useState(() => getStored("loyalty_customers", {}));
       
+      // Reels / Video Showcase & Lucky Spin The Wheel States
+      const [reels, setReels] = useState(() => getStored("reels", initialReels));
+      const [spinLeads, setSpinLeads] = useState(() => getStored("spin_leads", []));
+      const [spinPrizes, setSpinPrizes] = useState(() => getStored("spin_prizes", initialSpinPrizes));
+      const [isSpinWheelOpen, setIsSpinWheelOpen] = useState(false);
+      const [spinPhoneInput, setSpinPhoneInput] = useState("");
+      const [isSpinning, setIsSpinning] = useState(false);
+      const [wheelRotation, setWheelRotation] = useState(0);
+      const [spinPrizeResult, setSpinPrizeResult] = useState(null);
+
+      // Reels Player States
+      const [isReelsModalOpen, setIsReelsModalOpen] = useState(false);
+      const [activeReelIndex, setActiveReelIndex] = useState(0);
+      const [isReelPlaying, setIsReelPlaying] = useState(true);
+      const [isReelMuted, setIsReelMuted] = useState(false);
+      const [isReelModalAddOpen, setIsReelModalAddOpen] = useState(false);
+      const [reelForm, setReelForm] = useState({ title: "", caption: "", videoUrl: "", poster: "", productId: "", badge: "হট ট্রেন্ডিং 🔥" });
+
       // Customer Authentication & Profile Portal States
       const [currentUser, setCurrentUser] = useState(() => {
         const u = getStored("customer_user", null);
@@ -652,7 +738,7 @@
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
-          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user"];
+          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes"];
           for (const k of keys) {
             try {
               const val = await idbStore.get(k);
@@ -670,6 +756,9 @@
                 else if (k === "seo") setSeo(val);
                 else if (k === "loyalty") setLoyalty(prev => ({ ...prev, ...val }));
                 else if (k === "loyalty_customers") setLoyaltyCustomerMap(val);
+                else if (k === "reels") setReels(val);
+                else if (k === "spin_leads") setSpinLeads(val);
+                else if (k === "spin_prizes") setSpinPrizes(val);
                 else if (k === "customer_user" && val) {
                   const sanitized = { ...val, photoUrl: sanitizePhotoUrl(val.photoUrl) };
                   setCurrentUser(sanitized);
@@ -690,6 +779,9 @@
       useEffect(() => { if (hasHydratedRef.current) setStored("combos", combos); }, [combos]);
       useEffect(() => { if (hasHydratedRef.current) setStored("reviews", reviews); }, [reviews]);
       useEffect(() => { if (hasHydratedRef.current) setStored("categories", categories); }, [categories]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("reels", reels); }, [reels]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("spin_leads", spinLeads); }, [spinLeads]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("spin_prizes", spinPrizes); }, [spinPrizes]);
       useEffect(() => { if (hasHydratedRef.current) setStored("orders", orders); }, [orders]);
       useEffect(() => { if (hasHydratedRef.current) setStored("coupons", coupons); }, [coupons]);
       useEffect(() => { if (hasHydratedRef.current) setStored("banners", banners); }, [banners]);
@@ -1111,7 +1203,7 @@
       const [editingProduct, setEditingProduct] = useState(null);
       const [productForm, setProductForm] = useState({ 
         name: "", 
-        price: 0, 
+        price: "", 
         stock: 5, 
         category: "শাড়ি", 
         images: [], 
@@ -1144,7 +1236,7 @@
         subtitle: "",
         description: "",
         productIds: [],
-        comboPrice: 0,
+        comboPrice: "",
         badge: "সেরা অফার 🔥",
         image: "",
         active: true,
@@ -1167,6 +1259,224 @@
       const notify = (msg) => {
         setToast(msg);
         setTimeout(() => setToast(null), 3500);
+      };
+
+      // Web Audio synthesized sounds for Wheel Spin & Win
+      const playSpinTickSound = () => {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.04);
+        } catch(e) {}
+      };
+
+      const playWinFanfareSound = () => {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = "sine";
+            const startTime = ctx.currentTime + idx * 0.12;
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0.12, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+            osc.start(startTime);
+            osc.stop(startTime + 0.35);
+          });
+        } catch(e) {}
+      };
+
+      // Handle Lucky Wheel Spin
+      const handleSpinWheel = () => {
+        if (isSpinning) return;
+        const phone = (spinPhoneInput || "").trim().replace(/[^\d]/g, '');
+        if (!phone || phone.length < 11) {
+          notify("অনুগ্রহ করে আপনার সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!");
+          return;
+        }
+
+        // Check if customer already spun in the last 24 hours
+        const lastSpunTime = localStorage.getItem(`sajgoj_last_spin_${phone}`);
+        if (lastSpunTime) {
+          const elapsed = Date.now() - Number(lastSpunTime);
+          if (elapsed < 24 * 60 * 60 * 1000) {
+            const existingLead = spinLeads.find(l => l.phone === phone);
+            notify(`আপনি ইতিমধ্যে অফার জিতেছেন! প্রাপ্ত পুরস্কার: ${existingLead ? existingLead.prize : 'উপহার'}`);
+            if (existingLead) {
+              setSpinPrizeResult(existingLead);
+            }
+            return;
+          }
+        }
+
+        setIsSpinning(true);
+        setSpinPrizeResult(null);
+
+        // Pick winning slice (0 to 5)
+        const winningIndex = Math.floor(Math.random() * spinPrizes.length);
+        const prize = spinPrizes[winningIndex];
+
+        // 6 slices => 60 deg each
+        // Align winning slice center with top needle (0 deg / 12 o'clock)
+        const sliceCenter = (winningIndex + 0.5) * 60;
+        const targetOffset = 360 - sliceCenter;
+        const fullSpins = 360 * (5 + Math.floor(Math.random() * 3));
+        const currentMod = wheelRotation % 360;
+        const newTotalRotation = wheelRotation + fullSpins + (targetOffset - currentMod);
+
+        setWheelRotation(newTotalRotation);
+
+        let tickCount = 0;
+        let tickInterval = setInterval(() => {
+          playSpinTickSound();
+          tickCount++;
+          if (tickCount > 20) clearInterval(tickInterval);
+        }, 180);
+
+        setTimeout(async () => {
+          clearInterval(tickInterval);
+          setIsSpinning(false);
+          playWinFanfareSound();
+
+          const resultObj = {
+            id: "lead-" + Date.now(),
+            phone: phone,
+            prize: prize.label,
+            prizeType: prize.type,
+            code: prize.code || "",
+            value: prize.value,
+            date: new Date().toLocaleDateString('bn-BD') + " " + new Date().toLocaleTimeString('bn-BD'),
+            timestamp: Date.now()
+          };
+
+          setSpinPrizeResult(resultObj);
+          localStorage.setItem(`sajgoj_last_spin_${phone}`, String(Date.now()));
+
+          // If Coupon, ensure it is added to coupons list
+          if (prize.type === "coupon" || prize.type === "free_delivery") {
+            const existingCp = coupons.find(c => c.code === prize.code);
+            if (!existingCp) {
+              const newCp = {
+                id: "cp-" + prize.code.toLowerCase(),
+                code: prize.code,
+                type: prize.type === "free_delivery" ? "Flat" : "%",
+                value: prize.value,
+                minOrder: 500,
+                expiry: "2026-12-31",
+                active: true,
+                note: "ভাগ্যচাকা স্পিন পুরস্কার"
+              };
+              setCoupons(prev => [...prev, newCp]);
+              syncDocToCloud("coupons", newCp.id, newCp);
+            }
+          }
+
+          // If Points, credit immediately to customer loyalty account
+          if (prize.type === "points") {
+            setLoyaltyCustomerMap(prev => {
+              const cust = prev[phone] || { phone, name: currentUser?.name || "ভাগ্যচাকা বিজয়ী", manualPoints: 0 };
+              const updatedCust = {
+                ...cust,
+                manualPoints: (cust.manualPoints || 0) + prize.value
+              };
+              syncDocToCloud("loyalty_customers", phone, updatedCust);
+              return { ...prev, [phone]: updatedCust };
+            });
+          }
+
+          // Save Lead
+          const updatedLeads = [resultObj, ...spinLeads];
+          setSpinLeads(updatedLeads);
+          setStored("spin_leads", updatedLeads);
+          await syncDocToCloud("spin_leads", resultObj.id, resultObj);
+
+        }, 4500);
+      };
+
+      // 1-Click apply won spin coupon
+      const handleApplySpinCoupon = (code) => {
+        const found = coupons.find(c => c.code === code && c.active);
+        if (found) {
+          setAppliedCoupon(found);
+          notify(`🎉 অভিনন্দন! "${found.code}" কুপনটি কার্টে যুক্ত হয়েছে!`);
+          setIsSpinWheelOpen(false);
+          setIsCartOpen(true);
+        } else {
+          const newCp = {
+            id: "cp-" + code.toLowerCase(),
+            code: code,
+            type: code === "SPINFREE" ? "Flat" : "%",
+            value: code === "SPIN5" ? 5 : code === "SPIN10" ? 10 : code === "SPIN15" ? 15 : 120,
+            minOrder: 500,
+            expiry: "2026-12-31",
+            active: true
+          };
+          setCoupons(prev => [...prev, newCp]);
+          setAppliedCoupon(newCp);
+          notify(`🎉 অভিনন্দন! "${newCp.code}" কুপনটি সফলভাবে কার্টে এপ্লাই হয়েছে!`);
+          setIsSpinWheelOpen(false);
+          setIsCartOpen(true);
+        }
+      };
+
+      // Reels Handlers
+      const handleLikeReel = (reelId) => {
+        setReels(prev => prev.map(r => {
+          if (r.id === reelId) {
+            const hasLiked = r.userLiked;
+            return {
+              ...r,
+              likes: hasLiked ? r.likes - 1 : r.likes + 1,
+              userLiked: !hasLiked
+            };
+          }
+          return r;
+        }));
+      };
+
+      const handleAddReel = async () => {
+        if (!reelForm.title.trim()) return notify("রিলসের শিরোনাম আবশ্যক!");
+        if (!reelForm.videoUrl.trim()) return notify("ভিডিওর লিঙ্ক আবশ্যক!");
+        const newR = {
+          id: "reel-" + Date.now(),
+          title: reelForm.title.trim(),
+          caption: reelForm.caption.trim(),
+          videoUrl: reelForm.videoUrl.trim(),
+          poster: reelForm.poster.trim() || banner1,
+          productId: reelForm.productId || products[0]?.id || "",
+          likes: 0,
+          views: "1",
+          badge: reelForm.badge || "নতুন আগমন 🌸",
+          active: true
+        };
+        const updated = [newR, ...reels];
+        setReels(updated);
+        setStored("reels", updated);
+        await syncDocToCloud("reels", newR.id, newR);
+        setIsReelModalAddOpen(false);
+        setReelForm({ title: "", caption: "", videoUrl: "", poster: "", productId: "", badge: "হট ট্রেন্ডিং 🔥" });
+        notify("নতুন রিলস সফলভাবে পাবলিশ হয়েছে! 🎬");
+      };
+
+      const handleDeleteReel = async (reelId) => {
+        if (confirm("আপনি কি এই রিলসটি মুছে ফেলতে চান?")) {
+          const updated = reels.filter(r => r.id !== reelId);
+          setReels(updated);
+          setStored("reels", updated);
+          await deleteDocFromCloud("reels", reelId);
+          notify("রিলস সফলভাবে ডিলিট করা হয়েছে! 🗑️");
+        }
       };
 
       // Buy 2 Get 1 Free (B2G1) Free Product Selection Handler
@@ -1218,7 +1528,7 @@
             ? `এই বিশেষ কম্বো প্যাকে পাচ্ছেন: ${bundledProds.map(p => p.name).join(", ")}। একসাথে অর্ডার করলে পাচ্ছেন অবিশ্বাস্য ছাড়!` 
             : "",
           productIds: ids,
-          comboPrice: origSum > 0 ? Math.round(origSum * 0.85) : 0,
+          comboPrice: origSum > 0 ? Math.round(origSum * 0.85) : "",
           badge: "সেরা অফার 🔥",
           image: bundledProds[0]?.images?.[0] || "",
           active: true,
@@ -1286,7 +1596,9 @@
           notify("কম্বো প্যাক তৈরির জন্য ক্যাটালগ থেকে কমপক্ষে ২টি প্রোডাক্ট সিলেক্ট করুন!");
           return;
         }
-        if (!comboForm.comboPrice || comboForm.comboPrice <= 0) {
+        const cleanComboPrice = Number(comboForm.comboPrice) || 0;
+        const cleanStock = comboForm.stock === "" ? 0 : (Number(comboForm.stock) || 0);
+        if (!cleanComboPrice || cleanComboPrice <= 0) {
           notify("কম্বো প্যাকের বিশেষ অফার মূল্য দিন!");
           return;
         }
@@ -1295,7 +1607,7 @@
           const p = products.find(prod => prod.id === id);
           return sum + (p ? Number(p.price) : 0);
         }, 0);
-        const savings = Math.max(0, sumOrig - comboForm.comboPrice);
+        const savings = Math.max(0, sumOrig - cleanComboPrice);
         const discountPercent = sumOrig > 0 ? Math.round((savings / sumOrig) * 100) : 0;
 
         const firstSelectedProduct = products.find(p => p.id === comboForm.productIds[0]);
@@ -1305,6 +1617,8 @@
           const updated = {
             ...editingCombo,
             ...comboForm,
+            comboPrice: cleanComboPrice,
+            stock: cleanStock,
             originalPrice: sumOrig,
             savings,
             discountPercent,
@@ -1320,6 +1634,8 @@
           const newCombo = {
             id: newComboId,
             ...comboForm,
+            comboPrice: cleanComboPrice,
+            stock: cleanStock,
             originalPrice: sumOrig,
             savings,
             discountPercent,
@@ -1915,9 +2231,9 @@
       const paidCartQty = cart.filter(item => !item.isFreeGift).reduce((sum, item) => sum + (item.qty || 1), 0);
       const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
       const isDhaka = checkoutForm.district.includes("ঢাকা") || checkoutForm.district.includes("Dhaka");
-      const freeThreshold = config.freeDeliveryThreshold || 2000;
-      const insideDhakaFee = config.deliveryInsideDhaka !== undefined ? config.deliveryInsideDhaka : 60;
-      const outsideDhakaFee = config.deliveryOutsideDhaka !== undefined ? config.deliveryOutsideDhaka : 120;
+      const freeThreshold = (config.freeDeliveryThreshold !== "" && config.freeDeliveryThreshold !== undefined) ? Number(config.freeDeliveryThreshold) : 2000;
+      const insideDhakaFee = (config.deliveryInsideDhaka !== "" && config.deliveryInsideDhaka !== undefined) ? Number(config.deliveryInsideDhaka) : 60;
+      const outsideDhakaFee = (config.deliveryOutsideDhaka !== "" && config.deliveryOutsideDhaka !== undefined) ? Number(config.deliveryOutsideDhaka) : 120;
       const deliveryCharge = cartSubtotal >= freeThreshold ? 0 : (isDhaka ? insideDhakaFee : outsideDhakaFee);
 
       let discountAmount = 0;
@@ -2836,6 +3152,110 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   </div>
                 )}
 
+                {/* ========================================================= */}
+                {/* REELS & SHORT VIDEO SHOWCASE SECTION (TikTok/Reels Style) */}
+                {/* ========================================================= */}
+                {reels.filter(r => r.active !== false).length > 0 && (
+                  <div id="reels-showcase-section" className="bg-gradient-to-r from-[#2c1810] via-[#4a121c] to-[#2c1810] text-white p-5 sm:p-7 rounded-3xl shadow-xl border border-amber-500/30 space-y-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 relative z-10">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-2xl animate-pulse">🎬</span>
+                          <h3 className="font-extrabold text-xl sm:text-2xl text-[#ffd700] tracking-tight drop-shadow">
+                            সাজগোজ রিলস & শর্ট ভিডিও
+                          </h3>
+                          <span className="bg-gradient-to-r from-rose-600 to-amber-600 text-white text-[10px] font-extrabold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm animate-pulse">
+                            রিয়েল লুক যাচাই করুন 🎥
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#f5d7b5] mt-1 font-medium">
+                          শাড়ি ও গয়নার আসল সৌন্দর্য, নিখুঁত ফিনিশিং ও পড়ার পর কেমন দেখায় ভিডিওতে সরাসরি দেখুন
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-amber-200 bg-white/10 px-3 py-1 rounded-full border border-white/20">
+                          {reels.filter(r => r.active !== false).length} টি ভিডিও
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Reels Horizontal Scroll Reel Cards */}
+                    <div className="flex gap-4 overflow-x-auto pb-2 pt-1 scrollbar-hide relative z-10 snap-x">
+                      {reels.filter(r => r.active !== false).map((reel, idx) => {
+                        const linkedProduct = products.find(p => p.id === reel.productId);
+                        return (
+                          <div
+                            key={reel.id}
+                            onClick={() => {
+                              setActiveReelIndex(idx);
+                              setIsReelsModalOpen(true);
+                              setIsReelPlaying(true);
+                            }}
+                            className="flex-shrink-0 w-44 sm:w-52 aspect-[9/16] rounded-2xl overflow-hidden relative cursor-pointer group shadow-lg hover:shadow-2xl hover:scale-[1.03] transition-all duration-300 border-2 border-amber-400/40 bg-black snap-start"
+                          >
+                            {/* Video / Poster preview */}
+                            <img
+                              src={reel.poster || banner1}
+                              alt={reel.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
+                            />
+
+                            {/* Dark Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/40"></div>
+
+                            {/* Top Badges: Views & Badge */}
+                            <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between text-[10px] font-bold">
+                              <span className="bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/20">
+                                <span>👁️</span>
+                                <span>{reel.views || "1.5k"}</span>
+                              </span>
+                              <span className="bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full border border-amber-300 shadow-xs">
+                                {reel.badge || "হট 🔥"}
+                              </span>
+                            </div>
+
+                            {/* Center Play Button Overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-full bg-white/25 backdrop-blur-md border border-white/60 flex items-center justify-center text-white text-xl shadow-xl group-hover:scale-125 group-hover:bg-[#7a1c2b] transition-all duration-300">
+                                ▶
+                              </div>
+                            </div>
+
+                            {/* Bottom Info: Title, Likes & Linked Product */}
+                            <div className="absolute bottom-2.5 inset-x-2.5 space-y-1.5 text-white">
+                              <h4 className="font-extrabold text-xs sm:text-sm leading-snug line-clamp-2 drop-shadow group-hover:text-[#ffd700] transition">
+                                {reel.title}
+                              </h4>
+                              
+                              <div className="flex items-center justify-between text-[11px] font-semibold text-gray-300 pt-0.5">
+                                <span className="flex items-center gap-1 text-rose-300">
+                                  ❤️ {reel.likes || 0}
+                                </span>
+                                <span className="text-[10px] bg-[#d4a574] text-[#2c1810] font-black px-2 py-0.5 rounded-full shadow-xs">
+                                  রিল দেখুন →
+                                </span>
+                              </div>
+
+                              {linkedProduct && (
+                                <div className="bg-white/15 backdrop-blur-md rounded-xl p-1.5 flex items-center gap-2 border border-white/20 mt-1">
+                                  <img src={linkedProduct.images?.[0] || banner1} alt={linkedProduct.name} className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold truncate text-white">{linkedProduct.name}</p>
+                                    <p className="text-[10px] font-extrabold text-[#ffd700]">{Number(linkedProduct.price).toLocaleString()} ৳</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Category Pills Bar */}
                 {config.header.showCategories && (
                   <div className="space-y-3">
@@ -3193,19 +3613,19 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       {/* 3. Product Management */}
                       <button
                         onClick={() => {
-                          if (!["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)) {
+                          if (!["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews", "Reels", "SpinWheel"].includes(activeTab)) {
                             setActiveTab("Products");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab)
+                          ["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews", "Reels", "SpinWheel"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
                       >
                         <span>👗</span>
                         <span>প্রোডাক্ট ও অফার</span>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) ? 'bg-white/25 text-white' : 'bg-[#fff0e6] text-[#7a1c2b] border border-[#f3e2d0]'}`}>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews", "Reels", "SpinWheel"].includes(activeTab) ? 'bg-white/25 text-white' : 'bg-[#fff0e6] text-[#7a1c2b] border border-[#f3e2d0]'}`}>
                           {products.length}
                         </span>
                       </button>
@@ -3249,11 +3669,13 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   </div>
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR PRODUCT MANAGEMENT) */}
-                  {["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews"].includes(activeTab) && (
+                  {["Products", "B2G1", "Combos", "Categories", "Coupons", "Reviews", "Reels", "SpinWheel"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">প্রোডাক্ট মডিউল:</span>
                       {[
                         { id: "Products", label: "🛍️ সকল প্রোডাক্ট", count: products.length },
+                        { id: "Reels", label: "🎬 রিলস ভিডিও", count: reels.length },
+                        { id: "SpinWheel", label: "🎡 ভাগ্যচাকা লিডস", count: spinLeads.length },
                         { id: "B2G1", label: "🎁 Buy 2 Get 1 Free অফার", badge: (config.b2g1?.enabled ? "সক্রিয়" : "বন্ধ") },
                         { id: "Combos", label: "✨ কম্বো প্যাক", count: combos.length },
                         { id: "Categories", label: "🏷️ ক্যাটাগরি", count: categories.length },
@@ -3792,7 +4214,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                               setEditingProduct(null);
                               setProductForm({ 
                                 name: "", 
-                                price: 0, 
+                                price: "", 
                                 stock: 5, 
                                 category: categories[0]?.name || "শাড়ি", 
                                 images: [], 
@@ -4276,11 +4698,15 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         type="number"
                         min="1"
                         max="10"
-                        value={config.b2g1?.minItems || 2}
-                        onChange={(e) => setConfig({
-                          ...config,
-                          b2g1: { ...(config.b2g1 || {}), minItems: Number(e.target.value) || 2 }
-                        })}
+                        value={config.b2g1?.minItems !== undefined && config.b2g1?.minItems !== null ? config.b2g1.minItems : ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setConfig({
+                            ...config,
+                            b2g1: { ...(config.b2g1 || {}), minItems: val === '' ? '' : Number(val) }
+                          });
+                        }}
+                        placeholder="2"
                         className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 outline-none mt-1 focus:border-[#7a1c2b]"
                       />
                       <p className="text-[10px] text-gray-400 mt-1">ডিফল্ট: ২ (২টি কিনলে ১টি ফ্রি)</p>
@@ -4555,7 +4981,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         setEditingProduct(null);
                         setProductForm({ 
                           name: "", 
-                          price: 0, 
+                          price: "", 
                           stock: 5, 
                           category: categories[0]?.name || "শাড়ি", 
                           images: [], 
@@ -5085,15 +5511,21 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     <input 
                       type="number" 
                       placeholder="ছাড়ের পরিমাণ (Value)" 
-                      value={couponForm.value}
-                      onChange={(e) => setCouponForm({ ...couponForm, value: Number(e.target.value) })}
+                      value={couponForm.value !== undefined && couponForm.value !== null ? couponForm.value : ''}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/^0+(?=\d)/, '');
+                        setCouponForm({ ...couponForm, value: val === '' ? '' : Number(val) });
+                      }}
                       className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
                     />
                     <input 
                       type="number" 
                       placeholder="নূন্যতম অর্ডার মূল্য (Min Order)" 
-                      value={couponForm.minOrder}
-                      onChange={(e) => setCouponForm({ ...couponForm, minOrder: Number(e.target.value) })}
+                      value={couponForm.minOrder !== undefined && couponForm.minOrder !== null ? couponForm.minOrder : ''}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/^0+(?=\d)/, '');
+                        setCouponForm({ ...couponForm, minOrder: val === '' ? '' : Number(val) });
+                      }}
                       className="bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b]" 
                     />
                     <input 
@@ -5105,7 +5537,13 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     <button 
                       onClick={() => {
                         if (!couponForm.code.trim()) return notify("কুপন কোড দিন!");
-                        const newCp = { id: "cp" + Date.now(), ...couponForm, code: couponForm.code.trim() };
+                        const newCp = { 
+                          id: "cp" + Date.now(), 
+                          ...couponForm, 
+                          code: couponForm.code.trim(),
+                          value: Number(couponForm.value) || 0,
+                          minOrder: Number(couponForm.minOrder) || 0
+                        };
                         setCoupons(prev => [...prev, newCp]);
                         syncDocToCloud("coupons", newCp.id, newCp);
                         setCouponForm({ code: "", type: "%", value: 10, minOrder: 1500, expiry: "2026-12-31", active: true });
@@ -5289,6 +5727,269 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* REELS / VIDEO SHOWCASE MANAGEMENT TAB */}
+            {/* ========================================================= */}
+            {activeTab === "Reels" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 sm:p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <div className="flex items-center gap-2.5">
+                    <button 
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
+                    >
+                      ← ড্যাশবোর্ড
+                    </button>
+                    <div>
+                      <h3 className="font-bold text-xl text-[#7a1c2b]">🎬 রিলস ও শর্ট ভিডিও ম্যানেজমেন্ট</h3>
+                      <p className="text-xs text-[#b8956a]">শাড়ি ও গহনার ভিডিও যুক্ত করুন যা গ্রাহকরা সরাসরি দেখে অর্ডার করতে পারবে</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsReelModalAddOpen(true)}
+                    className="bg-[#7a1c2b] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:bg-[#681727] transition flex items-center gap-2"
+                  >
+                    <span>+ নতুন রিলস ভিডিও</span>
+                  </button>
+                </div>
+
+                {/* Quick Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] shadow-xs flex items-center gap-3">
+                    <span className="text-3xl p-2.5 rounded-xl bg-rose-50 text-rose-700">🎬</span>
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold">মোট ভিডিও রিলস</p>
+                      <h4 className="text-xl font-extrabold text-[#7a1c2b]">{reels.length} টি</h4>
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] shadow-xs flex items-center gap-3">
+                    <span className="text-3xl p-2.5 rounded-xl bg-amber-50 text-amber-700">👁️</span>
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold">সর্বমোট ভিউজ</p>
+                      <h4 className="text-xl font-extrabold text-amber-900">
+                        {reels.reduce((sum, r) => sum + (parseFloat(r.views) || 2.5), 0).toFixed(1)}k+
+                      </h4>
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] shadow-xs flex items-center gap-3">
+                    <span className="text-3xl p-2.5 rounded-xl bg-pink-50 text-pink-700">❤️</span>
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold">গ্রাহকদের লাইকস</p>
+                      <h4 className="text-xl font-extrabold text-pink-900">
+                        {reels.reduce((sum, r) => sum + (r.likes || 0), 0)} টি
+                      </h4>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reels Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {reels.map((reel, idx) => {
+                    const linkedProd = products.find(p => p.id === reel.productId);
+                    return (
+                      <div key={reel.id} className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm flex flex-col justify-between group">
+                        <div className="relative aspect-[9/14] bg-black overflow-hidden">
+                          <img src={reel.poster || banner1} alt={reel.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40"></div>
+                          
+                          <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+                            <span className="bg-[#7a1c2b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">
+                              {reel.badge || "রিলস"}
+                            </span>
+                            <span className="bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <span>👁️ {reel.views || "1.2k"}</span>
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setActiveReelIndex(idx);
+                              setIsReelsModalOpen(true);
+                              setIsReelPlaying(true);
+                            }}
+                            className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-white/30 backdrop-blur border border-white flex items-center justify-center text-white text-xl shadow-lg hover:scale-110 transition"
+                          >
+                            ▶
+                          </button>
+
+                          <div className="absolute bottom-2 inset-x-2 text-white">
+                            <h4 className="font-bold text-xs line-clamp-1">{reel.title}</h4>
+                            <p className="text-[10px] text-gray-300 line-clamp-1">{reel.caption}</p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                          {linkedProd ? (
+                            <div className="flex items-center gap-2 p-2 rounded-2xl bg-[#fffaf5] border border-[#f3e2d0]">
+                              <img src={linkedProd.images?.[0] || banner1} alt={linkedProd.name} className="w-8 h-8 rounded-xl object-cover flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-bold text-gray-800 truncate">{linkedProd.name}</p>
+                                <p className="text-[10px] font-black text-[#7a1c2b]">{Number(linkedProd.price).toLocaleString()} ৳</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-gray-400 italic">কোনো প্রোডাক্ট লিংক করা নেই</p>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1 border-t border-gray-100 text-xs">
+                            <span className="font-bold text-gray-600 flex items-center gap-1">
+                              ❤️ {reel.likes || 0} লাইক
+                            </span>
+                            <button
+                              onClick={() => handleDeleteReel(reel.id)}
+                              className="text-red-600 hover:text-red-800 text-xs font-bold hover:underline"
+                            >
+                              মুছুন 🗑️
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* LUCKY SPIN THE WHEEL LEADS MANAGEMENT TAB */}
+            {/* ========================================================= */}
+            {activeTab === "SpinWheel" && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 sm:p-6 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                  <div className="flex items-center gap-2.5">
+                    <button 
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#f3e2d0] bg-[#fffaf5] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
+                    >
+                      ← ড্যাশবোর্ড
+                    </button>
+                    <div>
+                      <h3 className="font-bold text-xl text-[#7a1c2b]">🎡 ভাগ্যচাকা লিডস ও বিজয়ী তালিকা</h3>
+                      <p className="text-xs text-[#b8956a]">গ্রাহকরা স্পিন করে যে নম্বর দিয়ে অফার জিতেছে তাদের তালিকা (মার্কেটিং এর জন্য সেরা)</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const uniquePhones = [...new Set(spinLeads.map(l => l.phone).filter(Boolean))];
+                        if (uniquePhones.length === 0) return notify("কোনো ফোন নম্বর নেই!");
+                        navigator.clipboard.writeText(uniquePhones.join("\n"));
+                        notify(`✓ ${uniquePhones.length} টি ফোন নম্বর ক্লিপবোর্ডে কপি হয়েছে!`);
+                      }}
+                      className="bg-[#2c1810] text-[#fff8f0] px-4 py-2 rounded-full text-xs font-bold shadow hover:bg-black transition flex items-center gap-1.5"
+                    >
+                      <span>📋 সব নম্বর কপি</span>
+                    </button>
+                    <button
+                      onClick={() => setIsSpinWheelOpen(true)}
+                      className="bg-[#7a1c2b] text-white px-4 py-2 rounded-full text-xs font-bold shadow hover:bg-[#681727] transition flex items-center gap-1.5"
+                    >
+                      <span>🎡 স্পিন প্রিভিউ</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Spin Leads Metric Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs flex items-center gap-3">
+                    <span className="text-3xl p-2.5 rounded-xl bg-amber-50 text-amber-700">📱</span>
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold">সংগৃহীত কাস্টমার লিডস</p>
+                      <h4 className="text-xl font-extrabold text-[#7a1c2b]">{spinLeads.length} জন</h4>
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-emerald-200 shadow-xs flex items-center gap-3">
+                    <span className="text-3xl p-2.5 rounded-xl bg-emerald-50 text-emerald-700">🎟️</span>
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold">ডিসকাউন্ট কুপন বিজয়ী</p>
+                      <h4 className="text-xl font-extrabold text-emerald-800">
+                        {spinLeads.filter(l => l.prizeType === "coupon" || l.prizeType === "free_delivery").length} জন
+                      </h4>
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-purple-200 shadow-xs flex items-center gap-3">
+                    <span className="text-3xl p-2.5 rounded-xl bg-purple-50 text-purple-700">⭐</span>
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold">বিতরণকৃত রিওয়ার্ড পয়েন্ট</p>
+                      <h4 className="text-xl font-extrabold text-purple-900">
+                        {spinLeads.filter(l => l.prizeType === "points").reduce((sum, l) => sum + (Number(l.value) || 0), 0).toLocaleString()} পয়েন্ট
+                      </h4>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Leads Table */}
+                <div className="bg-white rounded-3xl border border-[#f3e2d0] overflow-hidden shadow-sm">
+                  <div className="p-4 border-b border-[#f3e2d0] flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-[#7a1c2b]">স্পিন ফলাফল ও কাস্টমারদের লিস্ট</h4>
+                    <span className="text-xs text-gray-500">{spinLeads.length} টি এন্ট্রি</span>
+                  </div>
+
+                  {spinLeads.length === 0 ? (
+                    <div className="p-12 text-center text-gray-500 space-y-2">
+                      <span className="text-4xl block">🎡</span>
+                      <p className="font-bold text-sm">এখনো কেউ স্পিন করেনি</p>
+                      <p className="text-xs text-gray-400">গ্রাহকরা স্টোরফ্রন্টে আসলে মোবাইল নম্বর দিয়ে স্পিন করলেই এখানে ডাটা যুক্ত হবে।</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#fffaf5] text-[#7a1c2b] font-bold border-b border-[#f3e2d0]">
+                          <tr>
+                            <th className="py-3 px-4">#</th>
+                            <th className="py-3 px-4">মোবাইল নম্বর</th>
+                            <th className="py-3 px-4">প্রাপ্ত পুরস্কার</th>
+                            <th className="py-3 px-4">কুপন কোড / ভ্যালু</th>
+                            <th className="py-3 px-4">তারিখ ও সময়</th>
+                            <th className="py-3 px-4 text-right">যোগাযোগ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {spinLeads.map((lead, idx) => (
+                            <tr key={lead.id || idx} className="hover:bg-amber-50/40 transition">
+                              <td className="py-3 px-4 font-mono text-gray-400">{idx + 1}</td>
+                              <td className="py-3 px-4 font-mono font-bold text-gray-800">
+                                📞 {lead.phone}
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                  lead.prizeType === "points" 
+                                    ? "bg-purple-100 text-purple-800 border-purple-200" 
+                                    : lead.prizeType === "free_delivery"
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                    : "bg-rose-100 text-rose-800 border-rose-200"
+                                }`}>
+                                  {lead.prize}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 font-mono font-bold text-[#7a1c2b]">
+                                {lead.code || `${lead.value} Points`}
+                              </td>
+                              <td className="py-3 px-4 text-gray-500">
+                                {lead.date}
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                <a
+                                  href={`https://wa.me/88${lead.phone.replace(/^0/, '')}?text=Hello,%20thank%20you%20for%20spinning%20the%20wheel%20at%20SAJGOJ!%20Your%20reward:%20${encodeURIComponent(lead.prize)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 bg-[#25D366] text-white text-[11px] font-bold px-3 py-1 rounded-full hover:bg-emerald-600 transition shadow-xs"
+                                >
+                                  💬 WhatsApp
+                                </a>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -5527,8 +6228,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         <input
                           type="number"
                           min="1"
-                          value={loyalty?.pointsRate !== undefined ? loyalty.pointsRate : 100}
-                          onChange={(e) => setLoyalty(prev => ({ ...prev, pointsRate: Math.max(1, Number(e.target.value)) }))}
+                          value={loyalty?.pointsRate !== undefined && loyalty?.pointsRate !== null ? loyalty.pointsRate : ''}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/^0+(?=\d)/, '');
+                            setLoyalty(prev => ({ ...prev, pointsRate: val === '' ? '' : Number(val) }));
+                          }}
+                          placeholder="100"
                           className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
                         />
                         <span className="text-xs font-bold text-gray-500 whitespace-nowrap">পয়েন্ট</span>
@@ -5547,8 +6252,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         <input
                           type="number"
                           min="1"
-                          value={loyalty?.spendPerPoint !== undefined ? loyalty.spendPerPoint : 10}
-                          onChange={(e) => setLoyalty(prev => ({ ...prev, spendPerPoint: Math.max(1, Number(e.target.value)) }))}
+                          value={loyalty?.spendPerPoint !== undefined && loyalty?.spendPerPoint !== null ? loyalty.spendPerPoint : ''}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/^0+(?=\d)/, '');
+                            setLoyalty(prev => ({ ...prev, spendPerPoint: val === '' ? '' : Number(val) }));
+                          }}
+                          placeholder="10"
                           className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
                         />
                         <span className="text-xs font-bold text-gray-500 whitespace-nowrap">টাকা</span>
@@ -5567,8 +6276,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         <input
                           type="number"
                           min="0"
-                          value={loyalty?.minRedeemPoints !== undefined ? loyalty.minRedeemPoints : 100}
-                          onChange={(e) => setLoyalty(prev => ({ ...prev, minRedeemPoints: Math.max(0, Number(e.target.value)) }))}
+                          value={loyalty?.minRedeemPoints !== undefined && loyalty?.minRedeemPoints !== null ? loyalty.minRedeemPoints : ''}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/^0+(?=\d)/, '');
+                            setLoyalty(prev => ({ ...prev, minRedeemPoints: val === '' ? '' : Number(val) }));
+                          }}
+                          placeholder="100"
                           className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
                         />
                         <span className="text-xs font-bold text-gray-500 whitespace-nowrap">পয়েন্ট</span>
@@ -5588,8 +6301,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           type="number"
                           min="1"
                           max="100"
-                          value={loyalty?.maxRedeemPercent !== undefined ? loyalty.maxRedeemPercent : 50}
-                          onChange={(e) => setLoyalty(prev => ({ ...prev, maxRedeemPercent: Math.min(100, Math.max(1, Number(e.target.value))) }))}
+                          value={loyalty?.maxRedeemPercent !== undefined && loyalty?.maxRedeemPercent !== null ? loyalty.maxRedeemPercent : ''}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/^0+(?=\d)/, '');
+                            setLoyalty(prev => ({ ...prev, maxRedeemPercent: val === '' ? '' : Math.min(100, Number(val)) }));
+                          }}
+                          placeholder="50"
                           className="w-full bg-[#fffaf5] border rounded-xl px-3.5 py-2 text-sm font-bold font-mono outline-none focus:border-[#7a1c2b]"
                         />
                         <span className="text-xs font-bold text-gray-500 whitespace-nowrap">%</span>
@@ -5663,19 +6380,19 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                             <input
                               type="number"
                               min="0"
-                              value={tier.minSpend}
+                              value={tier.minSpend !== undefined && tier.minSpend !== null ? tier.minSpend : ''}
                               onChange={(e) => {
-                                const val = Number(e.target.value);
+                                const val = e.target.value.replace(/^0+(?=\d)/, '');
                                 setLoyalty(prev => ({
                                   ...prev,
-                                  tiers: prev.tiers.map(t => t.id === tier.id ? { ...t, minSpend: val } : t)
+                                  tiers: prev.tiers.map(t => t.id === tier.id ? { ...t, minSpend: val === '' ? '' : Number(val) } : t)
                                 }));
                               }}
                               className="w-full bg-white border rounded-xl px-3 py-2 text-xs font-bold font-mono outline-none focus:border-[#7a1c2b]"
                               placeholder="0"
                             />
                             <span className="text-[9px] text-gray-400 mt-0.5 block">
-                              {idx === 0 ? "সাধারণ এন্ট্রি (০ ৳)" : `ন্যূনতম ${tier.minSpend} ৳ খরচ`}
+                              {idx === 0 ? "সাধারণ এন্ট্রি (০ ৳)" : `ন্যূনতম ${tier.minSpend || 0} ৳ খরচ`}
                             </span>
                           </div>
 
@@ -5687,12 +6404,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                               type="number"
                               min="0"
                               max="100"
-                              value={tier.discountPercent}
+                              value={tier.discountPercent !== undefined && tier.discountPercent !== null ? tier.discountPercent : ''}
                               onChange={(e) => {
-                                const val = Number(e.target.value);
+                                const val = e.target.value.replace(/^0+(?=\d)/, '');
                                 setLoyalty(prev => ({
                                   ...prev,
-                                  tiers: prev.tiers.map(t => t.id === tier.id ? { ...t, discountPercent: val } : t)
+                                  tiers: prev.tiers.map(t => t.id === tier.id ? { ...t, discountPercent: val === '' ? '' : Math.min(100, Number(val)) } : t)
                                 }));
                               }}
                               className="w-full bg-white border rounded-xl px-3 py-2 text-xs font-bold font-mono outline-none focus:border-[#7a1c2b]"
@@ -5921,8 +6638,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <label className="text-xs font-semibold text-gray-600">ঢাকার ভিতরে ডেলিভারি চার্জ (টাকা)</label>
                       <input 
                         type="number" 
-                        value={config.deliveryInsideDhaka !== undefined ? config.deliveryInsideDhaka : 60} 
-                        onChange={(e) => setConfig({ ...config, deliveryInsideDhaka: Number(e.target.value) })}
+                        value={config.deliveryInsideDhaka !== undefined && config.deliveryInsideDhaka !== null ? config.deliveryInsideDhaka : ''} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setConfig({ ...config, deliveryInsideDhaka: val === '' ? '' : Number(val) });
+                        }}
+                        placeholder="60"
                         className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                       />
                     </div>
@@ -5930,8 +6651,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <label className="text-xs font-semibold text-gray-600">ঢাকার বাইরে ডেলিভারি চার্জ (টাকা)</label>
                       <input 
                         type="number" 
-                        value={config.deliveryOutsideDhaka !== undefined ? config.deliveryOutsideDhaka : 120} 
-                        onChange={(e) => setConfig({ ...config, deliveryOutsideDhaka: Number(e.target.value) })}
+                        value={config.deliveryOutsideDhaka !== undefined && config.deliveryOutsideDhaka !== null ? config.deliveryOutsideDhaka : ''} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setConfig({ ...config, deliveryOutsideDhaka: val === '' ? '' : Number(val) });
+                        }}
+                        placeholder="120"
                         className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                       />
                     </div>
@@ -5939,8 +6664,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <label className="text-xs font-semibold text-gray-600">ফ্রি ডেলিভারি ন্যূনতম অর্ডার (টাকা)</label>
                       <input 
                         type="number" 
-                        value={config.freeDeliveryThreshold !== undefined ? config.freeDeliveryThreshold : 2000} 
-                        onChange={(e) => setConfig({ ...config, freeDeliveryThreshold: Number(e.target.value) })}
+                        value={config.freeDeliveryThreshold !== undefined && config.freeDeliveryThreshold !== null ? config.freeDeliveryThreshold : ''} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setConfig({ ...config, freeDeliveryThreshold: val === '' ? '' : Number(val) });
+                        }}
+                        placeholder="2000"
                         className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                       />
                     </div>
@@ -8821,8 +9550,11 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <label className="text-xs font-semibold text-gray-700">বিক্রয় মূল্য (টাকা) *</label>
                       <input 
                         type="number" 
-                        value={productForm.price || ''} 
-                        onChange={(e) => setProductForm({ ...productForm, price: Number(e.target.value) })}
+                        value={productForm.price !== undefined && productForm.price !== null ? productForm.price : ''} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setProductForm({ ...productForm, price: val === '' ? '' : Number(val) });
+                        }}
                         placeholder="3500"
                         className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                       />
@@ -8831,8 +9563,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <label className="text-xs font-semibold text-gray-700">স্টক পরিমাণ *</label>
                       <input 
                         type="number" 
-                        value={productForm.stock} 
-                        onChange={(e) => setProductForm({ ...productForm, stock: Number(e.target.value) })}
+                        value={productForm.stock !== undefined && productForm.stock !== null ? productForm.stock : ''} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setProductForm({ ...productForm, stock: val === '' ? '' : Number(val) });
+                        }}
+                        placeholder="5"
                         className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]" 
                       />
                     </div>
@@ -9040,10 +9776,15 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       }
                       const finalImages = allImages.length > 0 ? allImages : [imgSharee];
 
+                      const cleanPrice = Number(productForm.price) || 0;
+                      const cleanStock = productForm.stock === "" ? 0 : (Number(productForm.stock) || 0);
+
                       if (editingProduct) {
                         const updated = { 
                           ...editingProduct, 
                           ...productForm, 
+                          price: cleanPrice,
+                          stock: cleanStock,
                           images: finalImages 
                         };
                         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
@@ -9053,6 +9794,8 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         const newP = {
                           id: "p" + Date.now(),
                           ...productForm,
+                          price: cleanPrice,
+                          stock: cleanStock,
                           images: finalImages,
                           sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
                           rating: 4.8,
@@ -9306,8 +10049,11 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                             </label>
                             <input 
                               type="number" 
-                              value={comboForm.comboPrice || ''} 
-                              onChange={(e) => setComboForm({ ...comboForm, comboPrice: Number(e.target.value) })}
+                              value={comboForm.comboPrice !== undefined && comboForm.comboPrice !== null ? comboForm.comboPrice : ''} 
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/^0+(?=\d)/, '');
+                                setComboForm({ ...comboForm, comboPrice: val === '' ? '' : Number(val) });
+                              }}
                               placeholder={originalTotal > 0 ? `${Math.round(originalTotal * 0.85)}` : "5499"}
                               className="w-full bg-white border border-[#7a1c2b] rounded-full px-4 py-2 text-sm font-bold text-[#7a1c2b] outline-none mt-1 focus:ring-2 focus:ring-[#7a1c2b]/20"
                             />
@@ -9357,8 +10103,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <label className="text-xs font-semibold text-gray-700">স্টক পরিমাণ *</label>
                       <input 
                         type="number" 
-                        value={comboForm.stock} 
-                        onChange={(e) => setComboForm({ ...comboForm, stock: Number(e.target.value) })}
+                        value={comboForm.stock !== undefined && comboForm.stock !== null ? comboForm.stock : ''} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setComboForm({ ...comboForm, stock: val === '' ? '' : Number(val) });
+                        }}
+                        placeholder="5"
                         className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b]"
                       />
                     </div>
@@ -9588,6 +10338,456 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     className="w-full bg-[#7a1c2b] text-white py-3 rounded-full font-bold text-sm shadow-md hover:bg-[#681727] transition mt-2"
                   >
                     ব্যানার আপডেট ও সেভ করুন ✓
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* FLOATING LUCKY SPIN WHEEL BUTTON (Storefront Only) */}
+          {/* ========================================================= */}
+          {activeTab === "Storefront" && (
+            <button
+              onClick={() => setIsSpinWheelOpen(true)}
+              className="fixed bottom-6 left-6 z-40 bg-gradient-to-r from-amber-600 via-rose-700 to-amber-700 text-white px-4 py-3 rounded-full shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 font-bold text-xs sm:text-sm group"
+              title="ভাগ্যচাকা স্পিন করুন - অফার জিতুন!"
+            >
+              <span className="text-xl animate-spin-slow">🎡</span>
+              <span className="hidden sm:inline">ভাগ্যচাকা</span>
+              <span className="bg-amber-300 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs uppercase tracking-wider animate-pulse">
+                উপহার 🎁
+              </span>
+            </button>
+          )}
+
+          {/* ========================================================= */}
+          {/* 🎡 LUCKY SPIN THE WHEEL MODAL */}
+          {/* ========================================================= */}
+          {isSpinWheelOpen && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+              <div className="bg-gradient-to-b from-[#2c1810] via-[#4a121c] to-[#1e0a10] text-white rounded-3xl w-full max-w-md p-6 border-2 border-amber-400 shadow-2xl relative overflow-hidden">
+                {/* Decorative background glow */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                {/* Modal Header */}
+                <div className="flex justify-between items-center mb-4 relative z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl animate-spin-slow">🎡</span>
+                    <div>
+                      <h3 className="font-extrabold text-xl text-[#ffd700] drop-shadow">সাজগোজ ভাগ্যচাকা</h3>
+                      <p className="text-[11px] text-[#f5d7b5]">স্পিন করে জিতে নিন আকর্ষণীয় ডিসকাউন্ট ও পয়েন্ট!</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!isSpinning) setIsSpinWheelOpen(false);
+                    }}
+                    disabled={isSpinning}
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center font-bold text-white transition disabled:opacity-30"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* THE ROTATING WHEEL CANVAS / SVG */}
+                <div className="relative flex flex-col items-center justify-center my-4">
+                  {/* Top Pointer Needle Indicator */}
+                  <div className="absolute -top-3 z-30 flex flex-col items-center drop-shadow-xl">
+                    <div className="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[22px] border-t-amber-300"></div>
+                    <div className="w-3.5 h-3.5 rounded-full bg-amber-400 border border-amber-950 -mt-5"></div>
+                  </div>
+
+                  {/* SVG Wheel */}
+                  <div className="w-72 h-72 sm:w-80 sm:h-80 rounded-full border-4 border-amber-400 shadow-[0_0_35px_rgba(212,165,116,0.4)] p-1 bg-gradient-to-r from-amber-500 via-[#7a1c2b] to-amber-500 flex items-center justify-center relative overflow-hidden">
+                    <svg
+                      viewBox="0 0 300 300"
+                      className="w-full h-full rounded-full transition-transform"
+                      style={{
+                        transform: `rotate(${wheelRotation}deg)`,
+                        transition: isSpinning ? "transform 4.5s cubic-bezier(0.12, 0.85, 0.15, 1)" : "none"
+                      }}
+                    >
+                      {spinPrizes.map((slice, i) => {
+                        const startAngle = i * 60;
+                        const endAngle = (i + 1) * 60;
+                        const r = 140;
+                        const cx = 150;
+                        const cy = 150;
+                        const rad1 = (startAngle - 90) * (Math.PI / 180);
+                        const rad2 = (endAngle - 90) * (Math.PI / 180);
+                        const x1 = cx + r * Math.cos(rad1);
+                        const y1 = cy + r * Math.sin(rad1);
+                        const x2 = cx + r * Math.cos(rad2);
+                        const y2 = cy + r * Math.sin(rad2);
+                        const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`;
+
+                        const midAngle = (i + 0.5) * 60;
+                        const textRad = (midAngle - 90) * (Math.PI / 180);
+                        const tx = cx + 85 * Math.cos(textRad);
+                        const ty = cy + 85 * Math.sin(textRad);
+
+                        return (
+                          <g key={slice.id}>
+                            <path d={pathData} fill={slice.color} stroke="#ffd700" strokeWidth="2" />
+                            <text
+                              x={tx}
+                              y={ty}
+                              fill={slice.textColor}
+                              fontSize="12"
+                              fontWeight="900"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              transform={`rotate(${midAngle}, ${tx}, ${ty})`}
+                            >
+                              {slice.icon} {slice.label}
+                            </text>
+                          </g>
+                        );
+                      })}
+                      {/* Center Pin Hub */}
+                      <circle cx="150" cy="150" r="28" fill="#2c1810" stroke="#ffd700" strokeWidth="4" />
+                      <circle cx="150" cy="150" r="14" fill="#ffd700" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* WINNER RESULT CELEBRATION BOX */}
+                {spinPrizeResult ? (
+                  <div className="bg-white/10 backdrop-blur-md border-2 border-amber-400 p-4 rounded-2xl text-center space-y-2 animate-fadeIn relative z-10">
+                    <span className="text-3xl animate-bounce block">🎉</span>
+                    <h4 className="font-extrabold text-lg text-[#ffd700]">
+                      অভিনন্দন! আপনি জিতেছেন:
+                    </h4>
+                    <div className="bg-[#7a1c2b] text-white py-2 px-4 rounded-xl border border-amber-300 font-extrabold text-base shadow-sm">
+                      {spinPrizeResult.prize}
+                    </div>
+
+                    {spinPrizeResult.code ? (
+                      <div className="space-y-1.5 pt-1">
+                        <p className="text-xs text-amber-200">কুপন কোড (অর্ডারে স্বয়ংক্রিয় ছাড় পাবেন):</p>
+                        <div className="bg-black/50 border border-dashed border-amber-300 font-mono text-base font-black py-1.5 px-3 rounded-lg text-amber-300 select-all">
+                          {spinPrizeResult.code}
+                        </div>
+                        <button
+                          onClick={() => handleApplySpinCoupon(spinPrizeResult.code)}
+                          className="w-full bg-[#d4a574] hover:bg-[#c4925e] text-[#2c1810] font-black py-2.5 rounded-full text-xs shadow-lg transition active:scale-95"
+                        >
+                          🛒 কুপনটি কার্টে যুক্ত করুন ও কেনাকাটা করুন
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5 pt-1">
+                        <p className="text-xs text-emerald-300 font-semibold">
+                          ✓ আপনার নম্বরে ({spinPrizeResult.phone}) পয়েন্ট যুক্ত হয়েছে! চেকআউটে এই পয়েন্ট দিয়ে ক্যাশ ডিসকাউন্ট পাবেন।
+                        </p>
+                        <button
+                          onClick={() => setIsSpinWheelOpen(false)}
+                          className="w-full bg-[#d4a574] hover:bg-[#c4925e] text-[#2c1810] font-black py-2.5 rounded-full text-xs shadow-lg transition active:scale-95"
+                        >
+                          🛍️ কালেকশন দেখুন ও শপিং শুরু করুন
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* INPUT PHONE & SPIN BUTTON */
+                  <div className="space-y-3 relative z-10 pt-1">
+                    <div>
+                      <label className="text-xs font-bold text-amber-200 block mb-1">
+                        আপনার মোবাইল নম্বর দিন (উপহার সংরক্ষণের জন্য):
+                      </label>
+                      <input
+                        type="tel"
+                        value={spinPhoneInput}
+                        onChange={(e) => setSpinPhoneInput(e.target.value)}
+                        placeholder="যেমন: 01712345678"
+                        disabled={isSpinning}
+                        className="w-full bg-white/10 border-2 border-amber-400/70 rounded-full px-5 py-2.5 text-sm font-bold text-white placeholder-gray-400 outline-none focus:border-amber-300 disabled:opacity-50"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSpinWheel}
+                      disabled={isSpinning}
+                      className="w-full bg-gradient-to-r from-amber-500 via-[#ffd700] to-amber-500 hover:brightness-110 text-[#2c1810] py-3.5 rounded-full font-black text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed uppercase tracking-wider"
+                    >
+                      <span>{isSpinning ? "🎡 স্পিন হচ্ছে..." : "🎯 স্পিন করুন ও অফার জিতুন!"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 🎬 FULLSCREEN REELS / SHORT VIDEO VIEWER MODAL */}
+          {/* ========================================================= */}
+          {isReelsModalOpen && reels[activeReelIndex] && (
+            <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fadeIn">
+              {(() => {
+                const currentReel = reels[activeReelIndex];
+                const linkedProduct = products.find(p => p.id === currentReel.productId);
+
+                return (
+                  <div className="relative w-full max-w-sm sm:max-w-md h-[90vh] max-h-[820px] bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/20 flex flex-col justify-between">
+                    {/* Video Player */}
+                    <video
+                      key={currentReel.id}
+                      src={currentReel.videoUrl}
+                      poster={currentReel.poster}
+                      autoPlay
+                      loop
+                      playsInline
+                      muted={isReelMuted}
+                      className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+                      onClick={(e) => {
+                        const vid = e.target;
+                        if (vid.paused) {
+                          vid.play();
+                          setIsReelPlaying(true);
+                        } else {
+                          vid.pause();
+                          setIsReelPlaying(false);
+                        }
+                      }}
+                    />
+
+                    {/* Dark gradient top and bottom for readability */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none"></div>
+
+                    {/* Top Bar: Reel title, sound toggle and close */}
+                    <div className="relative z-20 p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-[#7a1c2b] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-300">
+                          {currentReel.badge || "সাজগোজ রিলস"}
+                        </span>
+                        <span className="text-white/80 text-xs font-semibold">
+                          {activeReelIndex + 1} / {reels.length}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setIsReelMuted(!isReelMuted)}
+                          className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md text-white border border-white/30 flex items-center justify-center text-xs hover:bg-black/70 transition"
+                          title={isReelMuted ? "সাউন্ড অন করুন" : "মিউট করুন"}
+                        >
+                          {isReelMuted ? "🔇" : "🔊"}
+                        </button>
+                        <button
+                          onClick={() => setIsReelsModalOpen(false)}
+                          className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md text-white border border-white/30 flex items-center justify-center font-bold text-xs hover:bg-black/70 transition"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Center Play/Pause Indicator (if paused) */}
+                    {!isReelPlaying && (
+                      <div className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/60 border border-white/40 flex items-center justify-center text-white text-3xl pointer-events-none z-10 animate-pulse">
+                        ▶
+                      </div>
+                    )}
+
+                    {/* Floating Right Side Action Column (Likes, WhatsApp, Prev, Next) */}
+                    <div className="absolute right-3 bottom-32 z-20 flex flex-col items-center gap-3">
+                      {/* Like Button */}
+                      <button
+                        onClick={() => handleLikeReel(currentReel.id)}
+                        className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-md border border-white/30 flex flex-col items-center justify-center text-white transition active:scale-125"
+                      >
+                        <span className={`text-lg ${currentReel.userLiked ? 'text-rose-500' : 'text-white'}`}>❤️</span>
+                      </button>
+                      <span className="text-[10px] font-bold text-white drop-shadow -mt-2">
+                        {currentReel.likes || 0}
+                      </span>
+
+                      {/* WhatsApp Share */}
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(`সাজগোজের চমৎকার রিলসটি দেখুন: "${currentReel.title}" - ${window.location.href}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-11 h-11 rounded-full bg-[#25D366] text-white flex items-center justify-center text-xl shadow-lg hover:scale-110 transition"
+                        title="হোয়াটসঅ্যাপে শেয়ার করুন"
+                      >
+                        💬
+                      </a>
+
+                      {/* Previous Reel Navigation */}
+                      <button
+                        onClick={() => {
+                          const prevIdx = (activeReelIndex - 1 + reels.length) % reels.length;
+                          setActiveReelIndex(prevIdx);
+                          setIsReelPlaying(true);
+                        }}
+                        className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/30 text-white flex items-center justify-center text-base hover:bg-black transition"
+                        title="পূর্ববর্তী রিলস"
+                      >
+                        ⬆️
+                      </button>
+
+                      {/* Next Reel Navigation */}
+                      <button
+                        onClick={() => {
+                          const nextIdx = (activeReelIndex + 1) % reels.length;
+                          setActiveReelIndex(nextIdx);
+                          setIsReelPlaying(true);
+                        }}
+                        className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/30 text-white flex items-center justify-center text-base hover:bg-black transition"
+                        title="পরবর্তী রিলস"
+                      >
+                        ⬇️
+                      </button>
+                    </div>
+
+                    {/* Bottom Floating Info & Product Card */}
+                    <div className="relative z-20 p-4 space-y-2.5 max-w-[85%] sm:max-w-[88%]">
+                      {/* Reel Caption */}
+                      <div>
+                        <h3 className="font-extrabold text-sm sm:text-base text-white drop-shadow leading-snug">
+                          {currentReel.title}
+                        </h3>
+                        <p className="text-xs text-gray-200 drop-shadow line-clamp-2 mt-0.5">
+                          {currentReel.caption}
+                        </p>
+                      </div>
+
+                      {/* Linked Product Banner */}
+                      {linkedProduct && (
+                        <div className="bg-white/20 backdrop-blur-lg border border-white/40 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-2xl">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <img
+                              src={linkedProduct.images?.[0] || banner1}
+                              alt={linkedProduct.name}
+                              className="w-10 h-10 rounded-xl object-cover border border-white/50 flex-shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-bold text-xs text-white truncate drop-shadow">{linkedProduct.name}</p>
+                              <p className="font-black text-xs text-[#ffd700] drop-shadow">{Number(linkedProduct.price).toLocaleString()} ৳</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => {
+                                addToCart(linkedProduct);
+                                notify(`✓ "${linkedProduct.name}" কার্টে যোগ হয়েছে!`);
+                              }}
+                              className="bg-white text-[#7a1c2b] text-[11px] font-bold px-3 py-1.5 rounded-full hover:bg-gray-100 transition shadow-sm"
+                            >
+                              🛒 কার্টে নিন
+                            </button>
+                            <button
+                              onClick={() => {
+                                addToCart(linkedProduct);
+                                setIsReelsModalOpen(false);
+                                setIsCartOpen(true);
+                              }}
+                              className="bg-[#7a1c2b] text-white text-[11px] font-bold px-3 py-1.5 rounded-full hover:bg-[#681727] transition shadow-sm border border-amber-300"
+                            >
+                              ⚡ অর্ডার
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 🎬 ADD NEW REEL MODAL (ADMIN) */}
+          {/* ========================================================= */}
+          {isReelModalAddOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-lg p-6 border shadow-2xl space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-[#f3e2d0]">
+                  <h3 className="font-bold text-lg text-[#7a1c2b]">🎬 নতুন রিলস ভিডিও পাবলিশ করুন</h3>
+                  <button onClick={() => setIsReelModalAddOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 hover:text-black">✕</button>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">রিলসের শিরোনাম *</label>
+                    <input
+                      type="text"
+                      placeholder="যেমন: রাজকীয় কুন্দন চোকার আনবক্সিং"
+                      value={reelForm.title}
+                      onChange={(e) => setReelForm({ ...reelForm, title: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">ভিডিও লিঙ্ক (Direct MP4 URL) *</label>
+                    <input
+                      type="text"
+                      placeholder="https://.../video.mp4"
+                      value={reelForm.videoUrl}
+                      onChange={(e) => setReelForm({ ...reelForm, videoUrl: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">পোস্টার / থাম্বনেইল ছবির লিঙ্ক</label>
+                    <input
+                      type="text"
+                      placeholder="https://.../cover.jpg"
+                      value={reelForm.poster}
+                      onChange={(e) => setReelForm({ ...reelForm, poster: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">লিংক করা প্রোডাক্ট</label>
+                      <select
+                        value={reelForm.productId}
+                        onChange={(e) => setReelForm({ ...reelForm, productId: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1"
+                      >
+                        <option value="">প্রোডাক্ট সিলেক্ট করুন</option>
+                        {products.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.price} ৳)</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">অফার ব্যাজ</label>
+                      <input
+                        type="text"
+                        placeholder="যেমন: সেরা পছন্দ 🔥"
+                        value={reelForm.badge}
+                        onChange={(e) => setReelForm({ ...reelForm, badge: e.target.value })}
+                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">ক্যাপশন / বিবরণ</label>
+                    <textarea
+                      rows="2"
+                      placeholder="ভিডিও সম্পর্কে সংক্ষিপ্ত বিবরণ লিখুন..."
+                      value={reelForm.caption}
+                      onChange={(e) => setReelForm({ ...reelForm, caption: e.target.value })}
+                      className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-xs outline-none mt-1 focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleAddReel}
+                    className="w-full bg-[#7a1c2b] text-white py-3 rounded-full font-bold text-xs shadow hover:bg-[#681727] transition"
+                  >
+                    রিলস পাবলিশ করুন ✓
                   </button>
                 </div>
               </div>
