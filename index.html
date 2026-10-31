@@ -146,23 +146,40 @@
     const imgBangles = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fffaf5'/><circle cx='210' cy='300' r='80' fill='none' stroke='#b8956a' stroke-width='22'/><circle cx='390' cy='300' r='80' fill='none' stroke='#7a1c2b' stroke-width='22'/><text x='50%' y='82%' text-anchor='middle' fill='#2c1810' font-size='24' font-weight='700'>সিটি গোল্ড চুড়ি সেট</text></svg>");
     const imgBracelet = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><rect x='130' y='260' width='340' height='30' rx='15' fill='#2c1810'/><circle cx='300' cy='275' r='36' fill='#7a1c2b'/><text x='50%' y='48%' text-anchor='middle' fill='#7a1c2b' font-size='26' font-weight='700'>রুবি স্টোন ব্রেসলেট</text></svg>");
     
+    // Clothing & Apparel SVG Fallbacks
+    const imgTshirt = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#f4ede4'/><path d='M180,120 L240,170 C270,190 330,190 360,170 L420,120 L480,190 L420,240 L420,500 L180,500 L180,240 L120,190 Z' fill='#7a1c2b'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#ffdcc0' font-size='26' font-weight='bold'>প্রিমিয়াম কটন টি-শার্ট</text></svg>");
+    const imgKurti = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0f5'/><path d='M200,100 L250,150 C280,170 320,170 350,150 L400,100 L440,200 L390,220 L450,520 L150,520 L210,220 L160,200 Z' fill='#800020'/><circle cx='300' cy='220' r='18' fill='#ffd700'/><text x='50%' y='65%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='24' font-weight='bold'>ডিজাইনার জামা ও কুর্তি</text></svg>");
+    const imgPants = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#edf2f7'/><path d='M200,120 L400,120 L420,490 L320,490 L300,280 L280,490 L180,490 Z' fill='#2d3748'/><text x='50%' y='35%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='24' font-weight='bold'>ক্যাজুয়াল চিনো প্যান্ট</text></svg>");
+    const imgInnerwear = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff5f5'/><circle cx='230' cy='320' r='75' fill='#e53e3e'/><circle cx='370' cy='320' r='75' fill='#e53e3e'/><rect x='280' y='305' width='40' height='30' rx='8' fill='#c53030'/><text x='50%' y='75%' dominant-baseline='middle' text-anchor='middle' fill='#7a1c2b' font-size='24' font-weight='bold'>বডি ফিট ইনার ওয়্যার</text></svg>");
+    const imgKids = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fefcbf'/><path d='M220,150 L380,150 L420,460 L180,460 Z' fill='#dd6b20'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='26' font-weight='bold'>বাচ্চাদের কিউট পোশাক</text></svg>");
+
     const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#7a1c2b'/><circle cx='950' cy='220' r='260' fill='#d4a574' opacity='0.3'/><circle cx='1050' cy='400' r='180' fill='#53111c' opacity='0.4'/><text x='80' y='200' fill='#fff8f0' font-size='60' font-weight='800'>Eid Collection 2026</text><text x='80' y='270' fill='#ffdcc0' font-size='26'>এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি</text><rect x='80' y='320' width='220' height='56' rx='28' fill='#d4a574'/><text x='190' y='355' text-anchor='middle' fill='#2c1810' font-size='20' font-weight='bold'>কালেকশন দেখুন</text></svg>");
     const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#2c1810'/><rect x='0' y='0' width='550' height='550' fill='#7a1c2b' opacity='0.85'/><circle cx='600' cy='275' r='160' fill='#d4a574' opacity='0.25'/><text x='80' y='210' fill='#fff' font-size='52' font-weight='800'>রাজওয়াড়ি ব্রাইডাল কালেকশন</text><text x='80' y='275' fill='#ffdcc0' font-size='24'>ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত হাতের কাজ</text><rect x='80' y='325' width='220' height='56' rx='28' fill='#fff8f0'/><text x='190' y='360' text-anchor='middle' fill='#7a1c2b' font-size='20' font-weight='bold'>অফার লুফে নিন</text></svg>");
 
     // Seed Data
     const initialProducts = [
-      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "" },
-      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি" },
-      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "" },
-      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি" }
+      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "", colors: ["রয়েল রেড", "মেরুন", "গোল্ডেন", "কালো", "রোজ পিংক"], sizes: ["Free Size (আনস্টিচড শাড়ি)"] },
+      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["অ্যান্টিক গোল্ড", "রয়েল রুবি", "পান্না সবুজ"], sizes: ["অ্যাডজাস্টেবল ফ্রি সাইজ"] },
+      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "", colors: ["২২ ক্যারেট গোল্ড প্লেটেড", "রোজ গোল্ড"], sizes: ["২.২ (ছোট হাত)", "২.৪ (স্ট্যান্ডার্ড)", "২.৬ (মিডিয়াম-লার্জ)", "২.৮ (লার্জ)"] },
+      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রুবি রেড", "পান্না গ্রিন", "স্যাফায়ার ব্লু"], sizes: ["অ্যাডজাস্টেবল ফ্রি সাইজ"] },
+      { id: "p5", name: "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট (Premium T-Shirt)", price: 550, stock: 35, category: "টি-শার্ট", images: [imgTshirt], sku: "SAJ-TS01", description: "১০০% প্রিমিয়াম সুতি কম্বড কটন ফেব্রিক দিয়ে তৈরি অত্যন্ত আরামদায়ক ও ট্রেন্ডি টি-শার্ট। ডেইলি ওয়্যার ও ক্যাজুয়াল আউটিংয়ের জন্য সেরা।", rating: 4.9, reviewsCount: 38, sourceUrl: "", colors: ["কালো (Black)", "সাদা (White)", "নেভি ব্লু (Navy)", "মেরুন (Maroon)", "অলিভ গ্রিন (Olive)"], sizes: ["S (বডি ৩৬\")", "M (বডি ৩৮\")", "L (বডি ৪০\")", "XL (বডি ৪২\")", "XXL (বডি ৪৪\")"] },
+      { id: "p6", name: "ডিজাইনার এম্ব্রয়ডারি কটন কুর্তি ও জামা (Kameez)", price: 1750, stock: 16, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM02", description: "সফট পিওর কটনের ওপর রাজকীয় সুতার নিখুঁত এম্ব্রয়ডারি কাজ করা ডিজাইনার রেডিমেড কুর্তি ও কামিজ। আরামদায়ক ফিটিং ও নজরকাড়া ডিজাইন।", rating: 4.8, reviewsCount: 29, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রোজ পিংক", "ফিরোজা ব্লু", "লেমন ইয়োলো", "মেরুন (Maroon)"], sizes: ["৩৬ (বডি ৩৬\")", "৩৮ (বডি ৩৮\")", "৪০ (বডি ৪০\")", "৪২ (বডি ৪২\")", "৪৪ (বডি ৪৪\")"] },
+      { id: "p7", name: "স্লিম-ফিট স্ট্রেচেবল ক্যাজুয়াল চিনো প্যান্ট", price: 1250, stock: 22, category: "প্যান্ট", images: [imgPants], sku: "SAJ-PT03", description: "উচ্চমানের স্ট্রেচেবল কটন টুইল ফেব্রিক নির্মিত প্রিমিয়াম চিনো প্যান্ট। অফিস ও ক্যাজুয়াল আউটিংয়ের জন্য অত্যন্ত আরামদায়ক।", rating: 4.7, reviewsCount: 19, sourceUrl: "", colors: ["কালো (Black)", "নেভি ব্লু (Navy)", "খাকি (Khaki)", "অ্যাশ (Ash)"], sizes: ["২৮ (কোমর 28\")", "৩০ (কোমর 30\")", "৩২ (কোমর 32\")", "৩৪ (কোমর 34\")", "৩৬ (কোমর 36\")", "৩৮ (কোমর 38\")"] },
+      { id: "p8", name: "সফট সিমলেস বডি ফিট ইনার ওয়্যার / ব্রা (Innerwear)", price: 690, stock: 40, category: "ইনার ওয়্যার", images: [imgInnerwear], sku: "SAJ-IN04", description: "নরম ব্রেথেবল মাইক্রোফাইবার ফেব্রিকের তৈরি ওয়্যার-ফ্রি আরামদায়ক সিমলেস ইনার ওয়্যার। নিখুঁত সাপোর্ট ও শেপিং নিশ্চিত করে।", rating: 4.8, reviewsCount: 34, sourceUrl: "", colors: ["স্কিন / বেজ", "কালো (Black)", "সাদা (White)", "মেরুন"], sizes: ["32B (বডি ৩২\")", "34B (বডি ৩৪\")", "36B (বডি ৩৬\")", "38B (বডি ৩৮\")", "40B (বডি ৪০\")"] },
+      { id: "p9", name: "কিউট পার্টি ফ্রক ও বেবি ড্রেস (বাচ্চাদের ড্রেস)", price: 990, stock: 20, category: "বাচ্চাদের পোশাক", images: [imgKids], sku: "SAJ-KD05", description: "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।", rating: 4.9, reviewsCount: 22, sourceUrl: "", colors: ["বেবি পিংক", "লাল (Red)", "আকাশি (Sky Blue)", "হলুদ (Yellow)"], sizes: ["০-৬ মাস (সাইজ ১৬)", "১-২ বছর (সাইজ ২০)", "২-৩ বছর (সাইজ ২২)", "৩-৪ বছর (সাইজ ২৪)", "৫-৬ বছর (সাইজ ২৬)", "৭-৮ বছর (সাইজ ২৮)"] }
     ];
 
     const initialCategories = [
       { id: "c1", name: "শাড়ি", icon: "👗" },
-      { id: "c2", name: "নেকলেস", icon: "📿" },
-      { id: "c3", name: "চুড়ি", icon: "💍" },
-      { id: "c4", name: "ব্রেসলেট", icon: "✨" },
-      { id: "c5", name: "ব্রাইডাল সেট", icon: "👑" }
+      { id: "c2", name: "জামা / কামিজ", icon: "🥻" },
+      { id: "c3", name: "টি-শার্ট", icon: "👕" },
+      { id: "c4", name: "প্যান্ট", icon: "👖" },
+      { id: "c5", name: "ইনার ওয়্যার", icon: "👙" },
+      { id: "c6", name: "বাচ্চাদের পোশাক", icon: "👶" },
+      { id: "c7", name: "নেকলেস", icon: "📿" },
+      { id: "c8", name: "চুড়ি", icon: "💍" },
+      { id: "c9", name: "ব্রেসলেট", icon: "✨" },
+      { id: "c10", name: "ব্রাইডাল সেট", icon: "👑" }
     ];
 
     const initialOrders = [
@@ -738,7 +755,7 @@
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
-          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes"];
+          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes", "wishlist"];
           for (const k of keys) {
             try {
               const val = await idbStore.get(k);
@@ -759,6 +776,7 @@
                 else if (k === "reels") setReels(val);
                 else if (k === "spin_leads") setSpinLeads(val);
                 else if (k === "spin_prizes") setSpinPrizes(val);
+                else if (k === "wishlist") setWishlist(val);
                 else if (k === "customer_user" && val) {
                   const sanitized = { ...val, photoUrl: sanitizePhotoUrl(val.photoUrl) };
                   setCurrentUser(sanitized);
@@ -1115,6 +1133,22 @@
       const [viewProduct, setViewProduct] = useState(null);
       const [selectedDetailImg, setSelectedDetailImg] = useState(0);
       const [productQty, setProductQty] = useState(1);
+      const [selectedProductColor, setSelectedProductColor] = useState("");
+      const [selectedProductSize, setSelectedProductSize] = useState("");
+      const [customColorInput, setCustomColorInput] = useState("");
+      const [customSizeInput, setCustomSizeInput] = useState("");
+
+      // Initialize selected color and size when viewProduct opens
+      useEffect(() => {
+        if (viewProduct) {
+          setSelectedProductColor((viewProduct.colors && viewProduct.colors[0]) || "");
+          setSelectedProductSize((viewProduct.sizes && viewProduct.sizes[0]) || "");
+        } else {
+          setSelectedProductColor("");
+          setSelectedProductSize("");
+        }
+      }, [viewProduct?.id]);
+
       const [viewInvoiceOrder, setViewInvoiceOrder] = useState(null);
 
       // Review System State
@@ -1191,10 +1225,44 @@
         district: "Dhaka",
         thana: "",
         address: "",
+        orderNote: "",
         paymentMethod: "Cash on Delivery"
       });
       const [appliedCoupon, setAppliedCoupon] = useState(null);
       const [couponInput, setCouponInput] = useState("");
+
+      // Gift Wrapping & Special Greetings Card States
+      const [isGiftWrap, setIsGiftWrap] = useState(false);
+      const [giftMessage, setGiftMessage] = useState("");
+      const [giftRecipient, setGiftRecipient] = useState("");
+      const [giftSender, setGiftSender] = useState("");
+
+      // Wishlist (Save for Later / পছন্দের তালিকা) States
+      const [wishlist, setWishlist] = useState(() => getStored("wishlist", []));
+      useEffect(() => { if (hasHydratedRef.current) setStored("wishlist", wishlist); }, [wishlist]);
+      const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+
+      const toggleWishlist = (product) => {
+        if (!product) return;
+        setWishlist(prev => {
+          const exists = prev.some(p => p.id === product.id);
+          let updated;
+          if (exists) {
+            updated = prev.filter(p => p.id !== product.id);
+            notify(`"${product.name}" পছন্দের তালিকা থেকে বাদ দেওয়া হয়েছে!`);
+          } else {
+            updated = [product, ...prev];
+            notify(`❤️ "${product.name}" পছন্দের তালিকায় সেভ হয়েছে (পরে কিনতে পারবেন)!`);
+          }
+          setStored("wishlist", updated);
+          return updated;
+        });
+      };
+
+      // Ring & Bangle Size Guide States
+      const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+      const [sizeGuideTab, setSizeGuideTab] = useState("ring"); // "ring" or "bangle"
+      const [sizeCalcInput, setSizeCalcInput] = useState("");
 
       // Admin Modals & Forms
       const [adminOrderFilter, setAdminOrderFilter] = useState("All");
@@ -1211,7 +1279,9 @@
         description: "",
         sourceUrl: "",
         bogo: false,
-        bogoText: "১টি কিনলে ১টি ফ্রি"
+        bogoText: "১টি কিনলে ১টি ফ্রি",
+        colors: [],
+        sizes: []
       });
       const [adminProductBogoFilter, setAdminProductBogoFilter] = useState("All");
       const [externalLinkInput, setExternalLinkInput] = useState("");
@@ -1298,9 +1368,10 @@
       };
 
       // Handle Lucky Wheel Spin
-      const handleSpinWheel = () => {
+      const handleSpinWheel = (phoneOverride = null) => {
         if (isSpinning) return;
-        const phone = (spinPhoneInput || "").trim().replace(/[^\d]/g, '');
+        const rawPhone = phoneOverride || spinPhoneInput || currentUser?.phone || "";
+        const phone = (rawPhone || "").trim().replace(/[^\d]/g, '');
         if (!phone || phone.length < 11) {
           notify("অনুগ্রহ করে আপনার সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!");
           return;
@@ -1311,8 +1382,10 @@
         if (lastSpunTime) {
           const elapsed = Date.now() - Number(lastSpunTime);
           if (elapsed < 24 * 60 * 60 * 1000) {
+            const remHours = Math.floor((24 * 60 * 60 * 1000 - elapsed) / (1000 * 60 * 60));
+            const remMins = Math.floor(((24 * 60 * 60 * 1000 - elapsed) % (1000 * 60 * 60)) / (1000 * 60));
             const existingLead = spinLeads.find(l => l.phone === phone);
-            notify(`আপনি ইতিমধ্যে অফার জিতেছেন! প্রাপ্ত পুরস্কার: ${existingLead ? existingLead.prize : 'উপহার'}`);
+            notify(`আপনি আজকের স্পিন ইতিমধ্যে সম্পন্ন করেছেন! পরবর্তী স্পিন করতে পারবেন ${remHours} ঘণ্টা ${remMins} মিনিট পর।`);
             if (existingLead) {
               setSpinPrizeResult(existingLead);
             }
@@ -1362,6 +1435,11 @@
 
           setSpinPrizeResult(resultObj);
           localStorage.setItem(`sajgoj_last_spin_${phone}`, String(Date.now()));
+          if (currentUser && normalizePhone(currentUser.phone) === normalizePhone(phone)) {
+            const updatedUser = { ...currentUser, lastSpinTime: Date.now() };
+            setCurrentUser(updatedUser);
+            setStored("customer_user", updatedUser);
+          }
 
           // If Coupon, ensure it is added to coupons list
           if (prize.type === "coupon" || prize.type === "free_delivery") {
@@ -2152,15 +2230,19 @@
       };
 
       // Cart Functions
-      const addToCart = (product, qty = 1) => {
+      const addToCart = (product, qty = 1, selectedColor = null, selectedSize = null) => {
         if (product.stock <= 0) {
           notify("দুঃখিত, এই পণ্যটি স্টক আউট!");
           return;
         }
+        const color = selectedColor !== null && selectedColor !== undefined ? selectedColor : (selectedProductColor || (product.colors && product.colors[0]) || "");
+        const size = selectedSize !== null && selectedSize !== undefined ? selectedSize : (selectedProductSize || (product.sizes && product.sizes[0]) || "");
+        const cartItemId = `${product.id}_${color}_${size}`;
+
         setCart(prev => {
-          const existing = prev.find(item => item.id === product.id && !item.isFreeGift);
+          const existing = prev.find(item => (item.cartItemId === cartItemId || (item.id === product.id && (item.selectedColor || "") === color && (item.selectedSize || "") === size)) && !item.isFreeGift);
           if (existing) {
-            return prev.map(item => (item.id === product.id && !item.isFreeGift) ? { 
+            return prev.map(item => (item === existing) ? { 
               ...item, 
               qty: item.qty + qty, 
               bogo: Boolean(product.bogo), 
@@ -2169,21 +2251,29 @@
           }
           return [...prev, { 
             ...product, 
+            cartItemId,
+            selectedColor: color,
+            selectedSize: size,
             qty, 
             bogo: Boolean(product.bogo), 
             bogoText: product.bogoText || "" 
           }];
         });
+
+        const variantParts = [color ? `রং: ${color}` : "", size ? `সাইজ: ${size}` : ""].filter(Boolean);
+        const variantSuffix = variantParts.length > 0 ? ` (${variantParts.join(", ")})` : "";
+
         if (product.bogo) {
-          notify(`🎉 "${product.name}" কার্টে যুক্ত হয়েছে! [🎁 Buy 1 Get 1 Free অফারে সাথে আরও ${qty}টি সম্পূর্ণ ফ্রি পাবেন!]`);
+          notify(`🎉 "${product.name}"${variantSuffix} কার্টে যুক্ত হয়েছে! [🎁 Buy 1 Get 1 Free অফারে সাথে আরও ${qty}টি সম্পূর্ণ ফ্রি পাবেন!]`);
         } else {
-          notify(`"${product.name}" কার্টে যুক্ত হয়েছে! 🛒`);
+          notify(`"${product.name}"${variantSuffix} কার্টে যুক্ত হয়েছে! 🛒`);
         }
       };
 
-      const updateCartQty = (id, delta) => {
+      const updateCartQty = (idOrCartItemId, delta) => {
         setCart(prev => prev.map(item => {
-          if (item.id === id) {
+          const key = item.cartItemId || item.id;
+          if (key === idOrCartItemId || item.id === idOrCartItemId) {
             if (item.isFreeGift) {
               if (delta < 0) return null;
               return item;
@@ -2270,7 +2360,8 @@
       const pointsEarnedThisOrder = isLoyaltyEnabled ? Math.floor(cartSubtotal / spendPerPointRate) : 0;
 
       const totalDiscounts = discountAmount + tierDiscountAmount + pointsDiscountAmount;
-      const cartGrandTotal = Math.max(0, cartSubtotal - totalDiscounts) + deliveryCharge;
+      const giftWrapFee = isGiftWrap ? 50 : 0;
+      const cartGrandTotal = Math.max(0, cartSubtotal - totalDiscounts) + deliveryCharge + giftWrapFee;
 
       // Apply Coupon
       const handleApplyCoupon = () => {
@@ -2300,6 +2391,7 @@
         }
 
         const newOrderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+        const trimmedNote = (checkoutForm.orderNote || "").trim();
         const orderData = {
           id: newOrderId,
           customer: checkoutForm.name,
@@ -2307,6 +2399,13 @@
           district: checkoutForm.district,
           thana: checkoutForm.thana || "সদর",
           address: checkoutForm.address,
+          orderNote: trimmedNote,
+          note: trimmedNote,
+          giftWrap: isGiftWrap,
+          giftWrapFee: giftWrapFee,
+          giftMessage: isGiftWrap ? giftMessage.trim() : "",
+          giftRecipient: isGiftWrap ? giftRecipient.trim() : "",
+          giftSender: isGiftWrap ? giftSender.trim() : "",
           total: cartGrandTotal,
           subtotal: cartSubtotal,
           discount: totalDiscounts,
@@ -2335,7 +2434,11 @@
             bogo: Boolean(i.bogo),
             bogoText: i.bogoText || "",
             isFreeGift: Boolean(i.isFreeGift),
-            freeGiftOriginId: i.freeGiftOriginId || ""
+            freeGiftOriginId: i.freeGiftOriginId || "",
+            color: i.selectedColor || "",
+            size: i.selectedSize || "",
+            selectedColor: i.selectedColor || "",
+            selectedSize: i.selectedSize || ""
           })),
           trackingId: ""
         };
@@ -2358,6 +2461,11 @@
         setAppliedCoupon(null);
         setCouponInput("");
         setRedeemPointsChecked(false);
+        setIsGiftWrap(false);
+        setGiftMessage("");
+        setGiftRecipient("");
+        setGiftSender("");
+        setCheckoutForm(prev => ({ ...prev, orderNote: "" }));
         notify(`ধন্যবাদ ${checkoutForm.name}! আপনার অর্ডার সফল হয়েছে (ID: #${newOrderId}) 🎉`);
       };
 
@@ -2391,12 +2499,13 @@
         const w = window.open("", "_blank");
         if (!w) return;
         const rows = order.items.map(it => {
+          const variantLabel = (it.color || it.selectedColor || it.size || it.selectedSize) ? `<br><span style="display:inline-block;margin-top:2px;font-size:11px;color:#7a1c2b;font-weight:bold;background:#fff0f3;padding:1px 6px;border-radius:6px;border:1px solid #ffd1dc;">${[it.color || it.selectedColor ? `রং: ${it.color || it.selectedColor}` : "", it.size || it.selectedSize ? `সাইজ: ${it.size || it.selectedSize}` : ""].filter(Boolean).join(" | ")}</span>` : "";
           const bogoLabel = it.bogo ? `<br><span style="display:inline-block;margin-top:3px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #fde68a;">🎁 Buy 1 Get 1 Free: পেইড ${it.qty}টি + ফ্রি ${it.qty}টি = মোট ${it.qty * 2}টি</span>` : "";
           const freeGiftLabel = it.isFreeGift ? `<br><span style="display:inline-block;margin-top:3px;background:#ecfdf5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #a7f3d0;">🎁 Buy 2 Get 1 Free উপহার (ফ্রি গিফট - ০ ৳)</span>` : "";
           const comboLabel = it.isCombo ? `<br><span style="display:inline-block;margin-top:3px;background:#f3e8ff;color:#6b21a8;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;">🎁 কম্বো প্যাক বান্ডেল</span>` : "";
           return `
           <tr>
-            <td style="padding:10px;border-bottom:1px solid #f0e0d0;">${it.name}${bogoLabel}${freeGiftLabel}${comboLabel}</td>
+            <td style="padding:10px;border-bottom:1px solid #f0e0d0;">${it.name}${variantLabel}${bogoLabel}${freeGiftLabel}${comboLabel}</td>
             <td style="padding:10px;text-align:center;border-bottom:1px solid #f0e0d0;">
               ${it.qty} টি ${it.bogo ? `<span style="font-size:10px;color:#c2410c;display:block;font-weight:bold;">(+${it.qty}টি ফ্রি)</span>` : it.isFreeGift ? `<span style="font-size:10px;color:#047857;display:block;font-weight:bold;">(ফ্রি উপহার)</span>` : ""}
             </td>
@@ -2443,6 +2552,7 @@
                     <p style="margin:2px 0;font-weight:bold;">${order.customer}</p>
                     <p style="margin:2px 0;">মোবাইল: ${order.phone}</p>
                     <p style="margin:2px 0;">ঠিকানা: ${order.address}, ${order.thana}, ${order.district}</p>
+                    ${(order.orderNote || order.note) ? `<p style="margin:4px 0 0 0;padding:6px 10px;background:#fff8f0;border-left:3px solid #7a1c2b;border-radius:4px;font-size:11px;color:#2c1810;"><b>ডেলিভারি নোট:</b> ${order.orderNote || order.note}</p>` : ''}
                   </div>
                   <div style="text-align:right;">
                     <p style="margin:2px 0;"><b>পেমেন্ট মাধ্যম:</b> ${order.paymentMethod}</p>
@@ -2467,9 +2577,19 @@
                   <div class="flex"><span>সাবটোটাল</span><span>${order.subtotal} ৳</span></div>
                   ${order.discount ? `<div class="flex" style="color:green;"><span>কুপন ছাড় (${order.couponCode || 'Promo'})</span><span>- ${order.discount} ৳</span></div>` : ''}
                   <div class="flex"><span>ডেলিভারি চার্জ</span><span>${order.deliveryCharge === 0 ? 'ফ্রি' : order.deliveryCharge + ' ৳'}</span></div>
+                  ${order.giftWrap ? `<div class="flex" style="color:#7a1c2b;font-weight:bold;"><span>🎁 লাক্সারি গিফট র্যাপিং ও শুভেচ্ছাকার্ড</span><span>+ ${order.giftWrapFee || 50} ৳</span></div>` : ''}
                   <hr style="border:none;border-top:1px solid #d4a574;margin:8px 0;">
                   <div class="flex" style="font-weight:bold;font-size:16px;color:#7a1c2b;"><span>সর্বমোট বিল</span><span>${order.total} ৳</span></div>
                 </div>
+
+                ${order.giftWrap ? `
+                  <div style="margin-top:14px;padding:12px 14px;background:#fff0f3;border:1px dashed #e11d48;border-radius:10px;font-size:12px;">
+                    <div style="color:#9f1239;font-weight:bold;margin-bottom:4px;">🎁 বিশেষ উপহার প্যাকেজ ও শুভেচ্ছাকার্ড:</div>
+                    ${order.giftRecipient ? `<div><b>প্রাপক:</b> ${order.giftRecipient}</div>` : ''}
+                    ${order.giftSender ? `<div><b>প্রেরক:</b> ${order.giftSender}</div>` : ''}
+                    ${order.giftMessage ? `<div style="margin-top:4px;font-style:italic;color:#333;background:#fff;padding:8px 10px;border-radius:6px;border:1px solid #fecdd3;">"${order.giftMessage}"</div>` : ''}
+                  </div>
+                ` : ''}
 
                 <p style="text-align:center;margin-top:20px;font-size:12px;color:#666;">সজগোজ ফ্যাশনের সাথে থাকার জন্য ধন্যবাদ! 💖</p>
                 <div class="no-print" style="text-align:center;margin-top:20px;">
@@ -2492,9 +2612,11 @@
           const comboNote = it.isCombo ? " [🎁 কম্বো প্যাক]" : "";
           const bogoNote = it.bogo ? ` [🎁 Buy 1 Get 1 Free: পেইড ${it.qty || 1}টি + ফ্রি ${it.qty || 1}টি = মোট ${(it.qty || 1) * 2}টি]` : "";
           const freeGiftNote = it.isFreeGift ? " [🎁 Buy 2 Get 1 Free উপহার: ০ ৳ ফ্রি গিফট]" : "";
+          const colorNote = (it.color || it.selectedColor) ? ` [রং: ${it.color || it.selectedColor}]` : "";
+          const sizeNote = (it.size || it.selectedSize) ? ` [সাইজ: ${it.size || it.selectedSize}]` : "";
           const unitPrice = it.price || 0;
           const qty = it.qty || 1;
-          return `  ${idx + 1}. *${it.name}*${comboNote}${bogoNote}${freeGiftNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
+          return `  ${idx + 1}. *${it.name}*${colorNote}${sizeNote}${comboNote}${bogoNote}${freeGiftNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
         }).join("\n");
 
         return `🛍️ *${storeName} - অর্ডার কনফার্মেশন ও বিবরণী* 🛍️
@@ -2512,13 +2634,13 @@ ${itemsList || "  কোনো আইটেম নেই"}
 ──────────────────
 💰 পণ্যের মূল্য (সাবটোটাল): ${order.subtotal || order.total || 0} ৳
 🚚 ডেলিভারি চার্জ: ${order.deliveryCharge === 0 ? "ফ্রি (Free)" : `${order.deliveryCharge || 0} ৳`}
-${order.memberTierBn ? `👑 ভিআইপি স্ট্যাটাস: *${order.memberTierBn}*\n` : ""}${order.tierDiscount ? `✨ মেম্বারশিপ ছাড় (${order.tierDiscountPercent || 0}%): -${order.tierDiscount} ৳\n` : ""}${order.pointsRedeemed ? `🪙 রিওয়ার্ড পয়েন্ট ব্যবহার: -${order.pointsDiscount || 0} ৳ (${order.pointsRedeemed} পয়েন্ট)\n` : ""}${order.couponCode ? `🎟️ কুপন ছাড় (${order.couponCode}): -${order.couponDiscount || order.discount || 0} ৳\n` : (!order.tierDiscount && !order.pointsRedeemed && order.discount ? `🎁 স্পেশাল ডিসকাউন্ট: -${order.discount} ৳\n` : "")}${order.pointsEarned ? `🎉 এই অর্ডারে অর্জিত পয়েন্ট: +${order.pointsEarned} রিওয়ার্ড পয়েন্ট\n` : ""}💵 *সর্বমোট প্রদেয় বিল:* *${order.total || 0} ৳*
+${order.giftWrap ? `🎁 লাক্সারি গিফট র্যাপিং ও শুভেচ্ছাকার্ড: +${order.giftWrapFee || 50} ৳\n` : ""}${order.giftRecipient ? `👤 উপহার প্রাপক: *${order.giftRecipient}*\n` : ""}${order.giftSender ? `🎀 উপহার প্রেরক: *${order.giftSender}*\n` : ""}${order.giftMessage ? `💌 কার্ডের শুভেচ্ছাবার্তা: "${order.giftMessage}"\n` : ""}${order.memberTierBn ? `👑 ভিআইপি স্ট্যাটাস: *${order.memberTierBn}*\n` : ""}${order.tierDiscount ? `✨ মেম্বারশিপ ছাড় (${order.tierDiscountPercent || 0}%): -${order.tierDiscount} ৳\n` : ""}${order.pointsRedeemed ? `🪙 রিওয়ার্ড পয়েন্ট ব্যবহার: -${order.pointsDiscount || 0} ৳ (${order.pointsRedeemed} পয়েন্ট)\n` : ""}${order.couponCode ? `🎟️ কুপন ছাড় (${order.couponCode}): -${order.couponDiscount || order.discount || 0} ৳\n` : (!order.tierDiscount && !order.pointsRedeemed && order.discount ? `🎁 স্পেশাল ডিসকাউন্ট: -${order.discount} ৳\n` : "")}${order.pointsEarned ? `🎉 এই অর্ডারে অর্জিত পয়েন্ট: +${order.pointsEarned} রিওয়ার্ড পয়েন্ট\n` : ""}💵 *সর্বমোট প্রদেয় বিল:* *${order.total || 0} ৳*
 💳 পেমেন্ট মাধ্যম: *${order.paymentMethod || "Cash on Delivery (ক্যাশ অন ডেলিভারি)"}*
 
 📍 *ডেলিভারি ঠিকানা:*
 ${order.address || ""}${order.thana ? `, ${order.thana}` : ""}${order.district ? `, ${order.district}` : ""}
 📞 কন্টাক্ট নম্বর: ${order.phone || order.customerPhone || ""}
-${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং কোড: *${order.trackingId}*\n` : ""}
+${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভারি নির্দেশনা:* ${order.orderNote || order.note}\n` : ""}${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং কোড: *${order.trackingId}*\n` : ""}
 যে কোনো জিজ্ঞাসা বা পণ্য সংক্রান্ত প্রয়োজনে আমাদের সাথে সরাসরি যোগাযোগ করতে পারেন:
 📞 হেল্পলাইন: ${config.phone || "018051198888"}
 💬 WhatsApp: ${config.whatsapp || "88018051198888"}
@@ -2906,6 +3028,52 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         <span className="font-bold">লগইন</span>
                       </button>
                     )}
+
+                    {/* Quick Spin Wheel Trigger in Header */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (currentUser) {
+                          setProfileTab("spin");
+                          setIsProfileModalOpen(true);
+                        } else {
+                          setAuthMode("login");
+                          setIsAuthModalOpen(true);
+                          notify("ভাগ্যচাকা স্পিন করতে প্রথমে লগইন করুন!");
+                        }
+                      }}
+                      className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 hover:from-amber-500/20 hover:to-rose-500/20 border border-amber-400/60 text-[#7a1c2b] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1 active:scale-95"
+                      title="দৈনিক ফ্রি ভাগ্যচাকা স্পিন ও উপহার"
+                    >
+                      <span className="text-sm animate-spin-slow">🎡</span>
+                      <span className="hidden sm:inline">ভাগ্যচাকা</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsSizeGuideOpen(true)}
+                      className="hidden md:flex items-center gap-1 bg-[#fffaf5] hover:bg-[#fff0e6] border border-[#f3e2d0] text-[#7a1c2b] px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-xs transition active:scale-95"
+                      title="আংটি ও চুড়ির মাপের ভিজ্যুয়াল গাইড"
+                    >
+                      <span>📏</span>
+                      <span>সাইজ গাইড</span>
+                    </button>
+
+                    {/* Wishlist (Save for Later) Button */}
+                    <button 
+                      type="button"
+                      onClick={() => setIsWishlistOpen(true)}
+                      className="relative bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full flex items-center gap-1.5 text-xs sm:text-sm font-bold shadow-xs hover:shadow transition active:scale-95"
+                      title="পছন্দের তালিকা (Wishlist) - পরে কেনার জন্য"
+                    >
+                      <span className="text-sm">❤️</span>
+                      <span className="hidden sm:inline">পছন্দ</span>
+                      {wishlist.length > 0 && (
+                        <span className="bg-rose-600 text-white text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-black animate-pulse shadow-xs">
+                          {wishlist.length}
+                        </span>
+                      )}
+                    </button>
 
                     {/* Cart Button */}
                     <button 
@@ -3376,13 +3544,30 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
                               onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
                             />
+                            {/* Wishlist Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleWishlist(p);
+                              }}
+                              className={`absolute top-2 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition shadow-md active:scale-90 ${
+                                wishlist.some(item => item.id === p.id)
+                                  ? "bg-rose-600 text-white"
+                                  : "bg-white/90 text-gray-700 hover:text-rose-600 hover:bg-white"
+                              }`}
+                              title={wishlist.some(item => item.id === p.id) ? "পছন্দের তালিকা থেকে বাদ দিন" : "পছন্দের তালিকায় সেভ করুন (বেতন পেলে কেনার জন্য)"}
+                            >
+                              <span className="text-sm">{wishlist.some(item => item.id === p.id) ? "❤️" : "🤍"}</span>
+                            </button>
+
                             {p.stock > 0 && p.stock <= 5 && (
-                              <span className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">
+                              <span className="absolute top-11 left-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">
                                 মাত্র {p.stock} টি বাকি
                               </span>
                             )}
                             {p.stock === 0 && (
-                              <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">
+                              <span className="absolute top-11 left-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">
                                 স্টক আউট
                               </span>
                             )}
@@ -3439,12 +3624,35 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                   <span>🎁 ২টি অর্ডারে ফ্রি গিফট প্রযোজ্য</span>
                                 </div>
                               ) : null}
+
+                              {((p.colors && p.colors.length > 0) || (p.sizes && p.sizes.length > 0)) && (
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px]">
+                                  {p.colors && p.colors.length > 0 && (
+                                    <span className="bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-medium border border-rose-100">
+                                      🎨 {p.colors.length}টি কালার
+                                    </span>
+                                  )}
+                                  {p.sizes && p.sizes.length > 0 && (
+                                    <span className="bg-amber-50 text-amber-900 px-1.5 py-0.5 rounded font-medium border border-amber-100">
+                                      📏 {p.sizes.length}টি সাইজ
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             <div className="mt-3 pt-2.5 border-t border-[#f3e2d0] flex items-center justify-between">
                               <span className="text-sm sm:text-base font-bold text-[#7a1c2b]">{p.price.toLocaleString()} ৳</span>
                               <button 
-                                onClick={() => addToCart(p, 1)}
+                                onClick={() => {
+                                  if ((p.colors && p.colors.length > 1) || (p.sizes && p.sizes.length > 1)) {
+                                    setViewProduct(p);
+                                    setSelectedDetailImg(0);
+                                    setProductQty(1);
+                                  } else {
+                                    addToCart(p, 1);
+                                  }
+                                }}
                                 disabled={p.stock <= 0}
                                 className={`text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold transition ${
                                   p.stock > 0 
@@ -3452,7 +3660,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                                 }`}
                               >
-                                {p.stock > 0 ? "অর্ডার করুন" : "স্টক আউট"}
+                                {p.stock > 0 ? (((p.colors && p.colors.length > 1) || (p.sizes && p.sizes.length > 1)) ? "সাইজ/রং বাছুন" : "অর্ডার করুন") : "স্টক আউট"}
                               </button>
                             </div>
                           </div>
@@ -3508,7 +3716,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                   {/* Admin Login Button on the far left corner */}
                   <button 
                     onClick={() => setActiveTab("Dashboard")}
-                    className="text-gray-400 hover:text-[#d4af37] transition flex items-center gap-1.5 py-1 px-3 rounded-full border border-white/15 hover:border-[#d4af37]/60 hover:bg-white/5 text-[11px] font-semibold active:scale-95 whitespace-nowrap shadow-xs"
+                    className="text-amber-300 hover:text-white transition flex items-center gap-1.5 py-1.5 px-3.5 rounded-full border border-amber-400/40 hover:border-amber-300 hover:bg-amber-400/15 text-xs font-bold active:scale-95 whitespace-nowrap shadow-sm"
                     title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
                   >
                     <span>⚙️</span>
@@ -4136,6 +4344,11 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                     <span className="text-gray-300">•</span>
                                     <span className="font-bold text-[#7a1c2b] text-sm">{o.totalAmount || o.total || 0} ৳</span>
                                   </div>
+                                  {(o.orderNote || o.note) && (
+                                    <div className="text-[11px] bg-amber-50 border border-amber-200 text-amber-900 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium mt-1">
+                                      <span>📝</span> <span>নোট: {o.orderNote || o.note}</span>
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div className="flex items-center gap-2 self-end md:self-center flex-wrap">
@@ -4220,7 +4433,9 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                 images: [], 
                                 sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
                                 description: "",
-                                sourceUrl: ""
+                                sourceUrl: "",
+                                colors: [],
+                                sizes: []
                               });
                               setExternalLinkInput("");
                               setImageUrlInput("");
@@ -4283,7 +4498,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                   <button
                                     onClick={() => {
                                       setEditingProduct(p);
-                                      setProductForm({ ...p, images: p.images || [] });
+                                      setProductForm({ 
+                                        ...p, 
+                                        images: p.images || [],
+                                        colors: p.colors || [],
+                                        sizes: p.sizes || []
+                                      });
                                       setImageUrlInput(p.images[0] || "");
                                       setExternalLinkInput(p.sourceUrl || "");
                                       setImgLoadStatus(p.images[0] ? "loaded" : "idle");
@@ -4989,7 +5209,9 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           description: "",
                           sourceUrl: "",
                           bogo: false,
-                          bogoText: "১টি কিনলে ১টি ফ্রি"
+                          bogoText: "১টি কিনলে ১টি ফ্রি",
+                          colors: [],
+                          sizes: []
                         });
                         setExternalLinkInput("");
                         setImageUrlInput("");
@@ -5159,7 +5381,9 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                               setEditingProduct(p);
                               setProductForm({
                                 ...p,
-                                images: p.images || []
+                                images: p.images || [],
+                                colors: p.colors || [],
+                                sizes: p.sizes || []
                               });
                               setImageUrlInput(p.images[0] || "");
                               setExternalLinkInput(p.sourceUrl || "");
@@ -5301,6 +5525,38 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                             )}
                           </div>
                         </div>
+
+                        {/* Customer Order Note / Delivery Instructions */}
+                        {(o.orderNote || o.note) && (
+                          <div className="bg-gradient-to-r from-amber-50 to-[#fffaf5] border-2 border-amber-300 p-3 rounded-2xl text-xs flex items-start gap-2 shadow-xs">
+                            <span className="text-base flex-shrink-0">📝</span>
+                            <div className="space-y-0.5">
+                              <span className="font-bold text-amber-900 block text-[11px] uppercase tracking-wider">কাস্টমারের বিশেষ ডেলিভারি নির্দেশনা (Order Note):</span>
+                              <p className="text-gray-800 font-medium whitespace-pre-wrap">{o.orderNote || o.note}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Gift Wrapping & Greetings Card Information */}
+                        {o.giftWrap && (
+                          <div className="bg-gradient-to-r from-rose-50 to-[#fff0f3] border-2 border-rose-300 p-3 rounded-2xl text-xs space-y-1.5 shadow-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-rose-900 flex items-center gap-1.5">
+                                <span>🎁</span> <span>লাক্সারি গিফট র্যাপিং ও কার্ড (+৫০ ৳)</span>
+                              </span>
+                              <span className="text-[10px] bg-rose-600 text-white px-2 py-0.5 rounded-full font-black">উপহার</span>
+                            </div>
+                            <div className="text-[11px] text-gray-700 flex flex-wrap gap-3">
+                              {o.giftRecipient && <span><b>প্রাপক:</b> {o.giftRecipient}</span>}
+                              {o.giftSender && <span><b>প্রেরক:</b> {o.giftSender}</span>}
+                            </div>
+                            {o.giftMessage && (
+                              <p className="text-[11px] text-gray-800 italic bg-white p-2 rounded-lg border border-rose-200">
+                                "{o.giftMessage}"
+                              </p>
+                            )}
+                          </div>
+                        )}
 
                         {/* Ordered Items List & Supplier Links */}
                         <div className="bg-white p-3 rounded-2xl border border-gray-100">
@@ -7699,7 +7955,572 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                 </main>
               </div>
           )}
-{/* CART DRAWER */}
+
+          {/* ========================================================= */}
+          {/* WISHLIST DRAWER / MODAL (পছন্দের তালিকা - পরে কেনার জন্য) */}
+          {/* ========================================================= */}
+          {isWishlistOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
+              <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-fadeIn">
+                <div className="p-4 bg-gradient-to-r from-rose-50 via-[#fff8f0] to-rose-50 border-b border-rose-200 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">❤️</span>
+                    <div>
+                      <h3 className="font-bold text-base text-[#7a1c2b]">পছন্দের তালিকা (Wishlist)</h3>
+                      <p className="text-[11px] text-[#b8956a]">মোট {wishlist.length} টি পণ্য সংরক্ষিত</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsWishlistOpen(false)} 
+                    className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center font-bold text-gray-600 hover:text-black hover:bg-gray-100 transition shadow-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Helpful Motivation Tip */}
+                <div className="p-3 bg-rose-50/70 border-b border-rose-100 flex items-start gap-2.5">
+                  <span className="text-base mt-0.5">💡</span>
+                  <p className="text-xs text-rose-900 leading-relaxed">
+                    বেতন পাওয়ার পর বা পছন্দের কোনো বিশেষ দিন উপলক্ষ্যে কেনার জন্য পণ্যগুলো এখানে সেভ করে রাখতে পারেন!
+                  </p>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {wishlist.length === 0 ? (
+                    <div className="text-center py-16 px-4">
+                      <div className="w-20 h-20 bg-rose-50 text-rose-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 border border-rose-200">
+                        🤍
+                      </div>
+                      <h4 className="font-bold text-base text-gray-800">পছন্দের তালিকা খালি!</h4>
+                      <p className="text-xs text-gray-500 mt-2 max-w-xs mx-auto leading-relaxed">
+                        আপনার পছন্দের কোনো জুয়েলারি বা পোশাক থাকলে পণ্যের ওপর 🤍 আইকনে ক্লিক করে এখানে সেভ করে রাখুন।
+                      </p>
+                      <button
+                        onClick={() => setIsWishlistOpen(false)}
+                        className="mt-6 bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow hover:bg-[#681727] transition"
+                      >
+                        পণ্য ব্রাউজ করুন
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between pb-2 border-b border-gray-100 text-xs">
+                        <button
+                          onClick={() => {
+                            let addedCount = 0;
+                            wishlist.forEach(item => {
+                              if (item.stock > 0) {
+                                addToCart(item, 1);
+                                addedCount++;
+                              }
+                            });
+                            if (addedCount > 0) {
+                              setIsWishlistOpen(false);
+                              setIsCartOpen(true);
+                              notify(`${addedCount} টি পণ্য কার্টে যোগ করা হয়েছে!`);
+                            } else {
+                              notify("পছন্দের সব পণ্য বর্তমানে স্টক আউট!");
+                            }
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-full font-bold shadow-xs flex items-center gap-1 active:scale-95 transition text-[11px] sm:text-xs"
+                        >
+                          <span>🛒</span>
+                          <span>সব কার্টে যোগ করুন</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm("আপনি কি পছন্দের তালিকা খালি করতে চান?")) {
+                              setWishlist([]);
+                              setStored("wishlist", []);
+                              notify("পছন্দের তালিকা খালি করা হয়েছে!");
+                            }
+                          }}
+                          className="text-xs text-gray-500 hover:text-red-600 underline font-semibold transition"
+                        >
+                          সব মুছুন
+                        </button>
+                      </div>
+
+                      {wishlist.map((item) => (
+                        <div 
+                          key={item.id} 
+                          className="flex gap-3 bg-white p-3 rounded-2xl border border-[#f3e2d0] shadow-xs hover:shadow-md transition relative group"
+                        >
+                          <img 
+                            src={item.images?.[0] || imgSharee} 
+                            alt={item.name} 
+                            className="w-18 h-18 sm:w-20 sm:h-20 object-cover rounded-xl border cursor-pointer shrink-0"
+                            onClick={() => {
+                              setViewProduct(item);
+                              setIsWishlistOpen(false);
+                            }}
+                            onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                          />
+                          <div className="flex-1 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-start justify-between gap-1">
+                                <h4 
+                                  onClick={() => {
+                                    setViewProduct(item);
+                                    setIsWishlistOpen(false);
+                                  }}
+                                  className="font-bold text-xs sm:text-sm text-gray-800 hover:text-[#7a1c2b] cursor-pointer line-clamp-1"
+                                >
+                                  {item.name}
+                                </h4>
+                                <button 
+                                  onClick={() => toggleWishlist(item)}
+                                  className="text-gray-400 hover:text-red-600 text-sm p-1"
+                                  title="তালিকা থেকে সরান"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                              <p className="text-[10px] text-[#b8956a] uppercase font-semibold">{item.category}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="font-extrabold text-xs sm:text-sm text-[#7a1c2b]">{item.price.toLocaleString()} ৳</span>
+                                {item.stock <= 0 && (
+                                  <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.2 rounded font-bold">স্টক আউট</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-2">
+                              <button
+                                onClick={() => {
+                                  addToCart(item, 1);
+                                  notify(`"${item.name}" কার্টে যোগ করা হয়েছে!`);
+                                }}
+                                disabled={item.stock <= 0}
+                                className={`flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1 ${
+                                  item.stock > 0 
+                                    ? "bg-[#7a1c2b] text-white hover:bg-[#681727] shadow-xs active:scale-95" 
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                }`}
+                              >
+                                <span>🛒</span>
+                                <span>{item.stock > 0 ? "কার্টে নিন" : "স্টক আউট"}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+
+                <div className="p-4 border-t border-[#f3e2d0] bg-[#fffaf5] flex justify-between items-center">
+                  <span className="text-xs text-gray-600">পছন্দের আইটেম: <strong>{wishlist.length} টি</strong></span>
+                  <button
+                    onClick={() => setIsWishlistOpen(false)}
+                    className="bg-white border border-[#7a1c2b] text-[#7a1c2b] px-4 py-1.5 rounded-full text-xs font-bold hover:bg-rose-50 transition"
+                  >
+                    বন্ধ করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* RING & BANGLE SIZE GUIDE MODAL (আংটি ও চুড়ির সাইজ গাইড) */}
+          {/* ========================================================= */}
+          {isSizeGuideOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 border border-[#f3e2d0] shadow-2xl space-y-5">
+                {/* Header */}
+                <div className="flex justify-between items-start pb-3 border-b border-[#f3e2d0]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl sm:text-3xl">📏</span>
+                    <div>
+                      <h3 className="font-bold text-base sm:text-lg text-[#7a1c2b]">
+                        আংটি ও চুড়ির নিখুঁত সাইজ গাইড
+                      </h3>
+                      <p className="text-xs text-[#b8956a]">
+                        অনলাইনে জুয়েলারি কেনার আগে ঘরে বসে নিজের সঠিক সাইজ মেপে নিন
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsSizeGuideOpen(false)}
+                    className="w-8 h-8 rounded-full bg-[#fff8f0] border border-[#f3e2d0] flex items-center justify-center font-bold text-gray-500 hover:text-black hover:bg-gray-100 transition shadow-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Tab Switcher */}
+                <div className="flex p-1 bg-[#fff8f0] rounded-2xl border border-[#f3e2d0] gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideTab("ring")}
+                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                      sizeGuideTab === "ring"
+                        ? "bg-[#7a1c2b] text-white shadow-sm"
+                        : "text-gray-700 hover:bg-white/80"
+                    }`}
+                  >
+                    <span>💍</span>
+                    <span>আংটির সাইজ</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideTab("bangle")}
+                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                      sizeGuideTab === "bangle"
+                        ? "bg-[#7a1c2b] text-white shadow-sm"
+                        : "text-gray-700 hover:bg-white/80"
+                    }`}
+                  >
+                    <span>✨</span>
+                    <span>চুড়ির সাইজ</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideTab("calc")}
+                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                      sizeGuideTab === "calc"
+                        ? "bg-[#7a1c2b] text-white shadow-sm"
+                        : "text-gray-700 hover:bg-white/80"
+                    }`}
+                  >
+                    <span>🧮</span>
+                    <span>ক্যালকুলেটর</span>
+                  </button>
+                </div>
+
+                {/* TAB 1: RING SIZE GUIDE */}
+                {sizeGuideTab === "ring" && (
+                  <div className="space-y-4">
+                    {/* Visual 3 Steps Card */}
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 space-y-2.5">
+                      <h4 className="font-bold text-xs sm:text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                        <span>💡</span>
+                        <span>৩ ধাপে ঘরে বসে আঙুলের মাপ নেওয়ার নিয়ম:</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div className="bg-white p-2.5 rounded-xl border border-amber-100 shadow-2xs">
+                          <span className="inline-block bg-amber-600 text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">১</span>
+                          <p className="text-gray-700 font-medium">এক টুকরো সুতা বা সরু কাগজ আপনার যে আঙুলে আংটি পরবেন তার চারপাশে পেঁচিয়ে নিন।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-amber-100 shadow-2xs">
+                          <span className="inline-block bg-amber-600 text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">২</span>
+                          <p className="text-gray-700 font-medium">যেখানে সুতার দুটি প্রান্ত মিলিত হয় সেখানে কলম দিয়ে স্পষ্ট দাগ দিন।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-amber-100 shadow-2xs">
+                          <span className="inline-block bg-amber-600 text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">৩</span>
+                          <p className="text-gray-700 font-medium">একটি স্কেলে সুতাটি রেখে মিলিমিটার (mm) এককে মেপে নিচের চার্ট দেখে সাইজ মিলান।</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ring Size Table */}
+                    <div className="border border-[#f3e2d0] rounded-2xl overflow-hidden shadow-xs">
+                      <div className="bg-[#fff8f0] px-4 py-2.5 border-b border-[#f3e2d0] flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">আংটির আদর্শ সাইজ চার্ট (Ring Size Chart)</span>
+                        <span className="text-[11px] text-[#b8956a] font-semibold">BD / US & Indian</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#fcf8f4] text-[#7a1c2b] border-b border-[#f3e2d0]">
+                            <tr>
+                              <th className="p-2.5 font-bold">আঙুলের পরিধি (mm)</th>
+                              <th className="p-2.5 font-bold">ভেতরের ব্যাস (mm)</th>
+                              <th className="p-2.5 font-bold">বাংলাদেশ / US সাইজ</th>
+                              <th className="p-2.5 font-bold">ভারতীয় সাইজ</th>
+                              <th className="p-2.5 font-bold text-center">মান্যতা</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#f9ede1] text-gray-700">
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-semibold">৫২ মি.মি. (52 mm)</td>
+                              <td className="p-2.5">১৬.৫ mm</td>
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">US 6 / BD 12</td>
+                              <td className="p-2.5">১২</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">ছোট সাইজ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-semibold">৫৪ মি.মি. (54 mm)</td>
+                              <td className="p-2.5">১৭.৩ mm</td>
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">US 7 / BD 14</td>
+                              <td className="p-2.5">১৪</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">খুব জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-semibold">৫৭ মি.মি. (57 mm)</td>
+                              <td className="p-2.5">১৮.১ mm</td>
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">US 8 / BD 16</td>
+                              <td className="p-2.5">১৬</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">স্ট্যান্ডার্ড ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-semibold">৬০ মি.মি. (60 mm)</td>
+                              <td className="p-2.5">১৯.০ mm</td>
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">US 9 / BD 18</td>
+                              <td className="p-2.5">১৮</td>
+                              <td className="p-2.5 text-center"><span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full">মাঝারি বড়</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-semibold">৬২ মি.মি. (62 mm)</td>
+                              <td className="p-2.5">১৯.৮ mm</td>
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">US 10 / BD 20</td>
+                              <td className="p-2.5">২০</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">বড় সাইজ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-semibold">৬৫ মি.মি. (65 mm)</td>
+                              <td className="p-2.5">২০.৬ mm</td>
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">US 11 / BD 22</td>
+                              <td className="p-2.5">২২</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">এক্সট্রা লার্জ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                      <span>📌</span>
+                      <span><strong>টিপস:</strong> আঙুলের মাপ সন্ধ্যায় নেওয়া সবচেয়ে উপযুক্ত, কারণ সারাদিনের স্বাভাবিক কার্যকলাপে সন্ধ্যায় আঙুলের আকার সবচেয়ে সঠিক থাকে। যদি মাপ দুটি সাইজের মাঝামাঝি হয়, তবে একটু বড় সাইজটি নির্বাচন করুন।</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: BANGLE SIZE GUIDE */}
+                {sizeGuideTab === "bangle" && (
+                  <div className="space-y-4">
+                    {/* Visual 3 Steps Card */}
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 space-y-2.5">
+                      <h4 className="font-bold text-xs sm:text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                        <span>💡</span>
+                        <span>চুড়ির সঠিক মাপ নেওয়ার সহজ নিয়ম:</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div className="bg-white p-2.5 rounded-xl border border-amber-100 shadow-2xs">
+                          <span className="inline-block bg-amber-600 text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">১</span>
+                          <p className="text-gray-700 font-medium">হাত মুষ্টি করে বৃদ্ধাঙ্গুল অন্য আঙুলের ওপর চেপে রাখুন (চুড়ি পরার ভঙ্গি)।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-amber-100 shadow-2xs">
+                          <span className="inline-block bg-amber-600 text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">২</span>
+                          <p className="text-gray-700 font-medium">ফিতা দিয়ে হাতের সবচেয়ে চওড়া অংশ (Knuckles) মেপে নিন।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-amber-100 shadow-2xs">
+                          <span className="inline-block bg-amber-600 text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">৩</span>
+                          <p className="text-gray-700 font-medium">অথবা পুরনো আরামদায়ক চুড়ির ভেতরের ব্যাস স্কেল দিয়ে মেপে চার্ট মিলান।</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bangle Size Table */}
+                    <div className="border border-[#f3e2d0] rounded-2xl overflow-hidden shadow-xs">
+                      <div className="bg-[#fff8f0] px-4 py-2.5 border-b border-[#f3e2d0] flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">চুড়ির প্রচলিত সাইজ চার্ট (Bangle Size Chart)</span>
+                        <span className="text-[11px] text-[#b8956a] font-semibold">বাংলা ও আন্তর্জাতিক মাপ</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#fcf8f4] text-[#7a1c2b] border-b border-[#f3e2d0]">
+                            <tr>
+                              <th className="p-2.5 font-bold">চুড়ির সাইজ</th>
+                              <th className="p-2.5 font-bold">ভেতরের ব্যাস (ইঞ্চি)</th>
+                              <th className="p-2.5 font-bold">ভেতরের ব্যাস (মি.মি.)</th>
+                              <th className="p-2.5 font-bold">হাতের মাপ</th>
+                              <th className="p-2.5 font-bold text-center">জনপ্রিয়তা</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#f9ede1] text-gray-700">
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২.২ (2-2)</td>
+                              <td className="p-2.5">২.১২৫" (2-2/16")</td>
+                              <td className="p-2.5 font-semibold">৫৪.০ মি.মি.</td>
+                              <td className="p-2.5">ছোট হাত (Small)</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">স্মল সাইজ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২.৪ (2-4)</td>
+                              <td className="p-2.5">২.২৫০" (2-4/16")</td>
+                              <td className="p-2.5 font-semibold">৫৭.২ মি.মি.</td>
+                              <td className="p-2.5">মাঝারি স্ট্যান্ডার্ড (Medium)</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">সবচেয়ে জনপ্রিয় ★★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২.৬ (2-6)</td>
+                              <td className="p-2.5">২.৩৭৫" (2-6/16")</td>
+                              <td className="p-2.5 font-semibold">৬০.৩ মি.মি.</td>
+                              <td className="p-2.5">মাঝারি থেকে বড় (Med-Large)</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">অত্যন্ত প্রচলিত ★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২.৮ (2-8)</td>
+                              <td className="p-2.5">২.৫০০" (2-8/16")</td>
+                              <td className="p-2.5 font-semibold">৬৩.৫ মি.মি.</td>
+                              <td className="p-2.5">বড় হাত (Large)</td>
+                              <td className="p-2.5 text-center"><span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full">লার্জ সাইজ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২.১০ (2-10)</td>
+                              <td className="p-2.5">২.৬২৫" (2-10/16")</td>
+                              <td className="p-2.5 font-semibold">৬৬.৭ মি.মি.</td>
+                              <td className="p-2.5">এক্সট্রা লার্জ (XL)</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">এক্সট্রা লার্জ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                      <span>📌</span>
+                      <span><strong>টিপস:</strong> বাংলাদেশে নারীদের চুড়ির ক্ষেত্রে <strong>২.৪</strong> এবং <strong>২.৬</strong> সাইজ সবচেয়ে বেশি ফিট হয়।</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: SMART SIZE CALCULATOR */}
+                {sizeGuideTab === "calc" && (
+                  <div className="space-y-4">
+                    <div className="bg-[#fffaf5] border border-[#f3e2d0] rounded-2xl p-4 sm:p-5 space-y-4">
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                          <span>🧮</span>
+                          <span>লাইভ সাইজ ক্যালকুলেটর (Live Size Finder)</span>
+                        </h4>
+                        <p className="text-xs text-gray-600">
+                          স্কেল দিয়ে পাওয়া মিলিমিটার (mm) পরিমাপটি এখানে লিখুন, স্বয়ংক্রিয়ভাবে আপনার সঠিক সাইজ দেখে নিন:
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">
+                            পরিমাপ (মিলিমিটার / mm এককে লিখুন):
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={sizeCalcInput}
+                              onChange={(e) => setSizeCalcInput(e.target.value)}
+                              placeholder="যেমন: আংটির জন্য 54 বা চুড়ির জন্য 57"
+                              className="flex-1 bg-white border border-[#f3e2d0] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7a1c2b]"
+                            />
+                            {sizeCalcInput && (
+                              <button
+                                type="button"
+                                onClick={() => setSizeCalcInput("")}
+                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold"
+                              >
+                                মুছুন
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Quick Presets */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                          <span className="text-gray-500 text-[11px]">কুইক টেস্ট:</span>
+                          {[52, 54, 57, 60, 63].map((val) => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setSizeCalcInput(String(val))}
+                              className="px-2 py-0.5 bg-white border border-[#f3e2d0] rounded-md text-[11px] font-semibold hover:bg-amber-50 text-gray-700"
+                            >
+                              {val} mm
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Result Display */}
+                        {(() => {
+                          const val = parseFloat(sizeCalcInput);
+                          if (!val || isNaN(val)) {
+                            return (
+                              <div className="p-4 bg-white rounded-xl border border-dashed border-[#f3e2d0] text-center text-xs text-gray-500">
+                                👆 উপরে মিলিমিটার (mm) পরিমাপ লিখলে আপনার পারফেক্ট সাইজ দেখতে পাবেন।
+                              </div>
+                            );
+                          }
+
+                          // Calculation for Ring:
+                          let ringSizeText = "";
+                          if (val <= 52.5) ringSizeText = "US 6 / BD 12 (ছোট আঙুলের সাইজ)";
+                          else if (val <= 55.5) ringSizeText = "US 7 / BD 14 (সবচেয়ে জনপ্রিয় ও স্ট্যান্ডার্ড)";
+                          else if (val <= 58.5) ringSizeText = "US 8 / BD 16 (স্ট্যান্ডার্ড সাইজ)";
+                          else if (val <= 61.0) ringSizeText = "US 9 / BD 18 (মাঝারি বড় সাইজ)";
+                          else if (val <= 63.5) ringSizeText = "US 10 / BD 20 (বড় সাইজ)";
+                          else ringSizeText = "US 11 / BD 22 (এক্সট্রা লার্জ সাইজ)";
+
+                          // Calculation for Bangle:
+                          let bangleSizeText = "";
+                          if (val <= 55.5) bangleSizeText = "২.২ (2-2) / ৫৪ মিমি (ছোট হাতের চুড়ি)";
+                          else if (val <= 58.8) bangleSizeText = "২.৪ (2-4) / ৫৭.২ মিমি (সবচেয়ে বেশি বিক্রি)";
+                          else if (val <= 61.8) bangleSizeText = "২.৬ (2-6) / ৬০.৩ মিমি (মাঝারি বড় হাত)";
+                          else if (val <= 65.0) bangleSizeText = "২.৮ (2-8) / ৬৩.৫ মিমি (বড় হাত)";
+                          else bangleSizeText = "২.১০ (2-10) / ৬৬.৭ মিমি (এক্সট্রা লার্জ)";
+
+                          return (
+                            <div className="space-y-2.5 pt-2">
+                              <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-emerald-900">💍 আংটি খুঁজলে আপনার সাইজ:</span>
+                                  <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">নিখুঁত ফিট</span>
+                                </div>
+                                <p className="text-base sm:text-lg font-black text-emerald-800">{ringSizeText}</p>
+                              </div>
+
+                              <div className="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-amber-900">✨ চুড়ি খুঁজলে আপনার সাইজ:</span>
+                                  <span className="bg-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">নিখুঁত ফিট</span>
+                                </div>
+                                <p className="text-base sm:text-lg font-black text-amber-800">{bangleSizeText}</p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Support Callout */}
+                    <div className="p-3.5 bg-green-50 border border-green-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">💬</span>
+                        <div>
+                          <p className="font-bold text-green-900">সাইজ নিয়ে কোনো বিভ্রান্তি বা প্রশ্ন আছে?</p>
+                          <p className="text-green-700 text-[11px]">আমাদের প্রতিনিধি আপনাকে নিখুঁত সাইজ বেছে দিতে সরাসরি সাহায্য করবেন।</p>
+                        </div>
+                      </div>
+                      <a
+                        href={`https://wa.me/${config.phone?.replace(/[^0-9]/g, "") || "8801700000000"}?text=${encodeURIComponent("হ্যালো, আমি একটি আংটি/চুড়ি কিনতে চাচ্ছি। আমার সঠিক সাইজ জানতে সাহায্য করবেন?")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-bold shadow-xs transition flex items-center gap-1.5 shrink-0 self-stretch sm:self-auto justify-center"
+                      >
+                        <span>হোয়াটসঅ্যাপে কথা বলুন</span>
+                        <span>↗</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="pt-3 border-t border-[#f3e2d0] flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsSizeGuideOpen(false)}
+                    className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs font-bold hover:bg-[#681727] transition shadow"
+                  >
+                    বুঝেছি, ধন্যবাদ
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* CART DRAWER */}
           {/* ========================================================= */}
           {isCartOpen && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
@@ -7791,7 +8612,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         </div>
                       </div>
                     ) : (
-                      <div key={item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
+                      <div key={item.cartItemId || item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
                         <img 
                           src={item.images[0] || imgSharee} 
                           alt={item.name} 
@@ -7800,6 +8621,20 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-xs sm:text-sm truncate">{item.name}</p>
+                          {(item.selectedColor || item.selectedSize) && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px]">
+                              {item.selectedColor && (
+                                <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-md font-medium">
+                                  রং: {item.selectedColor}
+                                </span>
+                              )}
+                              {item.selectedSize && (
+                                <span className="bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md font-medium">
+                                  সাইজ: {item.selectedSize}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           {item.isCombo && (
                             <span className="inline-block bg-[#d4a574] text-[#2c1810] text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5">
                               🎁 কম্বো প্যাক বান্ডেল
@@ -7828,14 +8663,14 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                             )}
                           </p>
                           <div className="flex items-center gap-3 mt-2">
-                            <button onClick={() => updateCartQty(item.id, -1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">-</button>
+                            <button onClick={() => updateCartQty(item.cartItemId || item.id, -1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">-</button>
                             <span className="text-xs font-bold">{item.qty}</span>
-                            <button onClick={() => updateCartQty(item.id, 1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">+</button>
+                            <button onClick={() => updateCartQty(item.cartItemId || item.id, 1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">+</button>
                           </div>
                         </div>
                         <div className="text-right flex flex-col justify-between">
                           <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">{item.price * item.qty} ৳</span>
-                          <button onClick={() => updateCartQty(item.id, -item.qty)} className="text-[11px] text-red-500 font-semibold hover:underline">রিমুভ</button>
+                          <button onClick={() => updateCartQty(item.cartItemId || item.id, -item.qty)} className="text-[11px] text-red-500 font-semibold hover:underline">রিমুভ</button>
                         </div>
                       </div>
                     ))
@@ -8017,6 +8852,97 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     />
                   </div>
 
+                  {/* Optional Order Note / Special Delivery Instructions */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                        <span>📝</span>
+                        <span>অর্ডার নোট / বিশেষ ডেলিভারি নির্দেশনা (ঐচ্ছিক)</span>
+                      </label>
+                      <span className="text-[10px] text-gray-400 font-semibold bg-gray-100 px-2 py-0.5 rounded-full">
+                        Optional
+                      </span>
+                    </div>
+                    <textarea 
+                      rows="2" 
+                      placeholder="যেমন: বাসার নিচে এসে কল দিবেন, সকাল ১০টার পর ডেলিভারি চাই, সিকিউরিটির কাছে রাখবেন ইত্যাদি..." 
+                      value={checkoutForm.orderNote || ""} 
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, orderNote: e.target.value })} 
+                      className="w-full bg-[#fffaf5] border border-[#e8d5c0] rounded-2xl p-3 text-sm outline-none focus:border-[#7a1c2b] placeholder-gray-400 mt-0.5" 
+                    />
+                  </div>
+
+                  {/* 🎁 GIFT WRAPPING & GREETINGS CARD OPTION */}
+                  <div className="p-4 bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50 rounded-2xl border-2 border-rose-200/80 shadow-xs space-y-3">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={isGiftWrap}
+                        onChange={(e) => setIsGiftWrap(e.target.checked)}
+                        className="w-5 h-5 mt-0.5 accent-[#7a1c2b] cursor-pointer rounded"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between flex-wrap gap-1">
+                          <span className="font-extrabold text-xs sm:text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                            <span>🎁</span>
+                            <span>প্রিয়জনকে উপহার হিসেবে পাঠাতে চান?</span>
+                          </span>
+                          <span className="bg-[#7a1c2b] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
+                            +৫০ ৳ গিফট বক্স ও কার্ড
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-600 mt-0.5 leading-relaxed">
+                          লাক্সারি গিফট বক্স, রিবন নট এবং বিশেষ শুভেচ্ছাবার্তা কার্ড সহ প্রিয়জনের কাছে পৌঁছে দেওয়া হবে!
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Conditional Message & Recipient Fields */}
+                    {isGiftWrap && (
+                      <div className="pt-3 border-t border-rose-200/80 space-y-2.5 animate-fadeIn">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-bold text-gray-700 block mb-0.5">
+                              👤 প্রাপকের নাম (উপহার যার জন্য)
+                            </label>
+                            <input 
+                              type="text"
+                              placeholder="যেমন: প্রিয় সুমাইয়া"
+                              value={giftRecipient}
+                              onChange={(e) => setGiftRecipient(e.target.value)}
+                              className="w-full bg-white border border-rose-200 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-gray-700 block mb-0.5">
+                              🎀 প্রেরকের নাম (কার পক্ষ থেকে)
+                            </label>
+                            <input 
+                              type="text"
+                              placeholder="যেমন: তোমার ফাহিম"
+                              value={giftSender}
+                              onChange={(e) => setGiftSender(e.target.value)}
+                              className="w-full bg-white border border-rose-200 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-0.5">
+                            💌 কার্ডের বিশেষ শুভেচ্ছাবার্তা (Greetings Card Message)
+                          </label>
+                          <textarea 
+                            rows="2"
+                            placeholder="যেমন: শুভ জন্মদিন প্রিয়তমা! জীবনের প্রতিটি মুহূর্ত সুন্দর ও আনন্দময় হোক..."
+                            value={giftMessage}
+                            onChange={(e) => setGiftMessage(e.target.value)}
+                            className="w-full bg-white border border-rose-200 rounded-xl p-2.5 text-xs outline-none focus:border-[#7a1c2b] placeholder-gray-400"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Coupon Box */}
                   <div className="p-3.5 bg-[#fffaf5] rounded-2xl border">
                     <label className="text-xs font-semibold text-[#7a1c2b]">কুপন ডিসকাউন্ট কোড</label>
@@ -8089,6 +9015,13 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       <span>ডেলিভারি চার্জ</span>
                       <span>{deliveryCharge === 0 ? "ফ্রি (Free)" : `${deliveryCharge} ৳`}</span>
                     </div>
+
+                    {isGiftWrap && (
+                      <div className="flex justify-between text-[#7a1c2b] font-bold bg-rose-50 px-2 py-1 rounded-lg border border-rose-200">
+                        <span>🎁 স্পেশাল গিফট র্যাপিং ও শুভেচ্ছাকার্ড:</span>
+                        <span>+ 50 ৳</span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between text-base font-bold text-[#7a1c2b] pt-2 border-t border-[#d4a574]">
                       <span>সর্বমোট প্রদেয়</span>
@@ -8206,6 +9139,61 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         </select>
                       </div>
                     </div>
+
+                    {/* Customer Order Note / Special Delivery Instructions */}
+                    {(viewInvoiceOrder.orderNote || viewInvoiceOrder.note) ? (
+                      <div className="col-span-1 sm:col-span-2 bg-gradient-to-r from-amber-50 to-[#fffaf5] border-2 border-amber-300 p-3.5 rounded-2xl text-xs space-y-1.5 shadow-xs">
+                        <div className="flex items-center gap-1.5 text-amber-900 font-bold">
+                          <span className="text-base">📝</span>
+                          <span className="text-xs uppercase tracking-wider">কাস্টমারের বিশেষ ডেলিভারি নির্দেশনা (Order Note):</span>
+                        </div>
+                        <p className="text-gray-900 bg-white p-2.5 rounded-xl border border-amber-200/80 font-medium whitespace-pre-wrap leading-relaxed text-xs">
+                          {viewInvoiceOrder.orderNote || viewInvoiceOrder.note}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="col-span-1 sm:col-span-2 bg-gray-50 border border-gray-200/70 p-2.5 rounded-xl text-[11px] text-gray-500 flex items-center gap-1.5">
+                        <span>📝</span>
+                        <span>অর্ডার নোট: কোনো বিশেষ নির্দেশনা দেওয়া হয়নি</span>
+                      </div>
+                    )}
+
+                    {/* Gift Wrapping & Greetings Card Information */}
+                    {viewInvoiceOrder.giftWrap && (
+                      <div className="col-span-1 sm:col-span-2 bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50 border-2 border-rose-300 p-3.5 rounded-2xl text-xs space-y-2 shadow-xs">
+                        <div className="flex items-center justify-between flex-wrap gap-1">
+                          <div className="flex items-center gap-1.5 text-rose-900 font-extrabold">
+                            <span className="text-base">🎁</span>
+                            <span className="text-xs uppercase tracking-wider">উপহার প্যাকেজ ও গ্রিটিংস কার্ড রিকোয়েস্ট (+৫০ ৳)</span>
+                          </div>
+                          <span className="bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                            স্পেশাল গিফট
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                          {viewInvoiceOrder.giftRecipient && (
+                            <div className="bg-white p-2 rounded-lg border border-rose-200">
+                              <span className="text-gray-500 font-semibold">উপহার প্রাপক: </span>
+                              <strong className="text-rose-900">{viewInvoiceOrder.giftRecipient}</strong>
+                            </div>
+                          )}
+                          {viewInvoiceOrder.giftSender && (
+                            <div className="bg-white p-2 rounded-lg border border-rose-200">
+                              <span className="text-gray-500 font-semibold">উপহার প্রেরক: </span>
+                              <strong className="text-rose-900">{viewInvoiceOrder.giftSender}</strong>
+                            </div>
+                          )}
+                        </div>
+                        {viewInvoiceOrder.giftMessage && (
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-200 space-y-1">
+                            <span className="text-[10px] font-bold text-rose-800 uppercase block">💌 কার্ডে লেখার জন্য শুভেচ্ছাবার্তা:</span>
+                            <p className="text-gray-800 italic whitespace-pre-wrap leading-relaxed font-medium">
+                              "{viewInvoiceOrder.giftMessage}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Ordered Items List */}
@@ -8830,6 +9818,15 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                 <div className="px-6 flex items-center gap-2 border-b border-[#f3e2d0] text-xs font-bold overflow-x-auto scrollbar-hide">
                   {[
                     { id: "orders", label: `📦 আমার অর্ডারসমূহ (${(orders || []).filter(o => normalizePhone(o.phone || o.customerPhone) === normalizePhone(currentUser.phone) && o.phone).length})` },
+                    { 
+                      id: "spin", 
+                      label: "🎡 ভাগ্যচাকা স্পিন", 
+                      badge: (() => {
+                        const normP = normalizePhone(currentUser.phone);
+                        const last = Number(localStorage.getItem(`sajgoj_last_spin_${normP}`) || currentUser?.lastSpinTime || 0);
+                        return (!last || Date.now() - last >= 24 * 3600 * 1000) ? "ফ্রি স্পিন 🎁" : null;
+                      })()
+                    },
                     { id: "loyalty", label: "👑 ভিআইপি স্ট্যাটাস ও পয়েন্ট" },
                     { id: "settings", label: "⚙️ প্রোফাইল সেটিংস ও ছবি" }
                   ].map(tab => (
@@ -8838,7 +9835,12 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                       onClick={() => setProfileTab(tab.id)}
                       className={`pb-3 px-3 border-b-2 font-bold whitespace-nowrap transition flex items-center gap-1.5 ${profileTab === tab.id ? 'border-[#7a1c2b] text-[#7a1c2b]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
                     >
-                      {tab.label}
+                      <span>{tab.label}</span>
+                      {tab.badge && (
+                        <span className="bg-amber-400 text-amber-950 text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse shadow-xs">
+                          {tab.badge}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -8931,6 +9933,14 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                                   </div>
                                 ))}
                               </div>
+
+                              {/* Customer's Delivery Instruction Note */}
+                              {(order.orderNote || order.note) && (
+                                <div className="text-[11px] bg-amber-50 border border-amber-200 text-amber-900 p-2 rounded-xl flex items-start gap-1.5 font-medium">
+                                  <span>📝</span>
+                                  <span><strong>আপনার ডেলিভারি নির্দেশনা:</strong> {order.orderNote || order.note}</span>
+                                </div>
+                              )}
 
                               {/* Order Bottom Price & Action */}
                               <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
@@ -9032,6 +10042,219 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                               <li>চেকআউটে প্রতি <strong>{loyalty?.pointsRate || 100} পয়েন্ট = ১ টাকা</strong> ক্যাশ ছাড় হিসেবে বিল থেকে বাদ যাবে।</li>
                               <li>আপনার মেম্বারশিপ অনুযায়ী স্বয়ংক্রিয়ভাবে স্পেশাল ফ্ল্যাট % ডিসকাউন্ট আপনার কার্টে প্রযোজ্য হবে।</li>
                             </ul>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* TAB: LUCKY SPIN THE WHEEL (24-HOUR INTERVAL PER CUSTOMER) */}
+                {profileTab === "spin" && (
+                  <div className="px-6 pb-6 space-y-4 animate-fadeIn">
+                    {(() => {
+                      const normPhone = normalizePhone(currentUser.phone);
+                      const lastSpunTime = Number(localStorage.getItem(`sajgoj_last_spin_${normPhone}`) || currentUser?.lastSpinTime || 0);
+                      const cooldown = 24 * 60 * 60 * 1000;
+                      const elapsed = Date.now() - lastSpunTime;
+                      const canSpin = !lastSpunTime || elapsed >= cooldown;
+                      const remainingMs = Math.max(0, cooldown - elapsed);
+                      const remHours = Math.floor(remainingMs / (1000 * 60 * 60));
+                      const remMins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                      const latestLead = spinLeads.find(l => normalizePhone(l.phone) === normPhone) || spinPrizeResult;
+
+                      return (
+                        <div className="space-y-4">
+                          {/* Header Status Card */}
+                          <div className="bg-gradient-to-r from-[#2c1810] via-[#5d1521] to-[#2c1810] text-white p-4 sm:p-5 rounded-2xl border border-amber-400/40 shadow-sm relative overflow-hidden">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3 relative z-10 text-center sm:text-left">
+                              <div>
+                                <div className="flex items-center justify-center sm:justify-start gap-2">
+                                  <span className="text-2xl animate-spin-slow">🎡</span>
+                                  <h4 className="font-extrabold text-base sm:text-lg text-amber-300">দৈনিক সাজগোজ ভাগ্যচাকা</h4>
+                                  <span className="bg-amber-400/20 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-400/30">
+                                    ২৪ ঘণ্টায় ১ বার
+                                  </span>
+                                </div>
+                                <p className="text-xs text-amber-100 mt-1 max-w-md">
+                                  প্রতিদিন একবার চাকা ঘুরিয়ে জিতে নিন ৫% থেকে ১৫% ক্যাশ ছাড়, ফ্রি ডেলিভারি অথবা ভিআইপি রিওয়ার্ড পয়েন্ট!
+                                </p>
+                              </div>
+
+                              <div className="flex-shrink-0">
+                                {canSpin ? (
+                                  <span className="inline-flex items-center gap-1.5 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md animate-pulse">
+                                    <span>✓</span> <span>আজকের স্পিন প্রস্তুত</span>
+                                  </span>
+                                ) : (
+                                  <div className="bg-black/40 border border-amber-400/40 rounded-xl px-3 py-1.5 text-center">
+                                    <p className="text-[10px] text-amber-200">পরবর্তী স্পিন আনলক হবে</p>
+                                    <p className="text-xs font-black text-amber-400 font-mono">⏳ {remHours} ঘণ্টা {remMins} মিনিট পর</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Interactive Wheel Canvas Card */}
+                          <div className="bg-gradient-to-b from-[#1c080f] via-[#2a0c16] to-[#15040a] rounded-3xl p-4 sm:p-6 border-2 border-amber-400/50 shadow-xl flex flex-col items-center justify-center relative overflow-hidden text-white">
+                            
+                            {/* Decorative ambient lighting */}
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-40 h-40 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                            {/* Top Needle Indicator */}
+                            <div className="relative flex flex-col items-center justify-center my-2">
+                              <div className="absolute -top-3 z-30 flex flex-col items-center drop-shadow-xl">
+                                <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-amber-300"></div>
+                                <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-950 -mt-4.5"></div>
+                              </div>
+
+                              {/* Rotating SVG Wheel */}
+                              <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-full border-4 border-amber-400 shadow-[0_0_30px_rgba(212,165,116,0.35)] p-1 bg-gradient-to-r from-amber-500 via-[#7a1c2b] to-amber-500 flex items-center justify-center relative overflow-hidden">
+                                <svg
+                                  viewBox="0 0 300 300"
+                                  className="w-full h-full rounded-full transition-transform"
+                                  style={{
+                                    transform: `rotate(${wheelRotation}deg)`,
+                                    transition: isSpinning ? "transform 4.5s cubic-bezier(0.12, 0.85, 0.15, 1)" : "none"
+                                  }}
+                                >
+                                  {spinPrizes.map((slice, i) => {
+                                    const startAngle = i * 60;
+                                    const endAngle = (i + 1) * 60;
+                                    const r = 140;
+                                    const cx = 150;
+                                    const cy = 150;
+                                    const rad1 = (startAngle - 90) * (Math.PI / 180);
+                                    const rad2 = (endAngle - 90) * (Math.PI / 180);
+                                    const x1 = cx + r * Math.cos(rad1);
+                                    const y1 = cy + r * Math.sin(rad1);
+                                    const x2 = cx + r * Math.cos(rad2);
+                                    const y2 = cy + r * Math.sin(rad2);
+                                    const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`;
+
+                                    const midAngle = (i + 0.5) * 60;
+                                    const textRad = (midAngle - 90) * (Math.PI / 180);
+                                    const tx = cx + 85 * Math.cos(textRad);
+                                    const ty = cy + 85 * Math.sin(textRad);
+
+                                    return (
+                                      <g key={slice.id}>
+                                        <path d={pathData} fill={slice.color} stroke="#ffd700" strokeWidth="2" />
+                                        <text
+                                          x={tx}
+                                          y={ty}
+                                          fill={slice.textColor}
+                                          fontSize="12"
+                                          fontWeight="900"
+                                          textAnchor="middle"
+                                          dominantBaseline="central"
+                                          transform={`rotate(${midAngle}, ${tx}, ${ty})`}
+                                        >
+                                          {slice.icon} {slice.label}
+                                        </text>
+                                      </g>
+                                    );
+                                  })}
+                                  {/* Center Pin Hub */}
+                                  <circle cx="150" cy="150" r="26" fill="#2c1810" stroke="#ffd700" strokeWidth="4" />
+                                  <circle cx="150" cy="150" r="12" fill="#ffd700" />
+                                </svg>
+                              </div>
+                            </div>
+
+                            {/* WON PRIZE CELEBRATION BOX */}
+                            {spinPrizeResult ? (
+                              <div className="w-full max-w-sm mt-3 bg-white/10 backdrop-blur-md border-2 border-amber-400 p-4 rounded-2xl text-center space-y-2 animate-fadeIn relative z-10 text-white">
+                                <span className="text-3xl animate-bounce block">🎉</span>
+                                <h4 className="font-extrabold text-base text-[#ffd700]">
+                                  অভিনন্দন! আপনি জিতেছেন:
+                                </h4>
+                                <div className="bg-[#7a1c2b] text-white py-2 px-4 rounded-xl border border-amber-300 font-extrabold text-sm shadow-sm">
+                                  {spinPrizeResult.prize}
+                                </div>
+
+                                {spinPrizeResult.code ? (
+                                  <div className="space-y-1.5 pt-1">
+                                    <p className="text-[11px] text-amber-200">কুপন কোড (অর্ডারে স্বয়ংক্রিয় ছাড় পাবেন):</p>
+                                    <div className="bg-black/50 border border-dashed border-amber-300 font-mono text-sm font-black py-1 px-3 rounded-lg text-amber-300 select-all">
+                                      {spinPrizeResult.code}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApplySpinCoupon(spinPrizeResult.code)}
+                                      className="w-full bg-[#d4a574] hover:bg-[#c4925e] text-[#2c1810] font-black py-2 rounded-full text-xs shadow-lg transition active:scale-95"
+                                    >
+                                      🛒 কুপনটি কার্টে যুক্ত করুন ও কেনাকাটা করুন
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1.5 pt-1">
+                                    <p className="text-[11px] text-emerald-300 font-semibold">
+                                      ✓ আপনার অ্যাকাউন্টে পয়েন্ট যুক্ত হয়েছে! চেকআউটে সরাসরি ব্যবহার করতে পারবেন।
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => setProfileTab("loyalty")}
+                                      className="w-full bg-[#d4a574] hover:bg-[#c4925e] text-[#2c1810] font-black py-2 rounded-full text-xs shadow-lg transition active:scale-95"
+                                    >
+                                      👑 পয়েন্ট ব্যালেন্স ও মেম্বারশিপ দেখুন
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            ) : !canSpin && latestLead ? (
+                              /* Already Spun within last 24h */
+                              <div className="w-full max-w-sm mt-3 bg-black/40 border border-amber-400/40 p-4 rounded-2xl text-center space-y-2 text-white">
+                                <span className="text-2xl block">⏳</span>
+                                <h5 className="font-bold text-xs text-amber-300">
+                                  আজকের স্পিন সম্পন্ন হয়েছে!
+                                </h5>
+                                <p className="text-[11px] text-gray-300">
+                                  সর্বশেষ অর্জিত উপহার: <strong className="text-amber-200">{latestLead.prize}</strong>
+                                </p>
+                                {latestLead.code && (
+                                  <div className="flex items-center justify-center gap-2 pt-1">
+                                    <span className="bg-black/60 border border-dashed border-amber-300 font-mono text-xs text-amber-300 px-3 py-1 rounded">
+                                      {latestLead.code}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApplySpinCoupon(latestLead.code)}
+                                      className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-[11px] px-3 py-1 rounded-full transition"
+                                    >
+                                      কার্টে যোগ
+                                    </button>
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-amber-200/80 pt-1">
+                                  পরবর্তী স্পিন উপলব্ধ হবে: <span className="font-mono font-bold text-amber-300">{remHours} ঘণ্টা {remMins} মিনিট</span> পর
+                                </div>
+                              </div>
+                            ) : null}
+
+                            {/* ACTION BUTTON */}
+                            <div className="w-full max-w-sm mt-4">
+                              {canSpin ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSpinWheel(currentUser.phone)}
+                                  disabled={isSpinning}
+                                  className="w-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 text-[#2c1810] py-3 rounded-full font-black text-xs sm:text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed uppercase tracking-wider"
+                                >
+                                  <span>{isSpinning ? "🎡 স্পিন হচ্ছে..." : "🎯 স্পিন করুন (আজকের ফ্রি সুযোগ)"}</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={true}
+                                  className="w-full bg-white/10 border border-white/20 text-gray-400 py-3 rounded-full font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed"
+                                >
+                                  <span>⏳ পরবর্তী স্পিন: {remHours} ঘণ্টা {remMins} মিনিট পর</span>
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -9265,6 +10488,89 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           </a>
                         )}
                       </div>
+
+                      {/* Color Variation Selection */}
+                      {viewProduct.colors && viewProduct.colors.length > 0 && (
+                        <div className="mt-3 p-3 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                              <span>🎨</span>
+                              <span>কালার / রং নির্বাচন করুন:</span>
+                            </span>
+                            {(selectedProductColor || viewProduct.colors[0]) && (
+                              <span className="text-[11px] text-[#7a1c2b] font-bold bg-white px-2.5 py-0.5 rounded-full border border-rose-200 shadow-2xs">
+                                নির্বাচিত: {selectedProductColor || viewProduct.colors[0]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {viewProduct.colors.map(col => {
+                              const isSelected = (selectedProductColor || viewProduct.colors[0]) === col;
+                              return (
+                                <button
+                                  key={col}
+                                  type="button"
+                                  onClick={() => setSelectedProductColor(col)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
+                                    isSelected
+                                      ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-sm"
+                                      : "bg-white text-gray-700 border-[#f3e2d0] hover:border-[#7a1c2b]"
+                                  }`}
+                                >
+                                  {isSelected && <span className="text-[10px]">✓</span>}
+                                  <span>{col}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Size Variation Selection */}
+                      {viewProduct.sizes && viewProduct.sizes.length > 0 && (
+                        <div className="mt-3 p-3 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                              <span>📏</span>
+                              <span>সাইজ নির্বাচন করুন:</span>
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {(selectedProductSize || viewProduct.sizes[0]) && (
+                                <span className="text-[11px] text-amber-900 font-bold bg-white px-2.5 py-0.5 rounded-full border border-amber-200 shadow-2xs">
+                                  নির্বাচিত: {selectedProductSize || viewProduct.sizes[0]}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setIsSizeGuideOpen(true)}
+                                className="text-[11px] text-[#7a1c2b] hover:underline font-bold"
+                              >
+                                চার্ট ↗
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {viewProduct.sizes.map(sz => {
+                              const isSelected = (selectedProductSize || viewProduct.sizes[0]) === sz;
+                              return (
+                                <button
+                                  key={sz}
+                                  type="button"
+                                  onClick={() => setSelectedProductSize(sz)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
+                                    isSelected
+                                      ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                                      : "bg-white text-gray-700 border-[#f3e2d0] hover:border-amber-600"
+                                  }`}
+                                >
+                                  {isSelected && <span className="text-[10px]">✓</span>}
+                                  <span>{sz}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-3 pt-2">
@@ -9277,9 +10583,34 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                         </div>
                       </div>
 
+                      {/* Wishlist and Size Guide actions in Product Modal */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleWishlist(viewProduct)}
+                          className={`flex-1 py-2.5 px-3 rounded-2xl border text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
+                            wishlist.some(item => item.id === viewProduct.id)
+                              ? "bg-rose-50 border-rose-300 text-rose-700"
+                              : "bg-[#fffaf5] border-rose-200 text-rose-600 hover:bg-rose-50"
+                          }`}
+                        >
+                          <span>{wishlist.some(item => item.id === viewProduct.id) ? "❤️ পছন্দের তালিকায় সংরক্ষিত" : "🤍 পরে কেনার জন্য সেভ করুন"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsSizeGuideOpen(true)}
+                          className="py-2.5 px-3 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs active:scale-95"
+                          title="সঠিক আংটি ও চুড়ির মাপ জানতে ক্লিক করুন"
+                        >
+                          <span>📏 সাইজ গাইড</span>
+                        </button>
+                      </div>
+
                       <button 
                         onClick={() => {
-                          addToCart(viewProduct, productQty);
+                          const activeColor = selectedProductColor || (viewProduct.colors && viewProduct.colors[0]) || "";
+                          const activeSize = selectedProductSize || (viewProduct.sizes && viewProduct.sizes[0]) || "";
+                          addToCart(viewProduct, productQty, activeColor, activeSize);
                           setViewProduct(null);
                         }}
                         disabled={viewProduct.stock <= 0}
@@ -9755,6 +11086,299 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                     )}
                   </div>
 
+                  {/* ======================================================== */}
+                  {/* COLOR & SIZE VARIATION MANAGER (কালার ও সাইজ ভ্যারিয়েশন) */}
+                  {/* ======================================================== */}
+                  <div className="p-4 bg-gradient-to-r from-purple-50/70 via-[#fffaf5] to-amber-50/70 rounded-3xl border-2 border-[#d4a574] space-y-4 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-[#f3e2d0] pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">🎨📏</span>
+                        <div>
+                          <h4 className="font-bold text-sm text-[#7a1c2b]">কালার ও সাইজ ভ্যারিয়েশন ম্যানেজার</h4>
+                          <p className="text-[11px] text-[#b8956a]">কাপড়, জামা, টি-শার্ট, প্যান্ট, ইনার, বাচ্চাদের সাইজ ও পছন্দমতো কালার যোগ করুন</p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-bold bg-[#fff8f0] text-[#7a1c2b] px-2.5 py-1 rounded-full border border-[#d4a574]">
+                        {(productForm.colors?.length || 0)}টি কালার • {(productForm.sizes?.length || 0)}টি সাইজ
+                      </span>
+                    </div>
+
+                    {/* 1. COLOR VARIATIONS */}
+                    <div className="space-y-2.5 bg-white p-3.5 rounded-2xl border border-[#f3e2d0]">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <span>🎨</span>
+                          <span>কালার অপশন (Colors)</span>
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-medium">গ্রাহকরা ড্রপডাউন/চিপসে কালার বাছতে পারবেন</span>
+                      </div>
+
+                      {/* Currently selected color tags */}
+                      <div className="flex flex-wrap gap-1.5 min-h-[30px] p-2 bg-[#fffaf5] rounded-xl border border-dashed border-[#f3e2d0]">
+                        {(productForm.colors && productForm.colors.length > 0) ? (
+                          productForm.colors.map((c, idx) => (
+                            <span 
+                              key={idx} 
+                              className="inline-flex items-center gap-1.5 bg-white border border-[#7a1c2b] text-[#7a1c2b] text-xs font-bold px-3 py-1 rounded-full shadow-2xs"
+                            >
+                              <span>{c}</span>
+                              <button 
+                                type="button" 
+                                onClick={() => setProductForm(prev => ({ ...prev, colors: prev.colors.filter((_, i) => i !== idx) }))}
+                                className="w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center text-[10px] transition"
+                                title="কালার মুছুন"
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">কোনো কালার যোগ করা হয়নি (ফ্রি কালার / স্ট্যান্ডার্ড হিসেবে থাকবে)</span>
+                        )}
+                      </div>
+
+                      {/* Custom color input */}
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={customColorInput} 
+                          onChange={(e) => setCustomColorInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const val = customColorInput.trim();
+                              if (val && !productForm.colors?.includes(val)) {
+                                setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
+                                setCustomColorInput("");
+                              }
+                            }
+                          }}
+                          placeholder="নতুন কালার লিখুন (যেমন: গোল্ডেন কপার / স্কাই ব্লু)..." 
+                          className="flex-1 bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const val = customColorInput.trim();
+                            if (val && !productForm.colors?.includes(val)) {
+                              setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
+                              setCustomColorInput("");
+                            }
+                          }}
+                          className="bg-[#7a1c2b] text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-[#63141f] transition shadow-xs whitespace-nowrap"
+                        >
+                          + কালার যোগ
+                        </button>
+                      </div>
+
+                      {/* Quick Popular Color Chips */}
+                      <div className="pt-1">
+                        <p className="text-[10px] font-bold text-gray-500 mb-1.5">জনপ্রিয় কালার প্যালেট (১-ক্লিকে যোগ করুন):</p>
+                        <div className="flex flex-wrap gap-1">
+                          {[
+                            { name: "কালো (Black)", dot: "bg-black" },
+                            { name: "সাদা (White)", dot: "bg-white border border-gray-300" },
+                            { name: "মেরুন (Maroon)", dot: "bg-red-900" },
+                            { name: "রয়েল ব্লু (Royal Blue)", dot: "bg-blue-600" },
+                            { name: "নেভি ব্লু (Navy)", dot: "bg-blue-950" },
+                            { name: "লাল (Red)", dot: "bg-red-600" },
+                            { name: "গোলাপি (Pink)", dot: "bg-pink-400" },
+                            { name: "সবুজ (Green)", dot: "bg-emerald-600" },
+                            { name: "বটল গ্রিন (Bottle Green)", dot: "bg-green-900" },
+                            { name: "হলুদ (Yellow)", dot: "bg-amber-400" },
+                            { name: "গোল্ডেন (Golden)", dot: "bg-amber-500" },
+                            { name: "অলিভ (Olive)", dot: "bg-lime-800" },
+                            { name: "অ্যাশ (Ash/Gray)", dot: "bg-gray-400" },
+                            { name: "স্কিন / বেইজ (Beige)", dot: "bg-[#e8d5b7]" },
+                            { name: "ফিরোজা (Turquoise)", dot: "bg-cyan-500" }
+                          ].map((c) => {
+                            const isAdded = productForm.colors?.includes(c.name);
+                            return (
+                              <button
+                                key={c.name}
+                                type="button"
+                                onClick={() => {
+                                  setProductForm(prev => {
+                                    const current = prev.colors || [];
+                                    if (current.includes(c.name)) {
+                                      return { ...prev, colors: current.filter(x => x !== c.name) };
+                                    } else {
+                                      return { ...prev, colors: [...current, c.name] };
+                                    }
+                                  });
+                                }}
+                                className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border flex items-center gap-1.5 transition ${
+                                  isAdded 
+                                    ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-2xs font-bold" 
+                                    : "bg-white text-gray-700 border-gray-200 hover:border-[#7a1c2b]"
+                                }`}
+                              >
+                                <span className={`w-2 h-2 rounded-full ${c.dot}`}></span>
+                                <span>{isAdded ? `✓ ${c.name}` : `+ ${c.name}`}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. SIZE VARIATIONS */}
+                    <div className="space-y-2.5 bg-white p-3.5 rounded-2xl border border-[#f3e2d0]">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <span>📏</span>
+                          <span>সাইজ অপশন (Sizes - টিশার্ট, জামা, প্যান্ট, ইনার, বাচ্চাদের সাইজ)</span>
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-medium">গ্রাহকরা তাদের মাপ অনুযায়ী সাইজ বেছে নেবেন</span>
+                      </div>
+
+                      {/* Currently selected size tags */}
+                      <div className="flex flex-wrap gap-1.5 min-h-[30px] p-2 bg-[#fffaf5] rounded-xl border border-dashed border-[#f3e2d0]">
+                        {(productForm.sizes && productForm.sizes.length > 0) ? (
+                          productForm.sizes.map((s, idx) => (
+                            <span 
+                              key={idx} 
+                              className="inline-flex items-center gap-1.5 bg-white border border-[#7a1c2b] text-[#7a1c2b] text-xs font-bold px-3 py-1 rounded-full shadow-2xs"
+                            >
+                              <span>{s}</span>
+                              <button 
+                                type="button" 
+                                onClick={() => setProductForm(prev => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== idx) }))}
+                                className="w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center text-[10px] transition"
+                                title="সাইজ মুছুন"
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">কোনো সাইজ যোগ করা হয়নি (ফ্রি সাইজ / আনস্টিচড হিসেবে থাকবে)</span>
+                        )}
+                      </div>
+
+                      {/* Custom size input */}
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={customSizeInput} 
+                          onChange={(e) => setCustomSizeInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const val = customSizeInput.trim();
+                              if (val && !productForm.sizes?.includes(val)) {
+                                setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
+                                setCustomSizeInput("");
+                              }
+                            }
+                          }}
+                          placeholder="নতুন সাইজ লিখুন (যেমন: XL (বডি ৪২ ইঞ্চি) / ৩২ কোমর / 36B)..." 
+                          className="flex-1 bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const val = customSizeInput.trim();
+                            if (val && !productForm.sizes?.includes(val)) {
+                              setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
+                              setCustomSizeInput("");
+                            }
+                          }}
+                          className="bg-[#7a1c2b] text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-[#63141f] transition shadow-xs whitespace-nowrap"
+                        >
+                          + সাইজ যোগ
+                        </button>
+                      </div>
+
+                      {/* 1-Click Preset Template Sets */}
+                      <div className="pt-2 border-t border-gray-100 space-y-2">
+                        <p className="text-[11px] font-bold text-[#7a1c2b] flex items-center gap-1">
+                          <span>⚡</span>
+                          <span>১-ক্লিকে রেডিমেড সাইজ প্রিসেট সেট যোগ করুন:</span>
+                        </p>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const standardShirt = ["S (বডি ৩৬)", "M (বডি ৩৮)", "L (বডি ৪০)", "XL (বডি ৪২)", "XXL (বডি ৪৪)", "3XL (বডি ৪৬)"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardShirt])) }));
+                              notify("👕 টি-শার্ট / শার্ট / জামা সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👕 টি-শার্ট / শার্ট / জামা</p>
+                            <p className="text-[10px] text-gray-500">S, M, L, XL, XXL, 3XL</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const standardPants = ["২৮ (Waist 28)", "৩০ (Waist 30)", "৩২ (Waist 32)", "৩৪ (Waist 34)", "৩৬ (Waist 36)", "৩৮ (Waist 38)", "৪০ (Waist 40)"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardPants])) }));
+                              notify("👖 প্যান্ট / ট্রাউজার সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👖 প্যান্ট / ট্রাউজার / জিন্স</p>
+                            <p className="text-[10px] text-gray-500">২৮, ৩০, ৩২, ৩৪, ৩৬, ৩৮, ৪০</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const innerSizes = ["32B (বডি ৩২)", "34B (বডি ৩৪)", "36B (বডি ৩৬)", "38B (বডি ৩৮)", "40B (বডি ৪০)", "34C", "36C"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...innerSizes])) }));
+                              notify("👙 ইনার ও বডি সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👙 ইনার / ব্রা বডি সাইজ</p>
+                            <p className="text-[10px] text-gray-500">32B, 34B, 36B, 38B, 40B, 34C</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const kidsSizes = ["১৬ (০-৬ মাস)", "১৮ (৬-১২ মাস)", "২০ (১-২ বছর)", "২২ (২-৩ বছর)", "২৪ (৩-৪ বছর)", "২৬ (৫-৬ বছর)", "২৮ (৭-৮ বছর)", "৩০ (৯-১০ বছর)"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...kidsSizes])) }));
+                              notify("👶 বাচ্চাদের সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👶 বাচ্চাদের পোশাক সাইজ</p>
+                            <p className="text-[10px] text-gray-500">১৬ (০-৬M) থেকে ৩০ (১০Y)</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const jewelrySizes = ["আংটি ৬ (16.5 mm)", "আংটি ৭ (17.3 mm)", "আংটি ৮ (18.1 mm)", "চুড়ি ২.২", "চুড়ি ২.৪", "চুড়ি ২.৬", "চুড়ি ২.৮"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...jewelrySizes])) }));
+                              notify("💍 আংটি ও চুড়ির সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">💍 আংটি ও চুড়ির সাইজ</p>
+                            <p className="text-[10px] text-gray-500">US 6, 7, 8 & চুড়ি ২.৪, ২.৬</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProductForm(prev => ({ ...prev, sizes: ["Free Size (আনস্টিচড / অল-সাইজ)"] }));
+                              notify("✨ ফ্রি সাইজ সেট করা হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">✨ ফ্রি সাইজ (Free Size)</p>
+                            <p className="text-[10px] text-gray-500">শাড়ি, ওড়না বা আনস্টিচড</p>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* DESCRIPTION */}
                   <div>
                     <label className="text-xs font-semibold text-gray-700">পণ্য সম্পর্কে বিস্তারিত বিবরণ</label>
@@ -9785,6 +11409,8 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           ...productForm, 
                           price: cleanPrice,
                           stock: cleanStock,
+                          colors: productForm.colors || [],
+                          sizes: productForm.sizes || [],
                           images: finalImages 
                         };
                         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
@@ -9796,6 +11422,8 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
                           ...productForm,
                           price: cleanPrice,
                           stock: cleanStock,
+                          colors: productForm.colors || [],
+                          sizes: productForm.sizes || [],
                           images: finalImages,
                           sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
                           rating: 4.8,
@@ -10345,24 +11973,7 @@ ${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং 
           )}
 
           {/* ========================================================= */}
-          {/* FLOATING LUCKY SPIN WHEEL BUTTON (Storefront Only) */}
-          {/* ========================================================= */}
-          {activeTab === "Storefront" && (
-            <button
-              onClick={() => setIsSpinWheelOpen(true)}
-              className="fixed bottom-6 left-6 z-40 bg-gradient-to-r from-amber-600 via-rose-700 to-amber-700 text-white px-4 py-3 rounded-full shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 font-bold text-xs sm:text-sm group"
-              title="ভাগ্যচাকা স্পিন করুন - অফার জিতুন!"
-            >
-              <span className="text-xl animate-spin-slow">🎡</span>
-              <span className="hidden sm:inline">ভাগ্যচাকা</span>
-              <span className="bg-amber-300 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs uppercase tracking-wider animate-pulse">
-                উপহার 🎁
-              </span>
-            </button>
-          )}
-
-          {/* ========================================================= */}
-          {/* 🎡 LUCKY SPIN THE WHEEL MODAL */}
+          {/* 🎡 LUCKY SPIN THE WHEEL MODAL (Admin Preview & Dialog Mode) */}
           {/* ========================================================= */}
           {isSpinWheelOpen && (
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
