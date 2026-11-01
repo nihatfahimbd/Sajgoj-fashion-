@@ -44,6 +44,10 @@
   <!-- Babel standalone for JSX compiling -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
 
+  <!-- QR Code Generator & Real-time Live Camera Scanner (jsQR) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
   <!-- Firebase 10 SDK (Compat for seamless cross-browser cloud persistence - App -> Auth -> Firestore order) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -1150,6 +1154,441 @@
       }, [viewProduct?.id]);
 
       const [viewInvoiceOrder, setViewInvoiceOrder] = useState(null);
+
+      // =========================================================
+      // QR CODE GENERATION & CAMERA SCANNER STATES & REFS
+      // =========================================================
+      const [isScannerOpen, setIsScannerOpen] = useState(false);
+      const [scannerLoading, setScannerLoading] = useState(false);
+      const [scannerError, setScannerError] = useState("");
+      const [scannerFacingMode, setScannerFacingMode] = useState("environment");
+      const [qrModalProduct, setQrModalProduct] = useState(null);
+      const [manualScanInput, setManualScanInput] = useState("");
+      const [hasTorch, setHasTorch] = useState(false);
+      const [torchOn, setTorchOn] = useState(false);
+      const scannerVideoRef = useRef(null);
+      const scannerCanvasRef = useRef(null);
+      const scannerStreamRef = useRef(null);
+      const scannerAnimFrameRef = useRef(null);
+
+      // Web Audio synthesized sound for successful scan detection
+      const playScanSuccessBeep = () => {
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          const ctx = new AudioContextClass();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.19);
+        } catch (e) {
+          // audio fallback
+        }
+      };
+
+      // Get Deep Link URL for a product
+      const getProductDeepLink = (product) => {
+        if (!product) return window.location.href;
+        const origin = window.location.origin && window.location.origin !== "null" ? window.location.origin : "";
+        const pathname = window.location.pathname || "";
+        return `${origin}${pathname}#product-${product.id}`;
+      };
+
+      // Handle Scanned Raw Text / QR payload
+      const handleScannedData = (rawText) => {
+        if (!rawText) return;
+        const text = String(rawText).trim();
+        playScanSuccessBeep();
+
+        // Extract product id if formatted as URL or #product-<id> or ?product=<id>
+        let matchedId = null;
+        const hashMatch = text.match(/#product-([a-zA-Z0-9_-]+)/);
+        if (hashMatch) {
+          matchedId = hashMatch[1];
+        } else {
+          const queryMatch = text.match(/[?&]product=([a-zA-Z0-9_-]+)/);
+          if (queryMatch) matchedId = queryMatch[1];
+        }
+
+        let target = null;
+        if (matchedId) {
+          target = products.find(p => String(p.id) === String(matchedId));
+        }
+        if (!target) {
+          target = products.find(p => String(p.id) === text);
+        }
+        if (!target) {
+          target = products.find(p => p.sku && p.sku.toLowerCase() === text.toLowerCase());
+        }
+        if (!target) {
+          target = products.find(p => text.includes(String(p.id)) || (p.sku && text.toLowerCase().includes(p.sku.toLowerCase())));
+        }
+
+        stopScanner();
+        setIsScannerOpen(false);
+
+        if (target) {
+          setViewProduct(target);
+          notify(`🎉 পণ্য পাওয়া গেছে: "${target.name}"!`);
+        } else {
+          setStoreSearch(text);
+          setActiveTab("Storefront");
+          notify(`স্ক্যান কোড: "${text}" দিয়ে প্রোডাক্ট খোঁজা হচ্ছে...`);
+        }
+      };
+
+      // Stop camera video stream & animation frame
+      const stopScanner = () => {
+        if (scannerAnimFrameRef.current) {
+          cancelAnimationFrame(scannerAnimFrameRef.current);
+          scannerAnimFrameRef.current = null;
+        }
+        if (scannerStreamRef.current) {
+          scannerStreamRef.current.getTracks().forEach(track => {
+            try { track.stop(); } catch (e) {}
+          });
+          scannerStreamRef.current = null;
+        }
+        setTorchOn(false);
+        setHasTorch(false);
+      };
+
+      // Start camera stream and begin frame processing
+      const startScanner = async (facing = scannerFacingMode) => {
+        setScannerError("");
+        setScannerLoading(true);
+        stopScanner();
+
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error("এই ডিভাইসে ক্যামেরা সমর্থন করে না।");
+          }
+          const constraints = {
+            video: {
+              facingMode: { ideal: facing },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          };
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          scannerStreamRef.current = stream;
+
+          const videoTrack = stream.getVideoTracks()[0];
+          if (videoTrack) {
+            const capabilities = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
+            if (capabilities.torch) {
+              setHasTorch(true);
+            }
+          }
+
+          if (scannerVideoRef.current) {
+            scannerVideoRef.current.srcObject = stream;
+            scannerVideoRef.current.setAttribute("playsinline", "true");
+            await scannerVideoRef.current.play();
+          }
+          setScannerLoading(false);
+
+          const loop = () => {
+            if (!scannerVideoRef.current) return;
+            const video = scannerVideoRef.current;
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              let canvas = scannerCanvasRef.current;
+              if (!canvas) {
+                canvas = document.createElement("canvas");
+                scannerCanvasRef.current = canvas;
+              }
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              const ctx = canvas.getContext("2d", { willReadFrequently: true });
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+              let found = false;
+              if (window.jsQR) {
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = window.jsQR(imgData.data, imgData.width, imgData.height, {
+                  inversionAttempts: "dontInvert"
+                });
+                if (code && code.data) {
+                  found = true;
+                  handleScannedData(code.data);
+                  return;
+                }
+              }
+
+              if (!found && window.BarcodeDetector) {
+                try {
+                  const detector = new window.BarcodeDetector({ formats: ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39'] });
+                  detector.detect(video).then(barcodes => {
+                    if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                      handleScannedData(barcodes[0].rawValue);
+                    }
+                  }).catch(() => {});
+                } catch (e) {}
+              }
+            }
+            scannerAnimFrameRef.current = requestAnimationFrame(loop);
+          };
+          scannerAnimFrameRef.current = requestAnimationFrame(loop);
+        } catch (err) {
+          console.error("Scanner Error:", err);
+          setScannerLoading(false);
+          setScannerError("ক্যামেরা চালু করা সম্ভব হয়নি। অনুগ্রহ করে ব্রাউজার ক্যামেরা পারমিশন এলাও করুন অথবা নিচের ছবি আপলোড অপশন দিয়ে স্ক্যান করুন।");
+        }
+      };
+
+      // Toggle Torch
+      const toggleTorch = async () => {
+        if (!scannerStreamRef.current) return;
+        const track = scannerStreamRef.current.getVideoTracks()[0];
+        if (track && track.applyConstraints) {
+          try {
+            await track.applyConstraints({
+              advanced: [{ torch: !torchOn }]
+            });
+            setTorchOn(!torchOn);
+          } catch (e) {
+            console.error("Torch error:", e);
+          }
+        }
+      };
+
+      // Switch Camera (Front <-> Back)
+      const switchCamera = () => {
+        const nextMode = scannerFacingMode === "environment" ? "user" : "environment";
+        setScannerFacingMode(nextMode);
+        startScanner(nextMode);
+      };
+
+      // Scan QR from selected gallery image
+      const handleScanImageFile = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let code = null;
+            if (window.jsQR) {
+              code = window.jsQR(imgData.data, imgData.width, imgData.height);
+            }
+            if (code && code.data) {
+              handleScannedData(code.data);
+            } else {
+              notify("⚠️ ছবিতে কোনো পরিষ্কার QR কোড পাওয়া যায়নি। অনুগ্রহ করে স্পষ্ট ছবি দিন।");
+            }
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      // Download Branded Product QR Tag as PNG
+      const downloadProductQrTag = (product) => {
+        if (!product) return;
+        const canvas = document.createElement("canvas");
+        canvas.width = 600;
+        canvas.height = 860;
+        const ctx = canvas.getContext("2d");
+
+        // Background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Gold & Maroon Borders
+        ctx.strokeStyle = "#7a1c2b";
+        ctx.lineWidth = 14;
+        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+        ctx.strokeStyle = "#d4a574";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(22, 22, canvas.width - 44, canvas.height - 44);
+
+        // Header Background Banner
+        ctx.fillStyle = "#7a1c2b";
+        ctx.fillRect(25, 25, canvas.width - 50, 110);
+
+        // Store Branding Text
+        ctx.fillStyle = "#ffd700";
+        ctx.font = "bold 32px 'Hind Siliguri', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(config.storeName || "SAJGOJ FASHION", canvas.width / 2, 72);
+
+        ctx.fillStyle = "#fff8f0";
+        ctx.font = "14px sans-serif";
+        ctx.fillText("PREMIUM TRADITION & ELEGANCE", canvas.width / 2, 105);
+
+        // Product Name
+        ctx.fillStyle = "#2c1810";
+        ctx.font = "bold 26px 'Hind Siliguri', sans-serif";
+        const shortName = product.name.length > 30 ? product.name.slice(0, 28) + "..." : product.name;
+        ctx.fillText(shortName, canvas.width / 2, 180);
+
+        // SKU & Category
+        ctx.fillStyle = "#7a1c2b";
+        ctx.font = "bold 15px sans-serif";
+        ctx.fillText(`SKU: ${product.sku || product.id}  •  ${product.category || 'কালেকশন'}`, canvas.width / 2, 215);
+
+        // Price Badge
+        ctx.fillStyle = "#fff8f0";
+        ctx.fillRect(canvas.width / 2 - 130, 240, 260, 52);
+        ctx.strokeStyle = "#d4a574";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(canvas.width / 2 - 130, 240, 260, 52);
+
+        ctx.fillStyle = "#7a1c2b";
+        ctx.font = "bold 30px 'Hind Siliguri', sans-serif";
+        ctx.fillText(`মূল্য: ${product.price.toLocaleString()} ৳`, canvas.width / 2, 277);
+
+        // Load QR Code from dynamic API into canvas
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(getProductDeepLink(product))}&margin=10`;
+        const qrImg = new Image();
+        qrImg.crossOrigin = "anonymous";
+        qrImg.onload = () => {
+          ctx.drawImage(qrImg, canvas.width / 2 - 160, 315, 320, 320);
+
+          // Tag Instructions
+          ctx.fillStyle = "#7a1c2b";
+          ctx.font = "bold 16px 'Hind Siliguri', sans-serif";
+          ctx.fillText("📱 ক্যামেরা দিয়ে স্ক্যান করে সরাসরি অর্ডার করুন", canvas.width / 2, 670);
+
+          ctx.fillStyle = "#666666";
+          ctx.font = "13px sans-serif";
+          ctx.fillText("Scan to Order Online with Home Delivery", canvas.width / 2, 698);
+
+          // Footer Divider
+          ctx.strokeStyle = "#e8d5c0";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(50, 730);
+          ctx.lineTo(canvas.width - 50, 730);
+          ctx.stroke();
+
+          // Website / Helpline Footer
+          ctx.fillStyle = "#2c1810";
+          ctx.font = "bold 15px sans-serif";
+          ctx.fillText(`হটলাইন: ${config.phone || '018051198888'}`, canvas.width / 2, 765);
+
+          ctx.fillStyle = "#888888";
+          ctx.font = "12px sans-serif";
+          ctx.fillText("100% Genuine Handcrafted Fashion & Jewelry", canvas.width / 2, 795);
+
+          // Trigger Download
+          const a = document.createElement("a");
+          a.download = `sajgoj-qr-${product.sku || product.id}.png`;
+          a.href = canvas.toDataURL("image/png");
+          a.click();
+          notify("📥 ব্র‍্যান্ডেড QR প্রাইস ট্যাগ সফলভাবে ডাউনলোড হয়েছে!");
+        };
+        qrImg.onerror = () => {
+          notify("QR ইমেজ রেন্ডার হতে সমস্যা হয়েছে। সরাসরি QR ইমেজটি সেভ করুন।");
+        };
+        qrImg.src = qrUrl;
+      };
+
+      // Print Product QR Tag
+      const printProductQrTag = (product) => {
+        if (!product) return;
+        const link = getProductDeepLink(product);
+        const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}&margin=10`;
+        const win = window.open("", "_blank");
+        if (!win) {
+          notify("পপআপ ব্লক থাকায় প্রিন্ট উইন্ডো খোলা যায়নি। অনুমতি দিন।");
+          return;
+        }
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>QR Tag - ${product.name}</title>
+            <style>
+              @page { size: auto; margin: 10mm; }
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; }
+              .tag-card {
+                width: 320px;
+                border: 2px solid #7a1c2b;
+                border-radius: 16px;
+                padding: 16px;
+                text-align: center;
+                background: #ffffff;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+              }
+              .store-name { color: #7a1c2b; font-size: 20px; font-weight: 800; margin: 0; }
+              .tagline { color: #b8956a; font-size: 11px; margin: 2px 0 10px 0; font-weight: 600; text-transform: uppercase; }
+              .product-name { font-size: 16px; font-weight: bold; color: #1f2937; margin: 8px 0 4px 0; }
+              .sku { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+              .price { font-size: 24px; font-weight: 900; color: #7a1c2b; background: #fff8f0; border: 1px dashed #d4a574; border-radius: 8px; padding: 6px; margin: 8px 0; }
+              .qr-box { margin: 12px auto; width: 180px; height: 180px; }
+              .qr-box img { width: 100%; height: 100%; }
+              .instructions { font-size: 12px; font-weight: bold; color: #7a1c2b; margin: 6px 0 2px 0; }
+              .sub-inst { font-size: 10px; color: #6b7280; }
+              .footer { font-size: 11px; color: #374151; font-weight: 600; margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+            </style>
+          </head>
+          <body>
+            <div class="tag-card">
+              <h2 class="store-name">${config.storeName || 'SAJGOJ FASHION'}</h2>
+              <div class="tagline">Premium Lifestyle & Jewelry</div>
+              <div class="product-name">${product.name}</div>
+              <div class="sku">SKU: ${product.sku || product.id} | ${product.category || 'কালেকশন'}</div>
+              <div class="price">মূল্য: ${product.price.toLocaleString()} ৳</div>
+              <div class="qr-box">
+                <img src="${qrSrc}" alt="QR Code" />
+              </div>
+              <div class="instructions">📱 স্ক্যান করে সরাসরি অর্ডার করুন</div>
+              <div class="sub-inst">Scan to View & Buy Online</div>
+              <div class="footer">হটলাইন: ${config.phone || '018051198888'}</div>
+            </div>
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                }, 400);
+              };
+            <\/script>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      };
+
+      // URL Deep Link Listener: Automatically open product when page is loaded with #product-<id> or ?product=<id>
+      useEffect(() => {
+        const checkDeepLink = () => {
+          const hash = window.location.hash;
+          const search = window.location.search;
+          let pid = null;
+          if (hash && hash.startsWith("#product-")) {
+            pid = hash.replace("#product-", "");
+          } else if (search && search.includes("product=")) {
+            const params = new URLSearchParams(search);
+            pid = params.get("product");
+          }
+          if (pid && products && products.length > 0) {
+            const found = products.find(p => String(p.id) === String(pid) || (p.sku && p.sku === pid));
+            if (found) {
+              setViewProduct(found);
+              notify(`✨ কিউআর কোড স্ক্যান থেকে পণ্য লোড হয়েছে: "${found.name}"!`);
+            }
+          }
+        };
+
+        checkDeepLink();
+        window.addEventListener("hashchange", checkDeepLink);
+        return () => window.removeEventListener("hashchange", checkDeepLink);
+      }, [products]);
 
       // Review System State
       const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
@@ -2971,18 +3410,32 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               {/* Storefront Search Bar */}
               {config?.header?.showSearch && activeTab === "Storefront" && (
                 <div className="flex-1 max-w-md hidden md:block">
-                  <div className="relative">
+                  <div className="relative flex items-center">
                     <input 
                       type="text"
                       value={storeSearch}
                       onChange={(e) => setStoreSearch(e.target.value)}
-                      placeholder="শাড়ি বা জুয়েলারির নাম দিয়ে সার্চ করুন..."
-                      className="w-full bg-[#fffaf5] border border-[#e8d5c0] rounded-full px-5 py-2 text-sm outline-none focus:border-[#7a1c2b] pl-10"
+                      placeholder="শাড়ি, জামা বা জুয়েলারির নাম দিয়ে সার্চ..."
+                      className="w-full bg-[#fffaf5] border border-[#e8d5c0] rounded-full px-5 py-2 text-sm outline-none focus:border-[#7a1c2b] pl-10 pr-20 shadow-xs"
                     />
                     <span className="absolute left-3.5 top-2.5 text-gray-400">🔍</span>
-                    {storeSearch && (
-                      <button onClick={() => setStoreSearch("")} className="absolute right-3.5 top-2 text-xs text-gray-400 hover:text-black">✕</button>
-                    )}
+                    <div className="absolute right-2 top-1.5 flex items-center gap-1">
+                      {storeSearch && (
+                        <button onClick={() => setStoreSearch("")} className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-400 hover:text-black hover:bg-gray-100" title="মুছুন">✕</button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsScannerOpen(true);
+                          startScanner();
+                        }}
+                        className="bg-[#fff8f0] hover:bg-[#7a1c2b] text-[#7a1c2b] hover:text-white border border-[#d4a574] px-2 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95"
+                        title="ক্যামেরা দিয়ে QR বা বারকোড স্ক্যান করুন"
+                      >
+                        <span>📷</span>
+                        <span className="text-[10px]">স্ক্যান</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2995,37 +3448,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     {currentUser ? (
                       <button 
                         onClick={() => setIsProfileModalOpen(true)}
-                        className="bg-[#fff8f0] border-2 border-[#d4a574] hover:border-[#7a1c2b] text-[#7a1c2b] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs hover:shadow transition flex items-center gap-2 active:scale-95"
+                        className="bg-[#fff8f0] border-2 border-[#d4a574] hover:border-[#7a1c2b] text-[#7a1c2b] px-3 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs hover:shadow transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
                         title="আমার একাউন্ট ও প্রোফাইল"
                       >
-                        {sanitizePhotoUrl(currentUser.photoUrl) ? (
-                          <img 
-                            src={sanitizePhotoUrl(currentUser.photoUrl)} 
-                            alt="Avatar" 
-                            className="w-7 h-7 rounded-full object-cover border border-[#7a1c2b] shadow-xs" 
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xs font-bold shadow-xs border border-[#d4a574]">
-                            👤
-                          </div>
-                        )}
-                        <div className="text-left hidden sm:block">
-                          <span className="block text-[11px] font-extrabold leading-tight truncate max-w-[85px] text-[#2c1810]">
-                            {currentUser?.name && !currentUser.name.startsWith("0") ? String(currentUser.name).trim().split(" ")[0] : "কাস্টমার"}
-                          </span>
-                          <span className="block text-[9px] text-[#b8956a] leading-none font-bold">
-                            {getCustomerLoyalty(currentUser.phone)?.currentTier?.icon || "👑"} {getCustomerLoyalty(currentUser.phone)?.currentTier?.nameBn || "মেম্বার"}
-                          </span>
-                        </div>
+                        <span className="font-bold text-xs text-[#2c1810] max-w-[85px] truncate">
+                          {currentUser?.name && !currentUser.name.startsWith("0") ? String(currentUser.name).trim().split(" ")[0] : "প্রোফাইল"}
+                        </span>
                       </button>
                     ) : (
                       <button 
                         onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-                        className="bg-white border-2 border-[#7a1c2b] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-xs hover:shadow transition flex items-center gap-1.5 active:scale-95"
-                        title="কাস্টমার লগইন / সাইনআপ"
+                        className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-xs hover:shadow transition active:scale-95 whitespace-nowrap"
+                        title="Customer Login / Sign Up"
                       >
-                        <span className="text-sm">👤</span>
-                        <span className="font-bold">লগইন</span>
+                        Login / Sign
                       </button>
                     )}
 
@@ -3132,13 +3568,33 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 {/* Mobile Search */}
                 {config?.header?.showSearch && (
                   <div className="md:hidden">
-                    <input 
-                      type="text"
-                      value={storeSearch}
-                      onChange={(e) => setStoreSearch(e.target.value)}
-                      placeholder="পণ্য বা জুয়েলারি খুঁজুন..."
-                      className="w-full bg-white border border-[#e8d5c0] rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] shadow-sm"
-                    />
+                    <div className="relative flex items-center">
+                      <input 
+                        type="text"
+                        value={storeSearch}
+                        onChange={(e) => setStoreSearch(e.target.value)}
+                        placeholder="পণ্য, শাড়ি, জামা বা গহনা খুঁজুন..."
+                        className="w-full bg-white border border-[#e8d5c0] rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] pl-10 pr-24 shadow-sm"
+                      />
+                      <span className="absolute left-3.5 top-3 text-gray-400">🔍</span>
+                      <div className="absolute right-2 top-2 flex items-center gap-1">
+                        {storeSearch && (
+                          <button onClick={() => setStoreSearch("")} className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-gray-400 hover:text-black hover:bg-gray-100" title="মুছুন">✕</button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsScannerOpen(true);
+                            startScanner();
+                          }}
+                          className="bg-[#fff8f0] active:scale-95 border border-[#d4a574] text-[#7a1c2b] px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-xs"
+                          title="ক্যামেরা দিয়ে QR স্ক্যান করুন"
+                        >
+                          <span>📷</span>
+                          <span className="text-[11px]">স্ক্যান</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -3850,12 +4306,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {/* 5. System Configurations */}
                       <button
                         onClick={() => {
-                          if (!["Loyalty", "Courier", "Pixel", "SEO", "Backup"].includes(activeTab)) {
-                            setActiveTab("Loyalty");
+                          if (!["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "Backup"].includes(activeTab)) {
+                            setActiveTab("SEOMetaTags");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["Loyalty", "Courier", "Pixel", "SEO", "Backup"].includes(activeTab)
+                          ["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "Backup"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
@@ -3936,21 +4392,21 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   )}
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR SYSTEM CONFIGURATIONS) */}
-                  {["Loyalty", "Courier", "Pixel", "SEO", "Backup"].includes(activeTab) && (
+                  {["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "Backup"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">সিস্টেম কনফিগারেশন:</span>
                       {[
+                        { id: "SEOMetaTags", label: "🏷️ SEO Meta-Tags" },
                         { id: "Loyalty", label: "👑 মেম্বারশিপ ও রিওয়ার্ড (VIP ক্লাব)" },
                         { id: "Courier", label: "🚚 কুরিয়ার ইন্টিগ্রেশন (Steadfast / Pathao)" },
                         { id: "Pixel", label: "📈 ফেসবুক পিক্সেল ও CAPI" },
-                        { id: "SEO", label: "🌐 এসইও ও সাইটম্যাপ" },
                         { id: "Backup", label: "💾 ডাটাবেজ ব্যাকআপ ও ক্লাউড সিঙ্ক" }
                       ].map(sub => (
                         <button
                           key={sub.id}
                           onClick={() => setActiveTab(sub.id)}
                           className={`px-3 py-1.5 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                            activeTab === sub.id
+                            (activeTab === sub.id || (sub.id === "SEOMetaTags" && activeTab === "SEO"))
                               ? "bg-[#7a1c2b] text-white shadow-xs font-extrabold"
                               : "bg-white text-gray-700 hover:bg-[#fff8f0] border border-[#ecd9c6]"
                           }`}
@@ -4233,21 +4689,21 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                         {/* Hub 4: System Configurations */}
                         <div 
-                          onClick={() => setActiveTab("Courier")}
+                          onClick={() => setActiveTab("SEOMetaTags")}
                           className="bg-white p-5 rounded-3xl border-2 border-indigo-300/80 shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col justify-between group hover:border-indigo-500"
                         >
                           <div>
                             <div className="flex items-center justify-between mb-2.5">
                               <span className="text-2xl p-2.5 rounded-2xl bg-indigo-50 text-indigo-700">⚙️</span>
                               <span className="text-[10px] font-mono font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
-                                API Active
+                                SEO & API Ready
                               </span>
                             </div>
                             <h4 className="font-extrabold text-sm sm:text-base text-gray-900 group-hover:text-[#7a1c2b] transition">
-                              ৪. সিস্টেম কনফিগারেশন
+                              ৪. সিস্টেম ও মেটা কনফিগারেশন
                             </h4>
                             <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                              Steadfast ও Pathao API ইন্টিগ্রেশন, Facebook Meta Pixel & CAPI, SEO মেটা ও সাইটম্যাপ এবং ক্লাউড ব্যাকআপ।
+                              SEO Meta-Tags, গ্লোবাল টাইটেল, Open Graph ইমেজ ও সোশ্যাল শেয়ারিং, কুরিয়ার ও পিক্সেল সিঙ্ক।
                             </p>
                           </div>
                           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-indigo-700">
@@ -5366,6 +5822,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             title="কম্বো প্যাক বানাতে সিলেক্ট করুন"
                           >
                             <span>{selectedProductIdsForCombo.includes(p.id) ? "✓ কম্বোতে সিলেক্টেড" : "+ কম্বোতে যোগ"}</span>
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => setQrModalProduct(p)}
+                            className="px-2.5 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-xs font-bold hover:bg-amber-600 hover:text-white transition flex items-center gap-1 shadow-xs active:scale-95"
+                            title="প্রোডাক্টের QR কোড ও প্রিন্ট ট্যাগ দেখুন"
+                          >
+                            <span>📷</span>
+                            <span>QR ট্যাগ</span>
                           </button>
                           <button 
                             onClick={() => {
@@ -7083,7 +7548,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             {/* ========================================================= */}
             {/* 10. SEO & SITEMAP TAB - COMPREHENSIVE GOOGLE OPTIMIZATION SUITE */}
             {/* ========================================================= */}
-            {activeTab === "SEO" && (
+            {/* ========================================================= */}
+            {/* 10. SEO META-TAGS TAB - COMPREHENSIVE SEARCH & SOCIAL SHARING SUITE */}
+            {/* ========================================================= */}
+            {(activeTab === "SEO" || activeTab === "SEOMetaTags") && (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#f3e2d0]">
@@ -7096,13 +7564,17 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       ← ড্যাশবোর্ড
                     </button>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">সার্চ ইঞ্জিন অপটিমাইজেশন (SEO ও সাইটম্যাপ)</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">
+                          এসইও ও মেটা-ট্যাগ কনফিগারেশন (SEO Meta-Tags)
+                        </h3>
                         <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
-                          Google Ready ✓
+                          Social & Search Ready ✓
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">Google সার্চ ইনডেক্সিং, মেটা ট্যাগ, সোশ্যাল শেয়ার কার্ড এবং সাইটম্যাপ কনফিগারেশন</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        গ্লোবাল সাইট টাইটেল, ক্যানোনিকাল ডোমেইন URL এবং ওপেন-গ্রাফ (Open Graph) ইমেজ ট্যাগ নিয়ন্ত্রণ করুন
+                      </p>
                     </div>
                   </div>
 
@@ -7110,7 +7582,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <button 
                       type="button"
                       onClick={generateSitemap} 
-                      className="bg-[#2c1810] hover:bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95"
+                      className="bg-[#2c1810] hover:bg-black text-white px-4 py-2.5 rounded-full text-xs font-bold shadow flex items-center gap-1.5 transition active:scale-95"
+                      title="Google Search Console এর জন্য সাইটম্যাপ"
                     >
                       <span>🗺️</span>
                       <span>sitemap.xml ডাউনলোড</span>
@@ -7120,200 +7593,380 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       onClick={async () => {
                         setStored("seo", seo);
                         await syncDocToCloud("config", "seo", seo);
-                        notify("এসইও ও মেটা সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅");
+                        notify("এসইও মেটা-ট্যাগ ও সোশ্যাল সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅");
                       }} 
                       className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-md transition active:scale-95 flex items-center gap-1.5"
                     >
                       <span>💾</span>
-                      <span>এসইও তথ্য সেভ করুন</span>
+                      <span>মেটা-ট্যাগ সেভ করুন</span>
                     </button>
                   </div>
                 </div>
 
-                {/* 1. Real-time Google SERP Preview Card */}
-                <div className="bg-[#fffdfa] p-5 rounded-2xl border-2 border-dashed border-[#d4a574]/60 space-y-3">
-                  <div className="flex items-center justify-between">
+                {/* 1. Live Previews: Google SERP & Open-Graph Social Share Cards */}
+                <div className="bg-[#fffdfa] p-5 rounded-2xl border-2 border-dashed border-[#d4a574]/60 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <span>🔍</span>
-                      <span>গুগল সার্চ রেজাল্ট লাইভ প্রিভিউ (Google Desktop & Mobile SERP Preview)</span>
+                      <span>👁️</span>
+                      <span>সোশ্যাল শেয়ার ও সার্চ রেজাল্ট লাইভ প্রিভিউ (Social Open Graph & Google SERP)</span>
                     </span>
-                    <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">
-                      লাইভ প্রিভিউ
+                    <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
+                      রিয়েল-টাইম প্রিভিউ
                     </span>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {/* Google SERP Preview */}
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm font-sans space-y-2">
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">গুগল সার্চ প্রিভিউ (Google SERP)</span>
-                      <div className="flex items-center gap-2 text-xs text-[#202124]">
-                        <div className="w-5 h-5 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-[10px] font-bold">
-                          {config?.storeName ? config.storeName.charAt(0) : "S"}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-xs text-[#202124]">{config?.storeName || "SAJGOJ FASHION"}</span>
-                          <span className="text-[11px] text-[#5f6368] font-mono truncate max-w-xs">
-                            {seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}
-                          </span>
-                        </div>
+                  <div className="grid md:grid-cols-2 gap-5">
+                    {/* Facebook / WhatsApp / LinkedIn Open Graph Preview Card */}
+                    <div className="bg-white rounded-2xl border border-gray-300 shadow-sm overflow-hidden font-sans">
+                      <div className="bg-[#1877f2] text-white px-3 py-1.5 text-[11px] font-bold flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <span>🌐</span>
+                          <span>Facebook, WhatsApp ও LinkedIn শেয়ার কার্ড (og:image)</span>
+                        </span>
+                        <span className="text-[10px] bg-white/20 px-2 py-0.2 rounded font-mono">1.91:1 Ratio</span>
                       </div>
-                      <h4 className="text-base font-medium text-[#1a0dab] hover:underline cursor-pointer leading-tight">
-                        {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee Collection"}
-                      </h4>
-                      <p className="text-xs text-[#4d5156] leading-relaxed line-clamp-2">
-                        {seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।"}
-                      </p>
-                    </div>
-
-                    {/* Facebook & Twitter Social Card Live Preview */}
-                    <div className="bg-white rounded-xl border border-gray-300 shadow-sm overflow-hidden font-sans">
-                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block px-3 pt-2.5 pb-1">
-                        সোশ্যাল শেয়ার প্রিভিউ (Facebook / Twitter / WhatsApp)
-                      </span>
-                      <div className="aspect-[1.91/1] w-full bg-gray-100 overflow-hidden relative border-y border-gray-200">
+                      <div className="aspect-[1.91/1] w-full bg-gray-100 overflow-hidden relative border-b border-gray-200">
                         <img 
                           src={seo?.ogImage || banners?.[0]?.image || config?.logo || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80"} 
-                          alt="Social Preview" 
+                          alt="Open Graph Preview" 
                           className="w-full h-full object-cover"
                           onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80"; }}
                         />
+                        <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded">
+                          og:image
+                        </div>
                       </div>
-                      <div className="p-3 bg-[#f0f2f5] space-y-1">
-                        <span className="text-[10px] text-gray-500 uppercase font-mono block">
+                      <div className="p-3.5 bg-[#f0f2f5] space-y-1">
+                        <span className="text-[10px] text-gray-500 uppercase font-mono block truncate">
                           {seo?.canonicalUrl ? seo.canonicalUrl.replace(/^https?:\/\//, "").split("/")[0] : "sajgojfashion.netlify.app"}
                         </span>
-                        <h5 className="text-xs font-bold text-gray-900 truncate">
-                          {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee"}
+                        <h5 className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                          {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee Collection"}
                         </h5>
                         <p className="text-[11px] text-gray-600 line-clamp-2 leading-tight">
                           {seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।"}
                         </p>
                       </div>
                     </div>
+
+                    {/* Google SERP Preview */}
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm font-sans flex flex-col justify-between space-y-3">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+                            গুগল সার্চ প্রিভিউ (Google Search SERP)
+                          </span>
+                          <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-200">
+                            Canonical Linked
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-[#202124]">
+                          <div className="w-6 h-6 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                            {config?.storeName ? config.storeName.charAt(0) : "S"}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-xs text-[#202124] truncate">
+                              {config?.storeName || "SAJGOJ FASHION"}
+                            </span>
+                            <span className="text-[11px] text-[#5f6368] font-mono truncate">
+                              {seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}
+                            </span>
+                          </div>
+                        </div>
+                        <h4 className="text-base font-medium text-[#1a0dab] hover:underline cursor-pointer leading-snug line-clamp-2">
+                          {seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee Collection"}
+                        </h4>
+                        <p className="text-xs text-[#4d5156] leading-relaxed line-clamp-3">
+                          {seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।"}
+                        </p>
+                      </div>
+                      <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+                        <span>টাইটেল দৈর্ঘ্য: {(seo?.siteTitle || "").length} অক্ষর</span>
+                        <span>ডেসক্রিপশন: {(seo?.metaDescription || "").length} অক্ষর</span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-gray-500">
-                    💡 ফেসবুক, হোয়াটসঅ্যাপ বা টুইটারে আপনার ওয়েবসাইটের লিঙ্ক শেয়ার করলে এই ছবি, টাইটেল ও বিবরণটি প্রিভিউ হিসেবে প্রদর্শিত হবে।
-                  </p>
                 </div>
 
-                {/* 2. SEO Form Fields */}
-                <div className="grid md:grid-cols-2 gap-6 pt-2">
+                {/* 2. Primary SEO Meta-Tags Edit Form */}
+                <div className="grid md:grid-cols-2 gap-6 pt-1">
+                  {/* Left Column: Global Site Title, Description, Keywords */}
                   <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-gray-700">Meta Site Title (গুগল সার্চ টাইটেল)</label>
-                        <span className={`text-[10px] font-mono font-bold ${((seo?.siteTitle || "").length >= 40 && (seo?.siteTitle || "").length <= 60) ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
-                          {(seo?.siteTitle || "").length} / ৬০ অক্ষর
+                    {/* A. Global Site Title */}
+                    <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
+                        <label className="text-xs font-bold text-[#7a1c2b] flex items-center gap-1.5">
+                          <span>🏷️</span>
+                          <span>Global Site Title (গ্লোবাল সাইট টাইটেল) *</span>
+                        </label>
+                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                          ((seo?.siteTitle || "").length >= 40 && (seo?.siteTitle || "").length <= 65) 
+                            ? "bg-emerald-100 text-emerald-800" 
+                            : "bg-amber-100 text-amber-800"
+                        }`}>
+                          {(seo?.siteTitle || "").length} / ৬০-৬৫ অক্ষর
                         </span>
                       </div>
+                      <p className="text-[11px] text-gray-500">
+                        ব্রাউজারের ট্যাবে এবং গুগল সার্চ রেজাল্টে সাইটের প্রধান শিরোনাম হিসেবে প্রদর্শিত হবে।
+                      </p>
                       <input 
                         type="text" 
                         value={seo?.siteTitle || ""} 
                         onChange={(e) => setSeo({ ...seo, siteTitle: e.target.value })}
-                        placeholder="যেমন: SAJGOJ FASHION - Premium Jewelry & Sharee"
-                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs" 
+                        placeholder="যেমন: SAJGOJ FASHION - Premium Jewelry & Sharee Collection"
+                        className="w-full bg-white border border-[#e8d5c0] rounded-xl px-4 py-2.5 text-xs sm:text-sm outline-none focus:border-[#7a1c2b] shadow-xs" 
                       />
-                      <p className="text-[10px] text-gray-400 mt-1">৫০ থেকে ৬০ অক্ষরের মধ্যে টাইটেল রাখলে গুগলে সম্পূর্ণ দৃশ্যমান থাকে</p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const generated = `${config.storeName || "SAJGOJ FASHION"} - ${config.tagline || "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ"}`;
+                            setSeo({ ...seo, siteTitle: generated });
+                          }}
+                          className="text-[11px] font-bold text-[#7a1c2b] hover:text-[#53111c] bg-white border border-[#d4a574] px-2.5 py-1 rounded-lg transition active:scale-95 flex items-center gap-1"
+                        >
+                          <span>🪄</span>
+                          <span>স্টোরের নাম ও স্লোগান দিয়ে ফিল করুন</span>
+                        </button>
+                      </div>
                     </div>
 
-                    <div>
+                    {/* B. Meta Description */}
+                    <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-gray-700">Meta Description (গুগল সার্চ বিবরণ)</label>
-                        <span className={`text-[10px] font-mono font-bold ${((seo?.metaDescription || "").length >= 100 && (seo?.metaDescription || "").length <= 160) ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
+                        <label className="text-xs font-bold text-[#7a1c2b] flex items-center gap-1.5">
+                          <span>📝</span>
+                          <span>Meta Description (গুগল ও সোশ্যাল বিবরণ)</span>
+                        </label>
+                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                          ((seo?.metaDescription || "").length >= 100 && (seo?.metaDescription || "").length <= 160) 
+                            ? "bg-emerald-100 text-emerald-800" 
+                            : "bg-gray-100 text-gray-600"
+                        }`}>
                           {(seo?.metaDescription || "").length} / ১৬০ অক্ষর
                         </span>
                       </div>
+                      <p className="text-[11px] text-gray-500">
+                        গুগল এবং সোশ্যাল মিডিয়ায় লিঙ্কের নিচে প্রদর্শিত ১-২ লাইনের আকর্ষণীয় সারাংশ।
+                      </p>
                       <textarea 
                         rows="3" 
                         value={seo?.metaDescription || ""} 
                         onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
-                        placeholder="আপনার স্টোর সম্পর্কে ১-২ লাইনের বিবরণ যা গুগলে লিঙ্কের নিচে দেখা যাবে..."
-                        className="w-full bg-[#fffaf5] border rounded-2xl p-3.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs resize-none" 
+                        placeholder="আপনার স্টোর সম্পর্কে স্পষ্ট ও রুচিশীল বিবরণ যা ক্রেতাদের ওয়েবসাইট খুলতে উৎসাহিত করবে..."
+                        className="w-full bg-white border border-[#e8d5c0] rounded-xl p-3 text-xs sm:text-sm outline-none focus:border-[#7a1c2b] shadow-xs resize-none" 
                       />
-                      <p className="text-[10px] text-gray-400 mt-1">১০০ থেকে ১৬০ অক্ষরের মধ্যে সুন্দর বিবরণ গ্রাহকদের বেশি ক্লিক করতে উৎসাহিত করে</p>
                     </div>
 
+                    {/* C. Meta Keywords */}
                     <div>
-                      <label className="text-xs font-semibold text-gray-700">Meta Keywords (সার্চ ট্যাগ - কমা দিয়ে লিখুন)</label>
+                      <label className="text-xs font-semibold text-gray-700 block mb-1">
+                        Meta Keywords (কীওয়ার্ড ট্যাগসমূহ - কমা দিয়ে লিখুন)
+                      </label>
                       <input 
                         type="text" 
                         value={seo?.metaKeywords || ""} 
                         onChange={(e) => setSeo({ ...seo, metaKeywords: e.target.value })}
                         placeholder="sajgoj, sharee bd, bridal choker, jewelry, eid collection"
-                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs" 
+                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-xs sm:text-sm outline-none focus:border-[#7a1c2b] shadow-xs" 
                       />
                     </div>
                   </div>
 
+                  {/* Right Column: Canonical URL, Open-Graph Image Tags, Robots */}
                   <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-700">Canonical Site URL (মূল ডোমেইন লিঙ্ক)</label>
+                    {/* A. Canonical URL */}
+                    <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
+                        <label className="text-xs font-bold text-[#7a1c2b] flex items-center gap-1.5">
+                          <span>🔗</span>
+                          <span>Canonical URL (মূল ক্যানোনিকাল ডোমেইন লিঙ্ক) *</span>
+                        </label>
+                        <span className="text-[10px] bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded border border-purple-200">
+                          rel="canonical"
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        সার্চ ইঞ্জিন (Google/Bing) কে সাইটের মূল অফিশিয়াল অ্যাড্রেস জানাতে এবং ডুপ্লিকেট কন্টেন্ট রোধে ব্যবহৃত হয়।
+                      </p>
                       <input 
-                        type="text" 
+                        type="url" 
                         value={seo?.canonicalUrl || ""} 
                         onChange={(e) => setSeo({ ...seo, canonicalUrl: e.target.value })}
                         placeholder="https://sajgojfashion.netlify.app"
-                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 font-mono focus:border-[#7a1c2b] shadow-xs" 
+                        className="w-full bg-white border border-[#e8d5c0] rounded-xl px-4 py-2.5 text-xs sm:text-sm outline-none font-mono focus:border-[#7a1c2b] shadow-xs" 
                       />
-                      <p className="text-[10px] text-gray-400 mt-1">সার্চ ইঞ্জিন ডুপ্লিকেট কন্টেন্ট এড়াতে এই লিঙ্কটি অগ্রাধিকার দেয়</p>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-gray-700">Open Graph & Twitter Share Image (সোশ্যাল শেয়ার ছবি লিঙ্ক) *</label>
-                        <span className="text-[10px] text-emerald-700 font-bold">1200×630px প্রস্তাবিত</span>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentOrigin = window.location.origin && window.location.origin !== "null" ? (window.location.origin + window.location.pathname) : "https://sajgojfashion.netlify.app";
+                            setSeo({ ...seo, canonicalUrl: currentOrigin.replace(/\/$/, "") });
+                          }}
+                          className="text-[11px] font-bold text-[#7a1c2b] hover:text-[#53111c] bg-white border border-[#d4a574] px-2.5 py-1 rounded-lg transition active:scale-95 flex items-center gap-1"
+                        >
+                          <span>🌐</span>
+                          <span>বর্তমান লাইভ ইউআরএল সেট করুন</span>
+                        </button>
                       </div>
-                      <input 
-                        type="url" 
-                        value={seo?.ogImage || ""} 
-                        onChange={(e) => setSeo({ ...seo, ogImage: e.target.value })}
-                        placeholder="https://... (ছবি লিংক যেমন .jpg / .png)"
-                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-xs outline-none mt-1 font-mono focus:border-[#7a1c2b] shadow-xs" 
-                      />
-                      <p className="text-[10px] text-gray-400 mt-1">ফেসবুক বা হোয়াটসঅ্যাপে লিংক শেয়ার করলে যে ছবিটি বড় ব্যানার হিসেবে দেখাবে</p>
                     </div>
 
-                    <div>
-                      <label className="text-xs font-semibold text-gray-700">Robots Meta Tag (ইনডেক্সিং নির্দেশনা)</label>
-                      <select
-                        value={seo?.robots || "index, follow"}
-                        onChange={(e) => setSeo({ ...seo, robots: e.target.value })}
-                        className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none mt-1 focus:border-[#7a1c2b] shadow-xs cursor-pointer"
-                      >
-                        <option value="index, follow">index, follow (প্রস্তাবিত - গুগলে সম্পূর্ণ ইনডেক্স হবে)</option>
-                        <option value="noindex, follow">noindex, follow (গুগলে দেখাবে না কিন্তু লিঙ্ক ফলো করবে)</option>
-                        <option value="index, nofollow">index, nofollow (গুগলে ইনডেক্স হবে কিন্তু লিঙ্ক ফলো করবে না)</option>
-                        <option value="noindex, nofollow">noindex, nofollow (সার্চ ইঞ্জিন থেকে সম্পূর্ণ গোপন)</option>
-                      </select>
-                    </div>
-
-                    {/* Sitemap Statistics Card */}
-                    <div className="bg-[#fffaf5] p-4 rounded-2xl border border-[#f3e2d0] space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#7a1c2b]">XML সাইটম্যাপ স্ট্যাটাস:</span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          স্বয়ংক্রিয় তৈরি ✓
+                    {/* B. Open Graph & Twitter Share Image (og:image) */}
+                    <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2.5">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
+                        <label className="text-xs font-bold text-[#7a1c2b] flex items-center gap-1.5">
+                          <span>🖼️</span>
+                          <span>Open-Graph Image Tags (og:image / twitter:image) *</span>
+                        </label>
+                        <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
+                          1200×630px প্রস্তাবিত
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                        <div className="bg-white p-2 rounded-xl border border-[#f3e2d0]">
-                          <span className="text-xs text-gray-500 block">পণ্য লিঙ্ক</span>
-                          <span className="text-sm font-bold text-[#7a1c2b]">{products.length} টি</span>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-[#f3e2d0]">
-                          <span className="text-xs text-gray-500 block">কম্বো লিঙ্ক</span>
-                          <span className="text-sm font-bold text-[#7a1c2b]">{combos.length} টি</span>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-[#f3e2d0]">
-                          <span className="text-xs text-gray-500 block">ক্যাটাগরি</span>
-                          <span className="text-sm font-bold text-[#7a1c2b]">{categories.length} টি</span>
+                      <p className="text-[11px] text-gray-500">
+                        ফেসবুক, হোয়াটসঅ্যাপ, এক্স (টুইটার), মেসেঞ্জার বা রেডিটে লিংক পাঠালে এই ছবি বড় আকর্ষণীয় থাম্বনেইল হিসেবে ভেসে উঠবে।
+                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="url" 
+                          value={seo?.ogImage || ""} 
+                          onChange={(e) => setSeo({ ...seo, ogImage: e.target.value })}
+                          placeholder="https://... (ছবি লিংক যেমন .jpg / .png)"
+                          className="flex-1 bg-white border border-[#e8d5c0] rounded-xl px-4 py-2 text-xs font-mono outline-none focus:border-[#7a1c2b] shadow-xs" 
+                        />
+                        {seo?.ogImage && (
+                          <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#d4a574] shrink-0 bg-white">
+                            <img src={seo.ogImage} alt="OG Thumbnail" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Quick Image Presets */}
+                      <div className="pt-1">
+                        <span className="text-[10px] font-bold text-gray-500 block mb-1">কুইক ইমেজ প্রিসেট সিলেক্ট করুন:</span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {config?.logo && (
+                            <button
+                              type="button"
+                              onClick={() => setSeo({ ...seo, ogImage: config.logo })}
+                              className="px-2.5 py-1 bg-white hover:bg-amber-50 border border-[#ecd9c6] rounded-lg text-[11px] font-semibold text-gray-700 transition"
+                            >
+                              🏷️ স্টোর লোগো
+                            </button>
+                          )}
+                          {banners?.[0]?.image && (
+                            <button
+                              type="button"
+                              onClick={() => setSeo({ ...seo, ogImage: banners[0].image })}
+                              className="px-2.5 py-1 bg-white hover:bg-amber-50 border border-[#ecd9c6] rounded-lg text-[11px] font-semibold text-gray-700 transition"
+                            >
+                              👑 ১ম হিরো ব্যানার
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSeo({ ...seo, ogImage: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80" })}
+                            className="px-2.5 py-1 bg-white hover:bg-amber-50 border border-[#ecd9c6] rounded-lg text-[11px] font-semibold text-gray-700 transition"
+                          >
+                            💎 জুয়েলারি কালেকশন
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSeo({ ...seo, ogImage: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=1200&q=80" })}
+                            className="px-2.5 py-1 bg-white hover:bg-amber-50 border border-[#ecd9c6] rounded-lg text-[11px] font-semibold text-gray-700 transition"
+                          >
+                            👗 শাড়ি কালেকশন
+                          </button>
                         </div>
                       </div>
-                      <p className="text-[10px] text-gray-400 text-center pt-1">
-                        উপরে "sitemap.xml ডাউনলোড" বাটনে ক্লিক করে Google Search Console-এ জমা দিতে পারবেন।
-                      </p>
+                    </div>
+
+                    {/* C. Robots Meta Tag */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 block mb-1">Robots Meta Tag</label>
+                        <select
+                          value={seo?.robots || "index, follow"}
+                          onChange={(e) => setSeo({ ...seo, robots: e.target.value })}
+                          className="w-full bg-[#fffaf5] border rounded-xl px-3 py-2.5 text-xs outline-none focus:border-[#7a1c2b] shadow-xs cursor-pointer"
+                        >
+                          <option value="index, follow">index, follow (সম্পূর্ণ ইনডেক্স হবে)</option>
+                          <option value="noindex, follow">noindex, follow (ইনডেক্স হবে না)</option>
+                          <option value="index, nofollow">index, nofollow (লিঙ্ক ফলো করবে না)</option>
+                          <option value="noindex, nofollow">noindex, nofollow (গোপন)</option>
+                        </select>
+                      </div>
+
+                      {/* Debugger Tools */}
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 block mb-1">সোশ্যাল শেয়ার ডিবাগার টুল</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const targetUrl = seo?.canonicalUrl || window.location.href;
+                            window.open(`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(targetUrl)}`, '_blank');
+                          }}
+                          className="w-full bg-[#fffaf5] hover:bg-[#fff0e6] border border-[#d4a574] text-[#7a1c2b] rounded-xl px-3 py-2 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
+                          title="ফেসবুক ক্যাশ ক্লিয়ার ও শেয়ার টেস্ট"
+                        >
+                          <span>🔍</span>
+                          <span>FB Sharing Debugger</span>
+                          <span>↗</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
+                </div>
+
+                {/* 3. Generated HTML Meta Tags Inspector */}
+                <div className="bg-[#1c120c] text-amber-200 p-4 sm:p-5 rounded-2xl border border-[#d4a574]/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>💻</span>
+                      <span>রেন্ডার হওয়া HTML হেড মেটা-ট্যাগ কোড (Auto-injected into &lt;head&gt;)</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tagsSnippet = `<!-- Primary Meta Tags -->
+<title>${seo?.siteTitle || "SAJGOJ FASHION"}</title>
+<meta name="title" content="${seo?.siteTitle || "SAJGOJ FASHION"}" />
+<meta name="description" content="${seo?.metaDescription || ""}" />
+<meta name="keywords" content="${seo?.metaKeywords || ""}" />
+<meta name="robots" content="${seo?.robots || "index, follow"}" />
+<link rel="canonical" href="${seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="${config?.storeName || "SAJGOJ FASHION"}" />
+<meta property="og:url" content="${seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}" />
+<meta property="og:title" content="${seo?.siteTitle || "SAJGOJ FASHION"}" />
+<meta property="og:description" content="${seo?.metaDescription || ""}" />
+<meta property="og:image" content="${seo?.ogImage || ""}" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content="${seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}" />
+<meta name="twitter:title" content="${seo?.siteTitle || "SAJGOJ FASHION"}" />
+<meta name="twitter:description" content="${seo?.metaDescription || ""}" />
+<meta name="twitter:image" content="${seo?.ogImage || ""}" />`;
+                        navigator.clipboard.writeText(tagsSnippet);
+                        notify("✓ সকল মেটা ট্যাগ কোড ক্লিপবোর্ডে কপি হয়েছে!");
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-white text-[11px] px-3 py-1 rounded-lg font-mono transition"
+                    >
+                      📋 কোড কপি করুন
+                    </button>
+                  </div>
+                  <pre className="text-[11px] font-mono overflow-x-auto text-amber-100/90 bg-black/40 p-3 rounded-xl leading-relaxed">
+{`<title>${seo?.siteTitle || "SAJGOJ FASHION"}</title>
+<link rel="canonical" href="${seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}" />
+<meta property="og:title" content="${seo?.siteTitle || "SAJGOJ FASHION"}" />
+<meta property="og:image" content="${seo?.ogImage || ""}" />
+<meta property="og:url" content="${seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}" />
+<meta name="twitter:card" content="summary_large_image" />`}
+                  </pre>
                 </div>
 
                 {/* Save Button Footer */}
@@ -7327,7 +7980,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     onClick={async () => {
                       setStored("seo", seo);
                       await syncDocToCloud("config", "seo", seo);
-                      notify("এসইও তথ্য সফলভাবে ক্লাউড ও ডিভাইসে সংরক্ষিত হয়েছে! ✅");
+                      notify("এসইও মেটা-ট্যাগ ও সোশ্যাল সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅");
                     }} 
                     className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-8 py-3 rounded-full text-sm font-bold shadow-md hover:shadow-lg transition active:scale-95 flex items-center gap-2"
                   >
@@ -8799,6 +9452,282 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     className="bg-[#7a1c2b] text-white px-6 py-2.5 rounded-full text-xs font-bold hover:bg-[#681727] transition shadow"
                   >
                     বুঝেছি, ধন্যবাদ
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* CAMERA QR & BARCODE SCANNER MODAL (লাইভ ক্যামেরা স্ক্যানার) */}
+          {/* ========================================================= */}
+          {isScannerOpen && (
+            <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div className="bg-[#1c120c] text-white rounded-3xl w-full max-w-md overflow-hidden border border-[#d4a574]/40 shadow-2xl space-y-4">
+                {/* Header */}
+                <div className="p-4 sm:p-5 bg-gradient-to-r from-[#7a1c2b] to-[#450e18] flex items-center justify-between border-b border-[#d4a574]/30">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl sm:text-3xl">📷</span>
+                    <div>
+                      <h3 className="font-bold text-base sm:text-lg text-amber-200">
+                        QR কোড ও বারকোড স্ক্যানার
+                      </h3>
+                      <p className="text-[11px] text-amber-100/80">
+                        ক্যামেরা দিয়ে পণ্য বা ট্যাগের QR ধরুন
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopScanner();
+                      setIsScannerOpen(false);
+                    }}
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center font-bold text-white transition"
+                    title="বন্ধ করুন"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Viewfinder Area */}
+                <div className="px-4">
+                  <div className="relative aspect-[4/3] bg-black rounded-2xl overflow-hidden border-2 border-[#d4a574]/50 shadow-inner flex items-center justify-center">
+                    {/* Live Video Feed */}
+                    <video
+                      ref={scannerVideoRef}
+                      className="w-full h-full object-cover"
+                      muted
+                      autoPlay
+                      playsInline
+                    />
+
+                    {/* Laser Scanner Reticle Overlay */}
+                    {!scannerLoading && !scannerError && (
+                      <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                        <div className="w-56 h-56 border-2 border-[#ffd700] rounded-2xl relative shadow-2xl flex items-center justify-center">
+                          {/* Corner Accent Markers */}
+                          <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-amber-400 rounded-tl-lg"></div>
+                          <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-amber-400 rounded-tr-lg"></div>
+                          <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-amber-400 rounded-bl-lg"></div>
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-amber-400 rounded-br-lg"></div>
+
+                          {/* Animated Scan Line */}
+                          <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_12px_#ff0000] animate-pulse"></div>
+                        </div>
+                        <p className="mt-3 text-xs font-semibold text-amber-200 bg-black/60 px-3 py-1 rounded-full backdrop-blur-xs">
+                          QR কোডটি ফ্রেমের মাঝে রাখুন
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Camera Switch & Torch Controls */}
+                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                      {hasTorch && (
+                        <button
+                          type="button"
+                          onClick={toggleTorch}
+                          className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-md transition ${torchOn ? 'bg-amber-400 text-black' : 'bg-black/60 text-white hover:bg-black/80'}`}
+                          title="ফ্ল্যাশ লাইট অন/অফ"
+                        >
+                          🔦
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={switchCamera}
+                        className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-sm font-bold shadow-md transition"
+                        title="ক্যামেরা পরিবর্তন (Front/Back)"
+                      >
+                        🔄
+                      </button>
+                    </div>
+
+                    {/* Loading State */}
+                    {scannerLoading && (
+                      <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-2 z-10 text-amber-200 text-xs">
+                        <div className="w-8 h-8 border-3 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                        <span>ক্যামেরা চালু হচ্ছে...</span>
+                      </div>
+                    )}
+
+                    {/* Error State */}
+                    {scannerError && (
+                      <div className="absolute inset-0 bg-[#2c1810]/95 flex flex-col items-center justify-center p-4 text-center gap-2 z-10">
+                        <span className="text-3xl">⚠️</span>
+                        <p className="text-xs text-rose-300 font-medium">{scannerError}</p>
+                        <button
+                          type="button"
+                          onClick={() => startScanner()}
+                          className="mt-2 bg-[#7a1c2b] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow hover:bg-[#681727]"
+                        >
+                          পুনরায় চেষ্টা করুন 🔄
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Alternative Scanner Controls: Gallery Upload & Manual Code */}
+                <div className="px-4 pb-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 py-2 px-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl cursor-pointer text-xs font-bold flex items-center justify-center gap-1.5 transition text-amber-100">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleScanImageFile}
+                        className="hidden"
+                      />
+                      <span>📁 ছবি আপলোড থেকে স্ক্যান</span>
+                    </label>
+                  </div>
+
+                  {/* Manual Code / SKU Input */}
+                  <div className="pt-2 border-t border-white/10">
+                    <p className="text-[11px] text-gray-400 mb-1.5 font-medium">অথবা প্রোডাক্ট কোড / SKU লিখে খুঁজুন:</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={manualScanInput}
+                        onChange={(e) => setManualScanInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && manualScanInput.trim()) {
+                            handleScannedData(manualScanInput);
+                          }
+                        }}
+                        placeholder="উদাঃ SKU-101 বা প্রোডাক্ট নাম..."
+                        className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-400 outline-none focus:border-amber-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (manualScanInput.trim()) {
+                            handleScannedData(manualScanInput);
+                          }
+                        }}
+                        className="bg-[#d4a574] hover:bg-[#c39564] text-[#2c1810] px-4 py-2 rounded-xl text-xs font-bold shadow transition active:scale-95"
+                      >
+                        খুঁজুন
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* PRODUCT QR CODE & SMART TAG MODAL (প্রোডাক্ট কিউআর কোড) */}
+          {/* ========================================================= */}
+          {qrModalProduct && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden border border-[#f3e2d0] shadow-2xl space-y-4">
+                {/* Header */}
+                <div className="p-4 sm:p-5 bg-gradient-to-r from-[#7a1c2b] to-[#450e18] text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl sm:text-3xl">📷</span>
+                    <div>
+                      <h3 className="font-bold text-base sm:text-lg text-amber-100">
+                        প্রোডাক্ট QR কোড ও স্মার্ট ট্যাগ
+                      </h3>
+                      <p className="text-[11px] text-amber-200/80">
+                        স্ক্যান করে সরাসরি অনলাইনে অর্ডার করার কোড
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setQrModalProduct(null)}
+                    className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center font-bold text-white transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-4 pt-1">
+                  {/* Product Mini Preview */}
+                  <div className="flex items-center gap-3 p-3 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0]">
+                    <img
+                      src={qrModalProduct.images?.[0] || imgSharee}
+                      alt={qrModalProduct.name}
+                      className="w-14 h-14 rounded-xl object-cover border border-[#d4a574] shrink-0"
+                      onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-[#7a1c2b] truncate">{qrModalProduct.name}</h4>
+                      <p className="text-[11px] text-[#b8956a]">SKU: {qrModalProduct.sku || qrModalProduct.id} • {qrModalProduct.category}</p>
+                      <p className="text-base font-black text-[#7a1c2b]">{qrModalProduct.price.toLocaleString()} ৳</p>
+                    </div>
+                  </div>
+
+                  {/* QR Code Container */}
+                  <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border-2 border-[#d4a574]/40 shadow-xs space-y-2">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(getProductDeepLink(qrModalProduct))}&margin=10`}
+                      alt="Product QR"
+                      className="w-48 h-48 rounded-xl shadow-xs border border-gray-100"
+                    />
+                    <p className="text-xs font-bold text-[#7a1c2b] text-center">
+                      📱 মোবাইলের ক্যামেরা দিয়ে স্ক্যান করলেই পণ্যটি খুলবে
+                    </p>
+                    <p className="text-[11px] text-gray-500 text-center">
+                      কাপড় বা গহনার প্যাকেজিং, হ্যাংট্যাগ বা শোরুমে ব্যবহারের জন্য উপযুক্ত
+                    </p>
+                  </div>
+
+                  {/* Direct Link Copier */}
+                  <div className="bg-[#fff8f0] p-2.5 rounded-xl border border-[#f3e2d0] flex items-center gap-2 text-xs">
+                    <span className="text-gray-500 shrink-0">🔗</span>
+                    <input
+                      type="text"
+                      readOnly
+                      value={getProductDeepLink(qrModalProduct)}
+                      className="flex-1 bg-transparent text-[11px] text-gray-700 outline-none truncate font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(getProductDeepLink(qrModalProduct));
+                        notify("✓ প্রোডাক্টের সরাসরি লিংক ক্লিপবোর্ডে কপি হয়েছে!");
+                      }}
+                      className="bg-[#7a1c2b] text-white px-3 py-1 rounded-lg text-xs font-bold shadow-xs hover:bg-[#681727] transition shrink-0"
+                    >
+                      কপি
+                    </button>
+                  </div>
+
+                  {/* Action Buttons: Download Tag, Print Label, View Product */}
+                  <div className="grid grid-cols-2 gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => downloadProductQrTag(qrModalProduct)}
+                      className="py-2.5 px-3 rounded-2xl bg-[#7a1c2b] text-white hover:bg-[#681727] font-bold text-xs shadow transition flex items-center justify-center gap-1.5 active:scale-95"
+                      title="ব্র্যান্ডেড হ্যাং-ট্যাগ ইমেজ ডাউনলোড করুন"
+                    >
+                      <span>📥</span>
+                      <span>QR ট্যাগ ডাউনলোড</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => printProductQrTag(qrModalProduct)}
+                      className="py-2.5 px-3 rounded-2xl bg-[#fff8f0] hover:bg-[#fff0e6] border border-[#d4a574] text-[#7a1c2b] font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 active:scale-95"
+                      title="প্রিন্টার দিয়ে ট্যাগ বা স্টিকার প্রিন্ট করুন"
+                    >
+                      <span>🖨️</span>
+                      <span>প্রিন্ট ট্যাগ</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = qrModalProduct;
+                      setQrModalProduct(null);
+                      setViewProduct(target);
+                    }}
+                    className="w-full py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs transition flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <span>🛍️ এই প্রোডাক্টের ডিটেইলস ও সরাসরি অর্ডার পেজে যান</span>
                   </button>
                 </div>
               </div>
@@ -10889,6 +11818,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           title="সঠিক আংটি ও চুড়ির মাপ জানতে ক্লিক করুন"
                         >
                           <span>📏 সাইজ গাইড</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setQrModalProduct(viewProduct)}
+                          className="py-2.5 px-3 rounded-2xl bg-[#fff8f0] hover:bg-[#7a1c2b] hover:text-white border border-[#d4a574] text-[#7a1c2b] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs active:scale-95"
+                          title="এই পণ্যের QR কোড ও সরাসরি অর্ডার ট্যাগ দেখুন"
+                        >
+                          <span>📷 QR কোড</span>
                         </button>
                       </div>
 
