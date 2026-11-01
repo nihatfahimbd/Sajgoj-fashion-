@@ -146,23 +146,40 @@
     const imgBangles = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fffaf5'/><circle cx='210' cy='300' r='80' fill='none' stroke='#b8956a' stroke-width='22'/><circle cx='390' cy='300' r='80' fill='none' stroke='#7a1c2b' stroke-width='22'/><text x='50%' y='82%' text-anchor='middle' fill='#2c1810' font-size='24' font-weight='700'>সিটি গোল্ড চুড়ি সেট</text></svg>");
     const imgBracelet = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><rect x='130' y='260' width='340' height='30' rx='15' fill='#2c1810'/><circle cx='300' cy='275' r='36' fill='#7a1c2b'/><text x='50%' y='48%' text-anchor='middle' fill='#7a1c2b' font-size='26' font-weight='700'>রুবি স্টোন ব্রেসলেট</text></svg>");
     
+    // Clothing & Apparel SVG Fallbacks
+    const imgTshirt = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#f4ede4'/><path d='M180,120 L240,170 C270,190 330,190 360,170 L420,120 L480,190 L420,240 L420,500 L180,500 L180,240 L120,190 Z' fill='#7a1c2b'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#ffdcc0' font-size='26' font-weight='bold'>প্রিমিয়াম কটন টি-শার্ট</text></svg>");
+    const imgKurti = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0f5'/><path d='M200,100 L250,150 C280,170 320,170 350,150 L400,100 L440,200 L390,220 L450,520 L150,520 L210,220 L160,200 Z' fill='#800020'/><circle cx='300' cy='220' r='18' fill='#ffd700'/><text x='50%' y='65%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='24' font-weight='bold'>ডিজাইনার জামা ও কুর্তি</text></svg>");
+    const imgPants = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#edf2f7'/><path d='M200,120 L400,120 L420,490 L320,490 L300,280 L280,490 L180,490 Z' fill='#2d3748'/><text x='50%' y='35%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='24' font-weight='bold'>ক্যাজুয়াল চিনো প্যান্ট</text></svg>");
+    const imgInnerwear = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff5f5'/><circle cx='230' cy='320' r='75' fill='#e53e3e'/><circle cx='370' cy='320' r='75' fill='#e53e3e'/><rect x='280' y='305' width='40' height='30' rx='8' fill='#c53030'/><text x='50%' y='75%' dominant-baseline='middle' text-anchor='middle' fill='#7a1c2b' font-size='24' font-weight='bold'>বডি ফিট ইনার ওয়্যার</text></svg>");
+    const imgKids = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fefcbf'/><path d='M220,150 L380,150 L420,460 L180,460 Z' fill='#dd6b20'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='26' font-weight='bold'>বাচ্চাদের কিউট পোশাক</text></svg>");
+
     const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#7a1c2b'/><circle cx='950' cy='220' r='260' fill='#d4a574' opacity='0.3'/><circle cx='1050' cy='400' r='180' fill='#53111c' opacity='0.4'/><text x='80' y='200' fill='#fff8f0' font-size='60' font-weight='800'>Eid Collection 2026</text><text x='80' y='270' fill='#ffdcc0' font-size='26'>এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি</text><rect x='80' y='320' width='220' height='56' rx='28' fill='#d4a574'/><text x='190' y='355' text-anchor='middle' fill='#2c1810' font-size='20' font-weight='bold'>কালেকশন দেখুন</text></svg>");
     const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#2c1810'/><rect x='0' y='0' width='550' height='550' fill='#7a1c2b' opacity='0.85'/><circle cx='600' cy='275' r='160' fill='#d4a574' opacity='0.25'/><text x='80' y='210' fill='#fff' font-size='52' font-weight='800'>রাজওয়াড়ি ব্রাইডাল কালেকশন</text><text x='80' y='275' fill='#ffdcc0' font-size='24'>ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত হাতের কাজ</text><rect x='80' y='325' width='220' height='56' rx='28' fill='#fff8f0'/><text x='190' y='360' text-anchor='middle' fill='#7a1c2b' font-size='20' font-weight='bold'>অফার লুফে নিন</text></svg>");
 
     // Seed Data
     const initialProducts = [
-      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "" },
-      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি" },
-      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "" },
-      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি" }
+      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "", colors: ["রয়েল রেড", "মেরুন", "গোল্ডেন", "কালো", "রোজ পিংক"], sizes: ["Free Size (আনস্টিচড শাড়ি)"] },
+      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["অ্যান্টিক গোল্ড", "রয়েল রুবি", "পান্না সবুজ"], sizes: ["অ্যাডজাস্টেবল ফ্রি সাইজ"] },
+      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "", colors: ["২২ ক্যারেট গোল্ড প্লেটেড", "রোজ গোল্ড"], sizes: ["২.২ (ছোট হাত)", "২.৪ (স্ট্যান্ডার্ড)", "২.৬ (মিডিয়াম-লার্জ)", "২.৮ (লার্জ)"] },
+      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রুবি রেড", "পান্না গ্রিন", "স্যাফায়ার ব্লু"], sizes: ["অ্যাডজাস্টেবল ফ্রি সাইজ"] },
+      { id: "p5", name: "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট (Premium T-Shirt)", price: 550, stock: 35, category: "টি-শার্ট", images: [imgTshirt], sku: "SAJ-TS01", description: "১০০% প্রিমিয়াম সুতি কম্বড কটন ফেব্রিক দিয়ে তৈরি অত্যন্ত আরামদায়ক ও ট্রেন্ডি টি-শার্ট। ডেইলি ওয়্যার ও ক্যাজুয়াল আউটিংয়ের জন্য সেরা।", rating: 4.9, reviewsCount: 38, sourceUrl: "", colors: ["কালো (Black)", "সাদা (White)", "নেভি ব্লু (Navy)", "মেরুন (Maroon)", "অলিভ গ্রিন (Olive)"], sizes: ["S (বডি ৩৬\")", "M (বডি ৩৮\")", "L (বডি ৪০\")", "XL (বডি ৪২\")", "XXL (বডি ৪৪\")"] },
+      { id: "p6", name: "ডিজাইনার এম্ব্রয়ডারি কটন কুর্তি ও জামা (Kameez)", price: 1750, stock: 16, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM02", description: "সফট পিওর কটনের ওপর রাজকীয় সুতার নিখুঁত এম্ব্রয়ডারি কাজ করা ডিজাইনার রেডিমেড কুর্তি ও কামিজ। আরামদায়ক ফিটিং ও নজরকাড়া ডিজাইন।", rating: 4.8, reviewsCount: 29, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রোজ পিংক", "ফিরোজা ব্লু", "লেমন ইয়োলো", "মেরুন (Maroon)"], sizes: ["৩৬ (বডি ৩৬\")", "৩৮ (বডি ৩৮\")", "৪০ (বডি ৪০\")", "৪২ (বডি ৪২\")", "৪৪ (বডি ৪৪\")"] },
+      { id: "p7", name: "স্লিম-ফিট স্ট্রেচেবল ক্যাজুয়াল চিনো প্যান্ট", price: 1250, stock: 22, category: "প্যান্ট", images: [imgPants], sku: "SAJ-PT03", description: "উচ্চমানের স্ট্রেচেবল কটন টুইল ফেব্রিক নির্মিত প্রিমিয়াম চিনো প্যান্ট। অফিস ও ক্যাজুয়াল আউটিংয়ের জন্য অত্যন্ত আরামদায়ক।", rating: 4.7, reviewsCount: 19, sourceUrl: "", colors: ["কালো (Black)", "নেভি ব্লু (Navy)", "খাকি (Khaki)", "অ্যাশ (Ash)"], sizes: ["২৮ (কোমর 28\")", "৩০ (কোমর 30\")", "৩২ (কোমর 32\")", "৩৪ (কোমর 34\")", "৩৬ (কোমর 36\")", "৩৮ (কোমর 38\")"] },
+      { id: "p8", name: "সফট সিমলেস বডি ফিট ইনার ওয়্যার / ব্রা (Innerwear)", price: 690, stock: 40, category: "ইনার ওয়্যার", images: [imgInnerwear], sku: "SAJ-IN04", description: "নরম ব্রেথেবল মাইক্রোফাইবার ফেব্রিকের তৈরি ওয়্যার-ফ্রি আরামদায়ক সিমলেস ইনার ওয়্যার। নিখুঁত সাপোর্ট ও শেপিং নিশ্চিত করে।", rating: 4.8, reviewsCount: 34, sourceUrl: "", colors: ["স্কিন / বেজ", "কালো (Black)", "সাদা (White)", "মেরুন"], sizes: ["32B (বডি ৩২\")", "34B (বডি ৩৪\")", "36B (বডি ৩৬\")", "38B (বডি ৩৮\")", "40B (বডি ৪০\")"] },
+      { id: "p9", name: "কিউট পার্টি ফ্রক ও বেবি ড্রেস (বাচ্চাদের ড্রেস)", price: 990, stock: 20, category: "বাচ্চাদের পোশাক", images: [imgKids], sku: "SAJ-KD05", description: "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।", rating: 4.9, reviewsCount: 22, sourceUrl: "", colors: ["বেবি পিংক", "লাল (Red)", "আকাশি (Sky Blue)", "হলুদ (Yellow)"], sizes: ["০-৬ মাস (সাইজ ১৬)", "১-২ বছর (সাইজ ২০)", "২-৩ বছর (সাইজ ২২)", "৩-৪ বছর (সাইজ ২৪)", "৫-৬ বছর (সাইজ ২৬)", "৭-৮ বছর (সাইজ ২৮)"] }
     ];
 
     const initialCategories = [
       { id: "c1", name: "শাড়ি", icon: "👗" },
-      { id: "c2", name: "নেকলেস", icon: "📿" },
-      { id: "c3", name: "চুড়ি", icon: "💍" },
-      { id: "c4", name: "ব্রেসলেট", icon: "✨" },
-      { id: "c5", name: "ব্রাইডাল সেট", icon: "👑" }
+      { id: "c2", name: "জামা / কামিজ", icon: "🥻" },
+      { id: "c3", name: "টি-শার্ট", icon: "👕" },
+      { id: "c4", name: "প্যান্ট", icon: "👖" },
+      { id: "c5", name: "ইনার ওয়্যার", icon: "👙" },
+      { id: "c6", name: "বাচ্চাদের পোশাক", icon: "👶" },
+      { id: "c7", name: "নেকলেস", icon: "📿" },
+      { id: "c8", name: "চুড়ি", icon: "💍" },
+      { id: "c9", name: "ব্রেসলেট", icon: "✨" },
+      { id: "c10", name: "ব্রাইডাল সেট", icon: "👑" }
     ];
 
     const initialOrders = [
@@ -1116,6 +1133,22 @@
       const [viewProduct, setViewProduct] = useState(null);
       const [selectedDetailImg, setSelectedDetailImg] = useState(0);
       const [productQty, setProductQty] = useState(1);
+      const [selectedProductColor, setSelectedProductColor] = useState("");
+      const [selectedProductSize, setSelectedProductSize] = useState("");
+      const [customColorInput, setCustomColorInput] = useState("");
+      const [customSizeInput, setCustomSizeInput] = useState("");
+
+      // Initialize selected color and size when viewProduct opens
+      useEffect(() => {
+        if (viewProduct) {
+          setSelectedProductColor((viewProduct.colors && viewProduct.colors[0]) || "");
+          setSelectedProductSize((viewProduct.sizes && viewProduct.sizes[0]) || "");
+        } else {
+          setSelectedProductColor("");
+          setSelectedProductSize("");
+        }
+      }, [viewProduct?.id]);
+
       const [viewInvoiceOrder, setViewInvoiceOrder] = useState(null);
 
       // Review System State
@@ -1226,9 +1259,9 @@
         });
       };
 
-      // Ring & Bangle Size Guide States
+      // Size Guide States (Clothing & Jewelry)
       const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
-      const [sizeGuideTab, setSizeGuideTab] = useState("ring"); // "ring" or "bangle"
+      const [sizeGuideTab, setSizeGuideTab] = useState("clothing"); // "clothing", "ring", "bangle", "calc"
       const [sizeCalcInput, setSizeCalcInput] = useState("");
 
       // Admin Modals & Forms
@@ -1246,7 +1279,9 @@
         description: "",
         sourceUrl: "",
         bogo: false,
-        bogoText: "১টি কিনলে ১টি ফ্রি"
+        bogoText: "১টি কিনলে ১টি ফ্রি",
+        colors: [],
+        sizes: []
       });
       const [adminProductBogoFilter, setAdminProductBogoFilter] = useState("All");
       const [externalLinkInput, setExternalLinkInput] = useState("");
@@ -2195,15 +2230,19 @@
       };
 
       // Cart Functions
-      const addToCart = (product, qty = 1) => {
+      const addToCart = (product, qty = 1, selectedColor = null, selectedSize = null) => {
         if (product.stock <= 0) {
           notify("দুঃখিত, এই পণ্যটি স্টক আউট!");
           return;
         }
+        const color = selectedColor !== null && selectedColor !== undefined ? selectedColor : (selectedProductColor || (product.colors && product.colors[0]) || "");
+        const size = selectedSize !== null && selectedSize !== undefined ? selectedSize : (selectedProductSize || (product.sizes && product.sizes[0]) || "");
+        const cartItemId = `${product.id}_${color}_${size}`;
+
         setCart(prev => {
-          const existing = prev.find(item => item.id === product.id && !item.isFreeGift);
+          const existing = prev.find(item => (item.cartItemId === cartItemId || (item.id === product.id && (item.selectedColor || "") === color && (item.selectedSize || "") === size)) && !item.isFreeGift);
           if (existing) {
-            return prev.map(item => (item.id === product.id && !item.isFreeGift) ? { 
+            return prev.map(item => (item === existing) ? { 
               ...item, 
               qty: item.qty + qty, 
               bogo: Boolean(product.bogo), 
@@ -2212,21 +2251,29 @@
           }
           return [...prev, { 
             ...product, 
+            cartItemId,
+            selectedColor: color,
+            selectedSize: size,
             qty, 
             bogo: Boolean(product.bogo), 
             bogoText: product.bogoText || "" 
           }];
         });
+
+        const variantParts = [color ? `রং: ${color}` : "", size ? `সাইজ: ${size}` : ""].filter(Boolean);
+        const variantSuffix = variantParts.length > 0 ? ` (${variantParts.join(", ")})` : "";
+
         if (product.bogo) {
-          notify(`🎉 "${product.name}" কার্টে যুক্ত হয়েছে! [🎁 Buy 1 Get 1 Free অফারে সাথে আরও ${qty}টি সম্পূর্ণ ফ্রি পাবেন!]`);
+          notify(`🎉 "${product.name}"${variantSuffix} কার্টে যুক্ত হয়েছে! [🎁 Buy 1 Get 1 Free অফারে সাথে আরও ${qty}টি সম্পূর্ণ ফ্রি পাবেন!]`);
         } else {
-          notify(`"${product.name}" কার্টে যুক্ত হয়েছে! 🛒`);
+          notify(`"${product.name}"${variantSuffix} কার্টে যুক্ত হয়েছে! 🛒`);
         }
       };
 
-      const updateCartQty = (id, delta) => {
+      const updateCartQty = (idOrCartItemId, delta) => {
         setCart(prev => prev.map(item => {
-          if (item.id === id) {
+          const key = item.cartItemId || item.id;
+          if (key === idOrCartItemId || item.id === idOrCartItemId) {
             if (item.isFreeGift) {
               if (delta < 0) return null;
               return item;
@@ -2387,7 +2434,11 @@
             bogo: Boolean(i.bogo),
             bogoText: i.bogoText || "",
             isFreeGift: Boolean(i.isFreeGift),
-            freeGiftOriginId: i.freeGiftOriginId || ""
+            freeGiftOriginId: i.freeGiftOriginId || "",
+            color: i.selectedColor || "",
+            size: i.selectedSize || "",
+            selectedColor: i.selectedColor || "",
+            selectedSize: i.selectedSize || ""
           })),
           trackingId: ""
         };
@@ -2448,12 +2499,13 @@
         const w = window.open("", "_blank");
         if (!w) return;
         const rows = order.items.map(it => {
+          const variantLabel = (it.color || it.selectedColor || it.size || it.selectedSize) ? `<br><span style="display:inline-block;margin-top:2px;font-size:11px;color:#7a1c2b;font-weight:bold;background:#fff0f3;padding:1px 6px;border-radius:6px;border:1px solid #ffd1dc;">${[it.color || it.selectedColor ? `রং: ${it.color || it.selectedColor}` : "", it.size || it.selectedSize ? `সাইজ: ${it.size || it.selectedSize}` : ""].filter(Boolean).join(" | ")}</span>` : "";
           const bogoLabel = it.bogo ? `<br><span style="display:inline-block;margin-top:3px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #fde68a;">🎁 Buy 1 Get 1 Free: পেইড ${it.qty}টি + ফ্রি ${it.qty}টি = মোট ${it.qty * 2}টি</span>` : "";
           const freeGiftLabel = it.isFreeGift ? `<br><span style="display:inline-block;margin-top:3px;background:#ecfdf5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #a7f3d0;">🎁 Buy 2 Get 1 Free উপহার (ফ্রি গিফট - ০ ৳)</span>` : "";
           const comboLabel = it.isCombo ? `<br><span style="display:inline-block;margin-top:3px;background:#f3e8ff;color:#6b21a8;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;">🎁 কম্বো প্যাক বান্ডেল</span>` : "";
           return `
           <tr>
-            <td style="padding:10px;border-bottom:1px solid #f0e0d0;">${it.name}${bogoLabel}${freeGiftLabel}${comboLabel}</td>
+            <td style="padding:10px;border-bottom:1px solid #f0e0d0;">${it.name}${variantLabel}${bogoLabel}${freeGiftLabel}${comboLabel}</td>
             <td style="padding:10px;text-align:center;border-bottom:1px solid #f0e0d0;">
               ${it.qty} টি ${it.bogo ? `<span style="font-size:10px;color:#c2410c;display:block;font-weight:bold;">(+${it.qty}টি ফ্রি)</span>` : it.isFreeGift ? `<span style="font-size:10px;color:#047857;display:block;font-weight:bold;">(ফ্রি উপহার)</span>` : ""}
             </td>
@@ -2560,9 +2612,11 @@
           const comboNote = it.isCombo ? " [🎁 কম্বো প্যাক]" : "";
           const bogoNote = it.bogo ? ` [🎁 Buy 1 Get 1 Free: পেইড ${it.qty || 1}টি + ফ্রি ${it.qty || 1}টি = মোট ${(it.qty || 1) * 2}টি]` : "";
           const freeGiftNote = it.isFreeGift ? " [🎁 Buy 2 Get 1 Free উপহার: ০ ৳ ফ্রি গিফট]" : "";
+          const colorNote = (it.color || it.selectedColor) ? ` [রং: ${it.color || it.selectedColor}]` : "";
+          const sizeNote = (it.size || it.selectedSize) ? ` [সাইজ: ${it.size || it.selectedSize}]` : "";
           const unitPrice = it.price || 0;
           const qty = it.qty || 1;
-          return `  ${idx + 1}. *${it.name}*${comboNote}${bogoNote}${freeGiftNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
+          return `  ${idx + 1}. *${it.name}*${colorNote}${sizeNote}${comboNote}${bogoNote}${freeGiftNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
         }).join("\n");
 
         return `🛍️ *${storeName} - অর্ডার কনফার্মেশন ও বিবরণী* 🛍️
@@ -2975,24 +3029,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </button>
                     )}
 
-                    {/* Quick Spin Wheel Trigger in Header */}
+                    {/* Direct Admin Dashboard Trigger in Header */}
                     <button
                       type="button"
-                      onClick={() => {
-                        if (currentUser) {
-                          setProfileTab("spin");
-                          setIsProfileModalOpen(true);
-                        } else {
-                          setAuthMode("login");
-                          setIsAuthModalOpen(true);
-                          notify("ভাগ্যচাকা স্পিন করতে প্রথমে লগইন করুন!");
-                        }
-                      }}
-                      className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 hover:from-amber-500/20 hover:to-rose-500/20 border border-amber-400/60 text-[#7a1c2b] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1 active:scale-95"
-                      title="দৈনিক ফ্রি ভাগ্যচাকা স্পিন ও উপহার"
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="bg-[#fff8f0] hover:bg-[#7a1c2b] text-[#7a1c2b] hover:text-white border-2 border-[#d4a574] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1 active:scale-95"
+                      title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
                     >
-                      <span className="text-sm animate-spin-slow">🎡</span>
-                      <span className="hidden sm:inline">ভাগ্যচাকা</span>
+                      <span>⚙️</span>
+                      <span className="hidden sm:inline">এডমিন প্যানেল</span>
                     </button>
 
                     <button
@@ -3570,12 +3615,35 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   <span>🎁 ২টি অর্ডারে ফ্রি গিফট প্রযোজ্য</span>
                                 </div>
                               ) : null}
+
+                              {((p.colors && p.colors.length > 0) || (p.sizes && p.sizes.length > 0)) && (
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px]">
+                                  {p.colors && p.colors.length > 0 && (
+                                    <span className="bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-medium border border-rose-100">
+                                      🎨 {p.colors.length}টি কালার
+                                    </span>
+                                  )}
+                                  {p.sizes && p.sizes.length > 0 && (
+                                    <span className="bg-amber-50 text-amber-900 px-1.5 py-0.5 rounded font-medium border border-amber-100">
+                                      📏 {p.sizes.length}টি সাইজ
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             <div className="mt-3 pt-2.5 border-t border-[#f3e2d0] flex items-center justify-between">
                               <span className="text-sm sm:text-base font-bold text-[#7a1c2b]">{p.price.toLocaleString()} ৳</span>
                               <button 
-                                onClick={() => addToCart(p, 1)}
+                                onClick={() => {
+                                  if ((p.colors && p.colors.length > 1) || (p.sizes && p.sizes.length > 1)) {
+                                    setViewProduct(p);
+                                    setSelectedDetailImg(0);
+                                    setProductQty(1);
+                                  } else {
+                                    addToCart(p, 1);
+                                  }
+                                }}
                                 disabled={p.stock <= 0}
                                 className={`text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold transition ${
                                   p.stock > 0 
@@ -3583,7 +3651,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                                 }`}
                               >
-                                {p.stock > 0 ? "অর্ডার করুন" : "স্টক আউট"}
+                                {p.stock > 0 ? (((p.colors && p.colors.length > 1) || (p.sizes && p.sizes.length > 1)) ? "সাইজ/রং বাছুন" : "অর্ডার করুন") : "স্টক আউট"}
                               </button>
                             </div>
                           </div>
@@ -3635,19 +3703,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   </div>
                 </div>
-                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/10 text-xs text-gray-400 flex flex-row items-center justify-between gap-4">
+                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/10 text-xs text-gray-400 flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Admin Login Button on the far left corner */}
                   <button 
                     onClick={() => setActiveTab("Dashboard")}
-                    className="text-amber-300 hover:text-white transition flex items-center gap-1.5 py-1.5 px-3.5 rounded-full border border-amber-400/40 hover:border-amber-300 hover:bg-amber-400/15 text-xs font-bold active:scale-95 whitespace-nowrap shadow-sm"
+                    className="relative z-30 bg-[#42141c] hover:bg-[#5a1b26] text-amber-300 hover:text-white transition flex items-center gap-2 py-2 px-5 rounded-full border-2 border-amber-400/60 hover:border-amber-300 text-xs font-bold active:scale-95 whitespace-nowrap shadow-md cursor-pointer"
                     title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
                   >
-                    <span>⚙️</span>
-                    <span>এডমিন লগইন</span>
+                    <span className="text-sm">⚙️</span>
+                    <span>এডমিন কন্ট্রোল প্যানেল (লগইন)</span>
                   </button>
 
                   {/* Copyright Notice to the right/center with distance from the admin button */}
-                  <div className="text-right sm:text-center flex-1 text-gray-400">
+                  <div className="text-center sm:text-right flex-1 text-gray-400">
                     {config.footer.copyright}
                   </div>
                 </div>
@@ -4356,7 +4424,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 images: [], 
                                 sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
                                 description: "",
-                                sourceUrl: ""
+                                sourceUrl: "",
+                                colors: [],
+                                sizes: []
                               });
                               setExternalLinkInput("");
                               setImageUrlInput("");
@@ -4419,7 +4489,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   <button
                                     onClick={() => {
                                       setEditingProduct(p);
-                                      setProductForm({ ...p, images: p.images || [] });
+                                      setProductForm({ 
+                                        ...p, 
+                                        images: p.images || [],
+                                        colors: p.colors || [],
+                                        sizes: p.sizes || []
+                                      });
                                       setImageUrlInput(p.images[0] || "");
                                       setExternalLinkInput(p.sourceUrl || "");
                                       setImgLoadStatus(p.images[0] ? "loaded" : "idle");
@@ -5125,7 +5200,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           description: "",
                           sourceUrl: "",
                           bogo: false,
-                          bogoText: "১টি কিনলে ১টি ফ্রি"
+                          bogoText: "১টি কিনলে ১টি ফ্রি",
+                          colors: [],
+                          sizes: []
                         });
                         setExternalLinkInput("");
                         setImageUrlInput("");
@@ -5295,7 +5372,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               setEditingProduct(p);
                               setProductForm({
                                 ...p,
-                                images: p.images || []
+                                images: p.images || [],
+                                colors: p.colors || [],
+                                sizes: p.sizes || []
                               });
                               setImageUrlInput(p.images[0] || "");
                               setExternalLinkInput(p.sourceUrl || "");
@@ -8047,10 +8126,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <span className="text-2xl sm:text-3xl">📏</span>
                     <div>
                       <h3 className="font-bold text-base sm:text-lg text-[#7a1c2b]">
-                        আংটি ও চুড়ির নিখুঁত সাইজ গাইড
+                        পোশাক ও গহনার নিখুঁত সাইজ গাইড
                       </h3>
                       <p className="text-xs text-[#b8956a]">
-                        অনলাইনে জুয়েলারি কেনার আগে ঘরে বসে নিজের সঠিক সাইজ মেপে নিন
+                        অনলাইনে কাপড়, জামা, টি-শার্ট, প্যান্ট, ইনার ও গহনা কেনার আগে নিজের সঠিক সাইজ বেছে নিন
                       </p>
                     </div>
                   </div>
@@ -8063,11 +8142,23 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex p-1 bg-[#fff8f0] rounded-2xl border border-[#f3e2d0] gap-1">
+                <div className="flex p-1 bg-[#fff8f0] rounded-2xl border border-[#f3e2d0] gap-1 overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideTab("clothing")}
+                    className={`flex-1 min-w-[110px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                      sizeGuideTab === "clothing"
+                        ? "bg-[#7a1c2b] text-white shadow-sm"
+                        : "text-gray-700 hover:bg-white/80"
+                    }`}
+                  >
+                    <span>👗</span>
+                    <span>পোশাকের সাইজ</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setSizeGuideTab("ring")}
-                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 min-w-[90px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
                       sizeGuideTab === "ring"
                         ? "bg-[#7a1c2b] text-white shadow-sm"
                         : "text-gray-700 hover:bg-white/80"
@@ -8079,7 +8170,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={() => setSizeGuideTab("bangle")}
-                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 min-w-[90px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
                       sizeGuideTab === "bangle"
                         ? "bg-[#7a1c2b] text-white shadow-sm"
                         : "text-gray-700 hover:bg-white/80"
@@ -8091,7 +8182,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={() => setSizeGuideTab("calc")}
-                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 min-w-[90px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
                       sizeGuideTab === "calc"
                         ? "bg-[#7a1c2b] text-white shadow-sm"
                         : "text-gray-700 hover:bg-white/80"
@@ -8101,6 +8192,289 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <span>ক্যালকুলেটর</span>
                   </button>
                 </div>
+
+                {/* TAB 0: CLOTHING & FABRIC SIZE GUIDE */}
+                {sizeGuideTab === "clothing" && (
+                  <div className="space-y-4">
+                    {/* Measurement Tips Card */}
+                    <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 border border-purple-200 rounded-2xl p-4 space-y-2">
+                      <h4 className="font-bold text-xs sm:text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                        <span>💡</span>
+                        <span>ঘরে বসে সঠিক বডি ও কাপড়ের মাপ নেওয়ার ৩টি সহজ টিপস:</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div className="bg-white p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                          <span className="inline-block bg-[#7a1c2b] text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">১</span>
+                          <p className="text-gray-700 font-medium"><strong>চেস্ট / বডি মাপ:</strong> ফিতা দিয়ে বুকের সবচেয়ে চওড়া অংশের চারপাশে আলতোভাবে মাপুন। খুব টাইট বা ঢিলা করবেন না।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                          <span className="inline-block bg-[#7a1c2b] text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">২</span>
+                          <p className="text-gray-700 font-medium"><strong>কোমর / ওয়েস্ট মাপ:</strong> নাভির ঠিক উপরে স্বাভাবিকভাবে দাঁড়িয়ে ফিতা দিয়ে কোমর মেপে প্যান্ট সাইজ বের করুন।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                          <span className="inline-block bg-[#7a1c2b] text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">৩</span>
+                          <p className="text-gray-700 font-medium"><strong>বাচ্চা ও ইনার মাপ:</strong> বয়সের চেয়ে বাচ্চার বর্তমান উচ্চতা ও ওজন দেখে সাইজ নম্বর (১৬-৩২) মেলান।</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 1. T-Shirt, Shirt, Panjabi & Kameez/Kurti Size Chart */}
+                    <div className="border border-[#f3e2d0] rounded-2xl overflow-hidden shadow-xs">
+                      <div className="bg-[#fff8f0] px-4 py-2.5 border-b border-[#f3e2d0] flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">👕 টি-শার্ট, শার্ট, পাঞ্জাবি ও জামা/কুর্তি চার্ট (ইঞ্চি এককে)</span>
+                        <span className="text-[11px] text-[#b8956a] font-semibold">T-Shirt & Tops</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#fcf8f4] text-[#7a1c2b] border-b border-[#f3e2d0]">
+                            <tr>
+                              <th className="p-2.5 font-bold">সাইজ কোড</th>
+                              <th className="p-2.5 font-bold">বডি / চেস্ট (Chest)</th>
+                              <th className="p-2.5 font-bold">লম্বা (Length)</th>
+                              <th className="p-2.5 font-bold">কাঁধ (Shoulder)</th>
+                              <th className="p-2.5 font-bold text-center">উপযুক্ত ফিট</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#f9ede1] text-gray-700">
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">S (Small)</td>
+                              <td className="p-2.5 font-semibold">৩৬ ইঞ্চি (36")</td>
+                              <td className="p-2.5">২৬ ইঞ্চি</td>
+                              <td className="p-2.5">১৭ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">স্লিম / পাতলা গড়ন</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">M (Medium)</td>
+                              <td className="p-2.5 font-semibold">৩৮ ইঞ্চি (38")</td>
+                              <td className="p-2.5">২৭ ইঞ্চি</td>
+                              <td className="p-2.5">১৮ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">খুব জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">L (Large)</td>
+                              <td className="p-2.5 font-semibold">৪০ ইঞ্চি (40")</td>
+                              <td className="p-2.5">২৮ ইঞ্চি</td>
+                              <td className="p-2.5">১৯ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">স্ট্যান্ডার্ড ★★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">XL (Extra Large)</td>
+                              <td className="p-2.5 font-semibold">৪২ ইঞ্চি (42")</td>
+                              <td className="p-2.5">২৯ ইঞ্চি</td>
+                              <td className="p-2.5">২০ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">বহুল বিক্রিত ★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">XXL (2XL)</td>
+                              <td className="p-2.5 font-semibold">৪৪ ইঞ্চি (44")</td>
+                              <td className="p-2.5">৩০ ইঞ্চি</td>
+                              <td className="p-2.5">২১ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">স্বাস্থ্যবান গড়ন</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">3XL (Triple XL)</td>
+                              <td className="p-2.5 font-semibold">৪৬ ইঞ্চি (46")</td>
+                              <td className="p-2.5">৩১ ইঞ্চি</td>
+                              <td className="p-2.5">২২ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">প্লাস সাইজ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 2. Pants, Jeans & Trousers Size Chart */}
+                    <div className="border border-[#f3e2d0] rounded-2xl overflow-hidden shadow-xs">
+                      <div className="bg-[#fffaf5] px-4 py-2.5 border-b border-[#f3e2d0] flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">👖 প্যান্ট, গ্যাবার্ডিন, জিন্স ও ট্রাউজার চার্ট</span>
+                        <span className="text-[11px] text-[#b8956a] font-semibold">Pants & Bottoms</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#fcf8f4] text-[#7a1c2b] border-b border-[#f3e2d0]">
+                            <tr>
+                              <th className="p-2.5 font-bold">প্যান্ট সাইজ</th>
+                              <th className="p-2.5 font-bold">কোমর (Waist)</th>
+                              <th className="p-2.5 font-bold">হিপ (Hip)</th>
+                              <th className="p-2.5 font-bold">প্যান্ট লম্বা (Length)</th>
+                              <th className="p-2.5 font-bold text-center">জনপ্রিয়তা</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#f9ede1] text-gray-700">
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৮ (28)</td>
+                              <td className="p-2.5 font-semibold">২৮ ইঞ্চি</td>
+                              <td className="p-2.5">৩৪ ইঞ্চি</td>
+                              <td className="p-2.5">৩৮ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">স্মল</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩০ (30)</td>
+                              <td className="p-2.5 font-semibold">৩০ ইঞ্চি</td>
+                              <td className="p-2.5">৩৬ ইঞ্চি</td>
+                              <td className="p-2.5">৩৯ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">খুব জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩২ (32)</td>
+                              <td className="p-2.5 font-semibold">৩২ ইঞ্চি</td>
+                              <td className="p-2.5">৩৮ ইঞ্চি</td>
+                              <td className="p-2.5">৪০ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">সবচেয়ে জনপ্রিয় ★★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩৪ (34)</td>
+                              <td className="p-2.5 font-semibold">৩৪ ইঞ্চি</td>
+                              <td className="p-2.5">৪০ ইঞ্চি</td>
+                              <td className="p-2.5">৪১ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">স্ট্যান্ডার্ড ★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩৬ (36)</td>
+                              <td className="p-2.5 font-semibold">৩৬ ইঞ্চি</td>
+                              <td className="p-2.5">৪২ ইঞ্চি</td>
+                              <td className="p-2.5">৪২ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full">লার্জ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩৮ (38)</td>
+                              <td className="p-2.5 font-semibold">৩৮ ইঞ্চি</td>
+                              <td className="p-2.5">৪৪ ইঞ্চি</td>
+                              <td className="p-2.5">৪২.৫ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">এক্সট্রা লার্জ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৪০ (40)</td>
+                              <td className="p-2.5 font-semibold">৪০ ইঞ্চি</td>
+                              <td className="p-2.5">৪৬ ইঞ্চি</td>
+                              <td className="p-2.5">৪৩ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">প্লাস সাইজ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 3. Innerwear & Body Size Measurement */}
+                    <div className="border border-rose-200 rounded-2xl overflow-hidden shadow-xs bg-rose-50/30">
+                      <div className="bg-rose-100/60 px-4 py-2.5 border-b border-rose-200 flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-rose-900">👙 ইনার ওয়্যার ও বডি সাইজ চার্ট (ব্রা ও অন্তর্বাস)</span>
+                        <span className="text-[11px] text-rose-800 font-semibold">Innerwear & Bust Guide</span>
+                      </div>
+                      <div className="p-3.5 space-y-3">
+                        <div className="bg-white p-3 rounded-xl border border-rose-200 text-xs text-rose-950 space-y-1.5">
+                          <p className="font-bold">📐 বডি ও কাপ সাইজ মাপার নিয়ম:</p>
+                          <p className="text-gray-600">১. বুকের ঠিক নিচের অংশ ফিতা দিয়ে মাপুন। যেমন: ২৯"-৩১" হলে ব্যান্ড সাইজ <strong>৩২</strong>, ৩১"-৩৩" হলে ব্যান্ড <strong>৩৪</strong>, ৩৩"-৩৫" হলে ব্যান্ড <strong>৩৬</strong>।</p>
+                          <p className="text-gray-600">২. বুকের সবচেয়ে উন্নত অংশ আলতো করে মাপুন। ব্যান্ড ও বডির পার্থক্য ১" হলে A কাপ, ২" হলে B কাপ (স্ট্যান্ডার্ড), ৩" হলে C কাপ।</p>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-200 shadow-2xs text-center">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">32B</span>
+                            <span className="text-[11px] text-gray-500">বডি ৩২" • স্লিম ফিট</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-300 shadow-2xs text-center bg-rose-50/40">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">34B ★</span>
+                            <span className="text-[11px] text-emerald-800 font-bold">বডি ৩৪" • সর্বাধিক বিক্রি</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-300 shadow-2xs text-center bg-rose-50/40">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">36B ★</span>
+                            <span className="text-[11px] text-emerald-800 font-bold">বডি ৩৬" • স্ট্যান্ডার্ড</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-200 shadow-2xs text-center">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">38B / 40B</span>
+                            <span className="text-[11px] text-gray-500">বডি ৩৮"-৪০" • লার্জ ফিট</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. Kids Size by Age & Weight Chart */}
+                    <div className="border border-sky-200 rounded-2xl overflow-hidden shadow-xs bg-sky-50/30">
+                      <div className="bg-sky-100/70 px-4 py-2.5 border-b border-sky-200 flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-sky-900">👶 বাচ্চাদের বয়স, সাইজ নম্বর ও ওজন চার্ট (Kids Size)</span>
+                        <span className="text-[11px] text-sky-800 font-semibold">Kids Age & Number</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs bg-white">
+                          <thead className="bg-sky-50 text-sky-950 border-b border-sky-200">
+                            <tr>
+                              <th className="p-2.5 font-bold">সাইজ নম্বর</th>
+                              <th className="p-2.5 font-bold">বাচ্চার বয়স</th>
+                              <th className="p-2.5 font-bold">আনুমানিক উচ্চতা</th>
+                              <th className="p-2.5 font-bold">আনুমানিক ওজন</th>
+                              <th className="p-2.5 font-bold text-center">পোশাকের ধরন</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-sky-100 text-gray-700">
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">১৬ (16)</td>
+                              <td className="p-2.5 font-semibold">০ - ৬ মাস</td>
+                              <td className="p-2.5">৫০ - ৬৮ সেমি</td>
+                              <td className="p-2.5">৩ - ৭ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">নবজাতক বেবি</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">১৮ (18)</td>
+                              <td className="p-2.5 font-semibold">৬ - ১২ মাস</td>
+                              <td className="p-2.5">৬৮ - ৭৬ সেমি</td>
+                              <td className="p-2.5">৭ - ১০ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">ইনফ্যান্ট</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২০ (20)</td>
+                              <td className="p-2.5 font-semibold">১ - ২ বছর</td>
+                              <td className="p-2.5">৭৬ - ৮৬ সেমি</td>
+                              <td className="p-2.5">১০ - ১২ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২২ (22)</td>
+                              <td className="p-2.5 font-semibold">২ - ৩ বছর</td>
+                              <td className="p-2.5">৮৬ - ৯৬ সেমি</td>
+                              <td className="p-2.5">১২ - ১৪ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">টডলার</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৪ (24)</td>
+                              <td className="p-2.5 font-semibold">৩ - ৪ বছর</td>
+                              <td className="p-2.5">৯৬ - ১০৪ সেমি</td>
+                              <td className="p-2.5">১৪ - ১৬ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৬ (26)</td>
+                              <td className="p-2.5 font-semibold">৫ - ৬ বছর</td>
+                              <td className="p-2.5">১০৪ - ১১৪ সেমি</td>
+                              <td className="p-2.5">১৬ - ১৯ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">কিডস ফ্রক / শার্ট</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৮ (28)</td>
+                              <td className="p-2.5 font-semibold">৭ - ৮ বছর</td>
+                              <td className="p-2.5">১১৪ - ১২৪ সেমি</td>
+                              <td className="p-2.5">১৯ - ২৩ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">স্কুল এজ</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩০ (30)</td>
+                              <td className="p-2.5 font-semibold">৯ - ১০ বছর</td>
+                              <td className="p-2.5">১২৪ - ১৩৪ সেমি</td>
+                              <td className="p-2.5">২৩ - ২৮ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">প্রি-টিন</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩২ (32)</td>
+                              <td className="p-2.5 font-semibold">১১ - ১২ বছর</td>
+                              <td className="p-2.5">১৩৪ - ১৪৫ সেমি</td>
+                              <td className="p-2.5">২৮ - ৩৫ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">টিন সাইজ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* TAB 1: RING SIZE GUIDE */}
                 {sizeGuideTab === "ring" && (
@@ -8524,7 +8898,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       </div>
                     ) : (
-                      <div key={item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
+                      <div key={item.cartItemId || item.id} className="flex gap-3 bg-[#fffaf5] p-3 rounded-2xl border">
                         <img 
                           src={item.images[0] || imgSharee} 
                           alt={item.name} 
@@ -8533,6 +8907,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-xs sm:text-sm truncate">{item.name}</p>
+                          {(item.selectedColor || item.selectedSize) && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px]">
+                              {item.selectedColor && (
+                                <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-md font-medium">
+                                  রং: {item.selectedColor}
+                                </span>
+                              )}
+                              {item.selectedSize && (
+                                <span className="bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md font-medium">
+                                  সাইজ: {item.selectedSize}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           {item.isCombo && (
                             <span className="inline-block bg-[#d4a574] text-[#2c1810] text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5">
                               🎁 কম্বো প্যাক বান্ডেল
@@ -8561,14 +8949,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             )}
                           </p>
                           <div className="flex items-center gap-3 mt-2">
-                            <button onClick={() => updateCartQty(item.id, -1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">-</button>
+                            <button onClick={() => updateCartQty(item.cartItemId || item.id, -1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">-</button>
                             <span className="text-xs font-bold">{item.qty}</span>
-                            <button onClick={() => updateCartQty(item.id, 1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">+</button>
+                            <button onClick={() => updateCartQty(item.cartItemId || item.id, 1)} className="w-6 h-6 rounded-full bg-white border font-bold flex items-center justify-center">+</button>
                           </div>
                         </div>
                         <div className="text-right flex flex-col justify-between">
                           <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">{item.price * item.qty} ৳</span>
-                          <button onClick={() => updateCartQty(item.id, -item.qty)} className="text-[11px] text-red-500 font-semibold hover:underline">রিমুভ</button>
+                          <button onClick={() => updateCartQty(item.cartItemId || item.id, -item.qty)} className="text-[11px] text-red-500 font-semibold hover:underline">রিমুভ</button>
                         </div>
                       </div>
                     ))
@@ -10386,6 +10774,89 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </a>
                         )}
                       </div>
+
+                      {/* Color Variation Selection */}
+                      {viewProduct.colors && viewProduct.colors.length > 0 && (
+                        <div className="mt-3 p-3 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                              <span>🎨</span>
+                              <span>কালার / রং নির্বাচন করুন:</span>
+                            </span>
+                            {(selectedProductColor || viewProduct.colors[0]) && (
+                              <span className="text-[11px] text-[#7a1c2b] font-bold bg-white px-2.5 py-0.5 rounded-full border border-rose-200 shadow-2xs">
+                                নির্বাচিত: {selectedProductColor || viewProduct.colors[0]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {viewProduct.colors.map(col => {
+                              const isSelected = (selectedProductColor || viewProduct.colors[0]) === col;
+                              return (
+                                <button
+                                  key={col}
+                                  type="button"
+                                  onClick={() => setSelectedProductColor(col)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
+                                    isSelected
+                                      ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-sm"
+                                      : "bg-white text-gray-700 border-[#f3e2d0] hover:border-[#7a1c2b]"
+                                  }`}
+                                >
+                                  {isSelected && <span className="text-[10px]">✓</span>}
+                                  <span>{col}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Size Variation Selection */}
+                      {viewProduct.sizes && viewProduct.sizes.length > 0 && (
+                        <div className="mt-3 p-3 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                              <span>📏</span>
+                              <span>সাইজ নির্বাচন করুন:</span>
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {(selectedProductSize || viewProduct.sizes[0]) && (
+                                <span className="text-[11px] text-amber-900 font-bold bg-white px-2.5 py-0.5 rounded-full border border-amber-200 shadow-2xs">
+                                  নির্বাচিত: {selectedProductSize || viewProduct.sizes[0]}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setIsSizeGuideOpen(true)}
+                                className="text-[11px] text-[#7a1c2b] hover:underline font-bold"
+                              >
+                                চার্ট ↗
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {viewProduct.sizes.map(sz => {
+                              const isSelected = (selectedProductSize || viewProduct.sizes[0]) === sz;
+                              return (
+                                <button
+                                  key={sz}
+                                  type="button"
+                                  onClick={() => setSelectedProductSize(sz)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
+                                    isSelected
+                                      ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                                      : "bg-white text-gray-700 border-[#f3e2d0] hover:border-amber-600"
+                                  }`}
+                                >
+                                  {isSelected && <span className="text-[10px]">✓</span>}
+                                  <span>{sz}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-3 pt-2">
@@ -10423,7 +10894,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                       <button 
                         onClick={() => {
-                          addToCart(viewProduct, productQty);
+                          const activeColor = selectedProductColor || (viewProduct.colors && viewProduct.colors[0]) || "";
+                          const activeSize = selectedProductSize || (viewProduct.sizes && viewProduct.sizes[0]) || "";
+                          addToCart(viewProduct, productQty, activeColor, activeSize);
                           setViewProduct(null);
                         }}
                         disabled={viewProduct.stock <= 0}
@@ -10899,6 +11372,299 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     )}
                   </div>
 
+                  {/* ======================================================== */}
+                  {/* COLOR & SIZE VARIATION MANAGER (কালার ও সাইজ ভ্যারিয়েশন) */}
+                  {/* ======================================================== */}
+                  <div className="p-4 bg-gradient-to-r from-purple-50/70 via-[#fffaf5] to-amber-50/70 rounded-3xl border-2 border-[#d4a574] space-y-4 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-[#f3e2d0] pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">🎨📏</span>
+                        <div>
+                          <h4 className="font-bold text-sm text-[#7a1c2b]">কালার ও সাইজ ভ্যারিয়েশন ম্যানেজার</h4>
+                          <p className="text-[11px] text-[#b8956a]">কাপড়, জামা, টি-শার্ট, প্যান্ট, ইনার, বাচ্চাদের সাইজ ও পছন্দমতো কালার যোগ করুন</p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-bold bg-[#fff8f0] text-[#7a1c2b] px-2.5 py-1 rounded-full border border-[#d4a574]">
+                        {(productForm.colors?.length || 0)}টি কালার • {(productForm.sizes?.length || 0)}টি সাইজ
+                      </span>
+                    </div>
+
+                    {/* 1. COLOR VARIATIONS */}
+                    <div className="space-y-2.5 bg-white p-3.5 rounded-2xl border border-[#f3e2d0]">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <span>🎨</span>
+                          <span>কালার অপশন (Colors)</span>
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-medium">গ্রাহকরা ড্রপডাউন/চিপসে কালার বাছতে পারবেন</span>
+                      </div>
+
+                      {/* Currently selected color tags */}
+                      <div className="flex flex-wrap gap-1.5 min-h-[30px] p-2 bg-[#fffaf5] rounded-xl border border-dashed border-[#f3e2d0]">
+                        {(productForm.colors && productForm.colors.length > 0) ? (
+                          productForm.colors.map((c, idx) => (
+                            <span 
+                              key={idx} 
+                              className="inline-flex items-center gap-1.5 bg-white border border-[#7a1c2b] text-[#7a1c2b] text-xs font-bold px-3 py-1 rounded-full shadow-2xs"
+                            >
+                              <span>{c}</span>
+                              <button 
+                                type="button" 
+                                onClick={() => setProductForm(prev => ({ ...prev, colors: prev.colors.filter((_, i) => i !== idx) }))}
+                                className="w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center text-[10px] transition"
+                                title="কালার মুছুন"
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">কোনো কালার যোগ করা হয়নি (ফ্রি কালার / স্ট্যান্ডার্ড হিসেবে থাকবে)</span>
+                        )}
+                      </div>
+
+                      {/* Custom color input */}
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={customColorInput} 
+                          onChange={(e) => setCustomColorInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const val = customColorInput.trim();
+                              if (val && !productForm.colors?.includes(val)) {
+                                setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
+                                setCustomColorInput("");
+                              }
+                            }
+                          }}
+                          placeholder="নতুন কালার লিখুন (যেমন: গোল্ডেন কপার / স্কাই ব্লু)..." 
+                          className="flex-1 bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const val = customColorInput.trim();
+                            if (val && !productForm.colors?.includes(val)) {
+                              setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
+                              setCustomColorInput("");
+                            }
+                          }}
+                          className="bg-[#7a1c2b] text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-[#63141f] transition shadow-xs whitespace-nowrap"
+                        >
+                          + কালার যোগ
+                        </button>
+                      </div>
+
+                      {/* Quick Popular Color Chips */}
+                      <div className="pt-1">
+                        <p className="text-[10px] font-bold text-gray-500 mb-1.5">জনপ্রিয় কালার প্যালেট (১-ক্লিকে যোগ করুন):</p>
+                        <div className="flex flex-wrap gap-1">
+                          {[
+                            { name: "কালো (Black)", dot: "bg-black" },
+                            { name: "সাদা (White)", dot: "bg-white border border-gray-300" },
+                            { name: "মেরুন (Maroon)", dot: "bg-red-900" },
+                            { name: "রয়েল ব্লু (Royal Blue)", dot: "bg-blue-600" },
+                            { name: "নেভি ব্লু (Navy)", dot: "bg-blue-950" },
+                            { name: "লাল (Red)", dot: "bg-red-600" },
+                            { name: "গোলাপি (Pink)", dot: "bg-pink-400" },
+                            { name: "সবুজ (Green)", dot: "bg-emerald-600" },
+                            { name: "বটল গ্রিন (Bottle Green)", dot: "bg-green-900" },
+                            { name: "হলুদ (Yellow)", dot: "bg-amber-400" },
+                            { name: "গোল্ডেন (Golden)", dot: "bg-amber-500" },
+                            { name: "অলিভ (Olive)", dot: "bg-lime-800" },
+                            { name: "অ্যাশ (Ash/Gray)", dot: "bg-gray-400" },
+                            { name: "স্কিন / বেইজ (Beige)", dot: "bg-[#e8d5b7]" },
+                            { name: "ফিরোজা (Turquoise)", dot: "bg-cyan-500" }
+                          ].map((c) => {
+                            const isAdded = productForm.colors?.includes(c.name);
+                            return (
+                              <button
+                                key={c.name}
+                                type="button"
+                                onClick={() => {
+                                  setProductForm(prev => {
+                                    const current = prev.colors || [];
+                                    if (current.includes(c.name)) {
+                                      return { ...prev, colors: current.filter(x => x !== c.name) };
+                                    } else {
+                                      return { ...prev, colors: [...current, c.name] };
+                                    }
+                                  });
+                                }}
+                                className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border flex items-center gap-1.5 transition ${
+                                  isAdded 
+                                    ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-2xs font-bold" 
+                                    : "bg-white text-gray-700 border-gray-200 hover:border-[#7a1c2b]"
+                                }`}
+                              >
+                                <span className={`w-2 h-2 rounded-full ${c.dot}`}></span>
+                                <span>{isAdded ? `✓ ${c.name}` : `+ ${c.name}`}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. SIZE VARIATIONS */}
+                    <div className="space-y-2.5 bg-white p-3.5 rounded-2xl border border-[#f3e2d0]">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <span>📏</span>
+                          <span>সাইজ অপশন (Sizes - টিশার্ট, জামা, প্যান্ট, ইনার, বাচ্চাদের সাইজ)</span>
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-medium">গ্রাহকরা তাদের মাপ অনুযায়ী সাইজ বেছে নেবেন</span>
+                      </div>
+
+                      {/* Currently selected size tags */}
+                      <div className="flex flex-wrap gap-1.5 min-h-[30px] p-2 bg-[#fffaf5] rounded-xl border border-dashed border-[#f3e2d0]">
+                        {(productForm.sizes && productForm.sizes.length > 0) ? (
+                          productForm.sizes.map((s, idx) => (
+                            <span 
+                              key={idx} 
+                              className="inline-flex items-center gap-1.5 bg-white border border-[#7a1c2b] text-[#7a1c2b] text-xs font-bold px-3 py-1 rounded-full shadow-2xs"
+                            >
+                              <span>{s}</span>
+                              <button 
+                                type="button" 
+                                onClick={() => setProductForm(prev => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== idx) }))}
+                                className="w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center text-[10px] transition"
+                                title="সাইজ মুছুন"
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">কোনো সাইজ যোগ করা হয়নি (ফ্রি সাইজ / আনস্টিচড হিসেবে থাকবে)</span>
+                        )}
+                      </div>
+
+                      {/* Custom size input */}
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={customSizeInput} 
+                          onChange={(e) => setCustomSizeInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const val = customSizeInput.trim();
+                              if (val && !productForm.sizes?.includes(val)) {
+                                setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
+                                setCustomSizeInput("");
+                              }
+                            }
+                          }}
+                          placeholder="নতুন সাইজ লিখুন (যেমন: XL (বডি ৪২ ইঞ্চি) / ৩২ কোমর / 36B)..." 
+                          className="flex-1 bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const val = customSizeInput.trim();
+                            if (val && !productForm.sizes?.includes(val)) {
+                              setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
+                              setCustomSizeInput("");
+                            }
+                          }}
+                          className="bg-[#7a1c2b] text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-[#63141f] transition shadow-xs whitespace-nowrap"
+                        >
+                          + সাইজ যোগ
+                        </button>
+                      </div>
+
+                      {/* 1-Click Preset Template Sets */}
+                      <div className="pt-2 border-t border-gray-100 space-y-2">
+                        <p className="text-[11px] font-bold text-[#7a1c2b] flex items-center gap-1">
+                          <span>⚡</span>
+                          <span>১-ক্লিকে রেডিমেড সাইজ প্রিসেট সেট যোগ করুন:</span>
+                        </p>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const standardShirt = ["S (বডি ৩৬)", "M (বডি ৩৮)", "L (বডি ৪০)", "XL (বডি ৪২)", "XXL (বডি ৪৪)", "3XL (বডি ৪৬)"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardShirt])) }));
+                              notify("👕 টি-শার্ট / শার্ট / জামা সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👕 টি-শার্ট / শার্ট / জামা</p>
+                            <p className="text-[10px] text-gray-500">S, M, L, XL, XXL, 3XL</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const standardPants = ["২৮ (Waist 28)", "৩০ (Waist 30)", "৩২ (Waist 32)", "৩৪ (Waist 34)", "৩৬ (Waist 36)", "৩৮ (Waist 38)", "৪০ (Waist 40)"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardPants])) }));
+                              notify("👖 প্যান্ট / ট্রাউজার সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👖 প্যান্ট / ট্রাউজার / জিন্স</p>
+                            <p className="text-[10px] text-gray-500">২৮, ৩০, ৩২, ৩৪, ৩৬, ৩৮, ৪০</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const innerSizes = ["32B (বডি ৩২)", "34B (বডি ৩৪)", "36B (বডি ৩৬)", "38B (বডি ৩৮)", "40B (বডি ৪০)", "34C", "36C"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...innerSizes])) }));
+                              notify("👙 ইনার ও বডি সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👙 ইনার / ব্রা বডি সাইজ</p>
+                            <p className="text-[10px] text-gray-500">32B, 34B, 36B, 38B, 40B, 34C</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const kidsSizes = ["১৬ (০-৬ মাস)", "১৮ (৬-১২ মাস)", "২০ (১-২ বছর)", "২২ (২-৩ বছর)", "২৪ (৩-৪ বছর)", "২৬ (৫-৬ বছর)", "২৮ (৭-৮ বছর)", "৩০ (৯-১০ বছর)"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...kidsSizes])) }));
+                              notify("👶 বাচ্চাদের সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">👶 বাচ্চাদের পোশাক সাইজ</p>
+                            <p className="text-[10px] text-gray-500">১৬ (০-৬M) থেকে ৩০ (১০Y)</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const jewelrySizes = ["আংটি ৬ (16.5 mm)", "আংটি ৭ (17.3 mm)", "আংটি ৮ (18.1 mm)", "চুড়ি ২.২", "চুড়ি ২.৪", "চুড়ি ২.৬", "চুড়ি ২.৮"];
+                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...jewelrySizes])) }));
+                              notify("💍 আংটি ও চুড়ির সাইজ যোগ হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">💍 আংটি ও চুড়ির সাইজ</p>
+                            <p className="text-[10px] text-gray-500">US 6, 7, 8 & চুড়ি ২.৪, ২.৬</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProductForm(prev => ({ ...prev, sizes: ["Free Size (আনস্টিচড / অল-সাইজ)"] }));
+                              notify("✨ ফ্রি সাইজ সেট করা হয়েছে!");
+                            }}
+                            className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
+                          >
+                            <p className="font-bold text-xs text-[#7a1c2b]">✨ ফ্রি সাইজ (Free Size)</p>
+                            <p className="text-[10px] text-gray-500">শাড়ি, ওড়না বা আনস্টিচড</p>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* DESCRIPTION */}
                   <div>
                     <label className="text-xs font-semibold text-gray-700">পণ্য সম্পর্কে বিস্তারিত বিবরণ</label>
@@ -10929,6 +11695,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ...productForm, 
                           price: cleanPrice,
                           stock: cleanStock,
+                          colors: productForm.colors || [],
+                          sizes: productForm.sizes || [],
                           images: finalImages 
                         };
                         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
@@ -10940,6 +11708,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ...productForm,
                           price: cleanPrice,
                           stock: cleanStock,
+                          colors: productForm.colors || [],
+                          sizes: productForm.sizes || [],
                           images: finalImages,
                           sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
                           rating: 4.8,

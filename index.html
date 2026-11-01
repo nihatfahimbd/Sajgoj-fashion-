@@ -1259,9 +1259,9 @@
         });
       };
 
-      // Ring & Bangle Size Guide States
+      // Size Guide States (Clothing & Jewelry)
       const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
-      const [sizeGuideTab, setSizeGuideTab] = useState("ring"); // "ring" or "bangle"
+      const [sizeGuideTab, setSizeGuideTab] = useState("clothing"); // "clothing", "ring", "bangle", "calc"
       const [sizeCalcInput, setSizeCalcInput] = useState("");
 
       // Admin Modals & Forms
@@ -3029,24 +3029,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </button>
                     )}
 
-                    {/* Quick Spin Wheel Trigger in Header */}
+                    {/* Direct Admin Dashboard Trigger in Header */}
                     <button
                       type="button"
-                      onClick={() => {
-                        if (currentUser) {
-                          setProfileTab("spin");
-                          setIsProfileModalOpen(true);
-                        } else {
-                          setAuthMode("login");
-                          setIsAuthModalOpen(true);
-                          notify("ভাগ্যচাকা স্পিন করতে প্রথমে লগইন করুন!");
-                        }
-                      }}
-                      className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 hover:from-amber-500/20 hover:to-rose-500/20 border border-amber-400/60 text-[#7a1c2b] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1 active:scale-95"
-                      title="দৈনিক ফ্রি ভাগ্যচাকা স্পিন ও উপহার"
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="bg-[#fff8f0] hover:bg-[#7a1c2b] text-[#7a1c2b] hover:text-white border-2 border-[#d4a574] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1 active:scale-95"
+                      title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
                     >
-                      <span className="text-sm animate-spin-slow">🎡</span>
-                      <span className="hidden sm:inline">ভাগ্যচাকা</span>
+                      <span>⚙️</span>
+                      <span className="hidden sm:inline">এডমিন প্যানেল</span>
                     </button>
 
                     <button
@@ -3712,19 +3703,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   </div>
                 </div>
-                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/10 text-xs text-gray-400 flex flex-row items-center justify-between gap-4">
+                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/10 text-xs text-gray-400 flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Admin Login Button on the far left corner */}
                   <button 
                     onClick={() => setActiveTab("Dashboard")}
-                    className="text-amber-300 hover:text-white transition flex items-center gap-1.5 py-1.5 px-3.5 rounded-full border border-amber-400/40 hover:border-amber-300 hover:bg-amber-400/15 text-xs font-bold active:scale-95 whitespace-nowrap shadow-sm"
+                    className="relative z-30 bg-[#42141c] hover:bg-[#5a1b26] text-amber-300 hover:text-white transition flex items-center gap-2 py-2 px-5 rounded-full border-2 border-amber-400/60 hover:border-amber-300 text-xs font-bold active:scale-95 whitespace-nowrap shadow-md cursor-pointer"
                     title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
                   >
-                    <span>⚙️</span>
-                    <span>এডমিন লগইন</span>
+                    <span className="text-sm">⚙️</span>
+                    <span>এডমিন কন্ট্রোল প্যানেল (লগইন)</span>
                   </button>
 
                   {/* Copyright Notice to the right/center with distance from the admin button */}
-                  <div className="text-right sm:text-center flex-1 text-gray-400">
+                  <div className="text-center sm:text-right flex-1 text-gray-400">
                     {config.footer.copyright}
                   </div>
                 </div>
@@ -8135,10 +8126,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <span className="text-2xl sm:text-3xl">📏</span>
                     <div>
                       <h3 className="font-bold text-base sm:text-lg text-[#7a1c2b]">
-                        আংটি ও চুড়ির নিখুঁত সাইজ গাইড
+                        পোশাক ও গহনার নিখুঁত সাইজ গাইড
                       </h3>
                       <p className="text-xs text-[#b8956a]">
-                        অনলাইনে জুয়েলারি কেনার আগে ঘরে বসে নিজের সঠিক সাইজ মেপে নিন
+                        অনলাইনে কাপড়, জামা, টি-শার্ট, প্যান্ট, ইনার ও গহনা কেনার আগে নিজের সঠিক সাইজ বেছে নিন
                       </p>
                     </div>
                   </div>
@@ -8151,11 +8142,23 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex p-1 bg-[#fff8f0] rounded-2xl border border-[#f3e2d0] gap-1">
+                <div className="flex p-1 bg-[#fff8f0] rounded-2xl border border-[#f3e2d0] gap-1 overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideTab("clothing")}
+                    className={`flex-1 min-w-[110px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                      sizeGuideTab === "clothing"
+                        ? "bg-[#7a1c2b] text-white shadow-sm"
+                        : "text-gray-700 hover:bg-white/80"
+                    }`}
+                  >
+                    <span>👗</span>
+                    <span>পোশাকের সাইজ</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setSizeGuideTab("ring")}
-                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 min-w-[90px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
                       sizeGuideTab === "ring"
                         ? "bg-[#7a1c2b] text-white shadow-sm"
                         : "text-gray-700 hover:bg-white/80"
@@ -8167,7 +8170,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={() => setSizeGuideTab("bangle")}
-                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 min-w-[90px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
                       sizeGuideTab === "bangle"
                         ? "bg-[#7a1c2b] text-white shadow-sm"
                         : "text-gray-700 hover:bg-white/80"
@@ -8179,7 +8182,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={() => setSizeGuideTab("calc")}
-                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 min-w-[90px] py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 ${
                       sizeGuideTab === "calc"
                         ? "bg-[#7a1c2b] text-white shadow-sm"
                         : "text-gray-700 hover:bg-white/80"
@@ -8189,6 +8192,289 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <span>ক্যালকুলেটর</span>
                   </button>
                 </div>
+
+                {/* TAB 0: CLOTHING & FABRIC SIZE GUIDE */}
+                {sizeGuideTab === "clothing" && (
+                  <div className="space-y-4">
+                    {/* Measurement Tips Card */}
+                    <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 border border-purple-200 rounded-2xl p-4 space-y-2">
+                      <h4 className="font-bold text-xs sm:text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                        <span>💡</span>
+                        <span>ঘরে বসে সঠিক বডি ও কাপড়ের মাপ নেওয়ার ৩টি সহজ টিপস:</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div className="bg-white p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                          <span className="inline-block bg-[#7a1c2b] text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">১</span>
+                          <p className="text-gray-700 font-medium"><strong>চেস্ট / বডি মাপ:</strong> ফিতা দিয়ে বুকের সবচেয়ে চওড়া অংশের চারপাশে আলতোভাবে মাপুন। খুব টাইট বা ঢিলা করবেন না।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                          <span className="inline-block bg-[#7a1c2b] text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">২</span>
+                          <p className="text-gray-700 font-medium"><strong>কোমর / ওয়েস্ট মাপ:</strong> নাভির ঠিক উপরে স্বাভাবিকভাবে দাঁড়িয়ে ফিতা দিয়ে কোমর মেপে প্যান্ট সাইজ বের করুন।</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                          <span className="inline-block bg-[#7a1c2b] text-white w-5 h-5 rounded-full text-center font-bold text-[11px] leading-5 mb-1">৩</span>
+                          <p className="text-gray-700 font-medium"><strong>বাচ্চা ও ইনার মাপ:</strong> বয়সের চেয়ে বাচ্চার বর্তমান উচ্চতা ও ওজন দেখে সাইজ নম্বর (১৬-৩২) মেলান।</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 1. T-Shirt, Shirt, Panjabi & Kameez/Kurti Size Chart */}
+                    <div className="border border-[#f3e2d0] rounded-2xl overflow-hidden shadow-xs">
+                      <div className="bg-[#fff8f0] px-4 py-2.5 border-b border-[#f3e2d0] flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">👕 টি-শার্ট, শার্ট, পাঞ্জাবি ও জামা/কুর্তি চার্ট (ইঞ্চি এককে)</span>
+                        <span className="text-[11px] text-[#b8956a] font-semibold">T-Shirt & Tops</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#fcf8f4] text-[#7a1c2b] border-b border-[#f3e2d0]">
+                            <tr>
+                              <th className="p-2.5 font-bold">সাইজ কোড</th>
+                              <th className="p-2.5 font-bold">বডি / চেস্ট (Chest)</th>
+                              <th className="p-2.5 font-bold">লম্বা (Length)</th>
+                              <th className="p-2.5 font-bold">কাঁধ (Shoulder)</th>
+                              <th className="p-2.5 font-bold text-center">উপযুক্ত ফিট</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#f9ede1] text-gray-700">
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">S (Small)</td>
+                              <td className="p-2.5 font-semibold">৩৬ ইঞ্চি (36")</td>
+                              <td className="p-2.5">২৬ ইঞ্চি</td>
+                              <td className="p-2.5">১৭ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">স্লিম / পাতলা গড়ন</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">M (Medium)</td>
+                              <td className="p-2.5 font-semibold">৩৮ ইঞ্চি (38")</td>
+                              <td className="p-2.5">২৭ ইঞ্চি</td>
+                              <td className="p-2.5">১৮ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">খুব জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">L (Large)</td>
+                              <td className="p-2.5 font-semibold">৪০ ইঞ্চি (40")</td>
+                              <td className="p-2.5">২৮ ইঞ্চি</td>
+                              <td className="p-2.5">১৯ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">স্ট্যান্ডার্ড ★★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">XL (Extra Large)</td>
+                              <td className="p-2.5 font-semibold">৪২ ইঞ্চি (42")</td>
+                              <td className="p-2.5">২৯ ইঞ্চি</td>
+                              <td className="p-2.5">২০ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">বহুল বিক্রিত ★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">XXL (2XL)</td>
+                              <td className="p-2.5 font-semibold">৪৪ ইঞ্চি (44")</td>
+                              <td className="p-2.5">৩০ ইঞ্চি</td>
+                              <td className="p-2.5">২১ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">স্বাস্থ্যবান গড়ন</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">3XL (Triple XL)</td>
+                              <td className="p-2.5 font-semibold">৪৬ ইঞ্চি (46")</td>
+                              <td className="p-2.5">৩১ ইঞ্চি</td>
+                              <td className="p-2.5">২২ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">প্লাস সাইজ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 2. Pants, Jeans & Trousers Size Chart */}
+                    <div className="border border-[#f3e2d0] rounded-2xl overflow-hidden shadow-xs">
+                      <div className="bg-[#fffaf5] px-4 py-2.5 border-b border-[#f3e2d0] flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-[#7a1c2b]">👖 প্যান্ট, গ্যাবার্ডিন, জিন্স ও ট্রাউজার চার্ট</span>
+                        <span className="text-[11px] text-[#b8956a] font-semibold">Pants & Bottoms</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[#fcf8f4] text-[#7a1c2b] border-b border-[#f3e2d0]">
+                            <tr>
+                              <th className="p-2.5 font-bold">প্যান্ট সাইজ</th>
+                              <th className="p-2.5 font-bold">কোমর (Waist)</th>
+                              <th className="p-2.5 font-bold">হিপ (Hip)</th>
+                              <th className="p-2.5 font-bold">প্যান্ট লম্বা (Length)</th>
+                              <th className="p-2.5 font-bold text-center">জনপ্রিয়তা</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#f9ede1] text-gray-700">
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৮ (28)</td>
+                              <td className="p-2.5 font-semibold">২৮ ইঞ্চি</td>
+                              <td className="p-2.5">৩৪ ইঞ্চি</td>
+                              <td className="p-2.5">৩৮ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">স্মল</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩০ (30)</td>
+                              <td className="p-2.5 font-semibold">৩০ ইঞ্চি</td>
+                              <td className="p-2.5">৩৬ ইঞ্চি</td>
+                              <td className="p-2.5">৩৯ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">খুব জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩২ (32)</td>
+                              <td className="p-2.5 font-semibold">৩২ ইঞ্চি</td>
+                              <td className="p-2.5">৩৮ ইঞ্চি</td>
+                              <td className="p-2.5">৪০ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">সবচেয়ে জনপ্রিয় ★★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩৪ (34)</td>
+                              <td className="p-2.5 font-semibold">৩৪ ইঞ্চি</td>
+                              <td className="p-2.5">৪০ ইঞ্চি</td>
+                              <td className="p-2.5">৪১ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">স্ট্যান্ডার্ড ★★</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩৬ (36)</td>
+                              <td className="p-2.5 font-semibold">৩৬ ইঞ্চি</td>
+                              <td className="p-2.5">৪২ ইঞ্চি</td>
+                              <td className="p-2.5">৪২ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full">লার্জ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50 bg-[#fffaf5]/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩৮ (38)</td>
+                              <td className="p-2.5 font-semibold">৩৮ ইঞ্চি</td>
+                              <td className="p-2.5">৪৪ ইঞ্চি</td>
+                              <td className="p-2.5">৪২.৫ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">এক্সট্রা লার্জ</span></td>
+                            </tr>
+                            <tr className="hover:bg-amber-50/50">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৪০ (40)</td>
+                              <td className="p-2.5 font-semibold">৪০ ইঞ্চি</td>
+                              <td className="p-2.5">৪৬ ইঞ্চি</td>
+                              <td className="p-2.5">৪৩ ইঞ্চি</td>
+                              <td className="p-2.5 text-center"><span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">প্লাস সাইজ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 3. Innerwear & Body Size Measurement */}
+                    <div className="border border-rose-200 rounded-2xl overflow-hidden shadow-xs bg-rose-50/30">
+                      <div className="bg-rose-100/60 px-4 py-2.5 border-b border-rose-200 flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-rose-900">👙 ইনার ওয়্যার ও বডি সাইজ চার্ট (ব্রা ও অন্তর্বাস)</span>
+                        <span className="text-[11px] text-rose-800 font-semibold">Innerwear & Bust Guide</span>
+                      </div>
+                      <div className="p-3.5 space-y-3">
+                        <div className="bg-white p-3 rounded-xl border border-rose-200 text-xs text-rose-950 space-y-1.5">
+                          <p className="font-bold">📐 বডি ও কাপ সাইজ মাপার নিয়ম:</p>
+                          <p className="text-gray-600">১. বুকের ঠিক নিচের অংশ ফিতা দিয়ে মাপুন। যেমন: ২৯"-৩১" হলে ব্যান্ড সাইজ <strong>৩২</strong>, ৩১"-৩৩" হলে ব্যান্ড <strong>৩৪</strong>, ৩৩"-৩৫" হলে ব্যান্ড <strong>৩৬</strong>।</p>
+                          <p className="text-gray-600">২. বুকের সবচেয়ে উন্নত অংশ আলতো করে মাপুন। ব্যান্ড ও বডির পার্থক্য ১" হলে A কাপ, ২" হলে B কাপ (স্ট্যান্ডার্ড), ৩" হলে C কাপ।</p>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-200 shadow-2xs text-center">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">32B</span>
+                            <span className="text-[11px] text-gray-500">বডি ৩২" • স্লিম ফিট</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-300 shadow-2xs text-center bg-rose-50/40">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">34B ★</span>
+                            <span className="text-[11px] text-emerald-800 font-bold">বডি ৩৪" • সর্বাধিক বিক্রি</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-300 shadow-2xs text-center bg-rose-50/40">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">36B ★</span>
+                            <span className="text-[11px] text-emerald-800 font-bold">বডি ৩৬" • স্ট্যান্ডার্ড</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-xl border border-rose-200 shadow-2xs text-center">
+                            <span className="font-bold text-[#7a1c2b] block text-sm">38B / 40B</span>
+                            <span className="text-[11px] text-gray-500">বডি ৩৮"-৪০" • লার্জ ফিট</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. Kids Size by Age & Weight Chart */}
+                    <div className="border border-sky-200 rounded-2xl overflow-hidden shadow-xs bg-sky-50/30">
+                      <div className="bg-sky-100/70 px-4 py-2.5 border-b border-sky-200 flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-sky-900">👶 বাচ্চাদের বয়স, সাইজ নম্বর ও ওজন চার্ট (Kids Size)</span>
+                        <span className="text-[11px] text-sky-800 font-semibold">Kids Age & Number</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs bg-white">
+                          <thead className="bg-sky-50 text-sky-950 border-b border-sky-200">
+                            <tr>
+                              <th className="p-2.5 font-bold">সাইজ নম্বর</th>
+                              <th className="p-2.5 font-bold">বাচ্চার বয়স</th>
+                              <th className="p-2.5 font-bold">আনুমানিক উচ্চতা</th>
+                              <th className="p-2.5 font-bold">আনুমানিক ওজন</th>
+                              <th className="p-2.5 font-bold text-center">পোশাকের ধরন</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-sky-100 text-gray-700">
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">১৬ (16)</td>
+                              <td className="p-2.5 font-semibold">০ - ৬ মাস</td>
+                              <td className="p-2.5">৫০ - ৬৮ সেমি</td>
+                              <td className="p-2.5">৩ - ৭ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">নবজাতক বেবি</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">১৮ (18)</td>
+                              <td className="p-2.5 font-semibold">৬ - ১২ মাস</td>
+                              <td className="p-2.5">৬৮ - ৭৬ সেমি</td>
+                              <td className="p-2.5">৭ - ১০ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">ইনফ্যান্ট</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২০ (20)</td>
+                              <td className="p-2.5 font-semibold">১ - ২ বছর</td>
+                              <td className="p-2.5">৭৬ - ৮৬ সেমি</td>
+                              <td className="p-2.5">১০ - ১২ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২২ (22)</td>
+                              <td className="p-2.5 font-semibold">২ - ৩ বছর</td>
+                              <td className="p-2.5">৮৬ - ৯৬ সেমি</td>
+                              <td className="p-2.5">১২ - ১৪ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">টডলার</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৪ (24)</td>
+                              <td className="p-2.5 font-semibold">৩ - ৪ বছর</td>
+                              <td className="p-2.5">৯৬ - ১০৪ সেমি</td>
+                              <td className="p-2.5">১৪ - ১৬ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">জনপ্রিয় ★</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৬ (26)</td>
+                              <td className="p-2.5 font-semibold">৫ - ৬ বছর</td>
+                              <td className="p-2.5">১০৪ - ১১৪ সেমি</td>
+                              <td className="p-2.5">১৬ - ১৯ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">কিডস ফ্রক / শার্ট</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">২৮ (28)</td>
+                              <td className="p-2.5 font-semibold">৭ - ৮ বছর</td>
+                              <td className="p-2.5">১১৪ - ১২৪ সেমি</td>
+                              <td className="p-2.5">১৯ - ২৩ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full">স্কুল এজ</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40 bg-sky-50/20">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩০ (30)</td>
+                              <td className="p-2.5 font-semibold">৯ - ১০ বছর</td>
+                              <td className="p-2.5">১২৪ - ১৩৪ সেমি</td>
+                              <td className="p-2.5">২৩ - ২৮ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">প্রি-টিন</span></td>
+                            </tr>
+                            <tr className="hover:bg-sky-50/40">
+                              <td className="p-2.5 font-bold text-[#7a1c2b]">৩২ (32)</td>
+                              <td className="p-2.5 font-semibold">১১ - ১২ বছর</td>
+                              <td className="p-2.5">১৩৪ - ১৪৫ সেমি</td>
+                              <td className="p-2.5">২৮ - ৩৫ কেজি</td>
+                              <td className="p-2.5 text-center"><span className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full">টিন সাইজ</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* TAB 1: RING SIZE GUIDE */}
                 {sizeGuideTab === "ring" && (
