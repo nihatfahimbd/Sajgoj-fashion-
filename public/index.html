@@ -44,9 +44,10 @@
   <!-- Babel standalone for JSX compiling -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
 
-  <!-- QR Code Generator & Real-time Live Camera Scanner (jsQR) -->
+  <!-- QR Code Generator, jsPDF & Real-time Live Camera Scanner (jsQR) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <!-- Firebase 10 SDK (Compat for seamless cross-browser cloud persistence - App -> Auth -> Firestore order) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -1564,7 +1565,320 @@
         win.document.close();
       };
 
-      // URL Deep Link Listener: Automatically open product when page is loaded with #product-<id> or ?product=<id>
+      // =========================================================
+      // BATCH MULTI-PRODUCT QR PRICE TAG PDF GENERATION
+      // Allows selecting multiple products and downloading a single A4 PDF
+      // =========================================================
+      const [selectedProductIdsForQr, setSelectedProductIdsForQr] = useState([]);
+      const [isGeneratingBatchQrPdf, setIsGeneratingBatchQrPdf] = useState(false);
+      const [batchQrProgress, setBatchQrProgress] = useState(0);
+
+      // Toggle Single Product selection for QR PDF
+      const toggleProductSelectionForQr = (productId) => {
+        setSelectedProductIdsForQr(prev => 
+          prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
+        );
+      };
+
+      // Toggle Select All products for QR PDF
+      const toggleSelectAllProductsForQr = () => {
+        if (selectedProductIdsForQr.length === products.length) {
+          setSelectedProductIdsForQr([]);
+        } else {
+          setSelectedProductIdsForQr(products.map(p => p.id));
+        }
+      };
+
+      // Helper: Draw single high-res product tag on an offscreen canvas for crisp Bengali typography
+      const renderProductTagCanvas = async (product) => {
+        return new Promise((resolve) => {
+          const width = 520;
+          const height = 480;
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+
+          // Card Background
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+
+          // Outer Maroon Border
+          ctx.strokeStyle = "#7a1c2b";
+          ctx.lineWidth = 6;
+          ctx.strokeRect(6, 6, width - 12, height - 12);
+
+          // Inner Gold Border
+          ctx.strokeStyle = "#d4a574";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(14, 14, width - 28, height - 28);
+
+          // Header Banner
+          ctx.fillStyle = "#7a1c2b";
+          ctx.fillRect(16, 16, width - 32, 65);
+
+          // Store Name
+          ctx.fillStyle = "#ffd700";
+          ctx.font = "bold 22px 'Hind Siliguri', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(config?.storeName || "SAJGOJ FASHION", width / 2, 45);
+
+          ctx.fillStyle = "#fff8f0";
+          ctx.font = "10px sans-serif";
+          ctx.fillText("PREMIUM LUXURY & TRADITION", width / 2, 65);
+
+          // Product Name (truncated if long)
+          ctx.fillStyle = "#2c1810";
+          ctx.font = "bold 20px 'Hind Siliguri', sans-serif";
+          const rawName = product.name || "পণ্য";
+          const shortName = rawName.length > 28 ? rawName.slice(0, 26) + "..." : rawName;
+          ctx.fillText(shortName, width / 2, 115);
+
+          // SKU & Category
+          ctx.fillStyle = "#7a1c2b";
+          ctx.font = "bold 13px sans-serif";
+          ctx.fillText(`SKU: ${product.sku || product.id}  •  ${product.category || 'কালেকশন'}`, width / 2, 140);
+
+          // Price Badge Box
+          ctx.fillStyle = "#fff8f0";
+          ctx.fillRect(width / 2 - 110, 155, 220, 42);
+          ctx.strokeStyle = "#d4a574";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(width / 2 - 110, 155, 220, 42);
+
+          ctx.fillStyle = "#7a1c2b";
+          ctx.font = "bold 24px 'Hind Siliguri', sans-serif";
+          ctx.fillText(`মূল্য: ${Number(product.price || 0).toLocaleString()} ৳`, width / 2, 185);
+
+          // Load QR Code Image
+          const deepLink = getProductDeepLink(product);
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(deepLink)}&margin=6`;
+          const qrImg = new Image();
+          qrImg.crossOrigin = "anonymous";
+
+          const finishRender = () => {
+            // Instruction
+            ctx.fillStyle = "#7a1c2b";
+            ctx.font = "bold 13px 'Hind Siliguri', sans-serif";
+            ctx.fillText("📱 ক্যামেরা দিয়ে স্ক্যান করে সরাসরি অর্ডার করুন", width / 2, 435);
+
+            ctx.fillStyle = "#666666";
+            ctx.font = "10px sans-serif";
+            ctx.fillText(`হটলাইন: ${config?.phone || '018051198888'}  •  Online Delivery`, width / 2, 458);
+
+            resolve(canvas.toDataURL("image/png"));
+          };
+
+          qrImg.onload = () => {
+            ctx.drawImage(qrImg, width / 2 - 95, 210, 190, 190);
+            finishRender();
+          };
+          qrImg.onerror = () => {
+            ctx.fillStyle = "#f3f4f6";
+            ctx.fillRect(width / 2 - 80, 215, 160, 160);
+            ctx.fillStyle = "#666";
+            ctx.font = "12px sans-serif";
+            ctx.fillText("QR Code", width / 2, 300);
+            finishRender();
+          };
+          qrImg.src = qrUrl;
+        });
+      };
+
+      // Generate and Download Single Multi-Page PDF containing all selected products' QR price tags
+      const downloadBatchQrPdf = async (customProductIds = null) => {
+        const targetIds = customProductIds || selectedProductIdsForQr;
+        if (!targetIds || targetIds.length === 0) {
+          notify("অনুগ্রহ করে অন্তত ১টি পণ্য সিলেক্ট করুন!");
+          return;
+        }
+
+        const selectedList = products.filter(p => targetIds.includes(p.id));
+        if (selectedList.length === 0) {
+          notify("কোনো বৈধ পণ্য পাওয়া যায়নি!");
+          return;
+        }
+
+        setIsGeneratingBatchQrPdf(true);
+        setBatchQrProgress(0);
+        notify(`📄 ${selectedList.length} টি পণ্যের QR প্রাইস ট্যাগ PDF প্রস্তুত হচ্ছে...`);
+
+        try {
+          const { jsPDF } = window.jspdf || {};
+          if (!jsPDF) {
+            throw new Error("jsPDF লাইব্রেরি লোড হয়নি");
+          }
+
+          // A4 page: 210mm x 297mm
+          const doc = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4"
+          });
+
+          // Layout settings: 2 columns x 3 rows = 6 tags per page
+          const cols = 2;
+          const rows = 3;
+          const tagsPerPage = cols * rows; // 6
+          const tagWidth = 90; // mm
+          const tagHeight = 84; // mm
+          const marginX = 10; // mm
+          const marginY = 12; // mm
+          const gapX = 10; // mm
+          const gapY = 7; // mm
+
+          for (let i = 0; i < selectedList.length; i++) {
+            const product = selectedList[i];
+            const pageIndex = Math.floor(i / tagsPerPage);
+            const indexOnPage = i % tagsPerPage;
+
+            if (pageIndex > 0 && indexOnPage === 0) {
+              doc.addPage();
+            }
+
+            const col = indexOnPage % cols;
+            const row = Math.floor(indexOnPage / cols);
+            const x = marginX + col * (tagWidth + gapX);
+            const y = marginY + row * (tagHeight + gapY);
+
+            // Render high-res tag canvas with Bengali fonts and QR code
+            const tagDataUrl = await renderProductTagCanvas(product);
+            if (tagDataUrl) {
+              doc.addImage(tagDataUrl, "PNG", x, y, tagWidth, tagHeight, undefined, "FAST");
+            }
+
+            // Draw a subtle dashed cut guide box around each tag
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineDashPattern([2, 2], 0);
+            doc.rect(x - 1, y - 1, tagWidth + 2, tagHeight + 2);
+            doc.setLineDashPattern([], 0);
+
+            setBatchQrProgress(Math.round(((i + 1) / selectedList.length) * 100));
+          }
+
+          // Footer info on each page
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let p = 1; p <= totalPages; p++) {
+            doc.setPage(p);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`${config?.storeName || 'SAJGOJ FASHION'} • QR Price Tags • Page ${p} of ${totalPages}`, 105, 292, { align: "center" });
+          }
+
+          // Trigger download of single PDF
+          doc.save(`sajgoj-batch-qr-tags-${selectedList.length}-products.pdf`);
+          notify(`🎉 ${selectedList.length} টি পণ্যের QR প্রাইস ট্যাগ PDF সফলভাবে ডাউনলোড হয়েছে!`);
+        } catch (err) {
+          console.error("Batch QR PDF generation error:", err);
+          // Fallback to printable window if jsPDF fails
+          printBatchQrTagsWindow(selectedList);
+        } finally {
+          setIsGeneratingBatchQrPdf(false);
+          setBatchQrProgress(0);
+        }
+      };
+
+      // Print preview sheet for selected tags
+      const printBatchQrTagsWindow = (customProducts = null) => {
+        const list = customProducts || products.filter(p => selectedProductIdsForQr.includes(p.id));
+        if (!list || list.length === 0) {
+          notify("অনুগ্রহ করে প্রিন্ট করার জন্য অন্তত ১টি পণ্য সিলেক্ট করুন!");
+          return;
+        }
+
+        const win = window.open("", "_blank");
+        if (!win) {
+          notify("পপআপ ব্লক থাকায় প্রিন্ট প্রিভিউ খোলা যায়নি। অনুগ্রহ করে অনুমতি দিন।");
+          return;
+        }
+
+        const tagsHtml = list.map(product => {
+          const deepLink = getProductDeepLink(product);
+          const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(deepLink)}&margin=8`;
+          return `
+            <div class="tag-card">
+              <div class="tag-header">
+                <h3>${config?.storeName || 'SAJGOJ FASHION'}</h3>
+                <span>AUTHENTIC LUXURY</span>
+              </div>
+              <div class="tag-body">
+                <div class="product-title">${product.name}</div>
+                <div class="sku-cat">SKU: ${product.sku || product.id} • ${product.category || 'কালেকশন'}</div>
+                <div class="price-box">মূল্য: ${Number(product.price || 0).toLocaleString()} ৳</div>
+                <div class="qr-container">
+                  <img src="${qrSrc}" alt="QR" />
+                </div>
+                <div class="scan-text">📱 ক্যামেরা দিয়ে স্ক্যান করে অর্ডার করুন</div>
+                <div class="tag-footer">হটলাইন: ${config?.phone || '018051198888'}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>QR Price Tags (${list.length} Products)</title>
+            <style>
+              @page { size: A4 portrait; margin: 8mm; }
+              body { font-family: 'Hind Siliguri', 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 10px; background: #fafafa; }
+              .grid-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8mm;
+                max-width: 195mm;
+                margin: 0 auto;
+              }
+              .tag-card {
+                border: 2px dashed #7a1c2b;
+                border-radius: 12px;
+                background: #ffffff;
+                box-sizing: border-box;
+                padding: 10px;
+                text-align: center;
+                page-break-inside: avoid;
+                height: 84mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+              }
+              .tag-header {
+                background: #7a1c2b;
+                color: #ffd700;
+                border-radius: 8px;
+                padding: 6px;
+                margin-bottom: 6px;
+              }
+              .tag-header h3 { margin: 0; font-size: 16px; font-weight: 800; }
+              .tag-header span { font-size: 8px; color: #fff8f0; letter-spacing: 1px; display: block; }
+              .product-title { font-size: 14px; font-weight: bold; color: #1f2937; margin: 4px 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+              .sku-cat { font-size: 10px; color: #7a1c2b; font-weight: 600; margin-bottom: 4px; }
+              .price-box { font-size: 18px; font-weight: 900; color: #7a1c2b; background: #fff8f0; border: 1px solid #d4a574; border-radius: 6px; padding: 3px; margin: 4px auto; width: 80%; }
+              .qr-container { width: 110px; height: 110px; margin: 2px auto; }
+              .qr-container img { width: 100%; height: 100%; object-fit: contain; }
+              .scan-text { font-size: 10px; font-weight: bold; color: #7a1c2b; margin-top: 4px; }
+              .tag-footer { font-size: 9px; color: #6b7280; border-top: 1px solid #eee; padding-top: 3px; margin-top: 3px; }
+              @media print {
+                body { background: transparent; padding: 0; }
+                .no-print { display: none !important; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="no-print" style="text-align: center; margin-bottom: 15px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+              <h2 style="margin: 0 0 8px 0; color: #7a1c2b;">${list.length} টি পণ্যের QR প্রাইস ট্যাগ শিট</h2>
+              <button onclick="window.print()" style="background: #7a1c2b; color: #fff; border: none; padding: 8px 20px; font-size: 14px; font-weight: bold; border-radius: 20px; cursor: pointer;">🖨️ প্রিন্ট / PDF সেভ করুন</button>
+            </div>
+            <div class="grid-container">
+              ${tagsHtml}
+            </div>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      };
       useEffect(() => {
         const checkDeepLink = () => {
           const hash = window.location.hash;
@@ -5636,8 +5950,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <button 
+                      type="button"
+                      onClick={() => {
+                        if (selectedProductIdsForQr.length === 0) {
+                          setSelectedProductIdsForQr(products.map(p => p.id));
+                          notify(`সবগুলো (${products.length} টি) পণ্য QR PDF বানানোর জন্য সিলেক্ট হয়েছে! 📄`);
+                        } else {
+                          downloadBatchQrPdf();
+                        }
+                      }}
+                      className="bg-amber-600 hover:bg-amber-700 text-white px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:brightness-110 flex items-center gap-1.5 transition active:scale-95"
+                      title="একাধিক পণ্য সিলেক্ট করে ১টি সিঙ্গেল PDF ফাইলে QR প্রাইস ট্যাগ ডাউনলোড করুন"
+                    >
+                      <span>📄</span>
+                      <span>QR ট্যাগ PDF {selectedProductIdsForQr.length > 0 ? `(${selectedProductIdsForQr.length})` : 'ডাউনলোড'}</span>
+                    </button>
+                    <button 
                       onClick={() => handleOpenNewComboModal(selectedProductIdsForCombo)}
-                      className="bg-gradient-to-r from-amber-500 to-[#7a1c2b] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:brightness-110 flex items-center gap-1.5 transition active:scale-95"
+                      className="bg-gradient-to-r from-amber-500 to-[#7a1c2b] text-white px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:brightness-110 flex items-center gap-1.5 transition active:scale-95"
                       title="নির্বাচিত পণ্যগুলো দিয়ে নতুন কম্বো প্যাক বানান"
                     >
                       <span>🎁</span>
@@ -5672,6 +6002,67 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 </div>
 
+                {/* BATCH MULTI-PRODUCT QR PRICE TAG ACTION BANNER */}
+                {selectedProductIdsForQr.length > 0 && (
+                  <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-[#7a1c2b] text-white p-4 sm:p-5 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn border-2 border-amber-300">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl sm:text-4xl p-2.5 bg-white/20 rounded-2xl shrink-0">📄</span>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm sm:text-base font-black">
+                            {selectedProductIdsForQr.length} টি পণ্য সিলেক্ট করেছেন
+                          </h4>
+                          <span className="bg-white text-amber-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                            Single PDF Ready
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-100 mt-0.5 leading-relaxed">
+                          একটি সিঙ্গেল PDF ডকুমেন্টে প্রতি পাতায় ৬টি করে (A4 সাইজ) কাটিং গাইড সহ ব্র্যান্ডেড QR প্রাইস ট্যাগ জেনারেট হবে।
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap self-end md:self-auto shrink-0">
+                      <button
+                        type="button"
+                        disabled={isGeneratingBatchQrPdf}
+                        onClick={() => downloadBatchQrPdf()}
+                        className="bg-white hover:bg-amber-50 text-[#7a1c2b] px-5 py-2.5 rounded-full text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                      >
+                        {isGeneratingBatchQrPdf ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-[#7a1c2b] border-t-transparent rounded-full animate-spin"></span>
+                            <span>PDF তৈরি হচ্ছে ({batchQrProgress}%)...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>📥</span>
+                            <span>সিঙ্গেল PDF ডাউনলোড ({selectedProductIdsForQr.length})</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => printBatchQrTagsWindow()}
+                        className="bg-black/30 hover:bg-black/45 text-white px-3.5 py-2.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                        title="A4 শিট প্রিন্ট প্রিভিউ"
+                      >
+                        <span>🖨️</span>
+                        <span>প্রিন্ট প্রিভিউ</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedProductIdsForQr([])}
+                        className="bg-black/20 hover:bg-black/40 text-white/90 px-3 py-2.5 rounded-full text-xs font-semibold transition"
+                      >
+                        ক্লিয়ার
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* MULTI-PRODUCT COMBO BUILDER STRIP */}
                 {selectedProductIdsForCombo.length > 0 && (
                   <div className="bg-gradient-to-r from-[#7a1c2b] via-[#8e2032] to-[#59121d] text-white p-4 rounded-3xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn border-2 border-amber-400">
@@ -5703,41 +6094,60 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 )}
 
-                {/* Admin Product Filter Pills */}
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
-                  <button
-                    onClick={() => setAdminProductBogoFilter("All")}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition border ${
-                      adminProductBogoFilter === "All"
-                        ? "bg-[#7a1c2b] text-white border-[#7a1c2b]"
-                        : "bg-white text-gray-700 border-gray-200 hover:bg-[#fff8f0]"
-                    }`}
-                  >
-                    সকল পণ্য ({products.length})
-                  </button>
-                  <button
-                    onClick={() => setAdminProductBogoFilter("BOGO")}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition border flex items-center gap-1.5 ${
-                      adminProductBogoFilter === "BOGO"
-                        ? "bg-gradient-to-r from-amber-600 to-[#7a1c2b] text-white border-transparent shadow-sm"
-                        : "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
-                    }`}
-                  >
-                    <span>🎁 Buy 1 Get 1 Free</span>
-                    <span className="bg-amber-200 text-amber-950 px-1.5 py-0.2 rounded-full text-[10px]">
-                      {bogoProductsCount}
+                {/* Admin Product Filter Pills & Batch Selection Controls */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+                    <button
+                      onClick={() => setAdminProductBogoFilter("All")}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition border ${
+                        adminProductBogoFilter === "All"
+                          ? "bg-[#7a1c2b] text-white border-[#7a1c2b]"
+                          : "bg-white text-gray-700 border-gray-200 hover:bg-[#fff8f0]"
+                      }`}
+                    >
+                      সকল পণ্য ({products.length})
+                    </button>
+                    <button
+                      onClick={() => setAdminProductBogoFilter("BOGO")}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition border flex items-center gap-1.5 ${
+                        adminProductBogoFilter === "BOGO"
+                          ? "bg-gradient-to-r from-amber-600 to-[#7a1c2b] text-white border-transparent shadow-sm"
+                          : "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                      }`}
+                    >
+                      <span>🎁 Buy 1 Get 1 Free</span>
+                      <span className="bg-amber-200 text-amber-950 px-1.5 py-0.2 rounded-full text-[10px]">
+                        {bogoProductsCount}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setAdminProductBogoFilter("LowStock")}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition border ${
+                        adminProductBogoFilter === "LowStock"
+                          ? "bg-red-600 text-white border-red-600"
+                          : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                      }`}
+                    >
+                      ⚠️ কম স্টক ({lowStockProducts.length})
+                    </button>
+                  </div>
+
+                  {/* Select All Toggle for Batch QR PDF */}
+                  <div className="flex items-center gap-2 self-end sm:self-auto bg-[#fffaf5] border border-[#f3e2d0] px-3.5 py-1.5 rounded-full shadow-2xs">
+                    <input 
+                      type="checkbox" 
+                      id="selectAllQrCheckbox"
+                      checked={products.length > 0 && selectedProductIdsForQr.length === products.length} 
+                      onChange={toggleSelectAllProductsForQr}
+                      className="w-4 h-4 accent-[#7a1c2b] cursor-pointer rounded" 
+                    />
+                    <label htmlFor="selectAllQrCheckbox" className="font-bold text-[#7a1c2b] cursor-pointer text-xs select-none">
+                      {selectedProductIdsForQr.length === products.length ? "সব আনসিলেক্ট" : "সব পণ্য সিলেক্ট (Select All)"}
+                    </label>
+                    <span className="text-[11px] text-gray-400">
+                      ({selectedProductIdsForQr.length} টি)
                     </span>
-                  </button>
-                  <button
-                    onClick={() => setAdminProductBogoFilter("LowStock")}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition border ${
-                      adminProductBogoFilter === "LowStock"
-                        ? "bg-red-600 text-white border-red-600"
-                        : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                    }`}
-                  >
-                    ⚠️ কম স্টক ({lowStockProducts.length})
-                  </button>
+                  </div>
                 </div>
 
                 {/* Product Cards */}
@@ -5748,124 +6158,165 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       if (adminProductBogoFilter === "LowStock") return p.stock <= 5;
                       return true;
                     })
-                    .map(p => (
-                    <div key={p.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 shadow-sm flex flex-col justify-between space-y-3">
-                      <div className="flex gap-3.5 items-center">
-                        <img 
-                          src={p.images[0] || imgSharee} 
-                          alt={p.name} 
-                          className="w-20 h-20 rounded-2xl object-cover border flex-shrink-0" 
-                          onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[10px] bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-2 py-0.5 rounded-full font-bold">
-                            {p.category}
-                          </span>
-                          {p.bogo && (
-                            <span className="text-[10px] bg-gradient-to-r from-amber-500 to-rose-600 text-white px-2 py-0.5 rounded-full font-black ml-1.5 shadow-xs">
-                              🎁 Buy 1 Get 1 Free
-                            </span>
-                          )}
-                          <h4 className="font-semibold text-sm truncate mt-1 text-gray-900">{p.name}</h4>
-                          <p className="text-xs text-gray-400 font-mono">SKU: {p.sku}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="font-bold text-sm text-[#7a1c2b]">{p.price} ৳</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                              স্টক: {p.stock}
-                            </span>
+                    .map(p => {
+                      const isSelectedForQr = selectedProductIdsForQr.includes(p.id);
+                      return (
+                        <div 
+                          key={p.id} 
+                          className={`relative bg-white rounded-3xl p-4 shadow-sm flex flex-col justify-between space-y-3 transition duration-150 ${
+                            isSelectedForQr
+                              ? "border-2 border-amber-500 ring-2 ring-amber-300/40 bg-amber-50/15"
+                              : "border border-[#f3e2d0] hover:border-amber-300"
+                          }`}
+                        >
+                          {/* QR Tag Selection Header */}
+                          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                            <label 
+                              onClick={(e) => e.stopPropagation()}
+                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition select-none ${
+                                isSelectedForQr
+                                  ? "bg-amber-600 text-white border-amber-700 shadow-xs"
+                                  : "bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100"
+                              }`}
+                              title="QR প্রাইস ট্যাগ PDF-এ যুক্ত করতে টিক দিন"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelectedForQr}
+                                onChange={() => toggleProductSelectionForQr(p.id)}
+                                className="w-3.5 h-3.5 accent-[#7a1c2b] cursor-pointer rounded"
+                              />
+                              <span>QR ট্যাগ PDF {isSelectedForQr ? '✓ সিলেক্টেড' : 'সিলেক্ট'}</span>
+                            </label>
+                            <span className="text-[10px] text-gray-400 font-mono">ID: {p.id.substring(0, 8)}</span>
+                          </div>
+
+                          <div className="flex gap-3.5 items-center">
+                            <img 
+                              src={p.images[0] || imgSharee} 
+                              alt={p.name} 
+                              className="w-20 h-20 rounded-2xl object-cover border flex-shrink-0" 
+                              onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[10px] bg-[#fff8f0] text-[#7a1c2b] border border-[#d4a574] px-2 py-0.5 rounded-full font-bold">
+                                {p.category}
+                              </span>
+                              {p.bogo && (
+                                <span className="text-[10px] bg-gradient-to-r from-amber-500 to-rose-600 text-white px-2 py-0.5 rounded-full font-black ml-1.5 shadow-xs">
+                                  🎁 Buy 1 Get 1 Free
+                                </span>
+                              )}
+                              <h4 className="font-semibold text-sm truncate mt-1 text-gray-900">{p.name}</h4>
+                              <p className="text-xs text-gray-400 font-mono">SKU: {p.sku}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="font-bold text-sm text-[#7a1c2b]">{p.price} ৳</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                  স্টক: {p.stock}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Source Link & Action Buttons */}
+                          <div className="flex items-center justify-between pt-2 border-t border-[#f3e2d0]">
+                            {p.sourceUrl ? (
+                              <a 
+                                href={p.sourceUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-semibold hover:bg-blue-100 flex items-center gap-1"
+                              >
+                                <span>🌐</span>
+                                <span>সোর্স ওয়েবসাইট</span>
+                              </a>
+                            ) : (
+                              <span className="text-[11px] text-gray-400">ম্যানুয়াল আপলোড</span>
+                            )}
+
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = { ...p, bogo: !p.bogo, bogoText: p.bogoText || "১টি কিনলে ১টি ফ্রি" };
+                                  setProducts(prev => prev.map(item => item.id === p.id ? updated : item));
+                                  syncDocToCloud("products", p.id, updated);
+                                  notify(updated.bogo ? `"${p.name}"-এ Buy 1 Get 1 Free অফার চালু করা হয়েছে! 🎁` : `"${p.name}"-এ BOGO অফার বন্ধ করা হয়েছে`);
+                                }}
+                                className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold transition flex items-center gap-1 ${
+                                  p.bogo 
+                                    ? "bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-xs" 
+                                    : "bg-white text-gray-600 border border-gray-300 hover:border-amber-500 hover:text-amber-700"
+                                }`}
+                                title="১ ক্লিকে Buy 1 Get 1 Free অফার চালু বা বন্ধ করুন"
+                              >
+                                <span>🎁 {p.bogo ? "BOGO চালু" : "BOGO অফ"}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleProductSelectionForCombo(p.id)}
+                                className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold transition flex items-center gap-1 ${
+                                  selectedProductIdsForCombo.includes(p.id)
+                                    ? "bg-[#7a1c2b] text-white shadow-xs"
+                                    : "bg-[#fffaf5] text-[#7a1c2b] border border-[#d4a574] hover:bg-amber-50"
+                                }`}
+                                title="কম্বো প্যাক বানাতে সিলেক্ট করুন"
+                              >
+                                <span>{selectedProductIdsForCombo.includes(p.id) ? "✓ কম্বোতে সিলেক্টেড" : "+ কম্বোতে যোগ"}</span>
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => setQrModalProduct(p)}
+                                className="px-2.5 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-xs font-bold hover:bg-amber-600 hover:text-white transition flex items-center gap-1 shadow-xs active:scale-95"
+                                title="প্রোডাক্টের QR কোড ও প্রিন্ট ট্যাগ দেখুন"
+                              >
+                                <span>📷</span>
+                                <span>QR ট্যাগ</span>
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => downloadBatchQrPdf([p.id])}
+                                className="px-2.5 py-1.5 bg-[#7a1c2b]/10 border border-[#7a1c2b]/30 text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs active:scale-95"
+                                title="এই প্রোডাক্টের রেডি-টু-প্রিন্ট QR প্রাইস ট্যাগ PDF ডাউনলোড করুন"
+                              >
+                                <span>📄</span>
+                                <span>PDF ট্যাগ</span>
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setEditingProduct(p);
+                                  setProductForm({
+                                    ...p,
+                                    images: p.images || [],
+                                    colors: p.colors || [],
+                                    sizes: p.sizes || []
+                                  });
+                                  setImageUrlInput(p.images[0] || "");
+                                  setExternalLinkInput(p.sourceUrl || "");
+                                  setImgLoadStatus(p.images[0] ? "loaded" : "idle");
+                                  setIsProductModalOpen(true);
+                                }}
+                                className="px-2.5 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
+                              >
+                                ✏️ এডিট
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (confirm(`আপনি কি "${p.name}" মুছে ফেলতে চান?`)) {
+                                    setProducts(prev => prev.filter(item => item.id !== p.id));
+                                    deleteDocFromCloud("products", p.id);
+                                    notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
+                              >
+                                🗑️ মুছুন
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Source Link & Action Buttons */}
-                      <div className="flex items-center justify-between pt-2 border-t border-[#f3e2d0]">
-                        {p.sourceUrl ? (
-                          <a 
-                            href={p.sourceUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-semibold hover:bg-blue-100 flex items-center gap-1"
-                          >
-                            <span>🌐</span>
-                            <span>সোর্স ওয়েবসাইট</span>
-                          </a>
-                        ) : (
-                          <span className="text-[11px] text-gray-400">ম্যানুয়াল আপলোড</span>
-                        )}
-
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = { ...p, bogo: !p.bogo, bogoText: p.bogoText || "১টি কিনলে ১টি ফ্রি" };
-                              setProducts(prev => prev.map(item => item.id === p.id ? updated : item));
-                              syncDocToCloud("products", p.id, updated);
-                              notify(updated.bogo ? `"${p.name}"-এ Buy 1 Get 1 Free অফার চালু করা হয়েছে! 🎁` : `"${p.name}"-এ BOGO অফার বন্ধ করা হয়েছে`);
-                            }}
-                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold transition flex items-center gap-1 ${
-                              p.bogo 
-                                ? "bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-xs" 
-                                : "bg-white text-gray-600 border border-gray-300 hover:border-amber-500 hover:text-amber-700"
-                            }`}
-                            title="১ ক্লিকে Buy 1 Get 1 Free অফার চালু বা বন্ধ করুন"
-                          >
-                            <span>🎁 {p.bogo ? "BOGO চালু" : "BOGO অফ"}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleProductSelectionForCombo(p.id)}
-                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold transition flex items-center gap-1 ${
-                              selectedProductIdsForCombo.includes(p.id)
-                                ? "bg-[#7a1c2b] text-white shadow-xs"
-                                : "bg-[#fffaf5] text-[#7a1c2b] border border-[#d4a574] hover:bg-amber-50"
-                            }`}
-                            title="কম্বো প্যাক বানাতে সিলেক্ট করুন"
-                          >
-                            <span>{selectedProductIdsForCombo.includes(p.id) ? "✓ কম্বোতে সিলেক্টেড" : "+ কম্বোতে যোগ"}</span>
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => setQrModalProduct(p)}
-                            className="px-2.5 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-xs font-bold hover:bg-amber-600 hover:text-white transition flex items-center gap-1 shadow-xs active:scale-95"
-                            title="প্রোডাক্টের QR কোড ও প্রিন্ট ট্যাগ দেখুন"
-                          >
-                            <span>📷</span>
-                            <span>QR ট্যাগ</span>
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setEditingProduct(p);
-                              setProductForm({
-                                ...p,
-                                images: p.images || [],
-                                colors: p.colors || [],
-                                sizes: p.sizes || []
-                              });
-                              setImageUrlInput(p.images[0] || "");
-                              setExternalLinkInput(p.sourceUrl || "");
-                              setImgLoadStatus(p.images[0] ? "loaded" : "idle");
-                              setIsProductModalOpen(true);
-                            }}
-                            className="px-2.5 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition"
-                          >
-                            ✏️ এডিট
-                          </button>
-                          <button 
-                            onClick={() => {
-                              if (confirm(`আপনি কি "${p.name}" মুছে ফেলতে চান?`)) {
-                                setProducts(prev => prev.filter(item => item.id !== p.id));
-                                deleteDocFromCloud("products", p.id);
-                                notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
-                              }
-                            }}
-                            className="px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-bold hover:bg-red-600 hover:text-white transition"
-                          >
-                            🗑️ মুছুন
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
                 </div>
               </div>
             )}
