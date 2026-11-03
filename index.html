@@ -192,6 +192,32 @@
       { id: "ORD-1002", customer: "নুসরাত জাহান", phone: "01813987654", total: 3501, subtotal: 3889, status: "Shipped", date: "2026-10-19", items: [{ productId: "p2", qty: 1, name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, sourceUrl: "" }, { productId: "p4", qty: 1, name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, sourceUrl: "" }], address: "ফ্ল্যাট ৩বি, গুলশান এভিনিউ", district: "ঢাকা", thana: "গুলশান", couponCode: "EID2026", discount: 388, deliveryCharge: 0, paymentMethod: "bKash", trackingId: "ST-884219" }
     ];
 
+    const initialReturns = [
+      {
+        id: "RET-884211",
+        orderId: "ORD-1002",
+        customer: "নুসরাত জাহান",
+        phone: "01813987654",
+        date: "2026-10-21",
+        timestamp: 1729500000000,
+        returnedItems: [
+          { productId: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", qty: 1, price: 890, condition: "ভালো (বিক্রিযোগ্য)", restock: true }
+        ],
+        totalReturnValue: 890,
+        refundMethod: "exchange",
+        isExchange: true,
+        exchangeItems: [
+          { productId: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", qty: 1, price: 3500, selectedSize: "Free Size", selectedColor: "Royal Red" }
+        ],
+        totalExchangeValue: 3500,
+        priceDifference: 2610,
+        differenceType: "customer_paid_extra",
+        settlementMethod: "bKash",
+        reason: "পণ্য পরিবর্তন / অপছন্দ",
+        note: "ব্রেসলেট ফেরত দিয়ে শাড়ি এক্সচেঞ্জ নেওয়া হয়েছে। অতিরিক্ত ২৬১০ টাকা বিকাশে গ্রহণ করা হয়েছে।"
+      }
+    ];
+
     const initialCoupons = [
       { id: "cp1", code: "EID2026", type: "%", value: 10, minOrder: 2000, expiry: "2026-12-31", active: true },
       { id: "cp2", code: "NEW100", type: "Flat", value: 100, minOrder: 500, expiry: "2026-12-31", active: true },
@@ -691,6 +717,7 @@
       const [reviews, setReviews] = useState(() => getStored("reviews", initialReviews));
       const [categories, setCategories] = useState(() => getStored("categories", initialCategories));
       const [orders, setOrders] = useState(() => getStored("orders", initialOrders));
+      const [returns, setReturns] = useState(() => getStored("returns", initialReturns));
       const [coupons, setCoupons] = useState(() => getStored("coupons", initialCoupons));
       const [banners, setBanners] = useState(() => getStored("banners", initialBanners));
       const [config, setConfig] = useState(() => getStored("config", initialStoreConfig));
@@ -760,7 +787,7 @@
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
-          const keys = ["config", "banners", "products", "combos", "categories", "orders", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes", "wishlist"];
+          const keys = ["config", "banners", "products", "combos", "categories", "orders", "returns", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes", "wishlist"];
           for (const k of keys) {
             try {
               const val = await idbStore.get(k);
@@ -771,6 +798,7 @@
                 else if (k === "combos") setCombos(val);
                 else if (k === "categories") setCategories(val);
                 else if (k === "orders") setOrders(val);
+                else if (k === "returns") setReturns(val);
                 else if (k === "coupons") setCoupons(val);
                 else if (k === "reviews") setReviews(val);
                 else if (k === "courier") setCourier(val);
@@ -1873,6 +1901,461 @@
             </div>
             <div class="grid-container">
               ${tagsHtml}
+            </div>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      };
+
+      // =========================================================
+      // SALES RETURN & PRODUCT EXCHANGE (সেলস রিটার্ন ও এক্সচেঞ্জ)
+      // Supports Full Refund & Product Exchange with Price Difference Settlement
+      // =========================================================
+      const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+      const [activeReturnTab, setActiveReturnTab] = useState("new"); // "new", "history"
+      const [returnOrder, setReturnOrder] = useState(null);
+      // returnItemsSelection map: { [idx]: { selected: boolean, returnQty: number, condition: string, restock: boolean } }
+      const [returnItemsSelection, setReturnItemsSelection] = useState({});
+      const [returnRefundMethod, setReturnRefundMethod] = useState("exchange"); // "exchange", "cash", "bkash", "nagad", "credit"
+      const [exchangeItems, setExchangeItems] = useState([]); // [{ product, qty, price, selectedSize, selectedColor }]
+      const [exchangeSearchQuery, setExchangeSearchQuery] = useState("");
+      const [exchangeCategoryFilter, setExchangeCategoryFilter] = useState("All");
+      const [returnReason, setReturnReason] = useState("পণ্য পরিবর্তন / অপছন্দ");
+      const [returnNote, setReturnNote] = useState("");
+      const [settlementPaymentMethod, setSettlementPaymentMethod] = useState("Cash"); // customer pays extra
+      const [settlementRefundMethod, setSettlementRefundMethod] = useState("Cash"); // store refunds balance
+      const [viewReturnSlip, setViewReturnSlip] = useState(null);
+      const [returnSearchFilter, setReturnSearchFilter] = useState("");
+
+      // Open Return & Exchange modal for a specific order
+      const openReturnModalForOrder = (order) => {
+        if (!order) return;
+        setReturnOrder(order);
+        setActiveReturnTab("new");
+        
+        // Initialize selection for all items in order
+        const initialSelection = {};
+        (order.items || []).forEach((it, idx) => {
+          initialSelection[idx] = {
+            selected: true,
+            returnQty: Math.max(1, Number(it.qty) || 1),
+            condition: "ভালো (বিক্রিযোগ্য)",
+            restock: true
+          };
+        });
+        setReturnItemsSelection(initialSelection);
+        setReturnRefundMethod("exchange");
+        setExchangeItems([]);
+        setExchangeSearchQuery("");
+        setExchangeCategoryFilter("All");
+        setReturnReason("পণ্য পরিবর্তন / অপছন্দ");
+        setReturnNote("");
+        setSettlementPaymentMethod("Cash");
+        setSettlementRefundMethod("Cash");
+        setIsReturnModalOpen(true);
+      };
+
+      // Toggle item selection in return order
+      const toggleReturnItemSelection = (idx) => {
+        setReturnItemsSelection(prev => {
+          const current = prev[idx] || { selected: false, returnQty: 1, condition: "ভালো (বিক্রিযোগ্য)", restock: true };
+          return {
+            ...prev,
+            [idx]: { ...current, selected: !current.selected }
+          };
+        });
+      };
+
+      // Update return item quantity
+      const updateReturnItemQty = (idx, maxQty, deltaOrVal) => {
+        setReturnItemsSelection(prev => {
+          const current = prev[idx] || { selected: true, returnQty: 1, condition: "ভালো (বিক্রিযোগ্য)", restock: true };
+          let newQty = typeof deltaOrVal === "number" && (deltaOrVal === 1 || deltaOrVal === -1)
+            ? current.returnQty + deltaOrVal
+            : Number(deltaOrVal);
+          if (isNaN(newQty) || newQty < 1) newQty = 1;
+          if (newQty > maxQty) newQty = maxQty;
+          return {
+            ...prev,
+            [idx]: { ...current, returnQty: newQty }
+          };
+        });
+      };
+
+      // Update condition and restock toggle
+      const updateReturnItemField = (idx, field, value) => {
+        setReturnItemsSelection(prev => {
+          const current = prev[idx] || { selected: true, returnQty: 1, condition: "ভালো (বিক্রিযোগ্য)", restock: true };
+          const updated = { ...current, [field]: value };
+          if (field === "condition" && String(value).includes("ত্রুটিযুক্ত")) {
+            updated.restock = false; // Don't restock damaged goods
+          }
+          return { ...prev, [idx]: updated };
+        });
+      };
+
+      // Add a product from catalog to exchangeItems
+      const addProductToExchange = (product) => {
+        if (!product) return;
+        setExchangeItems(prev => {
+          const existingIdx = prev.findIndex(item => item.product.id === product.id);
+          if (existingIdx >= 0) {
+            const updated = [...prev];
+            updated[existingIdx].qty += 1;
+            return updated;
+          } else {
+            return [
+              ...prev,
+              {
+                product,
+                qty: 1,
+                price: Number(product.price) || 0,
+                selectedSize: (product.sizes && product.sizes[0]) || (product.category === "শাড়ি" ? "Free Size" : "M"),
+                selectedColor: (product.colors && product.colors[0]) || (product.color || "স্ট্যান্ডার্ড")
+              }
+            ];
+          }
+        });
+        notify(`"${product.name}" এক্সচেঞ্জ তালিকায় যোগ করা হয়েছে! 🔄`);
+      };
+
+      // Remove product from exchangeItems
+      const removeProductFromExchange = (index) => {
+        setExchangeItems(prev => prev.filter((_, i) => i !== index));
+      };
+
+      // Update exchange item qty
+      const updateExchangeItemQty = (index, deltaOrVal) => {
+        setExchangeItems(prev => {
+          const updated = [...prev];
+          let newQty = typeof deltaOrVal === "number" && (deltaOrVal === 1 || deltaOrVal === -1)
+            ? updated[index].qty + deltaOrVal
+            : Number(deltaOrVal);
+          if (isNaN(newQty) || newQty < 1) newQty = 1;
+          updated[index].qty = newQty;
+          return updated;
+        });
+      };
+
+      // Update exchange item variation (size, color)
+      const updateExchangeItemVariant = (index, field, val) => {
+        setExchangeItems(prev => {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], [field]: val };
+          return updated;
+        });
+      };
+
+      // Calculate Total Return Value
+      const calculateTotalReturnValue = () => {
+        if (!returnOrder || !returnOrder.items) return 0;
+        return returnOrder.items.reduce((sum, item, idx) => {
+          const sel = returnItemsSelection[idx];
+          if (sel && sel.selected) {
+            const qty = Number(sel.returnQty) || 1;
+            return sum + (Number(item.price) || 0) * qty;
+          }
+          return sum;
+        }, 0);
+      };
+
+      // Calculate Total Exchange Value
+      const calculateTotalExchangeValue = () => {
+        return exchangeItems.reduce((sum, item) => {
+          return sum + (Number(item.price) || 0) * (Number(item.qty) || 1);
+        }, 0);
+      };
+
+      // Execute and Confirm Sales Return & Exchange
+      const handleConfirmReturnAndExchange = async () => {
+        if (!returnOrder) {
+          notify("অনুগ্রহ করে একটি অর্ডার নির্বাচন করুন!");
+          return;
+        }
+
+        const selectedReturnIndices = Object.keys(returnItemsSelection).filter(idx => returnItemsSelection[idx]?.selected);
+        if (selectedReturnIndices.length === 0) {
+          notify("অনুগ্রহ করে অন্তত ১টি রিটার্ন করার পণ্য সিলেক্ট করুন!");
+          return;
+        }
+
+        const isExchange = returnRefundMethod === "exchange";
+        if (isExchange && exchangeItems.length === 0) {
+          notify("এক্সচেঞ্জের জন্য অন্তত ১টি নতুন পণ্য নির্বাচন করুন!");
+          return;
+        }
+
+        const returnTotal = calculateTotalReturnValue();
+        const exchangeTotal = isExchange ? calculateTotalExchangeValue() : 0;
+        const priceDiff = isExchange ? (exchangeTotal - returnTotal) : (-returnTotal);
+
+        // Build list of returned products
+        const returnedProductsList = selectedReturnIndices.map(idx => {
+          const orig = returnOrder.items[idx];
+          const sel = returnItemsSelection[idx];
+          return {
+            productId: orig.productId || orig.id || "",
+            name: orig.name,
+            price: Number(orig.price) || 0,
+            qty: Number(sel.returnQty) || 1,
+            condition: sel.condition || "ভালো (বিক্রিযোগ্য)",
+            restock: Boolean(sel.restock),
+            size: orig.size || orig.selectedSize || "",
+            color: orig.color || orig.selectedColor || ""
+          };
+        });
+
+        // 1. Update Product Stocks in Store Inventory:
+        // A. Restock returned items if restock is true
+        // B. Deduct new exchanged items from inventory stock
+        let updatedProducts = [...products];
+
+        returnedProductsList.forEach(ret => {
+          if (ret.restock) {
+            const pIdx = updatedProducts.findIndex(p => p.id === ret.productId || p.name === ret.name);
+            if (pIdx >= 0) {
+              const oldStock = Number(updatedProducts[pIdx].stock) || 0;
+              updatedProducts[pIdx] = { ...updatedProducts[pIdx], stock: oldStock + ret.qty };
+              syncDocToCloud("products", updatedProducts[pIdx].id, updatedProducts[pIdx]);
+            }
+          }
+        });
+
+        if (isExchange) {
+          exchangeItems.forEach(ex => {
+            const pIdx = updatedProducts.findIndex(p => p.id === ex.product.id);
+            if (pIdx >= 0) {
+              const oldStock = Number(updatedProducts[pIdx].stock) || 0;
+              const newStock = Math.max(0, oldStock - ex.qty);
+              updatedProducts[pIdx] = { ...updatedProducts[pIdx], stock: newStock };
+              syncDocToCloud("products", updatedProducts[pIdx].id, updatedProducts[pIdx]);
+            }
+          });
+        }
+
+        setProducts(updatedProducts);
+        setStored("products", updatedProducts);
+
+        // 2. Create the Sales Return Record
+        const returnId = "RET-" + Math.floor(100000 + Math.random() * 900000);
+        const record = {
+          id: returnId,
+          orderId: returnOrder.id,
+          customer: returnOrder.customer || returnOrder.customerName || "সম্মানিত গ্রাহক",
+          phone: returnOrder.phone || returnOrder.customerPhone || "",
+          address: returnOrder.address || "",
+          date: new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' }),
+          timestamp: Date.now(),
+          returnedItems: returnedProductsList,
+          totalReturnValue: returnTotal,
+          refundMethod: returnRefundMethod, // "exchange", "cash", "bkash", "nagad", "credit"
+          isExchange: isExchange,
+          exchangeItems: isExchange ? exchangeItems.map(ei => ({
+            productId: ei.product.id,
+            name: ei.product.name,
+            price: Number(ei.price) || 0,
+            qty: Number(ei.qty) || 1,
+            size: ei.selectedSize || "",
+            color: ei.selectedColor || "",
+            sku: ei.product.sku || ""
+          })) : [],
+          totalExchangeValue: exchangeTotal,
+          priceDifference: priceDiff,
+          differenceType: isExchange 
+            ? (priceDiff > 0 ? "customer_paid_extra" : priceDiff < 0 ? "customer_refunded_balance" : "even_exchange")
+            : "full_refund",
+          settlementMethod: isExchange 
+            ? (priceDiff > 0 ? settlementPaymentMethod : priceDiff < 0 ? settlementRefundMethod : "সমমূল্য")
+            : returnRefundMethod,
+          reason: returnReason || "পণ্য পরিবর্তন / অপছন্দ",
+          note: returnNote || ""
+        };
+
+        // 3. Save to Returns State and Cloud
+        const updatedReturns = [record, ...returns];
+        setReturns(updatedReturns);
+        setStored("returns", updatedReturns);
+        await syncDocToCloud("returns", record.id, record);
+
+        // 4. Update Original Order returnStatus
+        const updatedOrders = orders.map(o => {
+          if (o.id === returnOrder.id) {
+            return {
+              ...o,
+              hasReturn: true,
+              lastReturnId: record.id,
+              returnHistory: [...(o.returnHistory || []), record.id]
+            };
+          }
+          return o;
+        });
+        setOrders(updatedOrders);
+        setStored("orders", updatedOrders);
+        await syncDocToCloud("orders", returnOrder.id, { hasReturn: true, lastReturnId: record.id });
+
+        setIsReturnModalOpen(false);
+        setViewReturnSlip(record);
+        notify(`🎉 সেলস রিটার্ন ও এক্সচেঞ্জ সফল হয়েছে! মেমো নং: #${record.id} 📄`);
+      };
+
+      // Print Sales Return & Exchange Memo Window
+      const printReturnSlipWindow = (record) => {
+        if (!record) return;
+        const win = window.open("", "_blank");
+        if (!win) {
+          notify("পপআপ ব্লক থাকায় প্রিন্ট উইন্ডো খোলা যায়নি। অনুমতি দিন।");
+          return;
+        }
+
+        const returnRows = (record.returnedItems || []).map(it => `
+          <tr>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f0e0d0;">
+              <b>${it.name}</b>
+              ${it.condition ? `<div style="font-size: 11px; color: #7a1c2b;">অবস্থা: ${it.condition} ${it.restock ? '• স্টকে যুক্ত' : '• ড্যামেজ'}</div>` : ''}
+              ${it.size || it.color ? `<div style="font-size: 10px; color: #666;">${[it.size ? `সাইজ: ${it.size}` : '', it.color ? `কালার: ${it.color}` : ''].filter(Boolean).join(' | ')}</div>` : ''}
+            </td>
+            <td style="padding: 8px 10px; text-align: center; border-bottom: 1px solid #f0e0d0;">${it.qty} টি</td>
+            <td style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #f0e0d0;">${it.price} ৳</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: bold; border-bottom: 1px solid #f0e0d0;">${it.price * it.qty} ৳</td>
+          </tr>
+        `).join("");
+
+        const exchangeRows = (record.exchangeItems || []).map(it => `
+          <tr>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f0e0d0;">
+              <b>${it.name}</b>
+              ${it.size || it.color ? `<div style="font-size: 11px; color: #7a1c2b; font-weight: bold;">${[it.size ? `সাইজ: ${it.size}` : '', it.color ? `রং: ${it.color}` : ''].filter(Boolean).join(' | ')}</div>` : ''}
+            </td>
+            <td style="padding: 8px 10px; text-align: center; border-bottom: 1px solid #f0e0d0;">${it.qty} টি</td>
+            <td style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #f0e0d0;">${it.price} ৳</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: bold; border-bottom: 1px solid #f0e0d0;">${it.price * it.qty} ৳</td>
+          </tr>
+        `).join("");
+
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Return & Exchange Memo - ${record.id}</title>
+            <style>
+              body { font-family: 'Hind Siliguri', 'Segoe UI', Tahoma, sans-serif; background: #fffaf5; color: #2c1810; margin: 0; padding: 20px; }
+              .box { max-width: 680px; margin: 0 auto; background: #fff; border: 2px solid #7a1c2b; border-radius: 16px; overflow: hidden; }
+              .header { background: #7a1c2b; color: #fff8f0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
+              .header h2 { margin: 0; font-size: 20px; }
+              .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 20px; background: #fffdf9; border-bottom: 1px solid #f0e0d0; font-size: 12px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+              th { background: #fff8f0; color: #7a1c2b; padding: 8px 10px; text-align: left; }
+              .section-title { font-size: 14px; font-weight: bold; color: #7a1c2b; margin: 16px 20px 4px 20px; display: flex; align-items: center; gap: 6px; }
+              .summary-box { margin: 16px 20px; padding: 14px; background: #fff8f0; border: 1px dashed #d4a574; border-radius: 12px; font-size: 13px; }
+              .flex-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+              .highlight-row { font-size: 15px; font-weight: bold; padding-top: 8px; border-top: 1px solid #d4a574; }
+              @media print { .no-print { display: none; } .box { border: none; } }
+            </style>
+          </head>
+          <body>
+            <div class="no-print" style="text-align: center; margin-bottom: 15px;">
+              <button onclick="window.print()" style="background: #7a1c2b; color: #fff; border: none; padding: 8px 24px; font-size: 14px; font-weight: bold; border-radius: 20px; cursor: pointer;">🖨️ প্রিন্ট / মেমো সেভ করুন</button>
+            </div>
+            <div class="box">
+              <div class="header">
+                <div>
+                  <h2>${config?.storeName || 'SAJGOJ FASHION'}</h2>
+                  <div style="font-size: 11px; opacity: 0.9;">সেলস রিটার্ন ও এক্সচেঞ্জ মেমো (Sales Return Slip)</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-weight: bold; font-size: 14px;">মেমো #${record.id}</div>
+                  <div style="font-size: 11px;">তারিখ: ${record.date}</div>
+                </div>
+              </div>
+
+              <div class="info-grid">
+                <div>
+                  <b>গ্রাহক বিবরণ:</b>
+                  <div>নাম: ${record.customer}</div>
+                  <div>মোবাইল: ${record.phone}</div>
+                  ${record.address ? `<div>ঠিকানা: ${record.address}</div>` : ''}
+                </div>
+                <div style="text-align: right;">
+                  <b>মূল অর্ডার তথ্য:</b>
+                  <div>অর্ডার আইডি: #${record.orderId}</div>
+                  <div>লেনদেন পদ্ধতি: <b>${record.isExchange ? 'পণ্য এক্সচেঞ্জ সমন্বয়' : 'টাকা ফেরত (Refund)'}</b></div>
+                  <div>কারণ: ${record.reason}</div>
+                </div>
+              </div>
+
+              <div class="section-title">📦 রিটার্ন করা পণ্যসমূহ (Returned Items):</div>
+              <div style="padding: 0 20px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>পণ্যের নাম</th>
+                      <th style="text-align: center;">পরিমাণ</th>
+                      <th style="text-align: right;">দর</th>
+                      <th style="text-align: right;">মোট</th>
+                    </tr>
+                  </thead>
+                  <tbody>${returnRows}</tbody>
+                </table>
+              </div>
+
+              ${record.isExchange && record.exchangeItems?.length > 0 ? `
+                <div class="section-title" style="margin-top: 16px;">🔄 নতুন এক্সচেঞ্জ নেওয়া পণ্যসমূহ (Exchanged Items):</div>
+                <div style="padding: 0 20px;">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>পণ্যের নাম</th>
+                        <th style="text-align: center;">পরিমাণ</th>
+                        <th style="text-align: right;">দর</th>
+                        <th style="text-align: right;">মোট</th>
+                      </tr>
+                    </thead>
+                    <tbody>${exchangeRows}</tbody>
+                  </table>
+                </div>
+              ` : ''}
+
+              <div class="summary-box">
+                <div class="flex-row">
+                  <span>মোট রিটার্ন পণ্যের মূল্য:</span>
+                  <b>৳${record.totalReturnValue}</b>
+                </div>
+                ${record.isExchange ? `
+                  <div class="flex-row">
+                    <span>নতুন এক্সচেঞ্জ পণ্যের মূল্য:</span>
+                    <b>৳${record.totalExchangeValue}</b>
+                  </div>
+                  ${record.differenceType === "customer_paid_extra" ? `
+                    <div class="flex-row highlight-row" style="color: #c2410c;">
+                      <span>⚠️ কাস্টমার থেকে অতিরিক্ত গ্রহণ (${record.settlementMethod}):</span>
+                      <span>+ ৳${record.priceDifference}</span>
+                    </div>
+                  ` : record.differenceType === "customer_refunded_balance" ? `
+                    <div class="flex-row highlight-row" style="color: #047857;">
+                      <span>💵 কাস্টমারকে বাকি টাকা ফেরত প্রদান (${record.settlementMethod}):</span>
+                      <span>- ৳${Math.abs(record.priceDifference)}</span>
+                    </div>
+                  ` : `
+                    <div class="flex-row highlight-row" style="color: #1d4ed8;">
+                      <span>✅ সমমূল্যের এক্সচেঞ্জ সমন্বয় (ব্যালেন্স):</span>
+                      <span>৳০</span>
+                    </div>
+                  `}
+                ` : `
+                  <div class="flex-row highlight-row" style="color: #047857;">
+                    <span>💵 কাস্টমারকে মোট ফেরত প্রদান (${record.refundMethod}):</span>
+                    <span>৳${record.totalReturnValue}</span>
+                  </div>
+                `}
+                ${record.note ? `<div style="margin-top: 8px; font-size: 11px; color: #666; font-style: italic;">নোট: "${record.note}"</div>` : ''}
+              </div>
+
+              <div style="padding: 16px 20px 24px 20px; display: flex; justify-content: space-between; font-size: 11px; color: #777; border-top: 1px solid #f0e0d0; margin-top: 10px;">
+                <div>কাস্টমারের স্বাক্ষর: ________________</div>
+                <div>কর্তৃপক্ষের স্বাক্ষর: ________________</div>
+              </div>
             </div>
           </body>
           </html>
@@ -6340,7 +6823,35 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <p className="text-xs text-[#b8956a]">অর্ডার অনুমোদন, স্ট্যাটাস পরিবর্তন, মেমো প্রিন্ট ও কুরিয়ার বুকিং</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveReturnTab("new");
+                        if (!returnOrder && orders.length > 0) {
+                          openReturnModalForOrder(orders[0]);
+                        } else {
+                          setIsReturnModalOpen(true);
+                        }
+                      }}
+                      className="bg-gradient-to-r from-orange-500 to-[#e65100] text-white px-3.5 py-1.5 rounded-full text-xs font-bold hover:brightness-110 shadow-xs flex items-center gap-1.5 transition active:scale-95"
+                      title="সেলস রিটার্ন ও পণ্য এক্সচেঞ্জ উইন্ডো খুলুন"
+                    >
+                      <span>🔄</span>
+                      <span>রিটার্ন ও এক্সচেঞ্জ</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveReturnTab("history");
+                        setIsReturnModalOpen(true);
+                      }}
+                      className="bg-amber-50 text-amber-900 border border-amber-300 px-3.5 py-1.5 rounded-full text-xs font-bold hover:bg-amber-100 shadow-xs flex items-center gap-1.5 transition"
+                      title="পূর্ববর্তী সকল রিটার্ন ও এক্সচেঞ্জ তালিকা দেখুন"
+                    >
+                      <span>📜</span>
+                      <span>রিটার্ন তালিকা ({returns.length})</span>
+                    </button>
                     <span className="text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-bold">
                       পেন্ডিং: {orders.filter(o => o.status === "Pending").length}
                     </span>
@@ -6361,11 +6872,28 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     {orders.map(o => (
                       <div key={o.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 sm:p-5 shadow-sm space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f3e2d0] pb-3">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-mono font-bold text-sm sm:text-base text-[#7a1c2b] bg-[#fff8f0] px-3 py-1 rounded-full border border-[#d4a574]">
                               #{o.id}
                             </span>
                             <span className="text-xs text-gray-400">তারিখ: {o.date}</span>
+                            {o.hasReturn && (
+                              <span 
+                                onClick={() => {
+                                  const foundRet = returns.find(r => r.orderId === o.id || r.id === o.lastReturnId);
+                                  if (foundRet) setViewReturnSlip(foundRet);
+                                  else {
+                                    setActiveReturnTab("history");
+                                    setIsReturnModalOpen(true);
+                                  }
+                                }}
+                                className="cursor-pointer text-[10px] bg-orange-100 text-orange-900 border border-orange-300 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 hover:bg-orange-200 transition"
+                                title="রিটার্ন ও এক্সচেঞ্জ মেমো দেখুন"
+                              >
+                                <span>🔄</span>
+                                <span>রিটার্ন/এক্সচেঞ্জ প্রসেসড</span>
+                              </span>
+                            )}
                           </div>
                           
                           {/* Status Dropdown with Live Trigger */}
@@ -6512,6 +7040,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             >
                               <span>👁️</span>
                               <span>কনফার্মেশন ভিউ</span>
+                            </button>
+                            <button 
+                              onClick={() => openReturnModalForOrder(o)}
+                              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-[#e65100] text-white rounded-full text-xs font-bold hover:brightness-110 transition shadow-sm flex items-center gap-1.5"
+                              title="এই অর্ডারের পণ্য রিটার্ন বা এক্সচেঞ্জ করুন"
+                            >
+                              <span>🔄</span>
+                              <span>রিটার্ন ও এক্সচেঞ্জ</span>
                             </button>
                             <button 
                               onClick={() => shareOrderToWhatsApp(o)}
@@ -10959,6 +11495,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <span>মেমো প্রিন্ট করুন</span>
                     </button>
 
+                    <button
+                      onClick={() => {
+                        const o = viewInvoiceOrder;
+                        setViewInvoiceOrder(null);
+                        openReturnModalForOrder(o);
+                      }}
+                      className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-full text-xs font-bold hover:brightness-110 transition flex items-center gap-1.5 shadow-sm"
+                      title="এই অর্ডারের পণ্য রিটার্ন বা এক্সচেঞ্জ করুন"
+                    >
+                      <span>🔄</span>
+                      <span>রিটার্ন ও এক্সচেঞ্জ</span>
+                    </button>
+
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => shareOrderToWhatsApp(viewInvoiceOrder)}
@@ -10975,6 +11524,956 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* SALES RETURN & PRODUCT EXCHANGE MODAL (সেলস রিটার্ন ও এক্সচেঞ্জ) */}
+          {/* ========================================================= */}
+          {isReturnModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+              <div className="bg-[#fffdfa] rounded-3xl w-full max-w-3xl max-h-[94vh] overflow-y-auto border-2 border-[#d4a574] shadow-2xl animate-fadeIn flex flex-col justify-between">
+                
+                {/* 1. Modal Header (Matches Screenshot Style) */}
+                <div className="p-4 sm:p-6 bg-gradient-to-r from-amber-50 via-[#fff8f0] to-orange-50 border-b border-[#f3e2d0] rounded-t-3xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#e65100] text-white flex items-center justify-center text-2xl shadow-md shrink-0">
+                        ⟳
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-extrabold text-lg sm:text-xl text-[#7a1c2b]">
+                            সেলস রিটার্ন ও এক্সচেঞ্জ (Sales Return)
+                          </h3>
+                          {returnOrder && (
+                            <span className="font-mono text-xs font-bold bg-white text-[#7a1c2b] px-2.5 py-0.5 rounded-full border border-amber-300 shadow-xs">
+                              #{returnOrder.id}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#a06830] mt-0.5">
+                          পূর্ববর্তী ইনভয়েস থেকে পণ্য ফেরত ও এক্সচেঞ্জ হিসাব
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Top Right: Toggle Tabs + Close Button (Matches Screenshot) */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <div className="bg-[#f7ebe0] p-1 rounded-2xl flex items-center gap-1 border border-[#e6d0bc]">
+                        <button
+                          type="button"
+                          onClick={() => setActiveReturnTab("new")}
+                          className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                            activeReturnTab === "new"
+                              ? "bg-[#e65100] text-white shadow-sm"
+                              : "text-gray-700 hover:bg-white/60"
+                          }`}
+                        >
+                          <span>পণ্য রিটার্ন/এক্সচেঞ্জ</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveReturnTab("history")}
+                          className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                            activeReturnTab === "history"
+                              ? "bg-[#e65100] text-white shadow-sm"
+                              : "text-gray-700 hover:bg-white/60"
+                          }`}
+                        >
+                          <span>পূর্ববর্তী রিটার্ন তালিকা ({returns.length})</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsReturnModalOpen(false)}
+                        className="w-9 h-9 rounded-full bg-white border border-[#e6d0bc] text-gray-500 hover:text-black hover:bg-gray-100 flex items-center justify-center font-bold text-base transition shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Modal Content Body */}
+                <div className="p-4 sm:p-6 space-y-6 flex-1">
+                  
+                  {/* TAB 1: NEW RETURN & EXCHANGE PROCESS */}
+                  {activeReturnTab === "new" && (
+                    <div className="space-y-6">
+                      
+                      {/* Step A: Order Selector (If not preselected or wants to change) */}
+                      <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex-1 w-full sm:w-auto">
+                          <label className="text-xs font-bold text-gray-600 block mb-1">
+                            ১. ইনভয়েস / অর্ডার নির্বাচন করুন:
+                          </label>
+                          <select
+                            value={returnOrder?.id || ""}
+                            onChange={(e) => {
+                              const found = orders.find(o => o.id === e.target.value);
+                              if (found) openReturnModalForOrder(found);
+                            }}
+                            className="w-full bg-[#fffaf5] border border-[#d4a574] rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold outline-none focus:border-[#7a1c2b]"
+                          >
+                            <option value="">-- অর্ডার বেছে নিন --</option>
+                            {orders.map(o => (
+                              <option key={o.id} value={o.id}>
+                                #{o.id} - {o.customer} ({o.phone}) - {o.total} ৳ [{o.date}]
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {returnOrder && (
+                          <div className="text-xs bg-[#fff8f0] px-3.5 py-2 rounded-xl border border-amber-200 w-full sm:w-auto">
+                            <p className="font-bold text-[#7a1c2b]">{returnOrder.customer}</p>
+                            <p className="text-gray-500 font-mono">📞 {returnOrder.phone} • পেমেন্ট: {returnOrder.paymentMethod}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {returnOrder && returnOrder.items && returnOrder.items.length > 0 ? (
+                        <>
+                          {/* Step B: Invoiced Items Table to Select Return Qty & Condition */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs sm:text-sm font-extrabold text-[#7a1c2b] flex items-center gap-1.5">
+                                <span>২.</span>
+                                <span>রিটার্ন করার পণ্য নির্বাচন করুন ({returnOrder.items.length} টি পণ্যের মধ্যে):</span>
+                              </h4>
+                              <span className="text-[11px] text-gray-500">
+                                যেসব পণ্যে টিক দেওয়া থাকবে কেবল সেগুলো রিটার্ন হবে
+                              </span>
+                            </div>
+
+                            <div className="space-y-2.5">
+                              {returnOrder.items.map((it, idx) => {
+                                const sel = returnItemsSelection[idx] || { selected: false, returnQty: 1, condition: "ভালো (বিক্রিযোগ্য)", restock: true };
+                                const maxQty = Math.max(1, Number(it.qty) || 1);
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`p-3.5 rounded-2xl border transition ${
+                                      sel.selected
+                                        ? "bg-amber-50/40 border-amber-400 shadow-xs"
+                                        : "bg-white border-gray-200 opacity-75"
+                                    }`}
+                                  >
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                      
+                                      {/* Checkbox and Product Info */}
+                                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <input
+                                          type="checkbox"
+                                          checked={sel.selected}
+                                          onChange={() => toggleReturnItemSelection(idx)}
+                                          className="w-4 h-4 accent-[#e65100] cursor-pointer rounded shrink-0"
+                                          id={`ret-check-${idx}`}
+                                        />
+                                        <div className="min-w-0">
+                                          <label htmlFor={`ret-check-${idx}`} className="font-bold text-xs sm:text-sm text-gray-900 cursor-pointer block truncate">
+                                            {it.name}
+                                          </label>
+                                          <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5 flex-wrap">
+                                            {it.sku && <span className="font-mono">SKU: {it.sku}</span>}
+                                            <span className="text-[#7a1c2b] font-bold">রেট: ৳{it.price}</span>
+                                            <span>অর্ডার পরিমাণ: {it.qty} পিস</span>
+                                            {it.selectedSize && <span className="bg-gray-100 px-1.5 py-0.2 rounded">সাইজ: {it.selectedSize}</span>}
+                                            {it.selectedColor && <span className="bg-gray-100 px-1.5 py-0.2 rounded">রং: {it.selectedColor}</span>}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Quantity & Condition Controls */}
+                                      {sel.selected && (
+                                        <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto shrink-0">
+                                          {/* Quantity Selector */}
+                                          <div className="flex items-center border border-[#d4a574] rounded-xl bg-white overflow-hidden text-xs">
+                                            <button
+                                              type="button"
+                                              onClick={() => updateReturnItemQty(idx, maxQty, -1)}
+                                              className="px-2.5 py-1 bg-amber-50 hover:bg-amber-200 text-amber-900 font-bold"
+                                            >
+                                              -
+                                            </button>
+                                            <input
+                                              type="number"
+                                              min="1"
+                                              max={maxQty}
+                                              value={sel.returnQty}
+                                              onChange={(e) => updateReturnItemQty(idx, maxQty, e.target.value)}
+                                              className="w-12 text-center text-xs font-bold outline-none py-1"
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => updateReturnItemQty(idx, maxQty, 1)}
+                                              className="px-2.5 py-1 bg-amber-50 hover:bg-amber-200 text-amber-900 font-bold"
+                                            >
+                                              +
+                                            </button>
+                                          </div>
+
+                                          {/* Condition Dropdown */}
+                                          <select
+                                            value={sel.condition}
+                                            onChange={(e) => updateReturnItemField(idx, "condition", e.target.value)}
+                                            className="text-xs bg-white border border-gray-300 rounded-xl px-2.5 py-1 font-semibold text-gray-700 outline-none"
+                                          >
+                                            <option value="ভালো (বিক্রিযোগ্য)">ভালো (বিক্রিযোগ্য)</option>
+                                            <option value="সাইজ/ফিটিং সমস্যা">সাইজ/ফিটিং সমস্যা</option>
+                                            <option value="কালার মিসম্যাচ">কালার মিসম্যাচ</option>
+                                            <option value="ত্রুটিযুক্ত (ড্যামেজ)">ত্রুটিযুক্ত (ড্যামেজ)</option>
+                                          </select>
+
+                                          {/* Restock Checkbox */}
+                                          <label className="text-[11px] font-bold text-gray-600 flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded-xl border border-gray-200">
+                                            <input
+                                              type="checkbox"
+                                              checked={sel.restock}
+                                              onChange={(e) => updateReturnItemField(idx, "restock", e.target.checked)}
+                                              className="accent-[#e65100]"
+                                            />
+                                            <span>স্টকে যোগ</span>
+                                          </label>
+
+                                          {/* Item Return Total */}
+                                          <span className="font-extrabold text-xs text-[#7a1c2b] bg-amber-100/60 px-2.5 py-1 rounded-xl">
+                                            ৳{(Number(it.price) || 0) * (Number(sel.returnQty) || 1)}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Return Subtotal Banner */}
+                            <div className="flex items-center justify-between p-3 bg-amber-100/60 rounded-2xl border border-amber-300 text-xs sm:text-sm">
+                              <span className="font-bold text-amber-900">মোট নির্বাচিত রিটার্ন পণ্যের মূল্য:</span>
+                              <span className="font-extrabold text-[#7a1c2b] text-base">
+                                ৳{calculateTotalReturnValue()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Step C: Refund or Product Exchange Method (Matches Screenshot 3) */}
+                          <div className="space-y-3 pt-2 border-t border-[#f3e2d0]">
+                            <h4 className="text-xs sm:text-sm font-extrabold text-gray-900">
+                              ৩. টাকা ফেরত দেয়ার মাধ্যম (Refund Method):
+                            </h4>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                              {[
+                                { id: "cash", label: "ক্যাশ (নগদ টাকা)", icon: "$" },
+                                { id: "bkash", label: "বিকাশ (bKash)", icon: "📱" },
+                                { id: "nagad", label: "নগদ (Nagad)", icon: "📱" },
+                                { id: "credit", label: "দোকান জমা (Credit)", icon: "💳" },
+                                { id: "exchange", label: "📦 এক্সচেঞ্জ সমন্বয়", icon: "🔄", isSpecial: true }
+                              ].map(m => (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => setReturnRefundMethod(m.id)}
+                                  className={`p-3 rounded-2xl border text-xs font-bold transition flex items-center justify-center gap-1.5 text-center ${
+                                    returnRefundMethod === m.id
+                                      ? m.isSpecial
+                                        ? "bg-[#e65100] text-white border-[#bf360c] shadow-md scale-[1.02]"
+                                        : "bg-[#7a1c2b] text-white border-[#5a1420] shadow-md scale-[1.02]"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-amber-400 hover:bg-amber-50/50"
+                                  }`}
+                                >
+                                  <span>{m.icon}</span>
+                                  <span>{m.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* ========================================================= */}
+                          {/* Step D: DYNAMIC PRODUCT EXCHANGE CATALOG & DIFFERENCE CALCULATION */}
+                          {/* (TRIGGERED WHEN '📦 এক্সচেঞ্জ সমন্বয়' IS SELECTED) */}
+                          {/* ========================================================= */}
+                          {returnRefundMethod === "exchange" && (
+                            <div className="p-4 sm:p-5 bg-gradient-to-b from-orange-50/70 via-amber-50/40 to-white rounded-3xl border-2 border-orange-400 shadow-md space-y-5 animate-fadeIn">
+                              
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-orange-200 pb-3">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xl">🔄</span>
+                                    <h4 className="font-extrabold text-sm sm:text-base text-[#e65100]">
+                                      নতুন এক্সচেঞ্জ পণ্য নির্বাচন (Exchange Catalog)
+                                    </h4>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-0.5">
+                                    গ্রাহক রিটার্নকৃত পণ্যের পরিবর্তে দোকান থেকে যে নতুন পণ্য নিচ্ছেন তা নিচে যুক্ত করুন:
+                                  </p>
+                                </div>
+                                <span className="text-xs font-bold bg-[#e65100] text-white px-3 py-1 rounded-full shadow-xs">
+                                  নির্বাচিত নতুন পণ্য: {exchangeItems.length} টি
+                                </span>
+                              </div>
+
+                              {/* Search & Category Filter for Exchange Catalog */}
+                              <div className="space-y-2.5">
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="🔍 এক্সচেঞ্জ পণ্য খুঁজুন (পণ্যের নাম বা SKU)..."
+                                    value={exchangeSearchQuery}
+                                    onChange={(e) => setExchangeSearchQuery(e.target.value)}
+                                    className="flex-1 bg-white border border-[#d4a574] rounded-2xl px-4 py-2 text-xs sm:text-sm outline-none focus:border-[#e65100]"
+                                  />
+                                  {exchangeSearchQuery && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setExchangeSearchQuery("")}
+                                      className="px-3 bg-gray-100 text-gray-600 rounded-2xl text-xs hover:bg-gray-200"
+                                    >
+                                      মুছুন
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Category Chips */}
+                                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide text-xs">
+                                  <button
+                                    type="button"
+                                    onClick={() => setExchangeCategoryFilter("All")}
+                                    className={`px-3 py-1 rounded-full whitespace-nowrap font-bold transition ${
+                                      exchangeCategoryFilter === "All"
+                                        ? "bg-[#e65100] text-white"
+                                        : "bg-white text-gray-600 border border-gray-200 hover:bg-amber-50"
+                                    }`}
+                                  >
+                                    সকল ক্যাটাগরি
+                                  </button>
+                                  {categories.map(cat => (
+                                    <button
+                                      key={cat.id}
+                                      type="button"
+                                      onClick={() => setExchangeCategoryFilter(cat.name)}
+                                      className={`px-3 py-1 rounded-full whitespace-nowrap font-bold transition flex items-center gap-1 ${
+                                        exchangeCategoryFilter === cat.name
+                                          ? "bg-[#e65100] text-white"
+                                          : "bg-white text-gray-600 border border-gray-200 hover:bg-amber-50"
+                                      }`}
+                                    >
+                                      <span>{cat.icon}</span>
+                                      <span>{cat.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+
+                                {/* Catalog Quick Picker Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-52 overflow-y-auto p-1 bg-white/80 rounded-2xl border border-orange-200">
+                                  {products
+                                    .filter(p => {
+                                      if (exchangeCategoryFilter !== "All" && p.category !== exchangeCategoryFilter) return false;
+                                      if (exchangeSearchQuery.trim()) {
+                                        const q = exchangeSearchQuery.toLowerCase();
+                                        return p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)) || p.category.toLowerCase().includes(q);
+                                      }
+                                      return true;
+                                    })
+                                    .slice(0, 12)
+                                    .map(p => (
+                                      <div key={p.id} className="p-2.5 rounded-xl border border-gray-200 bg-white flex items-center justify-between gap-2 hover:border-orange-400 transition">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <img
+                                            src={p.images[0] || imgSharee}
+                                            alt={p.name}
+                                            className="w-10 h-10 rounded-lg object-cover border shrink-0"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                          />
+                                          <div className="min-w-0">
+                                            <p className="font-bold text-xs truncate text-gray-900">{p.name}</p>
+                                            <p className="text-[11px] text-[#e65100] font-bold">৳{p.price} <span className="text-gray-400 font-normal">| স্টক: {p.stock}</span></p>
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => addProductToExchange(p)}
+                                          className="bg-orange-50 hover:bg-[#e65100] text-[#e65100] hover:text-white border border-orange-300 px-2.5 py-1 rounded-xl text-xs font-bold transition shrink-0 active:scale-95"
+                                          title="এক্সচেঞ্জে যোগ করুন"
+                                        >
+                                          + যোগ
+                                        </button>
+                                      </div>
+                                    ))}
+                                </div>
+                              </div>
+
+                              {/* Selected Exchange Products List */}
+                              <div className="space-y-3 pt-2 border-t border-orange-200">
+                                <h5 className="text-xs font-bold text-gray-800">
+                                  এক্সচেঞ্জের জন্য বাছাইকৃত নতুন পণ্যসমূহ:
+                                </h5>
+
+                                {exchangeItems.length === 0 ? (
+                                  <div className="p-6 bg-white rounded-2xl border border-dashed border-orange-300 text-center text-xs text-gray-500">
+                                    <p className="text-2xl mb-1">🛍️</p>
+                                    <p className="font-bold text-gray-700">এখনো কোনো নতুন এক্সচেঞ্জ পণ্য যোগ করা হয়নি</p>
+                                    <p className="text-[11px] text-gray-400 mt-0.5">উপরের তালিকা থেকে গ্রাহকের পছন্দের নতুন পণ্যটি "+ যোগ" করুন</p>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {exchangeItems.map((exItem, exIdx) => (
+                                      <div key={exIdx} className="p-3 bg-white rounded-2xl border border-orange-300 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                          <img
+                                            src={exItem.product.images?.[0] || imgSharee}
+                                            alt={exItem.product.name}
+                                            className="w-12 h-12 rounded-xl object-cover border shrink-0"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                          />
+                                          <div className="min-w-0">
+                                            <p className="font-bold text-xs sm:text-sm text-gray-900 truncate">
+                                              {exItem.product.name}
+                                            </p>
+                                            <p className="text-xs text-[#e65100] font-bold">
+                                              দর: ৳{exItem.price}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        {/* Variation selectors: Size, Color, Qty */}
+                                        <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto shrink-0">
+                                          {/* Size Selector */}
+                                          <select
+                                            value={exItem.selectedSize}
+                                            onChange={(e) => updateExchangeItemVariant(exIdx, "selectedSize", e.target.value)}
+                                            className="text-xs bg-[#fffaf5] border border-gray-300 rounded-xl px-2 py-1 font-semibold text-gray-700"
+                                            title="সাইজ নির্বাচন"
+                                          >
+                                            {(exItem.product.sizes && exItem.product.sizes.length > 0) ? (
+                                              exItem.product.sizes.map(s => <option key={s} value={s}>{s}</option>)
+                                            ) : (
+                                              <>
+                                                <option value="Free Size">Free Size</option>
+                                                <option value="M">Size M</option>
+                                                <option value="L">Size L</option>
+                                                <option value="XL">Size XL</option>
+                                                <option value="XXL">Size XXL</option>
+                                              </>
+                                            )}
+                                          </select>
+
+                                          {/* Color Selector */}
+                                          <select
+                                            value={exItem.selectedColor}
+                                            onChange={(e) => updateExchangeItemVariant(exIdx, "selectedColor", e.target.value)}
+                                            className="text-xs bg-[#fffaf5] border border-gray-300 rounded-xl px-2 py-1 font-semibold text-gray-700"
+                                            title="রং নির্বাচন"
+                                          >
+                                            {(exItem.product.colors && exItem.product.colors.length > 0) ? (
+                                              exItem.product.colors.map(c => <option key={c} value={c}>{c}</option>)
+                                            ) : (
+                                              <>
+                                                <option value="স্ট্যান্ডার্ড">স্ট্যান্ডার্ড রং</option>
+                                                <option value="Royal Red">Royal Red</option>
+                                                <option value="Golden">Golden</option>
+                                                <option value="Emerald Green">Emerald Green</option>
+                                              </>
+                                            )}
+                                          </select>
+
+                                          {/* Quantity */}
+                                          <div className="flex items-center border border-[#d4a574] rounded-xl bg-white overflow-hidden text-xs">
+                                            <button
+                                              type="button"
+                                              onClick={() => updateExchangeItemQty(exIdx, -1)}
+                                              className="px-2 py-0.5 bg-amber-50 hover:bg-amber-200 font-bold"
+                                            >
+                                              -
+                                            </button>
+                                            <span className="w-8 text-center font-bold">{exItem.qty}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => updateExchangeItemQty(exIdx, 1)}
+                                              className="px-2 py-0.5 bg-amber-50 hover:bg-amber-200 font-bold"
+                                            >
+                                              +
+                                            </button>
+                                          </div>
+
+                                          {/* Subtotal */}
+                                          <span className="font-extrabold text-xs text-[#7a1c2b] bg-amber-100/70 px-2.5 py-1 rounded-xl">
+                                            ৳{exItem.price * exItem.qty}
+                                          </span>
+
+                                          {/* Remove */}
+                                          <button
+                                            type="button"
+                                            onClick={() => removeProductFromExchange(exIdx)}
+                                            className="w-7 h-7 rounded-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center text-xs font-bold"
+                                            title="বাদ দিন"
+                                          >
+                                            ✕
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+
+                                    <div className="flex items-center justify-between p-3 bg-orange-100/60 rounded-2xl border border-orange-300 text-xs sm:text-sm">
+                                      <span className="font-bold text-orange-950">মোট নতুন এক্সচেঞ্জ পণ্যের মূল্য:</span>
+                                      <span className="font-extrabold text-[#e65100] text-base">
+                                        ৳{calculateTotalExchangeValue()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* PRICE DIFFERENCE CALCULATION & SETTLEMENT */}
+                              {exchangeItems.length > 0 && (
+                                <div className="space-y-3 pt-3 border-t-2 border-orange-300">
+                                  <h5 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">
+                                    ৪. মূল্য পার্থক্য ও সমন্বয় হিসাব (Price Difference Settlement):
+                                  </h5>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                    <div className="bg-white p-3 rounded-2xl border border-amber-300 flex justify-between items-center">
+                                      <span className="text-gray-600 font-semibold">রিটার্ন পণ্যের মূল্য:</span>
+                                      <span className="font-bold text-[#7a1c2b] text-sm">৳{calculateTotalReturnValue()}</span>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-2xl border border-orange-300 flex justify-between items-center">
+                                      <span className="text-gray-600 font-semibold">নতুন এক্সচেঞ্জ পণ্যের মূল্য:</span>
+                                      <span className="font-bold text-[#e65100] text-sm">৳{calculateTotalExchangeValue()}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* CASE 1: EXCHANGE VALUE > RETURN VALUE (Customer pays extra) */}
+                                  {calculateTotalExchangeValue() > calculateTotalReturnValue() && (
+                                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-100 border-2 border-amber-500 rounded-3xl space-y-3 shadow-sm">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-2xl">⚠️</span>
+                                        <div>
+                                          <h4 className="font-black text-sm sm:text-base text-amber-900">
+                                            কাস্টমার থেকে অতিরিক্ত নিতে হবে: + ৳{calculateTotalExchangeValue() - calculateTotalReturnValue()}
+                                          </h4>
+                                          <p className="text-xs text-amber-800">
+                                            নতুন এক্সচেঞ্জ পণ্যের মূল্য বেশি হওয়ায় কাস্টমারকে এই অবশিষ্ট অতিরিক্ত টাকা প্রদান করতে হবে।
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 pt-2 border-t border-amber-300 text-xs">
+                                        <span className="font-bold text-amber-950 whitespace-nowrap">
+                                          অতিরিক্ত টাকা সংগ্রহের মাধ্যম:
+                                        </span>
+                                        <div className="flex gap-2 flex-wrap">
+                                          {["Cash", "bKash", "Nagad", "Card"].map(m => (
+                                            <button
+                                              key={m}
+                                              type="button"
+                                              onClick={() => setSettlementPaymentMethod(m)}
+                                              className={`px-3 py-1.5 rounded-xl font-bold transition border ${
+                                                settlementPaymentMethod === m
+                                                  ? "bg-[#e65100] text-white border-[#bf360c] shadow-xs"
+                                                  : "bg-white text-gray-700 border-amber-300 hover:bg-amber-100"
+                                              }`}
+                                            >
+                                              {m === "Cash" ? "💵 ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : "💳 কার্ড"}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* CASE 2: EXCHANGE VALUE < RETURN VALUE (Store refunds customer) */}
+                                  {calculateTotalExchangeValue() < calculateTotalReturnValue() && (
+                                    <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-100 border-2 border-emerald-500 rounded-3xl space-y-3 shadow-sm">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-2xl">💵</span>
+                                        <div>
+                                          <h4 className="font-black text-sm sm:text-base text-emerald-900">
+                                            কাস্টমারকে বাকি টাকা ফেরত দিতে হবে: ৳{calculateTotalReturnValue() - calculateTotalExchangeValue()}
+                                          </h4>
+                                          <p className="text-xs text-emerald-800">
+                                            নতুন এক্সচেঞ্জ পণ্যের মূল্য কম হওয়ায় কাস্টমারের প্রাপ্য বাকি টাকা ফেরত দিন অথবা স্টোর ক্রেডিটে জমা রাখুন।
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 pt-2 border-t border-emerald-300 text-xs">
+                                        <span className="font-bold text-emerald-950 whitespace-nowrap">
+                                          বাকি টাকা ফেরত দেওয়ার মাধ্যম:
+                                        </span>
+                                        <div className="flex gap-2 flex-wrap">
+                                          {["Cash", "bKash", "Nagad", "Credit"].map(m => (
+                                            <button
+                                              key={m}
+                                              type="button"
+                                              onClick={() => setSettlementRefundMethod(m)}
+                                              className={`px-3 py-1.5 rounded-xl font-bold transition border ${
+                                                settlementRefundMethod === m
+                                                  ? "bg-emerald-700 text-white border-emerald-900 shadow-xs"
+                                                  : "bg-white text-gray-700 border-emerald-300 hover:bg-emerald-100"
+                                              }`}
+                                            >
+                                              {m === "Cash" ? "💵 নগদ ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : "💳 দোকান জমা (Credit)"}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* CASE 3: EXCHANGE VALUE == RETURN VALUE (Even exchange) */}
+                                  {calculateTotalExchangeValue() === calculateTotalReturnValue() && (
+                                    <div className="p-4 bg-blue-50 border-2 border-blue-400 rounded-3xl flex items-center gap-2.5 text-xs text-blue-900 shadow-sm">
+                                      <span className="text-2xl">✅</span>
+                                      <div>
+                                        <p className="font-extrabold text-sm text-blue-950">
+                                          সমমূল্যের পণ্য এক্সচেঞ্জ (০ ৳ অতিরিক্ত লেনদেন)
+                                        </p>
+                                        <p className="text-blue-700">
+                                          রিটার্ন করা পণ্য ও নতুন এক্সচেঞ্জ পণ্যের মূল্য সমান হওয়ায় কোনো অতিরিক্ত টাকা লেনদেনের প্রয়োজন নেই।
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Step E: Return Reason & Admin Note */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            <div>
+                              <label className="text-xs font-bold text-gray-700 block mb-1">
+                                রিটার্নের কারণ:
+                              </label>
+                              <select
+                                value={returnReason}
+                                onChange={(e) => setReturnReason(e.target.value)}
+                                className="w-full bg-white border border-[#d4a574] rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-semibold outline-none focus:border-[#e65100]"
+                              >
+                                <option value="পণ্য পরিবর্তন / অপছন্দ">পণ্য পরিবর্তন / অপছন্দ</option>
+                                <option value="সাইজ / ফিটিং সমস্যা">সাইজ / ফিটিং সমস্যা</option>
+                                <option value="কালার বা ডিজাইন পছন্দ হয়নি">কালার বা ডিজাইন পছন্দ হয়নি</option>
+                                <option value="ত্রুটিযুক্ত বা ভাঙা পণ্য">ত্রুটিযুক্ত বা ভাঙা পণ্য</option>
+                                <option value="ভুল পণ্য ডেলিভারি">ভুল পণ্য ডেলিভারি</option>
+                                <option value="অন্যান্য">অন্যান্য</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-bold text-gray-700 block mb-1">
+                                অতিরিক্ত মন্তব্য / ট্রানজেকশন নোট (ঐচ্ছিক):
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="যেমন: কাস্টমার সাইজ M বদলে L নিয়েছেন..."
+                                value={returnNote}
+                                onChange={(e) => setReturnNote(e.target.value)}
+                                className="w-full bg-white border border-[#d4a574] rounded-2xl px-3.5 py-2 text-xs sm:text-sm outline-none focus:border-[#e65100]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Notice Info Box (Matches Screenshot) */}
+                          <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 flex items-start gap-2.5 shadow-xs">
+                            <span className="text-base shrink-0">ⓘ</span>
+                            <p className="leading-relaxed">
+                              যেসব আইটেমে <b>"স্টকে যোগ"</b> টিক দেয়া আছে, সেগুলোর পরিমাণ সাথে সাথে ইনভেন্টরি স্টকে পুনরায় যুক্ত হবে। এবং এক্সচেঞ্জ নেওয়া নতুন পণ্যের পরিমাণ ইনভেন্টরি স্টক থেকে স্বয়ংক্রিয়ভাবে বিয়োগ হয়ে যাবে।
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="p-12 text-center bg-white rounded-3xl border border-[#f3e2d0] text-gray-500">
+                          <p className="text-3xl mb-2">📦</p>
+                          <h4 className="font-bold text-sm text-gray-700">উপরে একটি অর্ডার নির্বাচন করুন</h4>
+                          <p className="text-xs text-gray-400 mt-1">অর্ডার বেছে নিলে অর্ডারের পণ্যসমূহ ও এক্সচেঞ্জ অপশন প্রদর্শিত হবে</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TAB 2: PREVIOUS RETURN & EXCHANGE LOGS */}
+                  {activeReturnTab === "history" && (
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#f3e2d0] shadow-xs">
+                        <div className="flex-1 w-full sm:w-auto">
+                          <input
+                            type="text"
+                            placeholder="🔍 রিটার্ন ID, অর্ডার ID বা কাস্টমারের নাম/ফোন দিয়ে খুঁজুন..."
+                            value={returnSearchFilter}
+                            onChange={(e) => setReturnSearchFilter(e.target.value)}
+                            className="w-full bg-[#fffaf5] border border-[#d4a574] rounded-full px-4 py-2 text-xs sm:text-sm outline-none focus:border-[#e65100]"
+                          />
+                        </div>
+                        <span className="text-xs font-bold bg-[#e65100] text-white px-3.5 py-1.5 rounded-full shrink-0">
+                          মোট রেকর্ড: {returns.length} টি
+                        </span>
+                      </div>
+
+                      {returns.length === 0 ? (
+                        <div className="p-12 text-center bg-white rounded-3xl border border-[#f3e2d0] text-gray-500">
+                          <p className="text-3xl mb-2">📜</p>
+                          <h4 className="font-bold text-sm text-gray-700">কোনো পূর্ববর্তী রিটার্ন বা এক্সচেঞ্জ রেকর্ড নেই</h4>
+                          <p className="text-xs text-gray-400 mt-1">পণ্য রিটার্ন বা এক্সচেঞ্জ কনফার্ম করলে এখানে হিস্ট্রি হিসেবে জমা থাকবে।</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {returns
+                            .filter(r => {
+                              if (!returnSearchFilter.trim()) return true;
+                              const q = returnSearchFilter.toLowerCase();
+                              return (r.id && r.id.toLowerCase().includes(q)) ||
+                                     (r.orderId && r.orderId.toLowerCase().includes(q)) ||
+                                     (r.customer && r.customer.toLowerCase().includes(q)) ||
+                                     (r.phone && r.phone.includes(q));
+                            })
+                            .map(ret => (
+                              <div key={ret.id} className="p-4 bg-white rounded-3xl border border-[#f3e2d0] shadow-sm space-y-3 hover:border-amber-400 transition">
+                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f3e2d0] pb-2.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono font-black text-sm text-[#e65100] bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
+                                      #{ret.id}
+                                    </span>
+                                    <span className="text-xs text-gray-500">অর্ডার: #{ret.orderId}</span>
+                                    <span className="text-xs text-gray-400">• {ret.date}</span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                                      ret.isExchange ? "bg-orange-100 text-orange-900 border border-orange-300" : "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                                    }`}>
+                                      {ret.isExchange ? "🔄 পণ্য এক্সচেঞ্জ" : `💰 টাকা ফেরত (${ret.refundMethod})`}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => printReturnSlipWindow(ret)}
+                                      className="px-2.5 py-1 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-xs font-bold hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
+                                    >
+                                      <span>🖨️ মেমো</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewReturnSlip(ret)}
+                                      className="px-2.5 py-1 bg-amber-500 text-white rounded-full text-xs font-bold hover:bg-amber-600 transition flex items-center gap-1 shadow-xs"
+                                    >
+                                      <span>👁️ ভিউ</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                  <div className="bg-[#fffaf5] p-3 rounded-2xl border">
+                                    <p className="font-bold text-gray-900">{ret.customer}</p>
+                                    <p className="text-gray-500 font-mono">📞 {ret.phone}</p>
+                                    <p className="text-[11px] text-gray-400 mt-1">কারণ: {ret.reason}</p>
+                                  </div>
+
+                                  <div className="bg-[#fffaf5] p-3 rounded-2xl border space-y-1">
+                                    <p className="font-bold text-gray-700">রিটার্ন করা পণ্য ({ret.returnedItems?.length || 0} টি):</p>
+                                    {(ret.returnedItems || []).map((rit, i) => (
+                                      <p key={i} className="text-[11px] text-gray-600 truncate">
+                                        • {rit.name} ({rit.qty}টি) - ৳{rit.price * rit.qty}
+                                      </p>
+                                    ))}
+                                    <p className="font-bold text-[#7a1c2b] text-[11px] pt-1 border-t border-amber-200">
+                                      মোট ফেরত মূল্য: ৳{ret.totalReturnValue}
+                                    </p>
+                                  </div>
+
+                                  <div className="bg-[#fffaf5] p-3 rounded-2xl border flex flex-col justify-between">
+                                    {ret.isExchange ? (
+                                      <div>
+                                        <p className="font-bold text-gray-700">এক্সচেঞ্জ পণ্য ({ret.exchangeItems?.length || 0} টি):</p>
+                                        {(ret.exchangeItems || []).map((eit, i) => (
+                                          <p key={i} className="text-[11px] text-gray-600 truncate">
+                                            • {eit.name} {eit.size ? `[${eit.size}]` : ''} - ৳{eit.price * eit.qty}
+                                          </p>
+                                        ))}
+                                        <div className="mt-1 pt-1 border-t border-amber-200">
+                                          {ret.differenceType === "customer_paid_extra" ? (
+                                            <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md inline-block">
+                                              + ৳{ret.priceDifference} অতিরিক্ত গ্রহণ ({ret.settlementMethod})
+                                            </span>
+                                          ) : ret.differenceType === "customer_refunded_balance" ? (
+                                            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block">
+                                              - ৳{Math.abs(ret.priceDifference)} ফেরত প্রদান ({ret.settlementMethod})
+                                            </span>
+                                          ) : (
+                                            <span className="text-[11px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md inline-block">
+                                              সমমূল্যের এক্সচেঞ্জ (০ ৳)
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <p className="font-bold text-gray-700">সম্পূর্ণ রিফান্ড:</p>
+                                        <span className="text-xs font-bold text-emerald-700">
+                                          ৳{ret.totalReturnValue} ({ret.refundMethod})
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Sticky Bottom Action & Summary Footer (Matches Screenshot) */}
+                {activeReturnTab === "new" && returnOrder && (
+                  <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-50 via-[#fff8f0] to-orange-50 border-t border-[#f3e2d0] rounded-b-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs font-bold text-gray-500 block">নির্বাচিত রিটার্ন সারসংক্ষেপ:</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-sm sm:text-base text-gray-900">
+                          {Object.keys(returnItemsSelection).filter(idx => returnItemsSelection[idx]?.selected).length} টি আইটেম • মোট ফেরত মূল্য: ৳{calculateTotalReturnValue()}
+                        </span>
+                        {returnRefundMethod === "exchange" && exchangeItems.length > 0 && (
+                          <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+                            calculateTotalExchangeValue() > calculateTotalReturnValue()
+                              ? "bg-amber-600 text-white"
+                              : calculateTotalExchangeValue() < calculateTotalReturnValue()
+                              ? "bg-emerald-600 text-white"
+                              : "bg-blue-600 text-white"
+                          }`}>
+                            {calculateTotalExchangeValue() > calculateTotalReturnValue()
+                              ? `কাস্টমার থেকে +৳${calculateTotalExchangeValue() - calculateTotalReturnValue()} নিতে হবে`
+                              : calculateTotalExchangeValue() < calculateTotalReturnValue()
+                              ? `কাস্টমারকে -৳${calculateTotalReturnValue() - calculateTotalExchangeValue()} ফেরত দিতে হবে`
+                              : "সমমূল্য (০ ৳)"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setIsReturnModalOpen(false)}
+                        className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-2xl text-xs font-bold hover:bg-gray-100 transition shadow-xs"
+                      >
+                        বাতিল
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmReturnAndExchange}
+                        className="px-6 py-2.5 bg-gradient-to-r from-[#e65100] to-amber-600 hover:from-[#d84315] hover:to-amber-700 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-2 active:scale-95"
+                      >
+                        <span>⟳</span>
+                        <span>রিটার্ন ও এক্সচেঞ্জ নিশ্চিত করুন</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* RETURN & EXCHANGE SLIP MEMO MODAL (ভিউ ও শেয়ার) */}
+          {/* ========================================================= */}
+          {viewReturnSlip && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+              <div className="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 border-2 border-[#7a1c2b] shadow-2xl animate-fadeIn space-y-4">
+                <div className="flex justify-between items-start pb-3 border-b border-[#f3e2d0]">
+                  <div>
+                    <h3 className="font-extrabold text-base sm:text-lg text-[#7a1c2b]">
+                      রিটার্ন ও এক্সচেঞ্জ মেমো স্লিপ
+                    </h3>
+                    <p className="text-xs text-gray-500 font-mono">
+                      মেমো #{viewReturnSlip.id} • তারিখ: {viewReturnSlip.date}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setViewReturnSlip(null)}
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-3.5 bg-[#fffaf5] rounded-2xl border border-amber-200 text-xs space-y-1">
+                  <p><b>কাস্টমার:</b> {viewReturnSlip.customer} (📞 {viewReturnSlip.phone})</p>
+                  <p><b>মূল অর্ডার:</b> #{viewReturnSlip.orderId} • <b>লেনদেন:</b> {viewReturnSlip.isExchange ? "পণ্য এক্সচেঞ্জ" : "টাকা ফেরত"}</p>
+                  <p><b>কারণ:</b> {viewReturnSlip.reason}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-bold text-xs text-[#7a1c2b]">📦 ফেরত দেওয়া পণ্য:</p>
+                  {(viewReturnSlip.returnedItems || []).map((it, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-xs p-2 bg-gray-50 rounded-xl">
+                      <span>{it.name} ({it.qty}টি)</span>
+                      <span className="font-bold">৳{it.price * it.qty}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-xs font-bold text-[#7a1c2b] px-2">
+                    <span>মোট ফেরত মূল্য:</span>
+                    <span>৳{viewReturnSlip.totalReturnValue}</span>
+                  </div>
+                </div>
+
+                {viewReturnSlip.isExchange && viewReturnSlip.exchangeItems?.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <p className="font-bold text-xs text-[#e65100]">🔄 নতুন এক্সচেঞ্জ নেওয়া পণ্য:</p>
+                    {viewReturnSlip.exchangeItems.map((it, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs p-2 bg-orange-50/60 rounded-xl">
+                        <span>{it.name} {it.size ? `[${it.size}]` : ''} ({it.qty}টি)</span>
+                        <span className="font-bold text-[#e65100]">৳{it.price * it.qty}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between text-xs font-bold text-[#e65100] px-2">
+                      <span>মোট নতুন পণ্য মূল্য:</span>
+                      <span>৳{viewReturnSlip.totalExchangeValue}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-3.5 rounded-2xl border text-xs space-y-1 bg-amber-50 border-amber-300">
+                  {viewReturnSlip.differenceType === "customer_paid_extra" ? (
+                    <div className="flex justify-between font-black text-amber-900 text-sm">
+                      <span>⚠️ কাস্টমার থেকে অতিরিক্ত গ্রহণ ({viewReturnSlip.settlementMethod}):</span>
+                      <span>+ ৳{viewReturnSlip.priceDifference}</span>
+                    </div>
+                  ) : viewReturnSlip.differenceType === "customer_refunded_balance" ? (
+                    <div className="flex justify-between font-black text-emerald-900 text-sm">
+                      <span>💵 কাস্টমারকে বাকি টাকা ফেরত প্রদান ({viewReturnSlip.settlementMethod}):</span>
+                      <span>- ৳{Math.abs(viewReturnSlip.priceDifference)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between font-black text-blue-900 text-sm">
+                      <span>✅ সমমূল্যের এক্সচেঞ্জ সমন্বয়:</span>
+                      <span>৳০ ব্যালেন্স</span>
+                    </div>
+                  )}
+                  {viewReturnSlip.note && (
+                    <p className="text-[11px] text-gray-600 italic pt-1">নোট: "{viewReturnSlip.note}"</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => printReturnSlipWindow(viewReturnSlip)}
+                    className="px-5 py-2.5 bg-[#7a1c2b] text-white rounded-full text-xs font-bold hover:bg-[#681727] transition flex items-center gap-1.5 shadow"
+                  >
+                    <span>🖨️</span>
+                    <span>মেমো প্রিন্ট করুন</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewReturnSlip(null)}
+                    className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-xs font-bold transition"
+                  >
+                    বন্ধ করুন
+                  </button>
                 </div>
               </div>
             </div>
