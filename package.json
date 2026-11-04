@@ -4,12 +4,15 @@
   "private": true,
   "description": "SAJGOJ FASHION - E-commerce Storefront, POS, Sales Return & Inventory Management",
   "scripts": {
-    "build": "node -e \"const fs = require('fs'); fs.copyFileSync('index.html', 'public/index.html'); if(fs.existsSync('_redirects')) fs.copyFileSync('_redirects', 'public/_redirects'); if(fs.existsSync('_headers')) fs.copyFileSync('_headers', 'public/_headers'); console.log('✅ Cloudflare build success: public/ directory ready for deployment');\"",
-    "deploy": "npx wrangler pages deploy public --project-name=sajgoj-fashion",
-    "preview": "npx wrangler pages dev public"
+    "build": "node -e \"const fs = require('fs'); if(!fs.existsSync('public')) fs.mkdirSync('public'); fs.copyFileSync('index.html', 'public/index.html'); if(fs.existsSync('_redirects')) fs.copyFileSync('_redirects', 'public/_redirects'); if(fs.existsSync('_headers')) fs.copyFileSync('_headers', 'public/_headers'); console.log('✅ Build complete');\"",
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.100.0"
   },
   "keywords": [
-    "cloudflare-pages",
+    "cloudflare-worker",
     "ecommerce",
     "sajgoj-fashion",
     "pos"

@@ -7,8 +7,5 @@ compatibility_date = "2024-09-23"
 directory = "./public"
 not_found_handling = "single-page-application"
 
-# Cloudflare Pages support
-pages_build_output_dir = "public"
-
 [vars]
 ENVIRONMENT = "production"
