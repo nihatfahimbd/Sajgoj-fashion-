@@ -4,12 +4,12 @@
   "private": true,
   "description": "SAJGOJ FASHION - E-commerce Storefront, POS, Sales Return & Inventory Management",
   "scripts": {
-    "build": "node -e \"const fs = require('fs'); if(!fs.existsSync('public')) fs.mkdirSync('public'); fs.copyFileSync('index.html', 'public/index.html'); if(fs.existsSync('_headers')) fs.copyFileSync('_headers', 'public/_headers'); if(fs.existsSync('public/_redirects')) fs.unlinkSync('public/_redirects'); console.log('✅ Build complete');\"",
+    "build": "node -e \"const fs = require('fs'); if(!fs.existsSync('public')) fs.mkdirSync('public'); fs.copyFileSync('index.html', 'public/index.html'); console.log('✅ Build complete');\"",
     "deploy": "wrangler deploy",
     "start": "wrangler dev"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "wrangler": "^3.100.0"
   },
   "keywords": [
     "cloudflare-worker",
