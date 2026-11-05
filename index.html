@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SAJGOJ FASHION - Premium Jewelry & Sharee Collection</title>
   
+  <!-- PWA & Offline Support -->
+  <meta name="theme-color" content="#7a1c2b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SAJGOJ">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').then(function(reg) {
+          console.log('✅ SAJGOJ PWA Service Worker Active:', reg.scope);
+        }).catch(function(err) {
+          console.log('Service Worker note:', err);
+        });
+      });
+    }
+  </script>
+
   <!-- Primary Meta Tags -->
   <meta name="title" content="SAJGOJ FASHION - Premium Jewelry & Sharee">
   <meta name="description" content="প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।">
@@ -726,6 +746,26 @@
       const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
       const [loyalty, setLoyalty] = useState(() => getStored("loyalty", initialLoyaltyConfig));
       const [loyaltyCustomerMap, setLoyaltyCustomerMap] = useState(() => getStored("loyalty_customers", {}));
+
+      // Online/Offline Network Status Detection
+      const [isOnline, setIsOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
+
+      useEffect(() => {
+        const handleOnline = () => {
+          setIsOnline(true);
+          notify("🌐 আপনি আবার অনলাইনে সংযুক্ত হয়েছেন! ক্লাউড সিঙ্ক সক্রিয়।");
+        };
+        const handleOffline = () => {
+          setIsOnline(false);
+          notify("⚡ অফলাইন মোড: সংরক্ষিত প্রোডাক্ট ও POS নির্বিঘ্নে চলবে।");
+        };
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+        return () => {
+          window.removeEventListener("online", handleOnline);
+          window.removeEventListener("offline", handleOffline);
+        };
+      }, []);
       
       // Reels / Video Showcase & Lucky Spin The Wheel States
       const [reels, setReels] = useState(() => getStored("reels", initialReels));
@@ -4586,11 +4626,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         { id: "Orders", label: "অর্ডার ট্র্যাকিং", icon: "📦" },
         { id: "Products", label: "প্রোডাক্টস ও অফার", icon: "👗" },
         { id: "General", label: "থিম ও ব্র্যান্ডিং", icon: "🎨" },
-        { id: "Loyalty", label: "সিস্টেম ও কনফিগ", icon: "⚙️" }
+        { id: "Loyalty", label: "সিস্টেম ও কনফিগ", icon: "⚙️" },
+        { id: "SEOSettings", label: "SEO Settings", icon: "🔍" }
       ];
 
       return (
         <div className="min-h-screen flex flex-col bg-[#fffaf5]">
+          {/* Offline Mode Indicator Bar */}
+          {!isOnline && (
+            <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center text-xs py-2 px-4 font-bold tracking-wide shadow-md flex items-center justify-center gap-2 sticky top-0 z-50">
+              <span>⚡</span>
+              <span>ইন্টারনেট সংযোগ নেই — সাজগোজ অফলাইন মোডে চলছে (ক্যাশড প্রোডাক্ট ও POS সচল রয়েছে)</span>
+            </div>
+          )}
+
           {/* Top Announcement Bar (Storefront only) */}
           {activeTab === "Storefront" && config?.announcement?.enabled && config?.announcement?.text && (
             <div className="bg-[#7a1c2b] text-[#fff8f0] text-center text-xs sm:text-sm py-2 px-4 font-medium tracking-wide shadow-sm flex items-center justify-center gap-2">
@@ -5538,12 +5587,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {/* 5. System Configurations */}
                       <button
                         onClick={() => {
-                          if (!["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "Backup"].includes(activeTab)) {
-                            setActiveTab("SEOMetaTags");
+                          if (!["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "SEOSettings", "Backup"].includes(activeTab)) {
+                            setActiveTab("SEOSettings");
                           }
                         }}
                         className={`px-4 py-2 rounded-full whitespace-nowrap transition flex items-center gap-2 ${
-                          ["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "Backup"].includes(activeTab)
+                          ["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "SEOSettings", "Backup"].includes(activeTab)
                             ? "bg-[#7c1d2a] text-white shadow-md font-extrabold scale-[1.02]"
                             : "bg-white text-gray-700 hover:bg-[#f2e7db] border border-[#ecd9c6]"
                         }`}
@@ -5604,6 +5653,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">থিম ও ব্র্যান্ডিং:</span>
                       {[
                         { id: "General", label: "🎨 ব্র্যান্ড, লোগো ও কালার থিম" },
+                        { id: "SEOSettings", label: "🔍 SEO Settings" },
                         { id: "Banners", label: `🖼️ ব্যানার স্লাইডার (${banners.length})` },
                         { id: "Header", label: `📢 নোটিশ বার (${config.announcement?.enabled ? "চালু" : "বন্ধ"})` },
                         { id: "Footer", label: "📄 ফুটার ও সোশ্যাল লিংক" }
@@ -5624,11 +5674,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   )}
 
                   {/* COHESIVE SUB-NAVIGATION PILLS (FOR SYSTEM CONFIGURATIONS) */}
-                  {["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "Backup"].includes(activeTab) && (
+                  {["Loyalty", "Courier", "Pixel", "SEO", "SEOMetaTags", "SEOSettings", "Backup"].includes(activeTab) && (
                     <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2 border-t border-[#f3e2d0] scrollbar-hide text-xs font-bold animate-fadeIn">
                       <span className="text-[#b8956a] whitespace-nowrap text-[11px] font-bold mr-1">সিস্টেম কনফিগারেশন:</span>
                       {[
-                        { id: "SEOMetaTags", label: "🏷️ SEO Meta-Tags" },
+                        { id: "SEOSettings", label: "🔍 SEO Settings" },
                         { id: "Loyalty", label: "👑 মেম্বারশিপ ও রিওয়ার্ড (VIP ক্লাব)" },
                         { id: "Courier", label: "🚚 কুরিয়ার ইন্টিগ্রেশন (Steadfast / Pathao)" },
                         { id: "Pixel", label: "📈 ফেসবুক পিক্সেল ও CAPI" },
@@ -5638,7 +5688,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           key={sub.id}
                           onClick={() => setActiveTab(sub.id)}
                           className={`px-3 py-1.5 rounded-full whitespace-nowrap transition flex items-center gap-1.5 ${
-                            (activeTab === sub.id || (sub.id === "SEOMetaTags" && activeTab === "SEO"))
+                            (activeTab === sub.id || (sub.id === "SEOSettings" && (activeTab === "SEO" || activeTab === "SEOMetaTags" || activeTab === "SEOSettings")))
                               ? "bg-[#7a1c2b] text-white shadow-xs font-extrabold"
                               : "bg-white text-gray-700 hover:bg-[#fff8f0] border border-[#ecd9c6]"
                           }`}
@@ -6982,7 +7032,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                         {/* Hub 4: System Configurations */}
                         <div 
-                          onClick={() => setActiveTab("SEOMetaTags")}
+                          onClick={() => setActiveTab("SEOSettings")}
                           className="bg-white p-5 rounded-3xl border-2 border-indigo-300/80 shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col justify-between group hover:border-indigo-500"
                         >
                           <div>
@@ -10032,9 +10082,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             {/* 10. SEO & SITEMAP TAB - COMPREHENSIVE GOOGLE OPTIMIZATION SUITE */}
             {/* ========================================================= */}
             {/* ========================================================= */}
-            {/* 10. SEO META-TAGS TAB - COMPREHENSIVE SEARCH & SOCIAL SHARING SUITE */}
+            {/* 10. SEO SETTINGS TAB - COMPREHENSIVE SEARCH & SOCIAL SHARING SUITE */}
             {/* ========================================================= */}
-            {(activeTab === "SEO" || activeTab === "SEOMetaTags") && (
+            {(activeTab === "SEO" || activeTab === "SEOMetaTags" || activeTab === "SEOSettings") && (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#f3e2d0] space-y-6 shadow-sm animate-fadeIn">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#f3e2d0]">
@@ -10049,14 +10099,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-xl sm:text-2xl font-bold text-[#7a1c2b]">
-                          এসইও ও মেটা-ট্যাগ কনফিগারেশন (SEO Meta-Tags)
+                          🔍 SEO Settings (সাইট টাইটেল, ক্যানোনিকাল ও ওপেন-গ্রাফ)
                         </h3>
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
-                          Social & Search Ready ✓
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Dynamic &lt;head&gt; Sync Active ✓
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        গ্লোবাল সাইট টাইটেল, ক্যানোনিকাল ডোমেইন URL এবং ওপেন-গ্রাফ (Open Graph) ইমেজ ট্যাগ নিয়ন্ত্রণ করুন
+                        Site Title, Canonical URL, এবং Open-Graph Image (og:image) পরিবর্তন করুন — টাইপ করার সাথে সাথে ব্রাউজারের &lt;head&gt; মেটা-ট্যাগ রিয়েল-টাইমে আপডেট হয়।
                       </p>
                     </div>
                   </div>
@@ -10081,8 +10132,32 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-md transition active:scale-95 flex items-center gap-1.5"
                     >
                       <span>💾</span>
-                      <span>মেটা-ট্যাগ সেভ করুন</span>
+                      <span>SEO সেটিংস সেভ করুন</span>
                     </button>
+                  </div>
+                </div>
+
+                {/* Real-time Head Tags DOM Inspector Card */}
+                <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-950 text-white p-4 sm:p-5 rounded-2xl border border-slate-700/80 shadow-md space-y-2.5 font-mono">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                      <span className="text-xs font-bold text-emerald-300 font-sans tracking-wide">
+                        ⚡ রিয়েল-টাইম &lt;head&gt; মেটা-ট্যাগ লাইভ ইনস্পেক্টর (Active DOM Head Tags)
+                      </span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
+                      Auto-Updated dynamically
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-emerald-100/90 space-y-1 overflow-x-auto bg-black/50 p-3 rounded-xl border border-slate-800/80">
+                    <div>&lt;title&gt;<span className="text-amber-300 font-bold">{seo?.siteTitle || "SAJGOJ FASHION - Premium Jewelry & Sharee Collection"}</span>&lt;/title&gt;</div>
+                    <div>&lt;link rel="canonical" href="<span className="text-cyan-300 font-bold">{seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}</span>" /&gt;</div>
+                    <div>&lt;meta property="og:title" content="<span className="text-amber-300">{seo?.siteTitle || "SAJGOJ FASHION"}</span>" /&gt;</div>
+                    <div>&lt;meta property="og:url" content="<span className="text-cyan-300">{seo?.canonicalUrl || "https://sajgojfashion.netlify.app"}</span>" /&gt;</div>
+                    <div>&lt;meta property="og:image" content="<span className="text-pink-300">{seo?.ogImage || "https://images.unsplash.com/..."}</span>" /&gt;</div>
+                    <div>&lt;meta name="twitter:image" content="<span className="text-pink-300">{seo?.ogImage || "https://images.unsplash.com/..."}</span>" /&gt;</div>
+                    <div>&lt;meta name="description" content="<span className="text-gray-300">{seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান..."}</span>" /&gt;</div>
                   </div>
                 </div>
 
