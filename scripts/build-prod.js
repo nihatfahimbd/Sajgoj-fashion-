@@ -59,10 +59,12 @@ const optimizedHtml = optimizedHead + '<script src="./app.min.js" defer></script
 fs.writeFileSync(path.join('public', 'index.html'), optimizedHtml);
 fs.writeFileSync(path.join('public', '200.html'), optimizedHtml);
 
-// 4. Sync PWA files
-if (fs.existsSync('manifest.webmanifest')) {
-  fs.copyFileSync('manifest.webmanifest', path.join('public', 'manifest.webmanifest'));
-}
+// 4. Sync PWA files & icons
+['manifest.webmanifest', 'pwa-512x512.png', 'pwa-192x192.png', 'apple-touch-icon.png', 'favicon.png', 'favicon.ico', 'logo.png'].forEach(file => {
+  if (fs.existsSync(file)) {
+    fs.copyFileSync(file, path.join('public', file));
+  }
+});
 
 // 5. Update and sync Service Worker to precache app.min.js
 if (fs.existsSync('public/sw.js')) {

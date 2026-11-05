@@ -1,12 +1,12 @@
 {
-  "name": "সাজগোজ ফ্যাশন - SAJGOJ FASHION",
+  "name": "সাজগোজ - SAJGOJ Luxury Jewellery",
   "short_name": "SAJGOJ",
-  "description": "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান ও লাইভ POS",
+  "description": "সাজগোজ লাক্সারি জুয়েলারি ও ফ্যাশন শোরুম এবং লাইভ POS বিলিং",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fffaf5",
-  "theme_color": "#7a1c2b",
+  "background_color": "#0e2046",
+  "theme_color": "#0e2046",
   "orientation": "portrait-primary",
   "icons": [
     {
