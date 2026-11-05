@@ -1,0 +1,19 @@
+{
+  "status": "healthy",
+  "service": "NF Pos & Inventory System",
+  "version": "1.0.0",
+  "deployment": "netlify",
+  "timestamp": "2026-10-23T09:27:00Z",
+  "features": {
+    "spa_routing": true,
+    "pwa_offline_caching": true,
+    "camera_barcode_scanner": true,
+    "inventory_management": true,
+    "multi_store": true
+  },
+  "checks": {
+    "html_entry": "ok",
+    "assets_bundle": "ok",
+    "service_worker_update_flow": "ok"
+  }
+}

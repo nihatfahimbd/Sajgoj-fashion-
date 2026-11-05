@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <script>
+      // Prevent Vite HMR WebSocket closed without opened error in proxy / iframe environments
+      (function () {
+        if (typeof window === 'undefined') return;
+
+        // Universal case-insensitive checker for Vite HMR / WebSocket disconnect errors
+        function isViteHmrError(err) {
+          if (!err) return false;
+          var msg = typeof err === 'string'
+            ? err
+            : (err.message || (err.reason && (err.reason.message || String(err.reason))) || String(err) || '');
+          var stack = err.stack ? String(err.stack) : '';
+          var str = (msg + ' ' + stack).toLowerCase();
+          return str.includes('websocket') ||
+                 str.includes('vite') ||
+                 str.includes('hmr') ||
+                 str.includes('disconnected') ||
+                 str.includes('closed without opened');
+        }
+
+        // Dummy WebSocket implementation to safely absorb any Vite HMR connections
+        const OrigWS = window.WebSocket;
+        if (OrigWS) {
+          const SafeWS = function (url, protocols) {
+            const handlers = { open: [], message: [], close: [], error: [] };
+            const dummy = {
+              CONNECTING: 0,
+              OPEN: 1,
+              CLOSING: 2,
+              CLOSED: 3,
+              readyState: 1,
+              bufferedAmount: 0,
+              extensions: '',
+              protocol: 'vite-hmr',
+              url: typeof url === 'string' ? url : '',
+              binaryType: 'blob',
+              send: function () {},
+              close: function () {},
+              addEventListener: function (type, fn) {
+                if (handlers[type]) handlers[type].push(fn);
+                if (type === 'open') {
+                  setTimeout(() => {
+                    try { fn.call(dummy, { type: 'open', target: dummy }); } catch (e) {}
+                  }, 0);
+                }
+              },
+              removeEventListener: function (type, fn) {
+                if (handlers[type]) {
+                  handlers[type] = handlers[type].filter((cb) => cb !== fn);
+                }
+              },
+              dispatchEvent: function () { return true; },
+              onopen: null,
+              onclose: null,
+              onerror: null,
+              onmessage: null,
+            };
+            try { Object.setPrototypeOf(dummy, OrigWS.prototype); } catch (e) {}
+            setTimeout(() => {
+              if (typeof dummy.onopen === 'function') {
+                try { dummy.onopen.call(dummy, { type: 'open', target: dummy }); } catch (e) {}
+              }
+            }, 0);
+            return dummy;
+          };
+
+          SafeWS.prototype = OrigWS.prototype;
+          SafeWS.CONNECTING = 0;
+          SafeWS.OPEN = 1;
+          SafeWS.CLOSING = 2;
+          SafeWS.CLOSED = 3;
+          window.WebSocket = SafeWS;
+        }
+
+        // Catch any remaining unhandled WebSocket rejections or errors
+        window.addEventListener('error', function (e) {
+          if (isViteHmrError(e.error) || isViteHmrError(e.message)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (e) {
+          if (isViteHmrError(e.reason)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return true;
+          }
+        }, true);
+
+        // Filter harmless Vite HMR WebSocket console errors in AI Studio iframe
+        const origError = console.error;
+        console.error = function (...args) {
+          for (let i = 0; i < args.length; i++) {
+            if (isViteHmrError(args[i])) {
+              return;
+            }
+          }
+          origError.apply(console, args);
+        };
+      })();
+    </script>
+    <title>SAJGOJ POS & Inventory</title>
+    <meta name="description" content="SAJGOJ - A modern POS and inventory management Android app tailored for toy stores and retail shops, with sales tracking, stock alerts, thermal receipts, and barcode scanning." />
+    <meta property="og:title" content="SAJGOJ POS & Inventory" />
+    <meta property="og:description" content="SAJGOJ - A modern POS and inventory management Android app tailored for toy stores and retail shops, with sales tracking, stock alerts, thermal receipts, and barcode scanning." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Android & PWA Meta -->
+    <meta name="theme-color" content="#B76E79" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="NF Pos" />
+    <link rel="icon" type="image/png" href="./logo.png" />
+    <link rel="apple-touch-icon" href="./logo.png" />
+
+    <!-- Google Fonts for Typography Hierarchy: Outfit & Plus Jakarta Sans & Hind Siliguri -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/index-CppyY8PZ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-D4cNJ1rw.css">
+  <link rel="manifest" href="./manifest.webmanifest"></head>
+  <body class="bg-[#FAF6F0] text-[#2C1F24] antialiased select-none font-sans overflow-x-hidden" data-theme="rosegold">
+    <div id="root"></div>
+  </body>
+</html>

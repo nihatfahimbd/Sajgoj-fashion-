@@ -5711,6 +5711,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             <span className="text-[10px] text-gray-300 ml-1.5">({todayPosOrders.length}টি মেমো)</span>
                           </div>
 
+                          <a
+                            href="./pos/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3.5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-2xl font-black text-xs transition flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95"
+                          >
+                            <span>🚀</span>
+                            <span>ফুলস্ক্রিন অ্যাডভান্সড POS অ্যাপ ↗</span>
+                          </a>
+
                           <button
                             type="button"
                             onClick={() => {
@@ -5728,6 +5738,22 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {/* SUB-TABS NAVIGATION */}
                       <div className="flex items-center justify-between border-b border-gray-200 pb-2 overflow-x-auto gap-2">
                         <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPosActiveSubTab("advanced_pos")}
+                            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-black transition flex items-center gap-2 ${
+                              posActiveSubTab === "advanced_pos"
+                                ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md scale-105"
+                                : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-bold"
+                            }`}
+                          >
+                            <span>💎</span>
+                            <span>পূর্ণাঙ্গ সাজগোজ POS ও ইনভেন্টরি</span>
+                            <span className="bg-emerald-200 text-emerald-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+                              PRO
+                            </span>
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => setPosActiveSubTab("counter")}
@@ -6554,6 +6580,134 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               })}
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* ======================================================= */}
+                      {/* SUBTAB 4: ADVANCED FULL-FEATURED POS APP (SAJGOJ POS)   */}
+                      {/* ======================================================= */}
+                      {posActiveSubTab === "advanced_pos" && (
+                        <div className="space-y-4 animate-fadeIn">
+                          {/* Banner & Control Bar */}
+                          <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-5 rounded-3xl border border-emerald-500/30 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-2xl shadow-inner">
+                                💎
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-black text-base sm:text-lg text-emerald-300">
+                                    সাজগোজ অল-ইন-ওয়ান পূর্ণাঙ্গ POS ও ইনভেন্টরি সিস্টেম
+                                  </h3>
+                                  <span className="bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    Enterprise
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-300">
+                                  বিলিং কাউন্টার • বারকোড/QR স্টুডিও • রিয়েলটাইম স্টক • বাকির খাতা • সাপ্লায়ার লেজার • ক্যাশ ড্রয়ার ক্লোজিং • ড্রাইভ ব্যাকআপ
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const frame = document.getElementById("sajgoj-fullpos-frame");
+                                  if (frame) {
+                                    frame.src = frame.src;
+                                    notify("🔄 সাজগোজ POS রিলোড করা হচ্ছে...");
+                                  }
+                                }}
+                                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-white/10"
+                                title="রিফ্রেশ করুন"
+                              >
+                                <span>🔄</span>
+                                <span>রিফ্রেশ</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const frame = document.getElementById("sajgoj-fullpos-frame");
+                                  if (frame && frame.requestFullscreen) {
+                                    frame.requestFullscreen();
+                                  } else {
+                                    window.open('./pos/', '_blank');
+                                  }
+                                }}
+                                className="px-3.5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg active:scale-95"
+                              >
+                                <span>⛶</span>
+                                <span>ফুলস্ক্রিন মোড</span>
+                              </button>
+
+                              <a
+                                href="./pos/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg active:scale-95"
+                              >
+                                <span>🚀</span>
+                                <span>নতুন ট্যাবে খুলুন ↗</span>
+                              </a>
+                            </div>
+                          </div>
+
+                          {/* Quick Feature Badges */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                            <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">🛒</span>
+                              <span className="text-[11px] font-bold text-emerald-900 block leading-tight">লাইভ বিলিং</span>
+                              <span className="text-[9px] text-emerald-700">অডিও বিপ সহ</span>
+                            </div>
+                            <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">🏷️</span>
+                              <span className="text-[11px] font-bold text-blue-900 block leading-tight">বারকোড/QR</span>
+                              <span className="text-[9px] text-blue-700">লেবেল স্টুডিও</span>
+                            </div>
+                            <div className="bg-purple-50 border border-purple-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">📦</span>
+                              <span className="text-[11px] font-bold text-purple-900 block leading-tight">স্টক লেজার</span>
+                              <span className="text-[9px] text-purple-700">এডজাস্টমেন্ট ও লগ</span>
+                            </div>
+                            <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">💰</span>
+                              <span className="text-[11px] font-bold text-amber-900 block leading-tight">বাকির খাতা</span>
+                              <span className="text-[9px] text-amber-700">Due/Credit Book</span>
+                            </div>
+                            <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">🚚</span>
+                              <span className="text-[11px] font-bold text-rose-900 block leading-tight">সাপ্লায়ার ডিরেক্টরি</span>
+                              <span className="text-[9px] text-rose-700">পারচেজ চালান</span>
+                            </div>
+                            <div className="bg-teal-50 border border-teal-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">📊</span>
+                              <span className="text-[11px] font-bold text-teal-900 block leading-tight">ক্যাশ ক্লোজিং</span>
+                              <span className="text-[9px] text-teal-700">দৈনিক শিফট রেজিস্টার</span>
+                            </div>
+                            <div className="bg-indigo-50 border border-indigo-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">👑</span>
+                              <span className="text-[11px] font-bold text-indigo-900 block leading-tight">কাস্টমার VIP</span>
+                              <span className="text-[9px] text-indigo-700">লয়ালটি পয়েন্ট</span>
+                            </div>
+                            <div className="bg-cyan-50 border border-cyan-200 p-2.5 rounded-2xl text-center">
+                              <span className="text-lg block">☁️</span>
+                              <span className="text-[11px] font-bold text-cyan-900 block leading-tight">ড্রাইভ ব্যাকআপ</span>
+                              <span className="text-[9px] text-cyan-700">PWA অফলাইন</span>
+                            </div>
+                          </div>
+
+                          {/* Embedded POS Container */}
+                          <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xl">
+                            <iframe
+                              id="sajgoj-fullpos-frame"
+                              src="./pos/"
+                              className="w-full h-[880px] border-0 bg-slate-900"
+                              title="SAJGOJ FASHION POS & Inventory Management System"
+                              allow="camera; microphone; clipboard-write; storage-access; fullscreen"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>

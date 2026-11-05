@@ -4,7 +4,7 @@
   "private": true,
   "description": "SAJGOJ FASHION - E-commerce Storefront, POS, Sales Return & Inventory Management",
   "scripts": {
-    "build": "node -e \"const fs = require('fs'); if(!fs.existsSync('public')) fs.mkdirSync('public'); fs.copyFileSync('index.html', 'public/index.html'); console.log('✅ Build complete');\"",
+    "build": "node -e \"const fs = require('fs'); if(!fs.existsSync('public')) fs.mkdirSync('public'); fs.copyFileSync('index.html', 'public/index.html'); fs.copyFileSync('index.html', 'public/200.html'); if(fs.existsSync('public/_redirects')) fs.unlinkSync('public/_redirects'); if(fs.existsSync('_redirects')) fs.unlinkSync('_redirects'); console.log('✅ Build complete with Cloudflare SPA 200.html');\"",
     "deploy": "wrangler deploy",
     "start": "wrangler dev"
   },
