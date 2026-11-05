@@ -4652,24 +4652,28 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           {/* Main Top Header (Storefront only) */}
           {activeTab === "Storefront" && (
             <header className={`bg-white/95 backdrop-blur border-b border-[#f3e2d0] transition-all duration-200 ${config?.header?.sticky ? 'sticky top-0 z-30' : ''}`}>
-            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3 sm:gap-4">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
               
-              {/* Logo & Store Title */}
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => setActiveTab("Storefront")}>
+              {/* Logo & Store Title: Strictly 1 line for Store Name & 1 line for Tagline */}
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 shrink" onClick={() => setActiveTab("Storefront")}>
                 {config.logo ? (
-                  <img src={config.logo} alt="Logo" className="w-10 h-10 object-contain rounded-full border border-[#d4a574]" />
+                  <img src={config.logo} alt="Logo" className="w-9 h-9 sm:w-11 sm:h-11 object-cover rounded-full border-2 border-[#d4a574] shrink-0 shadow-xs" />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#7a1c2b] text-[#fff8f0] flex items-center justify-center text-xl shadow-md border border-[#d4a574]">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#7a1c2b] text-[#fff8f0] flex items-center justify-center text-lg sm:text-xl shadow-md border-2 border-[#d4a574] shrink-0">
                     👑
                   </div>
                 )}
-                <div>
-                  <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-[#7a1c2b] leading-tight">{config.storeName}</h1>
-                  <p className="text-[10px] sm:text-xs text-[#b8956a] -mt-0.5 font-medium">{config.tagline}</p>
+                <div className="min-w-0">
+                  <h1 className="text-sm xs:text-base sm:text-xl lg:text-2xl font-black tracking-tight text-[#7a1c2b] leading-tight whitespace-nowrap uppercase">
+                    {config.storeName || "SAJGOJ FASHION"}
+                  </h1>
+                  <p className="text-[10px] sm:text-xs text-[#b8956a] font-medium leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] xs:max-w-[220px] sm:max-w-none">
+                    {config.tagline || "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ"}
+                  </p>
                 </div>
               </div>
 
-              {/* Storefront Search Bar */}
+              {/* Storefront Search Bar (Tablet/Desktop) */}
               {config?.header?.showSearch && activeTab === "Storefront" && (
                 <div className="flex-1 max-w-md hidden md:block">
                   <div className="relative flex items-center">
@@ -4702,40 +4706,41 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 </div>
               )}
 
-              {/* Action Buttons: Customer Profile & Shopping Cart */}
-              <div className="flex items-center gap-2">
+              {/* Action Buttons: Customer Profile, Wishlist & Shopping Cart */}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {activeTab === "Storefront" ? (
                   <>
                     {/* CUSTOMER LOGIN / PROFILE TAB */}
                     {currentUser ? (
                       <button 
                         onClick={() => setIsProfileModalOpen(true)}
-                        className="bg-[#fff8f0] border-2 border-[#d4a574] hover:border-[#7a1c2b] text-[#7a1c2b] px-3 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs hover:shadow transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
+                        className="bg-[#fff8f0] border-2 border-[#d4a574] hover:border-[#7a1c2b] text-[#7a1c2b] px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-bold shadow-xs hover:shadow transition flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0"
                         title="আমার একাউন্ট ও প্রোফাইল"
                       >
-                        <span className="font-bold text-xs text-[#2c1810] max-w-[85px] truncate">
+                        <span className="font-bold text-[11px] sm:text-xs text-[#2c1810] max-w-[65px] sm:max-w-[85px] truncate">
                           {currentUser?.name && !currentUser.name.startsWith("0") ? String(currentUser.name).trim().split(" ")[0] : "প্রোফাইল"}
                         </span>
                       </button>
                     ) : (
                       <button 
                         onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-                        className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-xs hover:shadow transition active:scale-95 whitespace-nowrap"
+                        className="bg-[#7a1c2b] hover:bg-[#63141f] text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold shadow-xs hover:shadow transition active:scale-95 whitespace-nowrap shrink-0"
                         title="Customer Login / Sign Up"
                       >
-                        Login / Sign
+                        <span className="hidden sm:inline">Login / Sign</span>
+                        <span className="sm:hidden">লগইন</span>
                       </button>
                     )}
 
-                    {/* Direct Admin Dashboard Trigger in Header */}
+                    {/* Direct Admin Dashboard Trigger: Hidden on mobile to keep header clean and prevent clutter */}
                     <button
                       type="button"
                       onClick={() => setActiveTab("Dashboard")}
-                      className="bg-[#fff8f0] hover:bg-[#7a1c2b] text-[#7a1c2b] hover:text-white border-2 border-[#d4a574] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1 active:scale-95"
+                      className="hidden sm:flex bg-[#fff8f0] hover:bg-[#7a1c2b] text-[#7a1c2b] hover:text-white border-2 border-[#d4a574] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition items-center gap-1 active:scale-95"
                       title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
                     >
                       <span>⚙️</span>
-                      <span className="hidden sm:inline">এডমিন প্যানেল</span>
+                      <span className="hidden md:inline">এডমিন প্যানেল</span>
                     </button>
 
                     <button
@@ -4752,13 +4757,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <button 
                       type="button"
                       onClick={() => setIsWishlistOpen(true)}
-                      className="relative bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full flex items-center gap-1.5 text-xs sm:text-sm font-bold shadow-xs hover:shadow transition active:scale-95"
+                      className="relative bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-1 text-xs sm:text-sm font-bold shadow-xs hover:shadow transition active:scale-95 shrink-0"
                       title="পছন্দের তালিকা (Wishlist) - পরে কেনার জন্য"
                     >
-                      <span className="text-sm">❤️</span>
+                      <span className="text-xs sm:text-sm">❤️</span>
                       <span className="hidden sm:inline">পছন্দ</span>
                       {wishlist.length > 0 && (
-                        <span className="bg-rose-600 text-white text-[10px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-black animate-pulse shadow-xs">
+                        <span className="bg-rose-600 text-white text-[9px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-black animate-pulse shadow-xs">
                           {wishlist.length}
                         </span>
                       )}
@@ -4767,11 +4772,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     {/* Cart Button */}
                     <button 
                       onClick={() => setIsCartOpen(true)}
-                      className="relative bg-[#7a1c2b] text-white px-3.5 sm:px-4 py-2 rounded-full flex items-center gap-2 text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] transition"
+                      className="relative bg-[#7a1c2b] text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold shadow hover:bg-[#681727] transition shrink-0 whitespace-nowrap"
                     >
-                      <span>🛒 কার্ট</span>
+                      <span>🛒</span>
+                      <span className="hidden xs:inline">কার্ট</span>
                       {cart.length > 0 && (
-                        <span className="bg-[#d4a574] text-[#2c1810] text-[11px] sm:text-xs px-2 py-0.2 rounded-full font-bold">
+                        <span className="bg-[#d4a574] text-[#2c1810] text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.2 rounded-full font-bold">
                           {cart.reduce((sum, i) => sum + i.qty, 0)}
                         </span>
                       )}
