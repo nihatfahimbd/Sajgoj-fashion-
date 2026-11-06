@@ -1,6 +1,13 @@
 const fs = require('fs');
 const path = require('path');
-const esbuild = require('esbuild');
+let esbuild;
+try {
+  esbuild = require('esbuild');
+} catch (e) {
+  console.log('📦 esbuild not found, installing automatically...');
+  require('child_process').execSync('npm install --no-audit --no-fund esbuild', { stdio: 'inherit' });
+  esbuild = require('esbuild');
+}
 
 console.log('⚡ Starting high-performance production build for Cloudflare...');
 

@@ -183,17 +183,37 @@
     const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#7a1c2b'/><circle cx='950' cy='220' r='260' fill='#d4a574' opacity='0.3'/><circle cx='1050' cy='400' r='180' fill='#53111c' opacity='0.4'/><text x='80' y='200' fill='#fff8f0' font-size='60' font-weight='800'>Eid Collection 2026</text><text x='80' y='270' fill='#ffdcc0' font-size='26'>এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি</text><rect x='80' y='320' width='220' height='56' rx='28' fill='#d4a574'/><text x='190' y='355' text-anchor='middle' fill='#2c1810' font-size='20' font-weight='bold'>কালেকশন দেখুন</text></svg>");
     const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#2c1810'/><rect x='0' y='0' width='550' height='550' fill='#7a1c2b' opacity='0.85'/><circle cx='600' cy='275' r='160' fill='#d4a574' opacity='0.25'/><text x='80' y='210' fill='#fff' font-size='52' font-weight='800'>রাজওয়াড়ি ব্রাইডাল কালেকশন</text><text x='80' y='275' fill='#ffdcc0' font-size='24'>ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত হাতের কাজ</text><rect x='80' y='325' width='220' height='56' rx='28' fill='#fff8f0'/><text x='190' y='360' text-anchor='middle' fill='#7a1c2b' font-size='20' font-weight='bold'>অফার লুফে নিন</text></svg>");
 
+    // Variation Cleaner: Removes redundant words, parentheses, and prefixes like "সাইজ:", "(Black)", "(বডি ৩২)"
+    const cleanVariation = (str) => {
+      if (!str || typeof str !== 'string') return str || '';
+      let cleaned = str.trim();
+      // Remove prefixes like "সাইজ:", "সাইজ :", "রং:", "রঙ:", "কালার:", "Size:", "Color:"
+      cleaned = cleaned.replace(/^(সাইজ|রং|রঙ|কালার|Size|Color)\s*[:：\-]\s*/i, '');
+      // If format is like "০-৬ মাস (সাইজ ১৬)" -> return "১৬"
+      const sizeInsideMatch = cleaned.match(/\(সাইজ\s*([^\)]+)\)/i);
+      if (sizeInsideMatch) return sizeInsideMatch[1].trim();
+      // Remove item prefix like "আংটি ৬" -> "৬", "চুড়ি ২.৪" -> "২.৪"
+      cleaned = cleaned.replace(/^(আংটি|চুড়ি)\s+/i, '');
+      // Remove parentheses and their contents, e.g. "32B (বডি ৩২)" -> "32B", "কালো (Black)" -> "কালো", "S (বডি ৩৬)" -> "S"
+      cleaned = cleaned.replace(/\s*\([^\)]*\)/g, '');
+      // If "স্কিন / বেইজ" or "স্কিন / বেজ" -> "স্কিন"
+      if (cleaned.startsWith("স্কিন")) return "স্কিন";
+      // If "অ্যাডজাস্টেবল ফ্রি সাইজ" or contains "ফ্রি সাইজ"
+      if (cleaned.includes("ফ্রি সাইজ") || cleaned.includes("Free Size")) return "Free Size";
+      return cleaned.trim();
+    };
+
     // Seed Data
     const initialProducts = [
-      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "", colors: ["রয়েল রেড", "মেরুন", "গোল্ডেন", "কালো", "রোজ পিংক"], sizes: ["Free Size (আনস্টিচড শাড়ি)"] },
-      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["অ্যান্টিক গোল্ড", "রয়েল রুবি", "পান্না সবুজ"], sizes: ["অ্যাডজাস্টেবল ফ্রি সাইজ"] },
-      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "", colors: ["২২ ক্যারেট গোল্ড প্লেটেড", "রোজ গোল্ড"], sizes: ["২.২ (ছোট হাত)", "২.৪ (স্ট্যান্ডার্ড)", "২.৬ (মিডিয়াম-লার্জ)", "২.৮ (লার্জ)"] },
-      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রুবি রেড", "পান্না গ্রিন", "স্যাফায়ার ব্লু"], sizes: ["অ্যাডজাস্টেবল ফ্রি সাইজ"] },
-      { id: "p5", name: "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট (Premium T-Shirt)", price: 550, stock: 35, category: "টি-শার্ট", images: [imgTshirt], sku: "SAJ-TS01", description: "১০০% প্রিমিয়াম সুতি কম্বড কটন ফেব্রিক দিয়ে তৈরি অত্যন্ত আরামদায়ক ও ট্রেন্ডি টি-শার্ট। ডেইলি ওয়্যার ও ক্যাজুয়াল আউটিংয়ের জন্য সেরা।", rating: 4.9, reviewsCount: 38, sourceUrl: "", colors: ["কালো (Black)", "সাদা (White)", "নেভি ব্লু (Navy)", "মেরুন (Maroon)", "অলিভ গ্রিন (Olive)"], sizes: ["S (বডি ৩৬\")", "M (বডি ৩৮\")", "L (বডি ৪০\")", "XL (বডি ৪২\")", "XXL (বডি ৪৪\")"] },
-      { id: "p6", name: "ডিজাইনার এম্ব্রয়ডারি কটন কুর্তি ও জামা (Kameez)", price: 1750, stock: 16, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM02", description: "সফট পিওর কটনের ওপর রাজকীয় সুতার নিখুঁত এম্ব্রয়ডারি কাজ করা ডিজাইনার রেডিমেড কুর্তি ও কামিজ। আরামদায়ক ফিটিং ও নজরকাড়া ডিজাইন।", rating: 4.8, reviewsCount: 29, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রোজ পিংক", "ফিরোজা ব্লু", "লেমন ইয়োলো", "মেরুন (Maroon)"], sizes: ["৩৬ (বডি ৩৬\")", "৩৮ (বডি ৩৮\")", "৪০ (বডি ৪০\")", "৪২ (বডি ৪২\")", "৪৪ (বডি ৪৪\")"] },
-      { id: "p7", name: "স্লিম-ফিট স্ট্রেচেবল ক্যাজুয়াল চিনো প্যান্ট", price: 1250, stock: 22, category: "প্যান্ট", images: [imgPants], sku: "SAJ-PT03", description: "উচ্চমানের স্ট্রেচেবল কটন টুইল ফেব্রিক নির্মিত প্রিমিয়াম চিনো প্যান্ট। অফিস ও ক্যাজুয়াল আউটিংয়ের জন্য অত্যন্ত আরামদায়ক।", rating: 4.7, reviewsCount: 19, sourceUrl: "", colors: ["কালো (Black)", "নেভি ব্লু (Navy)", "খাকি (Khaki)", "অ্যাশ (Ash)"], sizes: ["২৮ (কোমর 28\")", "৩০ (কোমর 30\")", "৩২ (কোমর 32\")", "৩৪ (কোমর 34\")", "৩৬ (কোমর 36\")", "৩৮ (কোমর 38\")"] },
-      { id: "p8", name: "সফট সিমলেস বডি ফিট ইনার ওয়্যার / ব্রা (Innerwear)", price: 690, stock: 40, category: "ইনার ওয়্যার", images: [imgInnerwear], sku: "SAJ-IN04", description: "নরম ব্রেথেবল মাইক্রোফাইবার ফেব্রিকের তৈরি ওয়্যার-ফ্রি আরামদায়ক সিমলেস ইনার ওয়্যার। নিখুঁত সাপোর্ট ও শেপিং নিশ্চিত করে।", rating: 4.8, reviewsCount: 34, sourceUrl: "", colors: ["স্কিন / বেজ", "কালো (Black)", "সাদা (White)", "মেরুন"], sizes: ["32B (বডি ৩২\")", "34B (বডি ৩৪\")", "36B (বডি ৩৬\")", "38B (বডি ৩৮\")", "40B (বডি ৪০\")"] },
-      { id: "p9", name: "কিউট পার্টি ফ্রক ও বেবি ড্রেস (বাচ্চাদের ড্রেস)", price: 990, stock: 20, category: "বাচ্চাদের পোশাক", images: [imgKids], sku: "SAJ-KD05", description: "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।", rating: 4.9, reviewsCount: 22, sourceUrl: "", colors: ["বেবি পিংক", "লাল (Red)", "আকাশি (Sky Blue)", "হলুদ (Yellow)"], sizes: ["০-৬ মাস (সাইজ ১৬)", "১-২ বছর (সাইজ ২০)", "২-৩ বছর (সাইজ ২২)", "৩-৪ বছর (সাইজ ২৪)", "৫-৬ বছর (সাইজ ২৬)", "৭-৮ বছর (সাইজ ২৮)"] }
+      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "", colors: ["রয়েল রেড", "মেরুন", "গোল্ডেন", "কালো", "রোজ পিংক"], sizes: ["Free Size"] },
+      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["অ্যান্টিক গোল্ড", "রয়েল রুবি", "পান্না সবুজ"], sizes: ["Free Size"] },
+      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "", colors: ["২২ ক্যারেট গোল্ড", "রোজ গোল্ড"], sizes: ["২.২", "২.৪", "২.৬", "২.৮"] },
+      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রুবি রেড", "পান্না গ্রিন", "স্যাফায়ার ব্লু"], sizes: ["Free Size"] },
+      { id: "p5", name: "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট (Premium T-Shirt)", price: 550, stock: 35, category: "টি-শার্ট", images: [imgTshirt], sku: "SAJ-TS01", description: "১০০% প্রিমিয়াম সুতি কম্বড কটন ফেব্রিক দিয়ে তৈরি অত্যন্ত আরামদায়ক ও ট্রেন্ডি টি-শার্ট। ডেইলি ওয়্যার ও ক্যাজুয়াল আউটিংয়ের জন্য সেরা।", rating: 4.9, reviewsCount: 38, sourceUrl: "", colors: ["কালো", "সাদা", "নেভি ব্লু", "মেরুন", "অলিভ"], sizes: ["S", "M", "L", "XL", "XXL"] },
+      { id: "p6", name: "ডিজাইনার এম্ব্রয়ডারি কটন কুর্তি ও জামা (Kameez)", price: 1750, stock: 16, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM02", description: "সফট পিওর কটনের ওপর রাজকীয় সুতার নিখুঁত এম্ব্রয়ডারি কাজ করা ডিজাইনার রেডিমেড কুর্তি ও কামিজ। আরামদায়ক ফিটিং ও নজরকাড়া ডিজাইন।", rating: 4.8, reviewsCount: 29, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রোজ পিংক", "ফিরোজা ব্লু", "লেমন ইয়োলো", "মেরুন"], sizes: ["৩৬", "৩৮", "৪০", "৪২", "৪৪"] },
+      { id: "p7", name: "স্লিম-ফিট স্ট্রেচেবল ক্যাজুয়াল চিনো প্যান্ট", price: 1250, stock: 22, category: "প্যান্ট", images: [imgPants], sku: "SAJ-PT03", description: "উচ্চমানের স্ট্রেচেবল কটন টুইল ফেব্রিক নির্মিত প্রিমিয়াম চিনো প্যান্ট। অফিস ও ক্যাজুয়াল আউটিংয়ের জন্য অত্যন্ত আরামদায়ক।", rating: 4.7, reviewsCount: 19, sourceUrl: "", colors: ["কালো", "নেভি ব্লু", "খাকি", "অ্যাশ"], sizes: ["২৮", "৩০", "৩২", "৩৪", "৩৬", "৩৮"] },
+      { id: "p8", name: "সফট সিমলেস বডি ফিট ইনার ওয়্যার / ব্রা (Innerwear)", price: 690, stock: 40, category: "ইনার ওয়্যার", images: [imgInnerwear], sku: "SAJ-IN04", description: "নরম ব্রেথেবল মাইক্রোফাইবার ফেব্রিকের তৈরি ওয়্যার-ফ্রি আরামদায়ক সিমলেস ইনার ওয়্যার। নিখুঁত সাপোর্ট ও শেপিং নিশ্চিত করে।", rating: 4.8, reviewsCount: 34, sourceUrl: "", colors: ["স্কিন", "কালো", "সাদা", "মেরুন"], sizes: ["32B", "34B", "36B", "38B", "40B"] },
+      { id: "p9", name: "কিউট পার্টি ফ্রক ও বেবি ড্রেস (বাচ্চাদের ড্রেস)", price: 990, stock: 20, category: "বাচ্চাদের পোশাক", images: [imgKids], sku: "SAJ-KD05", description: "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।", rating: 4.9, reviewsCount: 22, sourceUrl: "", colors: ["বেবি পিংক", "লাল", "আকাশি", "হলুদ"], sizes: ["১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮"] }
     ];
 
     const initialCategories = [
@@ -734,7 +754,14 @@
       };
 
       // Main Reactive States
-      const [products, setProducts] = useState(() => getStored("products", initialProducts));
+      const [products, setProducts] = useState(() => {
+        const stored = getStored("products", initialProducts);
+        return (stored || []).map(p => ({
+          ...p,
+          colors: (p.colors || []).map(cleanVariation).filter(Boolean),
+          sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
+        }));
+      });
       const [combos, setCombos] = useState(() => getStored("combos", initialCombos));
       const [reviews, setReviews] = useState(() => getStored("reviews", initialReviews));
       const [categories, setCategories] = useState(() => getStored("categories", initialCategories));
@@ -2265,7 +2292,7 @@
             <td style="padding: 8px 10px; border-bottom: 1px solid #f0e0d0;">
               <b>${it.name}</b>
               ${it.condition ? `<div style="font-size: 11px; color: #7a1c2b;">অবস্থা: ${it.condition} ${it.restock ? '• স্টকে যুক্ত' : '• ড্যামেজ'}</div>` : ''}
-              ${it.size || it.color ? `<div style="font-size: 10px; color: #666;">${[it.size ? `সাইজ: ${it.size}` : '', it.color ? `কালার: ${it.color}` : ''].filter(Boolean).join(' | ')}</div>` : ''}
+              ${it.size || it.color ? `<div style="font-size: 10px; color: #666;">${[it.size ? cleanVariation(it.size) : '', it.color ? cleanVariation(it.color) : ''].filter(Boolean).join(' • ')}</div>` : ''}
             </td>
             <td style="padding: 8px 10px; text-align: center; border-bottom: 1px solid #f0e0d0;">${it.qty} টি</td>
             <td style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #f0e0d0;">${it.price} ৳</td>
@@ -2277,7 +2304,7 @@
           <tr>
             <td style="padding: 8px 10px; border-bottom: 1px solid #f0e0d0;">
               <b>${it.name}</b>
-              ${it.size || it.color ? `<div style="font-size: 11px; color: #7a1c2b; font-weight: bold;">${[it.size ? `সাইজ: ${it.size}` : '', it.color ? `রং: ${it.color}` : ''].filter(Boolean).join(' | ')}</div>` : ''}
+              ${it.size || it.color ? `<div style="font-size: 11px; color: #7a1c2b; font-weight: bold;">${[it.size ? cleanVariation(it.size) : '', it.color ? cleanVariation(it.color) : ''].filter(Boolean).join(' • ')}</div>` : ''}
             </td>
             <td style="padding: 8px 10px; text-align: center; border-bottom: 1px solid #f0e0d0;">${it.qty} টি</td>
             <td style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #f0e0d0;">${it.price} ৳</td>
@@ -2695,7 +2722,7 @@
           <tr>
             <td style="padding: 4px 0; border-bottom: 1px dashed #ddd;">
               <div style="font-weight: bold; font-size: 13px;">${idx + 1}. ${it.name}</div>
-              ${it.size || it.color ? `<div style="font-size: 11px; color: #555;">${[it.size ? `সাইজ: ${it.size}` : '', it.color ? `রং: ${it.color}` : ''].filter(Boolean).join(' | ')}</div>` : ''}
+              ${it.size || it.color ? `<div style="font-size: 11px; color: #555;">${[it.size ? cleanVariation(it.size) : '', it.color ? cleanVariation(it.color) : ''].filter(Boolean).join(' • ')}</div>` : ''}
               <div style="font-size: 11px; color: #777;">${it.qty} x ${it.price} ৳</div>
             </td>
             <td style="padding: 4px 0; text-align: right; vertical-align: bottom; font-weight: bold; border-bottom: 1px dashed #ddd; font-size: 13px;">
@@ -3952,7 +3979,7 @@
           }];
         });
 
-        const variantParts = [color ? `রং: ${color}` : "", size ? `সাইজ: ${size}` : ""].filter(Boolean);
+        const variantParts = [color ? cleanVariation(color) : "", size ? cleanVariation(size) : ""].filter(Boolean);
         const variantSuffix = variantParts.length > 0 ? ` (${variantParts.join(", ")})` : "";
 
         if (product.bogo) {
@@ -4191,7 +4218,7 @@
         const w = window.open("", "_blank");
         if (!w) return;
         const rows = order.items.map(it => {
-          const variantLabel = (it.color || it.selectedColor || it.size || it.selectedSize) ? `<br><span style="display:inline-block;margin-top:2px;font-size:11px;color:#7a1c2b;font-weight:bold;background:#fff0f3;padding:1px 6px;border-radius:6px;border:1px solid #ffd1dc;">${[it.color || it.selectedColor ? `রং: ${it.color || it.selectedColor}` : "", it.size || it.selectedSize ? `সাইজ: ${it.size || it.selectedSize}` : ""].filter(Boolean).join(" | ")}</span>` : "";
+          const variantLabel = (it.color || it.selectedColor || it.size || it.selectedSize) ? `<br><span style="display:inline-block;margin-top:2px;font-size:11px;color:#7a1c2b;font-weight:bold;background:#fff0f3;padding:1px 6px;border-radius:6px;border:1px solid #ffd1dc;">${[it.color || it.selectedColor ? cleanVariation(it.color || it.selectedColor) : "", it.size || it.selectedSize ? cleanVariation(it.size || it.selectedSize) : ""].filter(Boolean).join(" • ")}</span>` : "";
           const bogoLabel = it.bogo ? `<br><span style="display:inline-block;margin-top:3px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #fde68a;">🎁 Buy 1 Get 1 Free: পেইড ${it.qty}টি + ফ্রি ${it.qty}টি = মোট ${it.qty * 2}টি</span>` : "";
           const freeGiftLabel = it.isFreeGift ? `<br><span style="display:inline-block;margin-top:3px;background:#ecfdf5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;border:1px solid #a7f3d0;">🎁 Buy 2 Get 1 Free উপহার (ফ্রি গিফট - ০ ৳)</span>` : "";
           const comboLabel = it.isCombo ? `<br><span style="display:inline-block;margin-top:3px;background:#f3e8ff;color:#6b21a8;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;">🎁 কম্বো প্যাক বান্ডেল</span>` : "";
@@ -4304,8 +4331,8 @@
           const comboNote = it.isCombo ? " [🎁 কম্বো প্যাক]" : "";
           const bogoNote = it.bogo ? ` [🎁 Buy 1 Get 1 Free: পেইড ${it.qty || 1}টি + ফ্রি ${it.qty || 1}টি = মোট ${(it.qty || 1) * 2}টি]` : "";
           const freeGiftNote = it.isFreeGift ? " [🎁 Buy 2 Get 1 Free উপহার: ০ ৳ ফ্রি গিফট]" : "";
-          const colorNote = (it.color || it.selectedColor) ? ` [রং: ${it.color || it.selectedColor}]` : "";
-          const sizeNote = (it.size || it.selectedSize) ? ` [সাইজ: ${it.size || it.selectedSize}]` : "";
+          const colorNote = (it.color || it.selectedColor) ? ` [${cleanVariation(it.color || it.selectedColor)}]` : "";
+          const sizeNote = (it.size || it.selectedSize) ? ` [${cleanVariation(it.size || it.selectedSize)}]` : "";
           const unitPrice = it.price || 0;
           const qty = it.qty || 1;
           return `  ${idx + 1}. *${it.name}*${colorNote}${sizeNote}${comboNote}${bogoNote}${freeGiftNote} (${qty}টি × ${unitPrice} ৳) = ${unitPrice * qty} ৳`;
@@ -6156,10 +6183,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                                 onChange={(e) => updatePosCartItemVariant(idx, "selectedSize", e.target.value)}
                                                 className="bg-gray-100 border border-gray-300 rounded px-1 py-0.5 text-[9px]"
                                               >
-                                                {item.product.sizes.map(s => <option key={s} value={s}>{s}</option>)}
+                                                {item.product.sizes.map(s => <option key={s} value={s}>{cleanVariation(s)}</option>)}
                                               </select>
                                             ) : (
-                                              <span>সাইজ: {item.selectedSize}</span>
+                                              <span>{cleanVariation(item.selectedSize)}</span>
                                             )}
                                             <span>•</span>
                                             <span className="flex items-center gap-1">
@@ -7299,8 +7326,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                       setProductForm({ 
                                         ...p, 
                                         images: p.images || [],
-                                        colors: p.colors || [],
-                                        sizes: p.sizes || []
+                                        colors: (p.colors || []).map(cleanVariation).filter(Boolean),
+                                        sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
                                       });
                                       setImageUrlInput(p.images[0] || "");
                                       setExternalLinkInput(p.sourceUrl || "");
@@ -8325,8 +8352,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   setProductForm({
                                     ...p,
                                     images: p.images || [],
-                                    colors: p.colors || [],
-                                    sizes: p.sizes || []
+                                    colors: (p.colors || []).map(cleanVariation).filter(Boolean),
+                                    sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
                                   });
                                   setImageUrlInput(p.images[0] || "");
                                   setExternalLinkInput(p.sourceUrl || "");
@@ -12405,13 +12432,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           {(item.selectedColor || item.selectedSize) && (
                             <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px]">
                               {item.selectedColor && (
-                                <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-md font-medium">
-                                  রং: {item.selectedColor}
+                                <span className="bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-md font-bold shadow-2xs">
+                                  {cleanVariation(item.selectedColor)}
                                 </span>
                               )}
                               {item.selectedSize && (
-                                <span className="bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md font-medium">
-                                  সাইজ: {item.selectedSize}
+                                <span className="bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md font-bold shadow-2xs">
+                                  {cleanVariation(item.selectedSize)}
                                 </span>
                               )}
                             </div>
@@ -13261,8 +13288,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                             {it.sku && <span className="font-mono">SKU: {it.sku}</span>}
                                             <span className="text-[#7a1c2b] font-bold">রেট: ৳{it.price}</span>
                                             <span>অর্ডার পরিমাণ: {it.qty} পিস</span>
-                                            {it.selectedSize && <span className="bg-gray-100 px-1.5 py-0.2 rounded">সাইজ: {it.selectedSize}</span>}
-                                            {it.selectedColor && <span className="bg-gray-100 px-1.5 py-0.2 rounded">রং: {it.selectedColor}</span>}
+                                            {it.selectedSize && <span className="bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.2 rounded font-bold">{cleanVariation(it.selectedSize)}</span>}
+                                            {it.selectedColor && <span className="bg-rose-50 text-rose-800 border border-rose-200 px-1.5 py-0.2 rounded font-bold">{cleanVariation(it.selectedColor)}</span>}
                                           </div>
                                         </div>
                                       </div>
@@ -15414,7 +15441,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   }`}
                                 >
                                   {isSelected && <span className="text-[10px]">✓</span>}
-                                  <span>{col}</span>
+                                  <span>{cleanVariation(col)}</span>
                                 </button>
                               );
                             })}
@@ -15428,12 +15455,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
                               <span>📏</span>
-                              <span>সাইজ নির্বাচন করুন:</span>
+                              <span>সাইজ:</span>
                             </span>
                             <div className="flex items-center gap-2">
                               {(selectedProductSize || viewProduct.sizes[0]) && (
                                 <span className="text-[11px] text-amber-900 font-bold bg-white px-2.5 py-0.5 rounded-full border border-amber-200 shadow-2xs">
-                                  নির্বাচিত: {selectedProductSize || viewProduct.sizes[0]}
+                                  {cleanVariation(selectedProductSize || viewProduct.sizes[0])}
                                 </span>
                               )}
                               <button
@@ -15460,7 +15487,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   }`}
                                 >
                                   {isSelected && <span className="text-[10px]">✓</span>}
-                                  <span>{sz}</span>
+                                  <span>{cleanVariation(sz)}</span>
                                 </button>
                               );
                             })}
@@ -16050,20 +16077,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              const val = customColorInput.trim();
+                              const val = cleanVariation(customColorInput.trim());
                               if (val && !productForm.colors?.includes(val)) {
                                 setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
                                 setCustomColorInput("");
                               }
                             }
                           }}
-                          placeholder="নতুন কালার লিখুন (যেমন: গোল্ডেন কপার / স্কাই ব্লু)..." 
+                          placeholder="নতুন কালার লিখুন (যেমন: গোল্ডেন / স্কাই ব্লু)..." 
                           className="flex-1 bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
                         />
                         <button 
                           type="button" 
                           onClick={() => {
-                            const val = customColorInput.trim();
+                            const val = cleanVariation(customColorInput.trim());
                             if (val && !productForm.colors?.includes(val)) {
                               setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
                               setCustomColorInput("");
@@ -16080,21 +16107,21 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <p className="text-[10px] font-bold text-gray-500 mb-1.5">জনপ্রিয় কালার প্যালেট (১-ক্লিকে যোগ করুন):</p>
                         <div className="flex flex-wrap gap-1">
                           {[
-                            { name: "কালো (Black)", dot: "bg-black" },
-                            { name: "সাদা (White)", dot: "bg-white border border-gray-300" },
-                            { name: "মেরুন (Maroon)", dot: "bg-red-900" },
-                            { name: "রয়েল ব্লু (Royal Blue)", dot: "bg-blue-600" },
-                            { name: "নেভি ব্লু (Navy)", dot: "bg-blue-950" },
-                            { name: "লাল (Red)", dot: "bg-red-600" },
-                            { name: "গোলাপি (Pink)", dot: "bg-pink-400" },
-                            { name: "সবুজ (Green)", dot: "bg-emerald-600" },
-                            { name: "বটল গ্রিন (Bottle Green)", dot: "bg-green-900" },
-                            { name: "হলুদ (Yellow)", dot: "bg-amber-400" },
-                            { name: "গোল্ডেন (Golden)", dot: "bg-amber-500" },
-                            { name: "অলিভ (Olive)", dot: "bg-lime-800" },
-                            { name: "অ্যাশ (Ash/Gray)", dot: "bg-gray-400" },
-                            { name: "স্কিন / বেইজ (Beige)", dot: "bg-[#e8d5b7]" },
-                            { name: "ফিরোজা (Turquoise)", dot: "bg-cyan-500" }
+                            { name: "কালো", dot: "bg-black" },
+                            { name: "সাদা", dot: "bg-white border border-gray-300" },
+                            { name: "মেরুন", dot: "bg-red-900" },
+                            { name: "রয়েল ব্লু", dot: "bg-blue-600" },
+                            { name: "নেভি ব্লু", dot: "bg-blue-950" },
+                            { name: "লাল", dot: "bg-red-600" },
+                            { name: "গোলাপি", dot: "bg-pink-400" },
+                            { name: "সবুজ", dot: "bg-emerald-600" },
+                            { name: "বটল গ্রিন", dot: "bg-green-900" },
+                            { name: "হলুদ", dot: "bg-amber-400" },
+                            { name: "গোল্ডেন", dot: "bg-amber-500" },
+                            { name: "অলিভ", dot: "bg-lime-800" },
+                            { name: "অ্যাশ", dot: "bg-gray-400" },
+                            { name: "স্কিন", dot: "bg-[#e8d5b7]" },
+                            { name: "ফিরোজা", dot: "bg-cyan-500" }
                           ].map((c) => {
                             const isAdded = productForm.colors?.includes(c.name);
                             return (
@@ -16131,9 +16158,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
                           <span>📏</span>
-                          <span>সাইজ অপশন (Sizes - টিশার্ট, জামা, প্যান্ট, ইনার, বাচ্চাদের সাইজ)</span>
+                          <span>সাইজ অপশন</span>
                         </label>
-                        <span className="text-[10px] text-gray-500 font-medium">গ্রাহকরা তাদের মাপ অনুযায়ী সাইজ বেছে নেবেন</span>
+                        <span className="text-[10px] text-gray-500 font-medium">গ্রাহকরা তাদের সাইজ বেছে নেবেন</span>
                       </div>
 
                       {/* Currently selected size tags */}
@@ -16156,7 +16183,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             </span>
                           ))
                         ) : (
-                          <span className="text-xs text-gray-400 italic">কোনো সাইজ যোগ করা হয়নি (ফ্রি সাইজ / আনস্টিচড হিসেবে থাকবে)</span>
+                          <span className="text-xs text-gray-400 italic">কোনো সাইজ যোগ করা হয়নি (Free Size থাকবে)</span>
                         )}
                       </div>
 
@@ -16169,20 +16196,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              const val = customSizeInput.trim();
+                              const val = cleanVariation(customSizeInput.trim());
                               if (val && !productForm.sizes?.includes(val)) {
                                 setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
                                 setCustomSizeInput("");
                               }
                             }
                           }}
-                          placeholder="নতুন সাইজ লিখুন (যেমন: XL (বডি ৪২ ইঞ্চি) / ৩২ কোমর / 36B)..." 
+                          placeholder="নতুন সাইজ লিখুন (যেমন: XL / 36B / ৩২)..." 
                           className="flex-1 bg-[#fffaf5] border border-[#f3e2d0] rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" 
                         />
                         <button 
                           type="button" 
                           onClick={() => {
-                            const val = customSizeInput.trim();
+                            const val = cleanVariation(customSizeInput.trim());
                             if (val && !productForm.sizes?.includes(val)) {
                               setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
                               setCustomSizeInput("");
@@ -16205,78 +16232,78 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <button
                             type="button"
                             onClick={() => {
-                              const standardShirt = ["S (বডি ৩৬)", "M (বডি ৩৮)", "L (বডি ৪০)", "XL (বডি ৪২)", "XXL (বডি ৪৪)", "3XL (বডি ৪৬)"];
+                              const standardShirt = ["S", "M", "L", "XL", "XXL", "3XL"];
                               setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardShirt])) }));
-                              notify("👕 টি-শার্ট / শার্ট / জামা সাইজ যোগ হয়েছে!");
+                              notify("👕 টি-শার্ট / জামা সাইজ যোগ হয়েছে!");
                             }}
                             className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
                           >
-                            <p className="font-bold text-xs text-[#7a1c2b]">👕 টি-শার্ট / শার্ট / জামা</p>
+                            <p className="font-bold text-xs text-[#7a1c2b]">👕 টি-শার্ট / জামা</p>
                             <p className="text-[10px] text-gray-500">S, M, L, XL, XXL, 3XL</p>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => {
-                              const standardPants = ["২৮ (Waist 28)", "৩০ (Waist 30)", "৩২ (Waist 32)", "৩৪ (Waist 34)", "৩৬ (Waist 36)", "৩৮ (Waist 38)", "৪০ (Waist 40)"];
+                              const standardPants = ["২৮", "৩০", "৩২", "৩৪", "৩৬", "৩৮", "৪০"];
                               setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardPants])) }));
                               notify("👖 প্যান্ট / ট্রাউজার সাইজ যোগ হয়েছে!");
                             }}
                             className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
                           >
-                            <p className="font-bold text-xs text-[#7a1c2b]">👖 প্যান্ট / ট্রাউজার / জিন্স</p>
+                            <p className="font-bold text-xs text-[#7a1c2b]">👖 প্যান্ট / ট্রাউজার</p>
                             <p className="text-[10px] text-gray-500">২৮, ৩০, ৩২, ৩৪, ৩৬, ৩৮, ৪০</p>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => {
-                              const innerSizes = ["32B (বডি ৩২)", "34B (বডি ৩৪)", "36B (বডি ৩৬)", "38B (বডি ৩৮)", "40B (বডি ৪০)", "34C", "36C"];
+                              const innerSizes = ["32B", "34B", "36B", "38B", "40B", "34C", "36C"];
                               setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...innerSizes])) }));
                               notify("👙 ইনার ও বডি সাইজ যোগ হয়েছে!");
                             }}
                             className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
                           >
-                            <p className="font-bold text-xs text-[#7a1c2b]">👙 ইনার / ব্রা বডি সাইজ</p>
-                            <p className="text-[10px] text-gray-500">32B, 34B, 36B, 38B, 40B, 34C</p>
+                            <p className="font-bold text-xs text-[#7a1c2b]">👙 ইনার / ব্রা সাইজ</p>
+                            <p className="text-[10px] text-gray-500">32B, 34B, 36B, 38B, 40B, 34C, 36C</p>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => {
-                              const kidsSizes = ["১৬ (০-৬ মাস)", "১৮ (৬-১২ মাস)", "২০ (১-২ বছর)", "২২ (২-৩ বছর)", "২৪ (৩-৪ বছর)", "২৬ (৫-৬ বছর)", "২৮ (৭-৮ বছর)", "৩০ (৯-১০ বছর)"];
+                              const kidsSizes = ["১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮", "৩০"];
                               setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...kidsSizes])) }));
                               notify("👶 বাচ্চাদের সাইজ যোগ হয়েছে!");
                             }}
                             className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
                           >
                             <p className="font-bold text-xs text-[#7a1c2b]">👶 বাচ্চাদের পোশাক সাইজ</p>
-                            <p className="text-[10px] text-gray-500">১৬ (০-৬M) থেকে ৩০ (১০Y)</p>
+                            <p className="text-[10px] text-gray-500">১৬ থেকে ৩০</p>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => {
-                              const jewelrySizes = ["আংটি ৬ (16.5 mm)", "আংটি ৭ (17.3 mm)", "আংটি ৮ (18.1 mm)", "চুড়ি ২.২", "চুড়ি ২.৪", "চুড়ি ২.৬", "চুড়ি ২.৮"];
+                              const jewelrySizes = ["৬", "৭", "৮", "২.২", "২.৪", "২.৬", "২.৮"];
                               setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...jewelrySizes])) }));
                               notify("💍 আংটি ও চুড়ির সাইজ যোগ হয়েছে!");
                             }}
                             className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
                           >
                             <p className="font-bold text-xs text-[#7a1c2b]">💍 আংটি ও চুড়ির সাইজ</p>
-                            <p className="text-[10px] text-gray-500">US 6, 7, 8 & চুড়ি ২.৪, ২.৬</p>
+                            <p className="text-[10px] text-gray-500">৬, ৭, ৮, ২.২, ২.৪, ২.৬, ২.৮</p>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => {
-                              setProductForm(prev => ({ ...prev, sizes: ["Free Size (আনস্টিচড / অল-সাইজ)"] }));
-                              notify("✨ ফ্রি সাইজ সেট করা হয়েছে!");
+                              setProductForm(prev => ({ ...prev, sizes: ["Free Size"] }));
+                              notify("✨ Free Size সেট করা হয়েছে!");
                             }}
                             className="p-2 bg-[#fffaf5] hover:bg-amber-50 border border-[#d4a574]/60 rounded-xl text-left transition"
                           >
-                            <p className="font-bold text-xs text-[#7a1c2b]">✨ ফ্রি সাইজ (Free Size)</p>
-                            <p className="text-[10px] text-gray-500">শাড়ি, ওড়না বা আনস্টিচড</p>
+                            <p className="font-bold text-xs text-[#7a1c2b]">✨ Free Size</p>
+                            <p className="text-[10px] text-gray-500">Free Size</p>
                           </button>
                         </div>
                       </div>
@@ -16306,6 +16333,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                       const cleanPrice = Number(productForm.price) || 0;
                       const cleanStock = productForm.stock === "" ? 0 : (Number(productForm.stock) || 0);
+                      const finalColors = (productForm.colors || []).map(cleanVariation).filter(Boolean);
+                      const finalSizes = (productForm.sizes || []).map(cleanVariation).filter(Boolean);
 
                       if (editingProduct) {
                         const updated = { 
@@ -16313,8 +16342,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ...productForm, 
                           price: cleanPrice,
                           stock: cleanStock,
-                          colors: productForm.colors || [],
-                          sizes: productForm.sizes || [],
+                          colors: finalColors,
+                          sizes: finalSizes,
                           images: finalImages 
                         };
                         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
@@ -16326,8 +16355,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ...productForm,
                           price: cleanPrice,
                           stock: cleanStock,
-                          colors: productForm.colors || [],
-                          sizes: productForm.sizes || [],
+                          colors: finalColors,
+                          sizes: finalSizes,
                           images: finalImages,
                           sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
                           rating: 4.8,
