@@ -8,11 +8,14 @@ import com.example.data.model.CartItem
 import com.example.data.model.Category
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
+import com.example.data.model.ExchangeItem
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.PixelConfig
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
+import com.example.data.model.ReturnItem
+import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -40,7 +43,9 @@ class StoreRepository(private val context: Context) {
       category = "শাড়ি",
       imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
       sku = "SAJ-001",
-      description = "খাঁটি বেনারসি ও কাতানের মেলবন্ধনে তৈরি সোনালী জরি পাড়যুক্ত জমকালো ডিজাইনার শাড়ি। উৎসব এবং বিয়ের অনুষ্ঠানের জন্য আদর্শ কালেকশন। সাথে রয়েছে আনস্টিচড ম্যাচিং ব্লাউজ পিস।"
+      description = "খাঁটি বেনারসি ও কাতানের মেলবন্ধনে তৈরি সোনালী জরি পাড়যুক্ত জমকালো ডিজাইনার শাড়ি। উৎসব এবং বিয়ের অনুষ্ঠানের জন্য আদর্শ কালেকশন। সাথে রয়েছে আনস্টিচড ম্যাচিং ব্লাউজ পিস।",
+      colors = listOf("রয়েল রেড", "মেরুন", "কালো", "গোল্ডেন"),
+      sizes = listOf("Free Size")
     ),
     Product(
       id = "p2",
@@ -50,7 +55,8 @@ class StoreRepository(private val context: Context) {
       category = "নেকলেস",
       imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
       sku = "SAJ-002",
-      description = "অ্যান্টিক গোল্ড প্লেটেড রয়্যাল কুন্দন চোকার, সাথে ম্যাচিং স্টেটমেন্ট ঝুমকা এবং টিকলি। রুচিশীল রত্নপাথর ও মুক্তোর কারুকার্যময় কাজ।"
+      description = "অ্যান্টিক গোল্ড প্লেটেড রয়্যাল কুন্দন চোকার, সাথে ম্যাচিং স্টেটমেন্ট ঝুমকা এবং টিকলি। রুচিশীল রত্নপাথর ও মুক্তোর কারুকার্যময় কাজ।",
+      colors = listOf("রয়্যাল গোল্ডেন", "অ্যান্টিক গোল্ড", "রুবী রেড")
     ),
     Product(
       id = "p3",
@@ -60,7 +66,8 @@ class StoreRepository(private val context: Context) {
       category = "চুড়ি",
       imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
       sku = "SAJ-003",
-      description = "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।"
+      description = "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।",
+      sizes = listOf("2.4", "2.6", "2.8")
     ),
     Product(
       id = "p4",
@@ -70,7 +77,8 @@ class StoreRepository(private val context: Context) {
       category = "ব্রেসলেট",
       imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
       sku = "SAJ-004",
-      description = "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।"
+      description = "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।",
+      colors = listOf("রুবী রেড", "পান্না সবুজ", "রয়েল ব্লু")
     ),
     Product(
       id = "p5",
@@ -80,7 +88,9 @@ class StoreRepository(private val context: Context) {
       category = "শাড়ি",
       imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
       sku = "SAJ-005",
-      description = "হাতে বোনা ঐতিহ্যবাহী জামদানি মোটিফ এবং নরম আরামদায়ক সিল্ক-সুতি টেক্সচার। আভিজাত্যে ভরপুর বিশেষ সংগ্রহ।"
+      description = "হাতে বোনা ঐতিহ্যবাহী জামদানি মোটিফ এবং নরম আরামদায়ক সিল্ক-সুতি টেক্সচার। আভিজাত্যে ভরপুর বিশেষ সংগ্রহ।",
+      colors = listOf("হলুদ ও লাল", "কালো ও সোনালী", "রানি গোলাপি"),
+      sizes = listOf("Free Size")
     ),
     Product(
       id = "p6",
@@ -91,6 +101,32 @@ class StoreRepository(private val context: Context) {
       imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
       sku = "SAJ-006",
       description = "রঙিন এনামেল কারুকাজ সমৃদ্ধ ঐতিহ্যবাহী মীনাকারি কানের দুল ও নোলক। উৎসবের সাজে দেবে এক রাজকীয় মাত্রা।"
+    ),
+    Product(
+      id = "p7",
+      name = "বাচ্চাদের ডিজাইনার পার্টি ফ্রক ও গাউন (Kids Frock)",
+      price = 1450,
+      stock = 12,
+      category = "বাচ্চাদের পোশাক",
+      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      sku = "KID-001",
+      description = "বাচ্চাদের জন্য আকর্ষণীয় সফট নেট ও সুতি কাপড়ে তৈরি আরামদায়ক ডিজাইনার পার্টি ফ্রক। জন্মদিন এবং উৎসব অনুষ্ঠানের জন্য সেরা পছন্দ।",
+      colors = listOf("গোলাপী", "রয়েল রেড", "স্কাই ব্লু", "সাদা"),
+      sizes = listOf("20", "22", "24", "26", "28"),
+      ageGroups = listOf("১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৪-৫ বছর", "৫-৬ বছর")
+    ),
+    Product(
+      id = "p8",
+      name = "বাচ্চাদের রয়্যাল সুতি পাঞ্জাবি ও পায়জামা সেট",
+      price = 1190,
+      stock = 10,
+      category = "বাচ্চাদের পোশাক",
+      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      sku = "KID-002",
+      description = "১০০% প্রিমিয়াম সুতি কাপড়ে তৈরি আরামদায়ক বাচ্চাদের পাঞ্জাবি সেট। গলায় সূক্ষ্ম সুতার এমব্রয়ডারি কাজ করা।",
+      colors = listOf("অফ হোয়াইট", "মেরুন", "রয়েল ব্লু", "সবুজ"),
+      sizes = listOf("18", "20", "22", "24", "26", "28"),
+      ageGroups = listOf("০-৬ মাস", "৬-১২ মাস", "১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৫-৬ বছর")
     )
   )
 
@@ -99,7 +135,8 @@ class StoreRepository(private val context: Context) {
     Category("c2", "নেকলেস", "📿"),
     Category("c3", "চুড়ি", "💍"),
     Category("c4", "ব্রেসলেট", "✨"),
-    Category("c5", "ব্রাইডাল সেট", "👑")
+    Category("c5", "ব্রাইডাল সেট", "👑"),
+    Category("c6", "বাচ্চাদের পোশাক", "👶")
   )
 
   private val initialBanners = listOf(
@@ -265,6 +302,51 @@ class StoreRepository(private val context: Context) {
   private val _pixelConfig = MutableStateFlow(PixelConfig())
   val pixelConfig: StateFlow<PixelConfig> = _pixelConfig.asStateFlow()
 
+  private val initialReturns = listOf(
+    ReturnRecord(
+      id = "RET-884211",
+      orderId = "ORD-1002",
+      customerName = "নুসরাত জাহান",
+      phone = "01813987654",
+      date = "2026-10-21",
+      returnedItems = listOf(
+        ReturnItem(
+          productId = "p4",
+          name = "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার",
+          price = 890,
+          quantity = 1,
+          condition = "ভালো (বিক্রিযোগ্য)",
+          restock = true
+        )
+      ),
+      totalReturnValue = 890,
+      isExchange = true,
+      exchangeItems = listOf(
+        ExchangeItem(
+          productId = "p1",
+          name = "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)",
+          price = 3500,
+          quantity = 1,
+          color = "Royal Red",
+          size = "Free Size",
+          sku = "KT-889"
+        )
+      ),
+      totalExchangeValue = 3500,
+      deliveryFee = 0,
+      priceDifference = 2610,
+      differenceType = "customer_paid_extra",
+      settlementMethod = "bKash",
+      settlementTrxId = "TRX9938120",
+      settlementStatus = "paid",
+      reason = "পণ্য পরিবর্তন / অপছন্দ",
+      note = "ব্রেসলেট ফেরত দিয়ে শাড়ি এক্সচেঞ্জ নেওয়া হয়েছে। অতিরিক্ত ২৬১০ টাকা বিকাশে গ্রহণ করা হয়েছে।"
+    )
+  )
+
+  private val _returns = MutableStateFlow<List<ReturnRecord>>(initialReturns)
+  val returns: StateFlow<List<ReturnRecord>> = _returns.asStateFlow()
+
   private val firestore: FirebaseFirestore? by lazy {
     try {
       val dbId = context.getString(R.string.firestore_database_id)
@@ -291,6 +373,9 @@ class StoreRepository(private val context: Context) {
             try {
               val ratingVal = (doc.getDouble("rating") ?: doc.getLong("rating")?.toDouble() ?: 4.8).toFloat()
               val reviewsCountVal = (doc.getLong("reviewsCount") ?: doc.getLong("reviews") ?: 12L).toInt()
+              val colorsList = (doc.get("colors") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+              val sizesList = (doc.get("sizes") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+              val ageGroupsList = (doc.get("ageGroups") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
               Product(
                 id = doc.getString("id") ?: doc.id,
                 name = doc.getString("name") ?: "",
@@ -302,7 +387,10 @@ class StoreRepository(private val context: Context) {
                 description = doc.getString("description") ?: "",
                 rating = ratingVal,
                 reviewsCount = reviewsCountVal,
-                sourceUrl = doc.getString("sourceUrl") ?: ""
+                sourceUrl = doc.getString("sourceUrl") ?: "",
+                colors = colorsList,
+                sizes = sizesList,
+                ageGroups = ageGroupsList
               )
             } catch (e: Exception) {
               null
@@ -357,6 +445,19 @@ class StoreRepository(private val context: Context) {
         if (error == null && snapshot != null && !snapshot.isEmpty) {
           val list = snapshot.documents.mapNotNull { doc ->
             try {
+              val itemsList = (doc.get("items") as? List<*>)?.mapNotNull { itemMap ->
+                val m = itemMap as? Map<*, *> ?: return@mapNotNull null
+                OrderItem(
+                  productId = m["productId"]?.toString() ?: "",
+                  name = m["name"]?.toString() ?: "",
+                  quantity = (m["quantity"] as? Number)?.toInt() ?: 1,
+                  price = (m["price"] as? Number)?.toInt() ?: 0,
+                  color = m["color"]?.toString() ?: "",
+                  size = m["size"]?.toString() ?: "",
+                  ageGroup = m["ageGroup"]?.toString() ?: ""
+                )
+              } ?: emptyList()
+
               Order(
                 id = doc.getString("id") ?: doc.id,
                 customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
@@ -364,7 +465,7 @@ class StoreRepository(private val context: Context) {
                 district = doc.getString("district") ?: "ঢাকা",
                 thana = doc.getString("thana") ?: "সদর",
                 address = doc.getString("address") ?: "",
-                items = emptyList(),
+                items = itemsList,
                 subtotal = (doc.getLong("subtotal") ?: 0L).toInt(),
                 deliveryCharge = (doc.getLong("deliveryCharge") ?: 0L).toInt(),
                 discount = (doc.getLong("discount") ?: 0L).toInt(),
@@ -394,24 +495,39 @@ class StoreRepository(private val context: Context) {
   }
 
   // Cart Operations
-  fun addToCart(product: Product, quantity: Int = 1): Boolean {
+  fun addToCart(
+    product: Product,
+    quantity: Int = 1,
+    color: String = "",
+    size: String = "",
+    ageGroup: String = ""
+  ): Boolean {
     if (product.stock <= 0) return false
     val current = _cart.value.toMutableList()
-    val index = current.indexOfFirst { it.product.id == product.id }
+    val targetKey = "${product.id}_${color}_${size}_${ageGroup}"
+    val index = current.indexOfFirst { it.itemKey == targetKey }
     if (index >= 0) {
       val existing = current[index]
       val newQty = (existing.quantity + quantity).coerceAtMost(product.stock)
       current[index] = existing.copy(quantity = newQty)
     } else {
-      current.add(CartItem(product = product, quantity = quantity.coerceAtMost(product.stock)))
+      current.add(
+        CartItem(
+          product = product,
+          quantity = quantity.coerceAtMost(product.stock),
+          selectedColor = color,
+          selectedSize = size,
+          selectedAgeGroup = ageGroup
+        )
+      )
     }
     _cart.value = current
     return true
   }
 
-  fun updateCartQuantity(productId: String, delta: Int) {
+  fun updateCartQuantity(itemKey: String, delta: Int) {
     val current = _cart.value.toMutableList()
-    val index = current.indexOfFirst { it.product.id == productId }
+    val index = current.indexOfFirst { it.itemKey == itemKey }
     if (index >= 0) {
       val item = current[index]
       val newQty = item.quantity + delta
@@ -425,8 +541,8 @@ class StoreRepository(private val context: Context) {
     }
   }
 
-  fun removeFromCart(productId: String) {
-    _cart.value = _cart.value.filterNot { it.product.id == productId }
+  fun removeFromCart(itemKey: String) {
+    _cart.value = _cart.value.filterNot { it.itemKey == itemKey }
   }
 
   fun clearCart() {
@@ -469,7 +585,17 @@ class StoreRepository(private val context: Context) {
       district = district,
       thana = thana.ifBlank { "সদর" },
       address = address,
-      items = cartItems.map { OrderItem(it.product.id, it.product.name, it.quantity, it.product.price) },
+      items = cartItems.map {
+        OrderItem(
+          productId = it.product.id,
+          name = it.product.name,
+          quantity = it.quantity,
+          price = it.product.price,
+          color = it.selectedColor,
+          size = it.selectedSize,
+          ageGroup = it.selectedAgeGroup
+        )
+      },
       subtotal = subtotal,
       deliveryCharge = deliveryCharge,
       discount = discount,
@@ -483,9 +609,9 @@ class StoreRepository(private val context: Context) {
 
     // Deduct stock for ordered products
     val updatedProducts = _products.value.map { p ->
-      val inCart = cartItems.find { it.product.id == p.id }
-      if (inCart != null) {
-        p.copy(stock = (p.stock - inCart.quantity).coerceAtLeast(0))
+      val totalOrderedForThisProduct = cartItems.filter { it.product.id == p.id }.sumOf { it.quantity }
+      if (totalOrderedForThisProduct > 0) {
+        p.copy(stock = (p.stock - totalOrderedForThisProduct).coerceAtLeast(0))
       } else {
         p
       }
@@ -496,6 +622,18 @@ class StoreRepository(private val context: Context) {
     _orders.value = listOf(newOrder) + _orders.value
 
     try {
+      val itemsMaps = newOrder.items.map {
+        mapOf(
+          "productId" to it.productId,
+          "name" to it.name,
+          "quantity" to it.quantity,
+          "price" to it.price,
+          "color" to it.color,
+          "size" to it.size,
+          "ageGroup" to it.ageGroup
+        )
+      }
+
       firestore?.collection("orders")?.document(newOrder.id)?.set(
         mapOf(
           "id" to newOrder.id,
@@ -505,6 +643,7 @@ class StoreRepository(private val context: Context) {
           "district" to newOrder.district,
           "thana" to newOrder.thana,
           "address" to newOrder.address,
+          "items" to itemsMaps,
           "subtotal" to newOrder.subtotal,
           "deliveryCharge" to newOrder.deliveryCharge,
           "discount" to newOrder.discount,
@@ -553,6 +692,53 @@ class StoreRepository(private val context: Context) {
     return tracking
   }
 
+  // Returns and Exchanges
+  fun addReturnRecord(record: ReturnRecord) {
+    _returns.value = listOf(record) + _returns.value
+
+    // Restock returned items if restock is true
+    record.returnedItems.forEach { retItem ->
+      if (retItem.restock) {
+        val prod = _products.value.find { it.id == retItem.productId || it.name == retItem.name }
+        if (prod != null) {
+          updateProduct(prod.copy(stock = prod.stock + retItem.quantity))
+        }
+      }
+    }
+
+    // Deduct exchange items from inventory stock
+    if (record.isExchange) {
+      record.exchangeItems.forEach { exItem ->
+        val prod = _products.value.find { it.id == exItem.productId }
+        if (prod != null) {
+          updateProduct(prod.copy(stock = maxOf(0, prod.stock - exItem.quantity)))
+        }
+      }
+    }
+
+    try {
+      firestore?.collection("returns")?.document(record.id)?.set(
+        mapOf(
+          "id" to record.id,
+          "orderId" to record.orderId,
+          "customerName" to record.customerName,
+          "phone" to record.phone,
+          "date" to record.date,
+          "totalReturnValue" to record.totalReturnValue,
+          "totalExchangeValue" to record.totalExchangeValue,
+          "deliveryFee" to record.deliveryFee,
+          "priceDifference" to record.priceDifference,
+          "differenceType" to record.differenceType,
+          "settlementMethod" to record.settlementMethod,
+          "settlementTrxId" to record.settlementTrxId,
+          "settlementStatus" to record.settlementStatus,
+          "reason" to record.reason,
+          "note" to record.note
+        )
+      )
+    } catch (e: Exception) {}
+  }
+
   // Product CRUD
   fun addProduct(product: Product) {
     _products.value = listOf(product) + _products.value
@@ -566,7 +752,10 @@ class StoreRepository(private val context: Context) {
           "category" to product.category,
           "imageUrl" to product.imageUrl,
           "sku" to product.sku,
-          "description" to product.description
+          "description" to product.description,
+          "colors" to product.colors,
+          "sizes" to product.sizes,
+          "ageGroups" to product.ageGroups
         )
       )
     } catch (e: Exception) {}
@@ -584,7 +773,10 @@ class StoreRepository(private val context: Context) {
           "category" to product.category,
           "imageUrl" to product.imageUrl,
           "sku" to product.sku,
-          "description" to product.description
+          "description" to product.description,
+          "colors" to product.colors,
+          "sizes" to product.sizes,
+          "ageGroups" to product.ageGroups
         ),
         SetOptions.merge()
       )

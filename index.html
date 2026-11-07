@@ -2004,6 +2004,9 @@
       const [returnNote, setReturnNote] = useState("");
       const [settlementPaymentMethod, setSettlementPaymentMethod] = useState("Cash"); // customer pays extra
       const [settlementRefundMethod, setSettlementRefundMethod] = useState("Cash"); // store refunds balance
+      const [exchangeDeliveryFee, setExchangeDeliveryFee] = useState(0); // optional delivery fee on exchange
+      const [settlementTrxId, setSettlementTrxId] = useState("");
+      const [settlementStatus, setSettlementStatus] = useState("paid"); // "paid" (পরিশোধিত) or "due" (বকেয়া)
       const [viewReturnSlip, setViewReturnSlip] = useState(null);
       const [returnSearchFilter, setReturnSearchFilter] = useState("");
 
@@ -2032,6 +2035,9 @@
         setReturnNote("");
         setSettlementPaymentMethod("Cash");
         setSettlementRefundMethod("Cash");
+        setExchangeDeliveryFee(0);
+        setSettlementTrxId("");
+        setSettlementStatus("paid");
         setIsReturnModalOpen(true);
       };
 
@@ -2146,6 +2152,17 @@
         }, 0);
       };
 
+      // Calculate Net Price Difference Settlement
+      // Positive: remaining balance to collect from customer
+      // Negative: remaining balance to refund to customer
+      // Zero: even exchange
+      const calculateNetPriceDifference = () => {
+        const retVal = calculateTotalReturnValue();
+        const exVal = calculateTotalExchangeValue();
+        const fee = Number(exchangeDeliveryFee) || 0;
+        return (exVal + fee) - retVal;
+      };
+
       // Execute and Confirm Sales Return & Exchange
       const handleConfirmReturnAndExchange = async () => {
         if (!returnOrder) {
@@ -2167,7 +2184,8 @@
 
         const returnTotal = calculateTotalReturnValue();
         const exchangeTotal = isExchange ? calculateTotalExchangeValue() : 0;
-        const priceDiff = isExchange ? (exchangeTotal - returnTotal) : (-returnTotal);
+        const deliveryFee = isExchange ? (Number(exchangeDeliveryFee) || 0) : 0;
+        const netDiff = isExchange ? ((exchangeTotal + deliveryFee) - returnTotal) : (-returnTotal);
 
         // Build list of returned products
         const returnedProductsList = selectedReturnIndices.map(idx => {
@@ -2240,13 +2258,16 @@
             sku: ei.product.sku || ""
           })) : [],
           totalExchangeValue: exchangeTotal,
-          priceDifference: priceDiff,
+          exchangeDeliveryFee: deliveryFee,
+          priceDifference: netDiff,
           differenceType: isExchange 
-            ? (priceDiff > 0 ? "customer_paid_extra" : priceDiff < 0 ? "customer_refunded_balance" : "even_exchange")
+            ? (netDiff > 0 ? "customer_paid_extra" : netDiff < 0 ? "customer_refunded_balance" : "even_exchange")
             : "full_refund",
           settlementMethod: isExchange 
-            ? (priceDiff > 0 ? settlementPaymentMethod : priceDiff < 0 ? settlementRefundMethod : "সমমূল্য")
+            ? (netDiff > 0 ? settlementPaymentMethod : netDiff < 0 ? settlementRefundMethod : "সমমূল্য")
             : returnRefundMethod,
+          settlementTrxId: settlementTrxId.trim(),
+          settlementStatus: netDiff > 0 ? settlementStatus : "completed",
           reason: returnReason || "পণ্য পরিবর্তন / অপছন্দ",
           note: returnNote || ""
         };
@@ -2275,7 +2296,14 @@
 
         setIsReturnModalOpen(false);
         setViewReturnSlip(record);
-        notify(`🎉 সেলস রিটার্ন ও এক্সচেঞ্জ সফল হয়েছে! মেমো নং: #${record.id} 📄`);
+        const settlementMsg = isExchange
+          ? (netDiff > 0
+              ? `কাস্টমার থেকে +৳${netDiff} গ্রহণ করা হয়েছে (${settlementPaymentMethod})`
+              : netDiff < 0
+              ? `কাস্টমারকে ৳${Math.abs(netDiff)} ফেরত দেওয়া হয়েছে (${settlementRefundMethod})`
+              : `সমমূল্য পণ্য বিনিময় (০ ৳ ব্যালেন্স)`)
+          : `কাস্টমারকে ৳${returnTotal} রিফান্ড দেওয়া হয়েছে (${returnRefundMethod})`;
+        notify(`🎉 সেলস রিটার্ন ও এক্সচেঞ্জ সফল হয়েছে! মেমো: #${record.id} • ${settlementMsg} 📄`);
       };
 
       // Print Sales Return & Exchange Memo Window
@@ -2398,7 +2426,7 @@
 
               <div class="summary-box">
                 <div class="flex-row">
-                  <span>মোট রিটার্ন পণ্যের মূল্য:</span>
+                  <span>ফেরত পণ্যের মোট জমা ক্রেডিট:</span>
                   <b>৳${record.totalReturnValue}</b>
                 </div>
                 ${record.isExchange ? `
@@ -2406,18 +2434,28 @@
                     <span>নতুন এক্সচেঞ্জ পণ্যের মূল্য:</span>
                     <b>৳${record.totalExchangeValue}</b>
                   </div>
+                  ${record.exchangeDeliveryFee > 0 ? `
+                    <div class="flex-row" style="color: #666; font-size: 11px;">
+                      <span>এক্সচেঞ্জ কুরিয়ার/ডেলিভারি ফি:</span>
+                      <b>+ ৳${record.exchangeDeliveryFee}</b>
+                    </div>
+                  ` : ''}
                   ${record.differenceType === "customer_paid_extra" ? `
-                    <div class="flex-row highlight-row" style="color: #c2410c;">
-                      <span>⚠️ কাস্টমার থেকে অতিরিক্ত গ্রহণ (${record.settlementMethod}):</span>
+                    <div class="flex-row highlight-row" style="color: #c2410c; background: #fff3e0; padding: 6px 8px; border-radius: 6px; margin-top: 6px;">
+                      <span>⚠️ কাস্টমার থেকে অবশিষ্ট আদায়যোগ্য (${record.settlementMethod}):</span>
                       <span>+ ৳${record.priceDifference}</span>
                     </div>
+                    ${record.settlementTrxId ? `<div style="font-size: 11px; color: #7a1c2b; margin-top: 4px;">লেনদেন TrxID/রেফারেন্স: <b>${record.settlementTrxId}</b></div>` : ''}
+                    <div style="font-size: 11px; color: #555; margin-top: 2px;">সংগ্রহ স্ট্যাটাস: <b>${record.settlementStatus === 'due' ? 'ডেলিভারিতে সংগ্রহযোগ্য (বকেয়া)' : 'পরিশোধ সংগৃহীত (Paid)'}</b></div>
                   ` : record.differenceType === "customer_refunded_balance" ? `
-                    <div class="flex-row highlight-row" style="color: #047857;">
+                    <div class="flex-row highlight-row" style="color: #047857; background: #ecfdf5; padding: 6px 8px; border-radius: 6px; margin-top: 6px;">
                       <span>💵 কাস্টমারকে বাকি টাকা ফেরত প্রদান (${record.settlementMethod}):</span>
                       <span>- ৳${Math.abs(record.priceDifference)}</span>
                     </div>
+                    ${record.settlementTrxId ? `<div style="font-size: 11px; color: #047857; margin-top: 4px;">অ্যাকাউন্ট / রেফারেন্স: <b>${record.settlementTrxId}</b></div>` : ''}
+                    <div style="font-size: 11px; color: #555; margin-top: 2px;">ফেরত স্ট্যাটাস: <b>সমন্বয় সম্পন্ন</b></div>
                   ` : `
-                    <div class="flex-row highlight-row" style="color: #1d4ed8;">
+                    <div class="flex-row highlight-row" style="color: #1d4ed8; background: #eff6ff; padding: 6px 8px; border-radius: 6px; margin-top: 6px;">
                       <span>✅ সমমূল্যের এক্সচেঞ্জ সমন্বয় (ব্যালেন্স):</span>
                       <span>৳০</span>
                     </div>
@@ -13636,117 +13674,232 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               </div>
 
                               {/* PRICE DIFFERENCE CALCULATION & SETTLEMENT */}
-                              {exchangeItems.length > 0 && (
-                                <div className="space-y-3 pt-3 border-t-2 border-orange-300">
-                                  <h5 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">
-                                    ৪. মূল্য পার্থক্য ও সমন্বয় হিসাব (Price Difference Settlement):
-                                  </h5>
+                              {exchangeItems.length > 0 && (() => {
+                                const retTotal = calculateTotalReturnValue();
+                                const exchTotal = calculateTotalExchangeValue();
+                                const fee = Number(exchangeDeliveryFee) || 0;
+                                const netBalance = (exchTotal + fee) - retTotal;
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                    <div className="bg-white p-3 rounded-2xl border border-amber-300 flex justify-between items-center">
-                                      <span className="text-gray-600 font-semibold">রিটার্ন পণ্যের মূল্য:</span>
-                                      <span className="font-bold text-[#7a1c2b] text-sm">৳{calculateTotalReturnValue()}</span>
+                                return (
+                                <div className="space-y-3 pt-3 border-t-2 border-orange-300">
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <h5 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                                      <span>⚖️</span>
+                                      <span>৪. মূল্য পার্থক্য ও সমন্বয় হিসাব (Price Difference Settlement):</span>
+                                    </h5>
+                                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-[#bf360c] border border-orange-200">
+                                      স্বয়ংক্রিয় ব্যালেন্স সমন্বয়
+                                    </span>
+                                  </div>
+
+                                  {/* Settlement Breakdown Cards */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                                    <div className="bg-white p-3 rounded-2xl border border-rose-200 shadow-xs flex flex-col justify-between">
+                                      <span className="text-gray-500 font-semibold flex items-center gap-1">
+                                        <span>↩️</span> ফেরত পণ্যের জমা ক্রেডিট:
+                                      </span>
+                                      <span className="font-extrabold text-[#7a1c2b] text-base mt-1">৳{retTotal}</span>
                                     </div>
-                                    <div className="bg-white p-3 rounded-2xl border border-orange-300 flex justify-between items-center">
-                                      <span className="text-gray-600 font-semibold">নতুন এক্সচেঞ্জ পণ্যের মূল্য:</span>
-                                      <span className="font-bold text-[#e65100] text-sm">৳{calculateTotalExchangeValue()}</span>
+                                    <div className="bg-white p-3 rounded-2xl border border-orange-200 shadow-xs flex flex-col justify-between">
+                                      <span className="text-gray-500 font-semibold flex items-center gap-1">
+                                        <span>🔄</span> নতুন এক্সচেঞ্জ পণ্যের মূল্য:
+                                      </span>
+                                      <span className="font-extrabold text-[#e65100] text-base mt-1">৳{exchTotal}</span>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-2xl border border-amber-200 shadow-xs flex flex-col justify-between">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-gray-500 font-semibold flex items-center gap-1">
+                                          <span>🚚</span> এক্সচেঞ্জ ডেলিভারি ফি:
+                                        </span>
+                                        <span className="font-bold text-amber-900 text-xs">+ ৳{fee}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 mt-1">
+                                        {[0, 60, 120].map(amt => (
+                                          <button
+                                            key={amt}
+                                            type="button"
+                                            onClick={() => setExchangeDeliveryFee(amt)}
+                                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition border ${
+                                              fee === amt ? "bg-amber-600 text-white border-amber-700" : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                                            }`}
+                                          >
+                                            {amt === 0 ? "ফ্রি (৳০)" : `৳${amt}`}
+                                          </button>
+                                        ))}
+                                      </div>
                                     </div>
                                   </div>
 
                                   {/* CASE 1: EXCHANGE VALUE > RETURN VALUE (Customer pays extra) */}
-                                  {calculateTotalExchangeValue() > calculateTotalReturnValue() && (
-                                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-100 border-2 border-amber-500 rounded-3xl space-y-3 shadow-sm">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-2xl">⚠️</span>
+                                  {netBalance > 0 && (
+                                    <div className="p-4 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100 border-2 border-amber-500 rounded-3xl space-y-3.5 shadow-md">
+                                      <div className="flex items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5">
+                                          <span className="text-3xl p-1.5 bg-amber-200/60 rounded-2xl">⚠️</span>
+                                          <div>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded-md">
+                                              নতুন পণ্যের মূল্য বেশি • অবশিষ্ট আদায়যোগ্য
+                                            </span>
+                                            <h4 className="font-black text-base sm:text-lg text-amber-950 mt-0.5">
+                                              কাস্টমার থেকে অবশিষ্ট আদায় করতে হবে: + ৳{netBalance}
+                                            </h4>
+                                            <p className="text-xs text-amber-900/80 mt-0.5">
+                                              হিসাব: [নতুন পণ্য ৳{exchTotal} {fee > 0 ? `+ ডেলিভারি ৳${fee}` : ''}] - [ফেরত পণ্য ক্রেডিট ৳{retTotal}] = অবশিষ্ট <b>+ ৳{netBalance}</b>
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <span className="font-mono text-xl sm:text-2xl font-black text-[#bf360c] bg-white px-3.5 py-1.5 rounded-2xl border-2 border-amber-400 shadow-sm shrink-0">
+                                          + ৳{netBalance}
+                                        </span>
+                                      </div>
+
+                                      <div className="pt-2.5 border-t border-amber-300 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                         <div>
-                                          <h4 className="font-black text-sm sm:text-base text-amber-900">
-                                            কাস্টমার থেকে অতিরিক্ত নিতে হবে: + ৳{calculateTotalExchangeValue() - calculateTotalReturnValue()}
-                                          </h4>
-                                          <p className="text-xs text-amber-800">
-                                            নতুন এক্সচেঞ্জ পণ্যের মূল্য বেশি হওয়ায় কাস্টমারকে এই অবশিষ্ট অতিরিক্ত টাকা প্রদান করতে হবে।
-                                          </p>
+                                          <span className="font-bold text-amber-950 block mb-1.5">
+                                            অতিরিক্ত টাকা সংগ্রহের মাধ্যম (Payment Method):
+                                          </span>
+                                          <div className="flex gap-1.5 flex-wrap">
+                                            {["Cash", "bKash", "Nagad", "Card", "POS"].map(m => (
+                                              <button
+                                                key={m}
+                                                type="button"
+                                                onClick={() => setSettlementPaymentMethod(m)}
+                                                className={`px-3 py-1.5 rounded-xl font-bold transition border ${
+                                                  settlementPaymentMethod === m
+                                                    ? "bg-[#e65100] text-white border-[#bf360c] shadow-xs"
+                                                    : "bg-white text-gray-700 border-amber-300 hover:bg-amber-100"
+                                                }`}
+                                              >
+                                                {m === "Cash" ? "💵 ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : m === "Card" ? "💳 কার্ড" : "🏧 POS"}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+
+                                        <div>
+                                          <span className="font-bold text-amber-950 block mb-1.5">
+                                            ট্রানজেকশন আইডি / রেফারেন্স নম্বর:
+                                          </span>
+                                          <input
+                                            type="text"
+                                            placeholder="যেমন: bKash TrxID বা ক্যাশ মেমো..."
+                                            value={settlementTrxId}
+                                            onChange={(e) => setSettlementTrxId(e.target.value)}
+                                            className="w-full bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-[#e65100]"
+                                          />
                                         </div>
                                       </div>
 
-                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 pt-2 border-t border-amber-300 text-xs">
-                                        <span className="font-bold text-amber-950 whitespace-nowrap">
-                                          অতিরিক্ত টাকা সংগ্রহের মাধ্যম:
-                                        </span>
-                                        <div className="flex gap-2 flex-wrap">
-                                          {["Cash", "bKash", "Nagad", "Card"].map(m => (
-                                            <button
-                                              key={m}
-                                              type="button"
-                                              onClick={() => setSettlementPaymentMethod(m)}
-                                              className={`px-3 py-1.5 rounded-xl font-bold transition border ${
-                                                settlementPaymentMethod === m
-                                                  ? "bg-[#e65100] text-white border-[#bf360c] shadow-xs"
-                                                  : "bg-white text-gray-700 border-amber-300 hover:bg-amber-100"
-                                              }`}
-                                            >
-                                              {m === "Cash" ? "💵 ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : "💳 কার্ড"}
-                                            </button>
-                                          ))}
+                                      <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200">
+                                        <span className="text-amber-900 font-semibold">সংগ্রহ স্ট্যাটাস:</span>
+                                        <div className="flex gap-3">
+                                          <label className="flex items-center gap-1 cursor-pointer font-bold text-emerald-800">
+                                            <input
+                                              type="radio"
+                                              name="settlementStatus"
+                                              checked={settlementStatus === "paid"}
+                                              onChange={() => setSettlementStatus("paid")}
+                                            />
+                                            পরিশোধ সংগৃহীত (Paid)
+                                          </label>
+                                          <label className="flex items-center gap-1 cursor-pointer font-bold text-amber-800">
+                                            <input
+                                              type="radio"
+                                              name="settlementStatus"
+                                              checked={settlementStatus === "due"}
+                                              onChange={() => setSettlementStatus("due")}
+                                            />
+                                            ডেলিভারিতে আদায়যোগ্য (Due)
+                                          </label>
                                         </div>
                                       </div>
                                     </div>
                                   )}
 
                                   {/* CASE 2: EXCHANGE VALUE < RETURN VALUE (Store refunds customer) */}
-                                  {calculateTotalExchangeValue() < calculateTotalReturnValue() && (
-                                    <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-100 border-2 border-emerald-500 rounded-3xl space-y-3 shadow-sm">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-2xl">💵</span>
-                                        <div>
-                                          <h4 className="font-black text-sm sm:text-base text-emerald-900">
-                                            কাস্টমারকে বাকি টাকা ফেরত দিতে হবে: ৳{calculateTotalReturnValue() - calculateTotalExchangeValue()}
-                                          </h4>
-                                          <p className="text-xs text-emerald-800">
-                                            নতুন এক্সচেঞ্জ পণ্যের মূল্য কম হওয়ায় কাস্টমারের প্রাপ্য বাকি টাকা ফেরত দিন অথবা স্টোর ক্রেডিটে জমা রাখুন।
-                                          </p>
+                                  {netBalance < 0 && (
+                                    <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-green-100 border-2 border-emerald-500 rounded-3xl space-y-3.5 shadow-md">
+                                      <div className="flex items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5">
+                                          <span className="text-3xl p-1.5 bg-emerald-200/60 rounded-2xl">💵</span>
+                                          <div>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-2 py-0.5 rounded-md">
+                                              নতুন পণ্যের মূল্য কম • বাকি টাকা ফেরতযোগ্য
+                                            </span>
+                                            <h4 className="font-black text-base sm:text-lg text-emerald-950 mt-0.5">
+                                              কাস্টমারকে বাকি টাকা ফেরত দিতে হবে: ৳{Math.abs(netBalance)}
+                                            </h4>
+                                            <p className="text-xs text-emerald-900/80 mt-0.5">
+                                              হিসাব: [ফেরত পণ্য ক্রেডিট ৳{retTotal}] - [নতুন পণ্য ৳{exchTotal} {fee > 0 ? `+ ডেলিভারি ৳${fee}` : ''}] = ফেরতযোগ্য <b>৳{Math.abs(netBalance)}</b>
+                                            </p>
+                                          </div>
                                         </div>
+                                        <span className="font-mono text-xl sm:text-2xl font-black text-emerald-700 bg-white px-3.5 py-1.5 rounded-2xl border-2 border-emerald-400 shadow-sm shrink-0">
+                                          - ৳{Math.abs(netBalance)}
+                                        </span>
                                       </div>
 
-                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 pt-2 border-t border-emerald-300 text-xs">
-                                        <span className="font-bold text-emerald-950 whitespace-nowrap">
-                                          বাকি টাকা ফেরত দেওয়ার মাধ্যম:
-                                        </span>
-                                        <div className="flex gap-2 flex-wrap">
-                                          {["Cash", "bKash", "Nagad", "Credit"].map(m => (
-                                            <button
-                                              key={m}
-                                              type="button"
-                                              onClick={() => setSettlementRefundMethod(m)}
-                                              className={`px-3 py-1.5 rounded-xl font-bold transition border ${
-                                                settlementRefundMethod === m
-                                                  ? "bg-emerald-700 text-white border-emerald-900 shadow-xs"
-                                                  : "bg-white text-gray-700 border-emerald-300 hover:bg-emerald-100"
-                                              }`}
-                                            >
-                                              {m === "Cash" ? "💵 নগদ ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : "💳 দোকান জমা (Credit)"}
-                                            </button>
-                                          ))}
+                                      <div className="pt-2.5 border-t border-emerald-300 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                        <div>
+                                          <span className="font-bold text-emerald-950 block mb-1.5">
+                                            বাকি টাকা ফেরত দেওয়ার মাধ্যম:
+                                          </span>
+                                          <div className="flex gap-1.5 flex-wrap">
+                                            {["Cash", "bKash", "Nagad", "Credit"].map(m => (
+                                              <button
+                                                key={m}
+                                                type="button"
+                                                onClick={() => setSettlementRefundMethod(m)}
+                                                className={`px-3 py-1.5 rounded-xl font-bold transition border ${
+                                                  settlementRefundMethod === m
+                                                    ? "bg-emerald-700 text-white border-emerald-900 shadow-xs"
+                                                    : "bg-white text-gray-700 border-emerald-300 hover:bg-emerald-100"
+                                                }`}
+                                              >
+                                                {m === "Cash" ? "💵 নগদ ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : "💳 দোকান জমা (Credit)"}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+
+                                        <div>
+                                          <span className="font-bold text-emerald-950 block mb-1.5">
+                                            রিফান্ড রেফারেন্স / ওয়ালেট নোট:
+                                          </span>
+                                          <input
+                                            type="text"
+                                            placeholder="যেমন: কাস্টমারের বিকাশ/নগদ নম্বর বা রসিদ..."
+                                            value={settlementTrxId}
+                                            onChange={(e) => setSettlementTrxId(e.target.value)}
+                                            className="w-full bg-white border border-emerald-300 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-emerald-600"
+                                          />
                                         </div>
                                       </div>
                                     </div>
                                   )}
 
                                   {/* CASE 3: EXCHANGE VALUE == RETURN VALUE (Even exchange) */}
-                                  {calculateTotalExchangeValue() === calculateTotalReturnValue() && (
-                                    <div className="p-4 bg-blue-50 border-2 border-blue-400 rounded-3xl flex items-center gap-2.5 text-xs text-blue-900 shadow-sm">
-                                      <span className="text-2xl">✅</span>
-                                      <div>
-                                        <p className="font-extrabold text-sm text-blue-950">
-                                          সমমূল্যের পণ্য এক্সচেঞ্জ (০ ৳ অতিরিক্ত লেনদেন)
-                                        </p>
-                                        <p className="text-blue-700">
-                                          রিটার্ন করা পণ্য ও নতুন এক্সচেঞ্জ পণ্যের মূল্য সমান হওয়ায় কোনো অতিরিক্ত টাকা লেনদেনের প্রয়োজন নেই।
-                                        </p>
+                                  {netBalance === 0 && (
+                                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-3xl flex items-center justify-between gap-3 text-xs shadow-sm">
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-3xl p-1 bg-blue-100 rounded-2xl">✅</span>
+                                        <div>
+                                          <p className="font-extrabold text-sm sm:text-base text-blue-950">
+                                            সমমূল্য পণ্য বিনিময় (০ ৳ অতিরিক্ত লেনদেন)
+                                          </p>
+                                          <p className="text-blue-700 mt-0.5">
+                                            ফেরত করা পণ্য (৳{retTotal}) এবং নতুন এক্সচেঞ্জ পণ্যের মূল্য {fee > 0 ? `+ ডেলিভারি (৳${exchTotal + fee})` : `(৳${exchTotal})`} পুরোপুরি সমান। কোনো অতিরিক্ত লেনদেন নেই।
+                                          </p>
+                                        </div>
                                       </div>
+                                      <span className="font-mono text-lg font-black text-blue-700 bg-white px-3 py-1 rounded-xl border border-blue-200">
+                                        ৳০ ব্যালেন্স
+                                      </span>
                                     </div>
                                   )}
                                 </div>
-                              )}
+                                );
+                              })()}
                             </div>
                           )}
 
@@ -13900,6 +14053,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                           </p>
                                         ))}
                                         <div className="mt-1 pt-1 border-t border-amber-200">
+                                          {ret.exchangeDeliveryFee > 0 && (
+                                            <p className="text-[10px] text-gray-500 mb-0.5">ডেলিভারি ফি: + ৳{ret.exchangeDeliveryFee}</p>
+                                          )}
                                           {ret.differenceType === "customer_paid_extra" ? (
                                             <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md inline-block">
                                               + ৳{ret.priceDifference} অতিরিক্ত গ্রহণ ({ret.settlementMethod})
@@ -13942,21 +14098,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <span className="font-black text-sm sm:text-base text-gray-900">
                           {Object.keys(returnItemsSelection).filter(idx => returnItemsSelection[idx]?.selected).length} টি আইটেম • মোট ফেরত মূল্য: ৳{calculateTotalReturnValue()}
                         </span>
-                        {returnRefundMethod === "exchange" && exchangeItems.length > 0 && (
+                        {returnRefundMethod === "exchange" && exchangeItems.length > 0 && (() => {
+                          const netDiff = calculateNetPriceDifference();
+                          return (
                           <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
-                            calculateTotalExchangeValue() > calculateTotalReturnValue()
+                            netDiff > 0
                               ? "bg-amber-600 text-white"
-                              : calculateTotalExchangeValue() < calculateTotalReturnValue()
+                              : netDiff < 0
                               ? "bg-emerald-600 text-white"
                               : "bg-blue-600 text-white"
                           }`}>
-                            {calculateTotalExchangeValue() > calculateTotalReturnValue()
-                              ? `কাস্টমার থেকে +৳${calculateTotalExchangeValue() - calculateTotalReturnValue()} নিতে হবে`
-                              : calculateTotalExchangeValue() < calculateTotalReturnValue()
-                              ? `কাস্টমারকে -৳${calculateTotalReturnValue() - calculateTotalExchangeValue()} ফেরত দিতে হবে`
-                              : "সমমূল্য (০ ৳)"}
+                            {netDiff > 0
+                              ? `কাস্টমার থেকে +৳${netDiff} আদায়যোগ্য (${settlementPaymentMethod})`
+                              : netDiff < 0
+                              ? `কাস্টমারকে ৳${Math.abs(netDiff)} ফেরতযোগ্য (${settlementRefundMethod})`
+                              : "সমমূল্য (০ ৳ ব্যালেন্স)"}
                           </span>
-                        )}
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -14042,25 +14201,44 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 )}
 
-                <div className="p-3.5 rounded-2xl border text-xs space-y-1 bg-amber-50 border-amber-300">
+                <div className="p-3.5 rounded-2xl border text-xs space-y-2 bg-amber-50 border-amber-300">
+                  {viewReturnSlip.isExchange && viewReturnSlip.exchangeDeliveryFee > 0 && (
+                    <div className="flex justify-between text-gray-600 font-semibold text-xs border-b border-amber-200 pb-1">
+                      <span>এক্সচেঞ্জ ডেলিভারি ফি:</span>
+                      <span>+ ৳{viewReturnSlip.exchangeDeliveryFee}</span>
+                    </div>
+                  )}
+
                   {viewReturnSlip.differenceType === "customer_paid_extra" ? (
-                    <div className="flex justify-between font-black text-amber-900 text-sm">
-                      <span>⚠️ কাস্টমার থেকে অতিরিক্ত গ্রহণ ({viewReturnSlip.settlementMethod}):</span>
-                      <span>+ ৳{viewReturnSlip.priceDifference}</span>
+                    <div className="space-y-1">
+                      <div className="flex justify-between font-black text-amber-950 text-sm">
+                        <span>⚠️ কাস্টমার থেকে অবশিষ্ট আদায় ({viewReturnSlip.settlementMethod}):</span>
+                        <span className="text-[#bf360c]">+ ৳{viewReturnSlip.priceDifference}</span>
+                      </div>
+                      {viewReturnSlip.settlementTrxId && (
+                        <p className="text-[11px] text-[#7a1c2b] font-medium">TrxID / রেফারেন্স: <b>{viewReturnSlip.settlementTrxId}</b></p>
+                      )}
+                      <p className="text-[11px] text-gray-500">সংগ্রহ স্ট্যাটাস: <b>{viewReturnSlip.settlementStatus === "due" ? "ডেলিভারিতে আদায়যোগ্য (বকেয়া)" : "পরিশোধ সংগৃহীত"}</b></p>
                     </div>
                   ) : viewReturnSlip.differenceType === "customer_refunded_balance" ? (
-                    <div className="flex justify-between font-black text-emerald-900 text-sm">
-                      <span>💵 কাস্টমারকে বাকি টাকা ফেরত প্রদান ({viewReturnSlip.settlementMethod}):</span>
-                      <span>- ৳{Math.abs(viewReturnSlip.priceDifference)}</span>
+                    <div className="space-y-1">
+                      <div className="flex justify-between font-black text-emerald-950 text-sm">
+                        <span>💵 কাস্টমারকে বাকি টাকা ফেরত ({viewReturnSlip.settlementMethod}):</span>
+                        <span className="text-emerald-700">- ৳{Math.abs(viewReturnSlip.priceDifference)}</span>
+                      </div>
+                      {viewReturnSlip.settlementTrxId && (
+                        <p className="text-[11px] text-emerald-800 font-medium">অ্যাকাউন্ট / রেফারেন্স: <b>{viewReturnSlip.settlementTrxId}</b></p>
+                      )}
+                      <p className="text-[11px] text-gray-500">স্ট্যাটাস: <b>রিফান্ড সমন্বয় সম্পন্ন</b></p>
                     </div>
                   ) : (
                     <div className="flex justify-between font-black text-blue-900 text-sm">
-                      <span>✅ সমমূল্যের এক্সচেঞ্জ সমন্বয়:</span>
+                      <span>✅ সমমূল্য এক্সচেঞ্জ সমন্বয়:</span>
                       <span>৳০ ব্যালেন্স</span>
                     </div>
                   )}
                   {viewReturnSlip.note && (
-                    <p className="text-[11px] text-gray-600 italic pt-1">নোট: "{viewReturnSlip.note}"</p>
+                    <p className="text-[11px] text-gray-600 italic pt-1 border-t border-amber-200">নোট: "{viewReturnSlip.note}"</p>
                   )}
                 </div>
 

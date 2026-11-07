@@ -12,6 +12,7 @@ import com.example.data.model.Order
 import com.example.data.model.PixelConfig
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
+import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.example.data.repository.StoreRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,6 +35,7 @@ enum class AdminTab(val title: String, val icon: String) {
   DASHBOARD("ড্যাশবোর্ড", "📊"),
   PRODUCTS("পণ্যসমূহ", "👗"),
   ORDERS("অর্ডার", "📦"),
+  RETURNS("রিটার্ন ও এক্সচেঞ্জ", "🔄"),
   CATEGORIES("ক্যাটাগরি", "🏷️"),
   COUPONS("কুপন", "🎟️"),
   COURIER("কুরিয়ার", "🚚"),
@@ -50,6 +52,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val categories: StateFlow<List<Category>> = repository.categories
   val cart: StateFlow<List<CartItem>> = repository.cart
   val orders: StateFlow<List<Order>> = repository.orders
+  val returns: StateFlow<List<ReturnRecord>> = repository.returns
   val coupons: StateFlow<List<Coupon>> = repository.coupons
   val banners: StateFlow<List<BannerItem>> = repository.banners
   val storeConfig: StateFlow<StoreConfig> = repository.storeConfig
@@ -161,21 +164,44 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     emitToast("অ্যাডমিন প্যানেল থেকে লগআউট সম্পন্ন হয়েছে।")
   }
 
-  fun addToCart(product: Product, quantity: Int = 1) {
-    val success = repository.addToCart(product, quantity)
+  fun addToCart(
+    product: Product,
+    quantity: Int = 1,
+    color: String = "",
+    size: String = "",
+    ageGroup: String = ""
+  ) {
+    val success = repository.addToCart(
+      product = product,
+      quantity = quantity,
+      color = color,
+      size = size,
+      ageGroup = ageGroup
+    )
     if (success) {
-      emitToast("\"${product.name}\" কার্টে যোগ করা হয়েছে! 🛒")
+      val variantText = listOfNotNull(
+        if (color.isNotBlank()) "কালার: $color" else null,
+        if (size.isNotBlank()) "সাইজ: $size" else null,
+        if (ageGroup.isNotBlank()) "বয়স: $ageGroup" else null
+      ).joinToString(" | ")
+
+      val toastMsg = if (variantText.isNotBlank()) {
+        "\"${product.name}\" ($variantText) কার্টে যোগ করা হয়েছে! 🛒"
+      } else {
+        "\"${product.name}\" কার্টে যোগ করা হয়েছে! 🛒"
+      }
+      emitToast(toastMsg)
     } else {
       emitToast("দুঃখিত, এই পণ্যটি স্টক আউট!")
     }
   }
 
-  fun updateCartQty(productId: String, delta: Int) {
-    repository.updateCartQuantity(productId, delta)
+  fun updateCartQty(itemKey: String, delta: Int) {
+    repository.updateCartQuantity(itemKey, delta)
   }
 
-  fun removeFromCart(productId: String) {
-    repository.removeFromCart(productId)
+  fun removeFromCart(itemKey: String) {
+    repository.removeFromCart(itemKey)
     emitToast("পণ্যটি কার্ট থেকে সরানো হয়েছে।")
   }
 
@@ -235,6 +261,22 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun dispatchCourier(orderId: String, provider: String) {
     val tracking = repository.dispatchToCourier(orderId, provider)
     emitToast("অর্ডার $orderId $provider-এ ডিসপ্যাচ করা হয়েছে! ট্র্যাকিং: $tracking 🚚")
+  }
+
+  fun addReturnRecord(record: ReturnRecord) {
+    repository.addReturnRecord(record)
+    val settlementMsg = if (record.isExchange) {
+      if (record.priceDifference > 0) {
+        "কাস্টমার থেকে +৳${record.priceDifference} আদায়যোগ্য (${record.settlementMethod})"
+      } else if (record.priceDifference < 0) {
+        "কাস্টমারকে ৳${kotlin.math.abs(record.priceDifference)} ফেরতযোগ্য (${record.settlementMethod})"
+      } else {
+        "সমমূল্য পণ্য বিনিময় (০ ৳ ব্যালেন্স)"
+      }
+    } else {
+      "কাস্টমারকে ৳${record.totalReturnValue} ফেরত (${record.settlementMethod})"
+    }
+    emitToast("🎉 রিটার্ন ও এক্সচেঞ্জ মেমো #${record.id} তৈরি হয়েছে! $settlementMsg")
   }
 
   fun addProduct(product: Product) {

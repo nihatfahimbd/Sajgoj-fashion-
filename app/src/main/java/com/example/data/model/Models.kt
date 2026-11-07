@@ -11,7 +11,10 @@ data class Product(
   val description: String,
   val rating: Float = 4.8f,
   val reviewsCount: Int = 18,
-  val sourceUrl: String = ""
+  val sourceUrl: String = "",
+  val colors: List<String> = emptyList(),
+  val sizes: List<String> = emptyList(),
+  val ageGroups: List<String> = emptyList()
 )
 
 data class Category(
@@ -22,14 +25,22 @@ data class Category(
 
 data class CartItem(
   val product: Product,
-  val quantity: Int
-)
+  val quantity: Int,
+  val selectedColor: String = "",
+  val selectedSize: String = "",
+  val selectedAgeGroup: String = ""
+) {
+  val itemKey: String get() = "${product.id}_${selectedColor}_${selectedSize}_${selectedAgeGroup}"
+}
 
 data class OrderItem(
   val productId: String,
   val name: String,
   val quantity: Int,
-  val price: Int
+  val price: Int,
+  val color: String = "",
+  val size: String = "",
+  val ageGroup: String = ""
 )
 
 data class Order(
@@ -124,5 +135,47 @@ data class ComboPack(
   val savings: Int = 0,
   val isActive: Boolean = true,
   val stock: Int = 5
+)
+
+data class ReturnItem(
+  val productId: String,
+  val name: String,
+  val price: Int,
+  val quantity: Int,
+  val condition: String = "ভালো (বিক্রিযোগ্য)",
+  val restock: Boolean = true,
+  val color: String = "",
+  val size: String = ""
+)
+
+data class ExchangeItem(
+  val productId: String,
+  val name: String,
+  val price: Int,
+  val quantity: Int,
+  val color: String = "",
+  val size: String = "",
+  val sku: String = ""
+)
+
+data class ReturnRecord(
+  val id: String,
+  val orderId: String,
+  val customerName: String,
+  val phone: String,
+  val date: String,
+  val returnedItems: List<ReturnItem>,
+  val totalReturnValue: Int,
+  val isExchange: Boolean,
+  val exchangeItems: List<ExchangeItem> = emptyList(),
+  val totalExchangeValue: Int = 0,
+  val deliveryFee: Int = 0,
+  val priceDifference: Int = 0, // (totalExchangeValue + deliveryFee) - totalReturnValue
+  val differenceType: String = "even_exchange", // customer_paid_extra, customer_refunded_balance, even_exchange, full_refund
+  val settlementMethod: String = "Cash",
+  val settlementTrxId: String = "",
+  val settlementStatus: String = "paid",
+  val reason: String = "পণ্য পরিবর্তন / অপছন্দ",
+  val note: String = ""
 )
 

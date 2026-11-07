@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -75,10 +76,14 @@ fun ProductDetailDialog(
   product: Product,
   reviews: List<ProductReview> = emptyList(),
   onDismiss: () -> Unit,
-  onAddToCart: (Product, Int) -> Unit,
+  onAddToCart: (Product, Int, String, String, String) -> Unit,
   onAddReview: (rating: Int, customerName: String, comment: String) -> Unit = { _, _, _ -> }
 ) {
   var quantity by remember { mutableIntStateOf(1) }
+  var selectedColor by remember { mutableStateOf(product.colors.firstOrNull() ?: "") }
+  var selectedSize by remember { mutableStateOf(product.sizes.firstOrNull() ?: "") }
+  var selectedAgeGroup by remember { mutableStateOf(product.ageGroups.firstOrNull() ?: "") }
+  var selectionError by remember { mutableStateOf<String?>(null) }
 
   // Review Form States
   var isReviewFormOpen by remember { mutableStateOf(false) }
@@ -236,6 +241,237 @@ fun ProductDetailDialog(
             )
           }
 
+          // ------------------------------------------
+          // COLOR SELECTION (যদি কালার অপশন থাকে)
+          // ------------------------------------------
+          if (product.colors.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(
+                  text = "কালার নির্বাচন করুন:",
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon
+                )
+                if (selectedColor.isNotBlank()) {
+                  Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = CreamSurface,
+                    border = BorderStroke(1.dp, BorderGold)
+                  ) {
+                    Text(
+                      text = selectedColor,
+                      fontSize = 11.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = DarkEspresso,
+                      modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                  }
+                }
+              }
+
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(top = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                product.colors.forEach { col ->
+                  val isSelected = selectedColor == col
+                  Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) RoyalMaroon else CreamSurface,
+                    border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+                    modifier = Modifier
+                      .clickable {
+                        selectedColor = col
+                        selectionError = null
+                      }
+                      .testTag("color_option_$col")
+                  ) {
+                    Row(
+                      modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                      if (isSelected) {
+                        Icon(
+                          imageVector = Icons.Default.CheckCircle,
+                          contentDescription = null,
+                          tint = Color.White,
+                          modifier = Modifier.size(13.dp)
+                        )
+                      }
+                      Text(
+                        text = col,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) Color.White else DarkEspresso
+                      )
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // ------------------------------------------
+          // SIZE SELECTION (যদি সাইজ অপশন থাকে)
+          // ------------------------------------------
+          if (product.sizes.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(
+                  text = "সাইজ নির্বাচন করুন:",
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon
+                )
+                if (selectedSize.isNotBlank()) {
+                  Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = CreamSurface,
+                    border = BorderStroke(1.dp, BorderGold)
+                  ) {
+                    Text(
+                      text = selectedSize,
+                      fontSize = 11.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = DarkEspresso,
+                      modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                  }
+                }
+              }
+
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(top = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                product.sizes.forEach { sz ->
+                  val isSelected = selectedSize == sz
+                  Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) DarkEspresso else Color.White,
+                    border = BorderStroke(1.dp, if (isSelected) DarkEspresso else BorderGold),
+                    modifier = Modifier
+                      .clickable {
+                        selectedSize = sz
+                        selectionError = null
+                      }
+                      .testTag("size_option_$sz")
+                  ) {
+                    Box(
+                      modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      Text(
+                        text = sz,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) Color.White else DarkEspresso
+                      )
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // ------------------------------------------
+          // KIDS AGE SELECTION (বাচ্চাদের বয়সের মাপ)
+          // ------------------------------------------
+          if (product.ageGroups.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                  Text(text = "👶", fontSize = 14.sp)
+                  Text(
+                    text = "বাচ্চার বয়স নির্বাচন করুন (Kids Age):",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = RoyalMaroon
+                  )
+                }
+                if (selectedAgeGroup.isNotBlank()) {
+                  Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = AntiqueGold.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, BorderGold)
+                  ) {
+                    Text(
+                      text = selectedAgeGroup,
+                      fontSize = 11.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = RoyalMaroon,
+                      modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                  }
+                }
+              }
+
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(top = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                product.ageGroups.forEach { age ->
+                  val isSelected = selectedAgeGroup == age
+                  Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) AntiqueGoldDark else CreamSurface,
+                    border = BorderStroke(1.dp, if (isSelected) AntiqueGoldDark else BorderGold),
+                    modifier = Modifier
+                      .clickable {
+                        selectedAgeGroup = age
+                        selectionError = null
+                      }
+                      .testTag("age_option_$age")
+                  ) {
+                    Row(
+                      modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                      if (isSelected) {
+                        Icon(
+                          imageVector = Icons.Default.CheckCircle,
+                          contentDescription = null,
+                          tint = Color.White,
+                          modifier = Modifier.size(12.dp)
+                        )
+                      }
+                      Text(
+                        text = age,
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) Color.White else DarkEspresso
+                      )
+                    }
+                  }
+                }
+              }
+            }
+          }
+
           Spacer(modifier = Modifier.height(14.dp))
 
           // Stock Info & Quantity Selector
@@ -284,12 +520,34 @@ fun ProductDetailDialog(
             }
           }
 
-          Spacer(modifier = Modifier.height(18.dp))
+          if (selectionError != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+              text = selectionError!!,
+              color = Color.Red,
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+
+          Spacer(modifier = Modifier.height(16.dp))
 
           // Add to cart button
           Button(
             onClick = {
-              onAddToCart(product, quantity)
+              if (product.colors.isNotEmpty() && selectedColor.isBlank()) {
+                selectionError = "অনুগ্রহ করে একটি কালার নির্বাচন করুন!"
+                return@Button
+              }
+              if (product.sizes.isNotEmpty() && selectedSize.isBlank()) {
+                selectionError = "অনুগ্রহ করে একটি সাইজ নির্বাচন করুন!"
+                return@Button
+              }
+              if (product.ageGroups.isNotEmpty() && selectedAgeGroup.isBlank()) {
+                selectionError = "অনুগ্রহ করে বাচ্চার বয়স নির্বাচন করুন!"
+                return@Button
+              }
+              onAddToCart(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
               onDismiss()
             },
             enabled = product.stock > 0,

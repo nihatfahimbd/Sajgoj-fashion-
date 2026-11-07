@@ -79,9 +79,12 @@ import com.example.data.model.CourierConfig
 import com.example.data.model.Order
 import com.example.data.model.PixelConfig
 import com.example.data.model.Product
+import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.example.ui.AdminTab
 import com.example.ui.components.AppImage
+import com.example.ui.components.ReturnExchangeDialog
+import com.example.ui.components.ReturnSlipDialog
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
 import com.example.ui.theme.AntiqueGold
@@ -103,6 +106,7 @@ fun AdminDashboardScreen(
   products: List<Product>,
   categories: List<Category>,
   orders: List<Order>,
+  returns: List<ReturnRecord> = emptyList(),
   coupons: List<Coupon>,
   banners: List<BannerItem>,
   storeConfig: StoreConfig,
@@ -114,6 +118,7 @@ fun AdminDashboardScreen(
   onUpdateOrderStatus: (String, String) -> Unit,
   onDispatchCourier: (String, String) -> Unit,
   onViewInvoice: (Order) -> Unit,
+  onAddReturnRecord: (ReturnRecord) -> Unit = {},
   onAddCategory: (Category) -> Unit,
   onDeleteCategory: (String) -> Unit,
   onAddCoupon: (Coupon) -> Unit,
@@ -134,12 +139,15 @@ fun AdminDashboardScreen(
   // Admin login dialog state if not logged in
   var loginPasswordInput by remember { mutableStateOf("admin123") }
 
-  // Modals for CRUD
+  // Modals for CRUD & Returns
   var showProductDialog by remember { mutableStateOf(false) }
   var editingProduct by remember { mutableStateOf<Product?>(null) }
   var showCategoryDialog by remember { mutableStateOf(false) }
   var showCouponDialog by remember { mutableStateOf(false) }
   var showBannerDialog by remember { mutableStateOf(false) }
+  var showReturnDialog by remember { mutableStateOf(false) }
+  var returnTargetOrder by remember { mutableStateOf<Order?>(null) }
+  var viewingReturnSlip by remember { mutableStateOf<ReturnRecord?>(null) }
 
   if (!isAdminLoggedIn) {
     // Admin Login Screen
@@ -321,7 +329,26 @@ fun AdminDashboardScreen(
             orders = orders,
             onUpdateStatus = onUpdateOrderStatus,
             onDispatchCourier = onDispatchCourier,
-            onViewInvoice = onViewInvoice
+            onViewInvoice = onViewInvoice,
+            onOpenReturn = { order ->
+              returnTargetOrder = order
+              showReturnDialog = true
+            }
+          )
+        }
+
+        AdminTab.RETURNS -> {
+          AdminReturnsTab(
+            returns = returns,
+            orders = orders,
+            products = products,
+            onOpenNewReturn = {
+              returnTargetOrder = null
+              showReturnDialog = true
+            },
+            onViewReturnSlip = { record ->
+              viewingReturnSlip = record
+            }
           )
         }
 
@@ -432,6 +459,31 @@ fun AdminDashboardScreen(
         onAddBanner(b)
         showBannerDialog = false
       }
+    )
+  }
+
+  // Return & Exchange Dialog
+  if (showReturnDialog) {
+    ReturnExchangeDialog(
+      orders = orders,
+      products = products,
+      initialOrder = returnTargetOrder,
+      onDismiss = { showReturnDialog = false },
+      onConfirm = { record ->
+        showReturnDialog = false
+        onAddReturnRecord(record)
+        viewingReturnSlip = record
+        onShowToast("রিটার্ন ও এক্সচেঞ্জ মেমো #${record.id} সম্পন্ন হয়েছে! 📄")
+      }
+    )
+  }
+
+  // Return Slip Memo Dialog
+  if (viewingReturnSlip != null) {
+    ReturnSlipDialog(
+      record = viewingReturnSlip!!,
+      onDismiss = { viewingReturnSlip = null },
+      onShowToast = onShowToast
     )
   }
 }
@@ -657,6 +709,67 @@ fun AdminProductsTab(
                 Text(text = "স্টক: ${product.stock}", fontSize = 11.sp, color = if (product.stock <= 5) AccentRed else Color.Gray)
                 Text(text = product.category, fontSize = 10.sp, color = AntiqueGoldDark)
               }
+
+              // Badges for colors, sizes, age groups
+              val hasVariants = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
+              if (hasVariants) {
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                  horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                  if (product.colors.isNotEmpty()) {
+                    Surface(
+                      shape = RoundedCornerShape(4.dp),
+                      color = CreamSurface,
+                      border = BorderStroke(0.5.dp, BorderGold)
+                    ) {
+                      Text(
+                        text = "🎨 ${product.colors.size} রং",
+                        fontSize = 9.sp,
+                        color = RoyalMaroon,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                      )
+                    }
+                  }
+
+                  if (product.sizes.isNotEmpty()) {
+                    Surface(
+                      shape = RoundedCornerShape(4.dp),
+                      color = CreamSurface,
+                      border = BorderStroke(0.5.dp, BorderGold)
+                    ) {
+                      Text(
+                        text = "📏 ${product.sizes.joinToString("/")}",
+                        fontSize = 9.sp,
+                        color = DarkEspresso,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                      )
+                    }
+                  }
+
+                  if (product.ageGroups.isNotEmpty()) {
+                    Surface(
+                      shape = RoundedCornerShape(4.dp),
+                      color = AntiqueGold.copy(alpha = 0.2f),
+                      border = BorderStroke(0.5.dp, BorderGold)
+                    ) {
+                      Text(
+                        text = "👶 ${product.ageGroups.firstOrNull()}...",
+                        fontSize = 9.sp,
+                        color = RoyalMaroon,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                      )
+                    }
+                  }
+                }
+              }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -680,7 +793,8 @@ fun AdminOrdersTab(
   orders: List<Order>,
   onUpdateStatus: (String, String) -> Unit,
   onDispatchCourier: (String, String) -> Unit,
-  onViewInvoice: (Order) -> Unit
+  onViewInvoice: (Order) -> Unit,
+  onOpenReturn: (Order) -> Unit
 ) {
   val statuses = listOf("Pending", "Confirmed", "Shipped", "Delivered", "Cancelled")
 
@@ -750,13 +864,23 @@ fun AdminOrdersTab(
 
             Text(text = "গ্রাহক: ${order.customerName} (${order.phone})", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             Text(text = "ঠিকানা: ${order.address}, ${order.thana}, ${order.district}", fontSize = 11.sp, color = DarkEspresso)
-            Text(
-              text = "আইটেমস: ${order.items.joinToString { "${it.name} x${it.quantity}" }}",
-              fontSize = 11.sp,
-              color = Color.Gray,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis
-            )
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+              Text(text = "অর্ডারকৃত পণ্যসমূহ (${order.items.size}):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+              order.items.forEach { itm ->
+                val v = listOfNotNull(
+                  if (itm.color.isNotBlank()) "রং: ${itm.color}" else null,
+                  if (itm.size.isNotBlank()) "সাইজ: ${itm.size}" else null,
+                  if (itm.ageGroup.isNotBlank()) "👶 বয়স: ${itm.ageGroup}" else null
+                ).joinToString(" | ")
+                Text(
+                  text = "• ${itm.name} x${itm.quantity}${if (v.isNotBlank()) " [$v]" else ""}",
+                  fontSize = 11.sp,
+                  color = DarkEspresso,
+                  maxLines = 2,
+                  overflow = TextOverflow.Ellipsis
+                )
+              }
+            }
 
             Row(
               modifier = Modifier.fillMaxWidth(),
@@ -813,6 +937,17 @@ fun AdminOrdersTab(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(text = "Steadfast", fontSize = 11.sp, fontWeight = FontWeight.Bold)
               }
+
+              Button(
+                onClick = { onOpenReturn(order) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100), contentColor = Color.White),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .height(34.dp)
+              ) {
+                Text(text = "🔄 রিটার্ন", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              }
             }
           }
         }
@@ -820,6 +955,238 @@ fun AdminOrdersTab(
     }
   }
 }
+
+@Composable
+fun AdminReturnsTab(
+  returns: List<ReturnRecord>,
+  orders: List<Order>,
+  products: List<Product>,
+  onOpenNewReturn: () -> Unit,
+  onViewReturnSlip: (ReturnRecord) -> Unit
+) {
+  var searchQuery by remember { mutableStateOf("") }
+
+  val filteredReturns = returns.filter {
+    searchQuery.isBlank() ||
+      it.id.contains(searchQuery, ignoreCase = true) ||
+      it.orderId.contains(searchQuery, ignoreCase = true) ||
+      it.customerName.contains(searchQuery, ignoreCase = true) ||
+      it.phone.contains(searchQuery)
+  }
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    // Header & Action
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Column {
+        Text(
+          text = "সেলস রিটার্ন ও এক্সচেঞ্জ (${returns.size})",
+          fontSize = 15.sp,
+          fontWeight = FontWeight.Bold,
+          color = RoyalMaroon
+        )
+        Text(
+          text = "মূল্য সমন্বয় ও ব্যালেন্স নিষ্পত্তি তালিকা",
+          fontSize = 11.sp,
+          color = DarkEspresso
+        )
+      }
+
+      Button(
+        onClick = onOpenNewReturn,
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+        shape = RoundedCornerShape(16.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+      ) {
+        Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = "নতুন রিটার্ন", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    // 3 Summary Cards
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      val extraCollected = returns.filter { it.priceDifference > 0 }.sumOf { it.priceDifference }
+      val balanceRefunded = returns.filter { it.priceDifference < 0 }.sumOf { kotlin.math.abs(it.priceDifference) }
+
+      Surface(
+        modifier = Modifier.weight(1f),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, BorderGold)
+      ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+          Text(text = "মোট মেমো", fontSize = 10.sp, color = Color.Gray)
+          Text(text = "${returns.size} টি", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+        }
+      }
+
+      Surface(
+        modifier = Modifier.weight(1f),
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFFFF3E0),
+        border = BorderStroke(1.dp, Color(0xFFFFCC80))
+      ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+          Text(text = "অতিরিক্ত আদায়", fontSize = 10.sp, color = Color(0xFFB26A00))
+          Text(text = "+ ৳$extraCollected", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
+        }
+      }
+
+      Surface(
+        modifier = Modifier.weight(1f),
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFE8F5E9),
+        border = BorderStroke(1.dp, Color(0xFFA5D6A7))
+      ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+          Text(text = "গ্রাহককে ফেরত", fontSize = 10.sp, color = AccentGreen)
+          Text(text = "- ৳$balanceRefunded", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    OutlinedTextField(
+      value = searchQuery,
+      onValueChange = { searchQuery = it },
+      placeholder = { Text("রিটার্ন ID, অর্ডার ID বা ফোন দিয়ে খুঁজুন...", fontSize = 11.sp) },
+      modifier = Modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(12.dp),
+      colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = BorderGold)
+    )
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    if (filteredReturns.isEmpty()) {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(32.dp),
+        contentAlignment = Alignment.Center
+      ) {
+        Text("কোনো রিটার্ন বা এক্সচেঞ্জ রেকর্ড নেই", fontSize = 13.sp, color = Color.Gray)
+      }
+    } else {
+      LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()) {
+        items(filteredReturns, key = { it.id }) { ret ->
+          Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, BorderGold)
+          ) {
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                  Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFFFF3E0),
+                    border = BorderStroke(1.dp, Color(0xFFFFB74D))
+                  ) {
+                    Text(
+                      text = "#${ret.id}",
+                      fontSize = 11.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = Color(0xFFE65100),
+                      modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                  }
+                  Text(text = "অর্ডার: #${ret.orderId}", fontSize = 11.sp, color = Color.Gray)
+                }
+
+                Text(text = ret.date, fontSize = 10.sp, color = Color.Gray)
+              }
+
+              HorizontalDivider(color = BorderGold)
+
+              Text(text = "${ret.customerName} • 📞 ${ret.phone}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+              Text(
+                text = "ফেরত পণ্য (${ret.returnedItems.size}টি): ${ret.returnedItems.joinToString { "${it.name} (${it.quantity}টি)" }}",
+                fontSize = 10.sp,
+                color = DarkEspresso,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+              )
+
+              if (ret.isExchange && ret.exchangeItems.isNotEmpty()) {
+                Text(
+                  text = "নতুন এক্সচেঞ্জ (${ret.exchangeItems.size}টি): ${ret.exchangeItems.joinToString { "${it.name} (${it.quantity}টি)" }}",
+                  fontSize = 10.sp,
+                  color = Color(0xFFE65100),
+                  maxLines = 2,
+                  overflow = TextOverflow.Ellipsis
+                )
+              }
+
+              // Settlement Badge
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Surface(
+                  shape = RoundedCornerShape(8.dp),
+                  color = when (ret.differenceType) {
+                    "customer_paid_extra" -> Color(0xFFFFF3E0)
+                    "customer_refunded_balance" -> Color(0xFFE8F5E9)
+                    else -> Color(0xFFE3F2FD)
+                  },
+                  border = BorderStroke(
+                    1.dp,
+                    when (ret.differenceType) {
+                      "customer_paid_extra" -> Color(0xFFFF9800)
+                      "customer_refunded_balance" -> AccentGreen
+                      else -> Color(0xFF2196F3)
+                    }
+                  )
+                ) {
+                  Text(
+                    text = when (ret.differenceType) {
+                      "customer_paid_extra" -> "+ ৳${ret.priceDifference} অতিরিক্ত আদায় (${ret.settlementMethod})"
+                      "customer_refunded_balance" -> "- ৳${kotlin.math.abs(ret.priceDifference)} ফেরত প্রদান (${ret.settlementMethod})"
+                      else -> "সমমূল্য বিনিময় (০ ৳)"
+                    },
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = when (ret.differenceType) {
+                      "customer_paid_extra" -> Color(0xFFB26A00)
+                      "customer_refunded_balance" -> AccentGreen
+                      else -> Color(0xFF0D47A1)
+                    },
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                  )
+                }
+
+                Button(
+                  onClick = { onViewReturnSlip(ret) },
+                  colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = RoyalMaroon),
+                  border = BorderStroke(1.dp, BorderGold),
+                  shape = RoundedCornerShape(10.dp),
+                  contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                  modifier = Modifier.height(28.dp)
+                ) {
+                  Text("মেমো ভিউ", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 
 @Composable
 fun AdminCategoriesTab(
@@ -1390,6 +1757,7 @@ fun AdminBackupTab(
 
 // ----------------- FORM DIALOGS -----------------
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductFormDialog(
   product: Product?,
@@ -1401,35 +1769,92 @@ fun ProductFormDialog(
   var priceStr by remember { mutableStateOf(product?.price?.toString() ?: "1000") }
   var stockStr by remember { mutableStateOf(product?.stock?.toString() ?: "10") }
   var category by remember { mutableStateOf(product?.category ?: categories.firstOrNull()?.name ?: "শাড়ি") }
+  var isCategoryDropdownExpanded by remember { mutableStateOf(false) }
   var sku by remember { mutableStateOf(product?.sku ?: "SAJ-${(100..999).random()}") }
   var description by remember { mutableStateOf(product?.description ?: "") }
+  var imageUrl by remember { mutableStateOf(product?.imageUrl ?: "res://${R.drawable.banner_eid_special_1792530116809}") }
+
+  // Variants lists
+  var colors by remember { mutableStateOf(product?.colors ?: emptyList()) }
+  var customColorInput by remember { mutableStateOf("") }
+
+  var sizes by remember { mutableStateOf(product?.sizes ?: emptyList()) }
+  var customSizeInput by remember { mutableStateOf("") }
+
+  var ageGroups by remember { mutableStateOf(product?.ageGroups ?: emptyList()) }
+  var customAgeInput by remember { mutableStateOf("") }
+
+  var formError by remember { mutableStateOf<String?>(null) }
+
+  // Preset options for quick clicks
+  val presetColors = listOf("লাল", "মেরুন", "কালো", "সবুজ", "নীল", "গোল্ডেন", "গোলাপী", "সাদা", "হলুদ", "পার্পল", "অরেঞ্জ", "অফ হোয়াইট", "রয়েল ব্লু")
+  val presetSizes = listOf("Free Size", "XS", "S", "M", "L", "XL", "XXL", "3XL", "20", "22", "24", "26", "28", "30", "32", "34", "36", "38")
+  val presetAges = listOf("০-৬ মাস", "৬-১২ মাস", "১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৪-৫ বছর", "৫-৬ বছর", "৭-৮ বছর", "৯-১০ বছর", "১১-১২ বছর")
+
+  val presetImages = listOf(
+    "res://${R.drawable.banner_eid_special_1792530116809}" to "পোশাক / শাড়ি",
+    "res://${R.drawable.banner_jewelry_royal_1792530130914}" to "জুয়েলারি",
+    "res://${R.drawable.ic_app_icon_1792530102214}" to "ব্র্যান্ড লোগো"
+  )
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
-      shape = RoundedCornerShape(20.dp),
+      shape = RoundedCornerShape(24.dp),
       color = Color.White,
       modifier = Modifier
-        .fillMaxWidth(0.95f)
-        .padding(vertical = 20.dp)
+        .fillMaxWidth(0.96f)
+        .padding(vertical = 16.dp)
+        .testTag("product_form_dialog")
     ) {
       Column(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(16.dp)
+          .padding(18.dp)
           .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
-        Text(
-          text = if (product != null) "পণ্য এডিট করুন" else "নতুন পণ্য যোগ করুন",
-          fontSize = 16.sp,
-          fontWeight = FontWeight.Bold,
-          color = RoyalMaroon
-        )
+        // Dialog Title
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Column {
+            Text(
+              text = if (product != null) "পণ্য এডিট করুন" else "নতুন পণ্য যোগ করুন",
+              fontSize = 17.sp,
+              fontWeight = FontWeight.Bold,
+              color = RoyalMaroon
+            )
+            Text(
+              text = "পণ্যের বিবরণ, কালার, সাইজ ও বাচ্চার বয়স সেট করুন",
+              fontSize = 11.sp,
+              color = Color.Gray
+            )
+          }
 
+          IconButton(
+            onClick = onDismiss,
+            modifier = Modifier
+              .size(28.dp)
+              .clip(CircleShape)
+              .background(CreamSurface)
+          ) {
+            Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = DarkEspresso, modifier = Modifier.size(16.dp))
+          }
+        }
+
+        HorizontalDivider(color = BorderGold)
+
+        // 1. Basic Product Info
         OutlinedTextField(
           value = name,
-          onValueChange = { name = it },
+          onValueChange = { 
+            name = it
+            formError = null 
+          },
           label = { Text("পণ্যের নাম *") },
+          placeholder = { Text("যেমন: বাচ্চাদের ডিজাইনার ফ্রক বা কাতান শাড়ি") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
           modifier = Modifier.fillMaxWidth()
@@ -1439,7 +1864,7 @@ fun ProductFormDialog(
           OutlinedTextField(
             value = priceStr,
             onValueChange = { priceStr = it },
-            label = { Text("মূল্য (৳)") },
+            label = { Text("মূল্য (৳) *") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
@@ -1449,7 +1874,7 @@ fun ProductFormDialog(
           OutlinedTextField(
             value = stockStr,
             onValueChange = { stockStr = it },
-            label = { Text("স্টক সংখ্যা") },
+            label = { Text("স্টক সংখ্যা *") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
@@ -1458,14 +1883,38 @@ fun ProductFormDialog(
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          OutlinedTextField(
-            value = category,
-            onValueChange = { category = it },
-            label = { Text("ক্যাটাগরি") },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+          // Category selector with dropdown
+          ExposedDropdownMenuBox(
+            expanded = isCategoryDropdownExpanded,
+            onExpandedChange = { isCategoryDropdownExpanded = !isCategoryDropdownExpanded },
             modifier = Modifier.weight(1f)
-          )
+          ) {
+            OutlinedTextField(
+              value = category,
+              onValueChange = { category = it },
+              label = { Text("ক্যাটাগরি") },
+              trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryDropdownExpanded) },
+              singleLine = true,
+              shape = RoundedCornerShape(12.dp),
+              modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+              expanded = isCategoryDropdownExpanded,
+              onDismissRequest = { isCategoryDropdownExpanded = false }
+            ) {
+              categories.forEach { cat ->
+                DropdownMenuItem(
+                  text = { Text("${cat.icon} ${cat.name}", fontSize = 12.sp) },
+                  onClick = {
+                    category = cat.name
+                    isCategoryDropdownExpanded = false
+                  }
+                )
+              }
+            }
+          }
 
           OutlinedTextField(
             value = sku,
@@ -1477,36 +1926,531 @@ fun ProductFormDialog(
           )
         }
 
+        // Image Selection
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+          Text(text = "পণ্যের ছবি নির্বাচন বা ইউআরএল:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DarkEspresso)
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            presetImages.forEach { (url, label) ->
+              val isChosen = imageUrl == url
+              Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (isChosen) RoyalMaroon else CreamSurface,
+                border = BorderStroke(1.dp, if (isChosen) RoyalMaroon else BorderGold),
+                modifier = Modifier
+                  .weight(1f)
+                  .clickable { imageUrl = url }
+              ) {
+                Box(
+                  modifier = Modifier.padding(vertical = 6.dp),
+                  contentAlignment = Alignment.Center
+                ) {
+                  Text(
+                    text = label,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isChosen) Color.White else DarkEspresso
+                  )
+                }
+              }
+            }
+          }
+
+          OutlinedTextField(
+            value = imageUrl,
+            onValueChange = { imageUrl = it },
+            label = { Text("অথবা সরাসরি ছবির লিঙ্ক (Image URL)") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+          )
+        }
+
+        // ==========================================
+        // 2. COLOR MANAGEMENT SECTION
+        // ==========================================
+        Card(
+          shape = RoundedCornerShape(14.dp),
+          colors = CardDefaults.cardColors(containerColor = CreamBackground),
+          border = BorderStroke(1.dp, BorderGold),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "🎨 কালার বা রঙের অপশন (${colors.size})",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = RoyalMaroon
+              )
+              if (colors.isNotEmpty()) {
+                Text(
+                  text = "ক্লিয়ার",
+                  fontSize = 11.sp,
+                  color = AccentRed,
+                  fontWeight = FontWeight.Bold,
+                  modifier = Modifier.clickable { colors = emptyList() }
+                )
+              }
+            }
+
+            // Current added colors chips with remove 'x'
+            if (colors.isEmpty()) {
+              Text(
+                text = "কোনো নির্দিষ্ট কালার যুক্ত করা হয়নি। নিচে ক্লিক করে বা লিখে যোগ করুন।",
+                fontSize = 11.sp,
+                color = Color.Gray
+              )
+            } else {
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                colors.forEach { col ->
+                  Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = RoyalMaroon,
+                    border = BorderStroke(1.dp, RoyalMaroon)
+                  ) {
+                    Row(
+                      modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                      Text(text = col, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                      Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Remove",
+                        tint = Color.White,
+                        modifier = Modifier
+                          .size(14.dp)
+                          .clickable { colors = colors.filterNot { it == col } }
+                      )
+                    }
+                  }
+                }
+              }
+            }
+
+            // Custom color text input + Add button
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(6.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              OutlinedTextField(
+                value = customColorInput,
+                onValueChange = { customColorInput = it },
+                placeholder = { Text("নতুন কালার লিখুন (যেমন: টিয়া সবুজ)", fontSize = 11.sp) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .height(44.dp)
+              )
+
+              Button(
+                onClick = {
+                  val trimmed = customColorInput.trim()
+                  if (trimmed.isNotBlank() && !colors.contains(trimmed)) {
+                    colors = colors + trimmed
+                    customColorInput = ""
+                  }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(44.dp)
+              ) {
+                Text("+ কালার যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+
+            // Quick preset chips
+            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Medium)
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              presetColors.forEach { col ->
+                val alreadyAdded = colors.contains(col)
+                Surface(
+                  shape = RoundedCornerShape(12.dp),
+                  color = if (alreadyAdded) CreamSurface else Color.White,
+                  border = BorderStroke(1.dp, if (alreadyAdded) RoyalMaroon else BorderGold),
+                  modifier = Modifier.clickable {
+                    colors = if (alreadyAdded) colors.filterNot { it == col } else colors + col
+                  }
+                ) {
+                  Text(
+                    text = if (alreadyAdded) "✓ $col" else "+ $col",
+                    fontSize = 11.sp,
+                    fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
+                    color = if (alreadyAdded) RoyalMaroon else DarkEspresso,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        // ==========================================
+        // 3. SIZE MANAGEMENT SECTION
+        // ==========================================
+        Card(
+          shape = RoundedCornerShape(14.dp),
+          colors = CardDefaults.cardColors(containerColor = CreamBackground),
+          border = BorderStroke(1.dp, BorderGold),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "📏 সাইজের অপশন (${sizes.size})",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = RoyalMaroon
+              )
+              if (sizes.isNotEmpty()) {
+                Text(
+                  text = "ক্লিয়ার",
+                  fontSize = 11.sp,
+                  color = AccentRed,
+                  fontWeight = FontWeight.Bold,
+                  modifier = Modifier.clickable { sizes = emptyList() }
+                )
+              }
+            }
+
+            // Current added sizes
+            if (sizes.isEmpty()) {
+              Text(
+                text = "কোনো সাইজ নির্ধারণ করা হয়নি। নিচে ক্লিক করে বা লিখে যোগ করুন।",
+                fontSize = 11.sp,
+                color = Color.Gray
+              )
+            } else {
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                sizes.forEach { sz ->
+                  Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = DarkEspresso,
+                    border = BorderStroke(1.dp, DarkEspresso)
+                  ) {
+                    Row(
+                      modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                      Text(text = sz, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                      Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Remove",
+                        tint = Color.White,
+                        modifier = Modifier
+                          .size(14.dp)
+                          .clickable { sizes = sizes.filterNot { it == sz } }
+                      )
+                    }
+                  }
+                }
+              }
+            }
+
+            // Custom size input + Add button
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(6.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              OutlinedTextField(
+                value = customSizeInput,
+                onValueChange = { customSizeInput = it },
+                placeholder = { Text("নতুন সাইজ লিখুন (যেমন: 40 বা 38 Semi-Stitch)", fontSize = 11.sp) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .height(44.dp)
+              )
+
+              Button(
+                onClick = {
+                  val trimmed = customSizeInput.trim()
+                  if (trimmed.isNotBlank() && !sizes.contains(trimmed)) {
+                    sizes = sizes + trimmed
+                    customSizeInput = ""
+                  }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(44.dp)
+              ) {
+                Text("+ সাইজ যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+
+            // Quick preset chips
+            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Medium)
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              presetSizes.forEach { sz ->
+                val alreadyAdded = sizes.contains(sz)
+                Surface(
+                  shape = RoundedCornerShape(12.dp),
+                  color = if (alreadyAdded) CreamSurface else Color.White,
+                  border = BorderStroke(1.dp, if (alreadyAdded) DarkEspresso else BorderGold),
+                  modifier = Modifier.clickable {
+                    sizes = if (alreadyAdded) sizes.filterNot { it == sz } else sizes + sz
+                  }
+                ) {
+                  Text(
+                    text = if (alreadyAdded) "✓ $sz" else "+ $sz",
+                    fontSize = 11.sp,
+                    fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
+                    color = if (alreadyAdded) DarkEspresso else DarkEspresso.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        // ==========================================
+        // 4. KIDS AGE MANAGEMENT SECTION
+        // ==========================================
+        Card(
+          shape = RoundedCornerShape(14.dp),
+          colors = CardDefaults.cardColors(containerColor = AntiqueGold.copy(alpha = 0.08f)),
+          border = BorderStroke(1.dp, BorderGold),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = "👶", fontSize = 14.sp)
+                Text(
+                  text = "বাচ্চাদের বয়সের মাপ (Kids Age) (${ageGroups.size})",
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon
+                )
+              }
+              if (ageGroups.isNotEmpty()) {
+                Text(
+                  text = "ক্লিয়ার",
+                  fontSize = 11.sp,
+                  color = AccentRed,
+                  fontWeight = FontWeight.Bold,
+                  modifier = Modifier.clickable { ageGroups = emptyList() }
+                )
+              }
+            }
+
+            Text(
+              text = "বাচ্চাদের পোশাকের ক্ষেত্রে ক্রেতাদের বয়সের মাপ সিলেক্ট করার সুযোগ দিন।",
+              fontSize = 11.sp,
+              color = DarkEspresso.copy(alpha = 0.7f)
+            )
+
+            // Current added age groups
+            if (ageGroups.isEmpty()) {
+              Text(
+                text = "কোনো বয়স গ্রুপ যুক্ত করা হয়নি। নিচের বয়সগুলো ক্লিক করুন বা নতুন বয়স লিখুন।",
+                fontSize = 11.sp,
+                color = Color.Gray
+              )
+            } else {
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                ageGroups.forEach { age ->
+                  Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = AntiqueGoldDark,
+                    border = BorderStroke(1.dp, AntiqueGoldDark)
+                  ) {
+                    Row(
+                      modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                      Text(text = age, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                      Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Remove",
+                        tint = Color.White,
+                        modifier = Modifier
+                          .size(14.dp)
+                          .clickable { ageGroups = ageGroups.filterNot { it == age } }
+                      )
+                    }
+                  }
+                }
+              }
+            }
+
+            // Custom age input + Add button
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(6.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              OutlinedTextField(
+                value = customAgeInput,
+                onValueChange = { customAgeInput = it },
+                placeholder = { Text("নতুন বাচ্চার বয়স লিখুন (যেমন: নবজাতক বা ৭-৯ মাস)", fontSize = 11.sp) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .height(44.dp)
+              )
+
+              Button(
+                onClick = {
+                  val trimmed = customAgeInput.trim()
+                  if (trimmed.isNotBlank() && !ageGroups.contains(trimmed)) {
+                    ageGroups = ageGroups + trimmed
+                    customAgeInput = ""
+                  }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = AntiqueGoldDark),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(44.dp)
+              ) {
+                Text("+ বয়স যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+
+            // Quick preset age chips
+            Text(text = "দ্রুত বয়সের মাপ যুক্ত করুন:", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Medium)
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              presetAges.forEach { age ->
+                val alreadyAdded = ageGroups.contains(age)
+                Surface(
+                  shape = RoundedCornerShape(12.dp),
+                  color = if (alreadyAdded) CreamSurface else Color.White,
+                  border = BorderStroke(1.dp, if (alreadyAdded) AntiqueGoldDark else BorderGold),
+                  modifier = Modifier.clickable {
+                    ageGroups = if (alreadyAdded) ageGroups.filterNot { it == age } else ageGroups + age
+                  }
+                ) {
+                  Text(
+                    text = if (alreadyAdded) "✓ $age" else "+ $age",
+                    fontSize = 11.sp,
+                    fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
+                    color = if (alreadyAdded) AntiqueGoldDark else DarkEspresso,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        // Description field
         OutlinedTextField(
           value = description,
           onValueChange = { description = it },
           label = { Text("পণ্যের বিস্তারিত বিবরণ") },
+          placeholder = { Text("কাপড়ের কোয়ালিটি, ফেব্রিক ও স্পেসিফিকেশন লিখুন") },
           minLines = 2,
           shape = RoundedCornerShape(12.dp),
           modifier = Modifier.fillMaxWidth()
         )
 
+        if (formError != null) {
+          Text(
+            text = formError!!,
+            color = Color.Red,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+          )
+        }
+
+        // Save Button
         Button(
           onClick = {
-            if (name.isNotBlank()) {
-              val p = Product(
-                id = product?.id ?: "p_${System.currentTimeMillis()}",
-                name = name,
-                price = priceStr.toIntOrNull() ?: 1000,
-                stock = stockStr.toIntOrNull() ?: 5,
-                category = category,
-                imageUrl = product?.imageUrl ?: "res://${R.drawable.banner_jewelry_royal_1792530130914}",
-                sku = sku,
-                description = description.ifBlank { "সজগোজ ফ্যাশনের আকর্ষণীয় প্রিমিয়াম কোয়ালিটি পণ্য।" }
-              )
-              onSave(p)
+            if (name.isBlank()) {
+              formError = "অনুগ্রহ করে পণ্যের নাম লিখুন!"
+              return@Button
             }
+            val price = priceStr.toIntOrNull()
+            if (price == null || price <= 0) {
+              formError = "সঠিক মূল্য (৳) প্রদান করুন!"
+              return@Button
+            }
+            val stock = stockStr.toIntOrNull() ?: 1
+
+            val p = Product(
+              id = product?.id ?: "p_${System.currentTimeMillis()}",
+              name = name.trim(),
+              price = price,
+              stock = stock,
+              category = category.trim().ifBlank { "অন্যান্য" },
+              imageUrl = imageUrl.trim().ifBlank { "res://${R.drawable.banner_eid_special_1792530116809}" },
+              sku = sku.trim().ifBlank { "SAJ-${(100..999).random()}" },
+              description = description.trim().ifBlank { "সজগোজ ফ্যাশনের আকর্ষণীয় প্রিমিয়াম কোয়ালিটি পণ্য।" },
+              colors = colors,
+              sizes = sizes,
+              ageGroups = ageGroups
+            )
+            onSave(p)
           },
           colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-          shape = RoundedCornerShape(14.dp),
-          modifier = Modifier.fillMaxWidth()
+          shape = RoundedCornerShape(16.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
         ) {
-          Text("সংরক্ষণ করুন")
+          Text("সংরক্ষণ করুন", fontSize = 14.sp, fontWeight = FontWeight.Bold)
         }
       }
     }

@@ -237,6 +237,66 @@ fun CartAndCheckoutDialog(
                       fontWeight = FontWeight.Medium
                     )
 
+                    // Variant Badges (Color, Size, Kids Age)
+                    val hasVariants = item.selectedColor.isNotBlank() || item.selectedSize.isNotBlank() || item.selectedAgeGroup.isNotBlank()
+                    if (hasVariants) {
+                      Row(
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .padding(vertical = 3.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                      ) {
+                        if (item.selectedColor.isNotBlank()) {
+                          Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = RoyalMaroon.copy(alpha = 0.12f),
+                            border = BorderStroke(0.5.dp, RoyalMaroon.copy(alpha = 0.4f))
+                          ) {
+                            Text(
+                              text = "রং: ${item.selectedColor}",
+                              fontSize = 10.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = RoyalMaroon,
+                              modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                          }
+                        }
+
+                        if (item.selectedSize.isNotBlank()) {
+                          Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = DarkEspresso.copy(alpha = 0.1f),
+                            border = BorderStroke(0.5.dp, DarkEspresso.copy(alpha = 0.3f))
+                          ) {
+                            Text(
+                              text = "সাইজ: ${item.selectedSize}",
+                              fontSize = 10.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = DarkEspresso,
+                              modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                          }
+                        }
+
+                        if (item.selectedAgeGroup.isNotBlank()) {
+                          Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = AntiqueGold.copy(alpha = 0.2f),
+                            border = BorderStroke(0.5.dp, BorderGold)
+                          ) {
+                            Text(
+                              text = "👶 ${item.selectedAgeGroup}",
+                              fontSize = 10.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = RoyalMaroon,
+                              modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                          }
+                        }
+                      }
+                    }
+
                     // Quantity controls
                     Row(
                       verticalAlignment = Alignment.CenterVertically,
@@ -249,7 +309,7 @@ fun CartAndCheckoutDialog(
                           .clip(CircleShape)
                           .background(Color.White)
                           .border(1.dp, BorderGold, CircleShape)
-                          .clickable { onUpdateQty(item.product.id, -1) },
+                          .clickable { onUpdateQty(item.itemKey, -1) },
                         contentAlignment = Alignment.Center
                       ) {
                         Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(12.dp))
@@ -268,7 +328,7 @@ fun CartAndCheckoutDialog(
                           .clip(CircleShape)
                           .background(Color.White)
                           .border(1.dp, BorderGold, CircleShape)
-                          .clickable { onUpdateQty(item.product.id, 1) },
+                          .clickable { onUpdateQty(item.itemKey, 1) },
                         contentAlignment = Alignment.Center
                       ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(12.dp))
@@ -288,7 +348,7 @@ fun CartAndCheckoutDialog(
                       color = RoyalMaroon
                     )
                     IconButton(
-                      onClick = { onRemoveItem(item.product.id) },
+                      onClick = { onRemoveItem(item.itemKey) },
                       modifier = Modifier.size(24.dp)
                     ) {
                       Icon(imageVector = Icons.Default.Delete, contentDescription = "Remove", tint = AccentRed, modifier = Modifier.size(16.dp))

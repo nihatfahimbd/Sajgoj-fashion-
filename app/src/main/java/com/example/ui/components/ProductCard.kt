@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,6 +40,7 @@ import com.example.ui.theme.AccentRed
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
+import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.RoyalMaroon
 
@@ -145,14 +147,43 @@ fun ProductCard(
           .fillMaxWidth()
           .padding(10.dp)
       ) {
-        // Category Label
-        Text(
-          text = product.category.uppercase(),
-          color = AntiqueGoldDark,
-          fontSize = 10.sp,
-          fontWeight = FontWeight.Bold,
-          letterSpacing = 0.5.sp
-        )
+        // Category Label and Variant Badges
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = product.category.uppercase(),
+            color = AntiqueGoldDark,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp
+          )
+
+          val hasVariants = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
+          if (hasVariants) {
+            val variantLabel = when {
+              product.ageGroups.isNotEmpty() -> "👶 বয়স"
+              product.colors.isNotEmpty() && product.sizes.isNotEmpty() -> "🎨📏 ভ্যারিয়েন্ট"
+              product.colors.isNotEmpty() -> "🎨 কালার"
+              else -> "📏 সাইজ"
+            }
+            Surface(
+              shape = RoundedCornerShape(6.dp),
+              color = CreamSurface,
+              border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.6f))
+            ) {
+              Text(
+                text = variantLabel,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = RoyalMaroon,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+              )
+            }
+          }
+        }
 
         Spacer(modifier = Modifier.height(2.dp))
 
@@ -171,6 +202,7 @@ fun ProductCard(
         Spacer(modifier = Modifier.height(6.dp))
 
         // Price & Quick Order Button
+        val hasOptions = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
         Row(
           modifier = Modifier.fillMaxWidth(),
           verticalAlignment = Alignment.CenterVertically,
@@ -191,7 +223,13 @@ fun ProductCard(
           }
 
           Button(
-            onClick = { onAddToCart(product) },
+            onClick = {
+              if (hasOptions) {
+                onProductClick(product)
+              } else {
+                onAddToCart(product)
+              }
+            },
             enabled = product.stock > 0,
             colors = ButtonDefaults.buttonColors(
               containerColor = RoyalMaroon,
@@ -212,7 +250,7 @@ fun ProductCard(
             )
             Spacer(modifier = Modifier.size(4.dp))
             Text(
-              text = if (product.stock > 0) "অর্ডার" else "শেষ",
+              text = if (product.stock > 0) (if (hasOptions) "অপশন" else "অর্ডার") else "শেষ",
               fontSize = 11.sp,
               fontWeight = FontWeight.Bold
             )

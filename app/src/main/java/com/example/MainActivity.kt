@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
         val banners by viewModel.banners.collectAsStateWithLifecycle()
         val cartItems by viewModel.cart.collectAsStateWithLifecycle()
         val orders by viewModel.orders.collectAsStateWithLifecycle()
+        val returns by viewModel.returns.collectAsStateWithLifecycle()
         val coupons by viewModel.coupons.collectAsStateWithLifecycle()
         val storeConfig by viewModel.storeConfig.collectAsStateWithLifecycle()
         val courierConfig by viewModel.courierConfig.collectAsStateWithLifecycle()
@@ -136,6 +137,7 @@ class MainActivity : ComponentActivity() {
                     products = products,
                     categories = categories,
                     orders = orders,
+                    returns = returns,
                     coupons = coupons,
                     banners = banners,
                     storeConfig = storeConfig,
@@ -147,6 +149,7 @@ class MainActivity : ComponentActivity() {
                     onUpdateOrderStatus = { id, status -> viewModel.updateOrderStatus(id, status) },
                     onDispatchCourier = { id, provider -> viewModel.dispatchCourier(id, provider) },
                     onViewInvoice = { viewModel.openInvoice(it) },
+                    onAddReturnRecord = { viewModel.addReturnRecord(it) },
                     onAddCategory = { viewModel.addCategory(it) },
                     onDeleteCategory = { viewModel.deleteCategory(it) },
                     onAddCoupon = { viewModel.addCoupon(it) },
@@ -171,7 +174,9 @@ class MainActivity : ComponentActivity() {
                   product = selectedProduct!!,
                   reviews = productReviews,
                   onDismiss = { viewModel.closeProductDetail() },
-                  onAddToCart = { prod, qty -> viewModel.addToCart(prod, qty) },
+                  onAddToCart = { prod, qty, color, size, ageGroup ->
+                    viewModel.addToCart(prod, qty, color, size, ageGroup)
+                  },
                   onAddReview = { rating, name, comment ->
                     viewModel.addReview(selectedProduct!!.id, name, rating, comment)
                   }

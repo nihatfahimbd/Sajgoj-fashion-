@@ -62,7 +62,13 @@ fun InvoiceDialog(
 
   fun shareInvoice() {
     val itemsSummary = order.items.joinToString("\n") {
-      "• ${it.name} x${it.quantity} = ${it.price * it.quantity} ৳"
+      val variantParts = listOfNotNull(
+        if (it.color.isNotBlank()) "কালার: ${it.color}" else null,
+        if (it.size.isNotBlank()) "সাইজ: ${it.size}" else null,
+        if (it.ageGroup.isNotBlank()) "বয়স: ${it.ageGroup}" else null
+      )
+      val variantStr = if (variantParts.isNotEmpty()) " [${variantParts.joinToString(" | ")}]" else ""
+      "• ${it.name}$variantStr x${it.quantity} = ${it.price * it.quantity} ৳"
     }
     val invoiceText = """
       ==============================
@@ -236,7 +242,28 @@ fun InvoiceDialog(
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically
             ) {
-              Text(text = item.name, fontSize = 11.sp, modifier = Modifier.weight(2f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+              Column(modifier = Modifier.weight(2f)) {
+                Text(
+                  text = item.name,
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Medium,
+                  maxLines = 2,
+                  overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                val variantParts = listOfNotNull(
+                  if (item.color.isNotBlank()) "কালার: ${item.color}" else null,
+                  if (item.size.isNotBlank()) "সাইজ: ${item.size}" else null,
+                  if (item.ageGroup.isNotBlank()) "👶 বয়স: ${item.ageGroup}" else null
+                )
+                if (variantParts.isNotEmpty()) {
+                  Text(
+                    text = variantParts.joinToString(" • "),
+                    fontSize = 10.sp,
+                    color = RoyalMaroon,
+                    fontWeight = FontWeight.SemiBold
+                  )
+                }
+              }
               Text(text = "${item.quantity}", fontSize = 11.sp, modifier = Modifier.weight(1f))
               Text(text = "${item.price} ৳", fontSize = 11.sp, modifier = Modifier.weight(1f))
               Text(text = "${item.price * item.quantity} ৳", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
