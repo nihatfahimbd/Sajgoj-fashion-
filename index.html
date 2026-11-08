@@ -66,8 +66,10 @@
   <!-- Babel standalone for JSX compiling -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
 
-  <!-- QR Code Generator, jsPDF & Real-time Live Camera Scanner (jsQR) -->
+  <!-- QR Code Generator, JsBarcode, html5-qrcode, jsPDF & Real-time Live Camera Scanner -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -392,6 +394,8 @@
       deliveryInsideDhaka: 60,
       deliveryOutsideDhaka: 120,
       freeDeliveryThreshold: 2000,
+      returnPolicyDays: 7, // Default return window in days (e.g. 3, 7, 10, 14 days)
+      returnPolicyEnabled: true,
       announcement: { 
         text: "🔥 Eid Special: ২০০০ টাকার অর্ডারে সারা দেশে ডেলিভারি সম্পূর্ণ ফ্রি!", 
         enabled: true 
@@ -2010,6 +2014,26 @@
       const [viewReturnSlip, setViewReturnSlip] = useState(null);
       const [returnSearchFilter, setReturnSearchFilter] = useState("");
 
+      // =========================================================
+      // QR CODE & BARCODE SCANNER & INVENTORY IN/OUT STATES
+      // =========================================================
+      const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
+      const [scannerTargetMode, setScannerTargetMode] = useState("return_order_search"); 
+      // Modes: "return_order_search", "product_barcode_search", "stock_in_out", "customer_qr"
+      const [scannerActiveMessage, setScannerActiveMessage] = useState("");
+      const [productBarcodeModal, setProductBarcodeModal] = useState(null); // Product object for barcode generation & label printing
+      const [stockInOutModal, setStockInOutModal] = useState(false); // Quick stock in-out hub
+      const [stockInOutType, setStockInOutType] = useState("in"); // "in" = পণ্য কেনা / রিস্টক ইন, "out" = পণ্য বেচা / স্টক আউট
+      const [stockInOutQty, setStockInOutQty] = useState(1);
+      const [stockInOutSelectedProductId, setStockInOutSelectedProductId] = useState("");
+      const [stockInOutSource, setStockInOutSource] = useState("কারখানা / শোরুম");
+      const [barcodeStickerCount, setBarcodeStickerCount] = useState(12);
+      const [customerQrModal, setCustomerQrModal] = useState(null); // Customer/order object for QR display
+      const [stockLogs, setStockLogs] = useState(() => getStored("stock_logs", [
+        { id: "STK-101", date: "2026-10-22", type: "in", productName: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি", qty: 10, source: "কেনাকাটা (Purchase)", user: "Admin" },
+        { id: "STK-102", date: "2026-10-21", type: "out", productName: "কুন্দন ব্রাইডাল চোকার ও ঝুমকা সেট", qty: 2, source: "বিক্রয় (POS Sale)", user: "Counter 1" }
+      ]));
+
       // Open Return & Exchange modal for a specific order
       const openReturnModalForOrder = (order) => {
         if (!order) return;
@@ -2040,6 +2064,357 @@
         setSettlementStatus("paid");
         setIsReturnModalOpen(true);
       };
+
+      // Play pleasant audio beep on successful barcode / QR scan
+      const playScannerBeep = () => {
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.14);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.14);
+          }
+        } catch (e) {}
+      };
+
+      // Open universal scanner modal
+      const openUniversalScanner = (mode = "return_order_search", customMsg = "") => {
+        setScannerTargetMode(mode);
+        setScannerActiveMessage(
+          customMsg ||
+          (mode === "return_order_search"
+            ? "ইনভয়েস QR কোড, অর্ডার বারকোড বা কাস্টমার QR কোড স্ক্যান করুন..."
+            : mode === "stock_in_out"
+            ? (stockInOutType === "in" ? "পণ্য কেনা / রিস্টক ইন করতে বারকোড বা QR স্ক্যান করুন..." : "পণ্য বেচা / বিক্রয় আউট করতে বারকোড বা QR স্ক্যান করুন...")
+            : "প্রোডাক্ট বারকোড বা QR কোড স্ক্যান করুন...")
+        );
+        setIsScannerModalOpen(true);
+      };
+
+      // Execute Stock In (পণ্য কেনা / রিস্টক) or Stock Out (পণ্য বেচা / বিক্রয়)
+      const executeStockInOut = async (product, type, qty = 1) => {
+        if (!product) return;
+        const quantity = Math.max(1, Number(qty) || 1);
+        const oldStock = Number(product.stock) || 0;
+        const newStock = type === "in" ? oldStock + quantity : Math.max(0, oldStock - quantity);
+
+        const updatedProducts = products.map(p => p.id === product.id ? { ...p, stock: newStock } : p);
+        setProducts(updatedProducts);
+        setStored("products", updatedProducts);
+        await syncDocToCloud("products", product.id, { stock: newStock });
+
+        const newLog = {
+          id: "STK-" + Math.floor(1000 + Math.random() * 9000),
+          date: new Date().toLocaleDateString('bn-BD'),
+          timestamp: Date.now(),
+          type: type, // "in" or "out"
+          productId: product.id,
+          productName: product.name,
+          sku: product.sku || product.id,
+          qty: quantity,
+          oldStock,
+          newStock,
+          source: type === "in" ? "বারকোড রিস্টক ইন (Purchase)" : "বারকোড বিক্রয় আউট (Sale)",
+          user: "Admin"
+        };
+        const updatedLogs = [newLog, ...stockLogs];
+        setStockLogs(updatedLogs);
+        setStored("stock_logs", updatedLogs);
+
+        playScannerBeep();
+        notify(
+          type === "in"
+            ? `📥 স্টক ইন সফল! ${product.name} (+${quantity}টি) • বর্তমান স্টক: ${newStock}টি`
+            : `📤 স্টক আউট সফল! ${product.name} (-${quantity}টি) • বর্তমান স্টক: ${newStock}টি`
+        );
+      };
+
+      // Handle barcode or QR scan detection
+      const handleBarcodeOrQrScanResult = (decodedText) => {
+        if (!decodedText) return;
+        const raw = String(decodedText).trim();
+        playScannerBeep();
+        setIsScannerModalOpen(false);
+
+        // 1. Return & Exchange Order Search Mode
+        if (scannerTargetMode === "return_order_search") {
+          let matchedOrder = orders.find(o => 
+            (o.id && o.id.toLowerCase() === raw.toLowerCase()) ||
+            (o.id && `#${o.id.toLowerCase()}` === raw.toLowerCase()) ||
+            (o.phone && o.phone.includes(raw)) ||
+            (raw.includes(o.id))
+          );
+
+          // If scanned a JSON QR code from Invoice or Customer Card
+          if (!matchedOrder && raw.startsWith("{")) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed.orderId) {
+                matchedOrder = orders.find(o => o.id === parsed.orderId);
+              } else if (parsed.phone) {
+                matchedOrder = orders.find(o => o.phone.includes(parsed.phone));
+              }
+            } catch (e) {}
+          }
+
+          if (matchedOrder) {
+            openReturnModalForOrder(matchedOrder);
+            notify(`✅ স্ক্যান সফল! অর্ডার #${matchedOrder.id} (${matchedOrder.customerName || matchedOrder.customer}) পাওয়া গেছে।`);
+          } else {
+            // Check if user scanned product barcode to exchange instead
+            const matchedProd = products.find(p => 
+              (p.sku && p.sku.toLowerCase() === raw.toLowerCase()) ||
+              (p.id && p.id.toLowerCase() === raw.toLowerCase()) ||
+              (p.name && p.name.toLowerCase().includes(raw.toLowerCase()))
+            );
+
+            if (matchedProd) {
+              setExchangeSearchQuery(matchedProd.sku || matchedProd.name);
+              notify(`✅ প্রোডাক্ট বারকোড স্ক্যান সফল: ${matchedProd.name} (SKU: ${matchedProd.sku})`);
+            } else {
+              setReturnSearchFilter(raw);
+              notify(`🔍 স্ক্যান কোড: "${raw}" দিয়ে সার্চ ফিল্টার করা হয়েছে।`);
+            }
+          }
+          return;
+        }
+
+        // 2. Stock In/Out Mode (কেনা ও বেচা)
+        if (scannerTargetMode === "stock_in_out") {
+          const matchedProd = products.find(p => 
+            (p.sku && p.sku.toLowerCase() === raw.toLowerCase()) ||
+            (p.id && p.id.toLowerCase() === raw.toLowerCase()) ||
+            (raw.includes(p.sku)) ||
+            (p.name && p.name.toLowerCase().includes(raw.toLowerCase()))
+          );
+
+          if (matchedProd) {
+            executeStockInOut(matchedProd, stockInOutType, stockInOutQty);
+          } else {
+            notify(`⚠️ স্ক্যান করা বারকোডে কোনো পণ্য পাওয়া যায়নি: ${raw}`);
+          }
+          return;
+        }
+
+        // 3. Product Search Mode
+        if (scannerTargetMode === "product_barcode_search") {
+          const matchedProd = products.find(p => 
+            (p.sku && p.sku.toLowerCase() === raw.toLowerCase()) ||
+            (p.id && p.id.toLowerCase() === raw.toLowerCase()) ||
+            (p.name && p.name.toLowerCase().includes(raw.toLowerCase()))
+          );
+          if (matchedProd) {
+            setDashboardProductSearch(matchedProd.sku || matchedProd.name);
+            setStoreSearch(matchedProd.name);
+            notify(`✅ প্রোডাক্ট বারকোড স্ক্যান সফল: ${matchedProd.name} (স্টক: ${matchedProd.stock}টি)`);
+          } else {
+            setDashboardProductSearch(raw);
+            notify(`🔍 স্ক্যান কোড: ${raw}`);
+          }
+          return;
+        }
+
+        // 4. Customer QR Search
+        if (scannerTargetMode === "customer_qr") {
+          setReturnSearchFilter(raw);
+          notify(`👤 গ্রাহক QR কোড স্ক্যান সম্পন্ন: ${raw}`);
+        }
+      };
+
+      // Print Barcode Label Sheet (A4 or thermal sticker paper)
+      const printBarcodeLabelsWindow = (product, count = 12) => {
+        if (!product) return;
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const countNum = Math.max(1, Number(count) || 12);
+        const labelsHtml = Array.from({ length: countNum }).map(() => `
+          <div class="label-card">
+            <div class="store-title">${config.storeName || "SAJGOJ FASHION"}</div>
+            <div class="product-title">${product.name}</div>
+            <div class="sku-tag">SKU: ${product.sku || product.id}</div>
+            <svg class="barcode-svg" jsbarcode-format="CODE128" jsbarcode-value="${product.sku || product.id}" jsbarcode-width="1.6" jsbarcode-height="38" jsbarcode-fontsize="10"></svg>
+            <div class="price-tag">মূল্য: ৳${product.price}</div>
+          </div>
+        `).join("");
+
+        w.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Barcode Labels - ${product.sku || product.id}</title>
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+            <style>
+              body { font-family: 'Hind Siliguri', sans-serif, Arial; margin: 0; padding: 15px; background: #fff; color: #000; }
+              .grid-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                max-width: 800px;
+                margin: 0 auto;
+              }
+              .label-card {
+                border: 1px dashed #777;
+                border-radius: 8px;
+                padding: 8px 6px;
+                text-align: center;
+                background: #fff;
+                page-break-inside: avoid;
+              }
+              .store-title { font-size: 10px; font-weight: bold; color: #7a1c2b; text-transform: uppercase; letter-spacing: 0.5px; }
+              .product-title { font-size: 11px; font-weight: bold; margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+              .sku-tag { font-family: monospace; font-size: 9px; color: #555; }
+              .barcode-svg { max-width: 100%; height: auto; margin: 2px 0; }
+              .price-tag { font-size: 12px; font-weight: 900; color: #000; margin-top: 2px; }
+              @media print {
+                .no-print { display: none !important; }
+                body { padding: 0; }
+                .label-card { border: 1px dashed #bbb; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="no-print" style="max-width:800px;margin:0 auto 15px auto;display:flex;justify-content:space-between;align-items:center;background:#fff8f0;padding:10px 16px;border-radius:12px;border:1px solid #d4a574;">
+              <div>
+                <b>প্রোডাক্ট বারকোড স্টিকার শিট (${countNum} টি লেবেল)</b>
+                <div style="font-size:12px;color:#666;">A4 বা স্টিকার লেবেল পেপারে প্রিন্ট করার জন্য প্রস্তুত</div>
+              </div>
+              <div>
+                <button onclick="window.print()" style="background:#7a1c2b;color:#fff;padding:8px 20px;border:none;border-radius:20px;font-weight:bold;cursor:pointer;">🖨️ প্রিন্ট করুন</button>
+                <button onclick="window.close()" style="background:#eee;color:#333;padding:8px 16px;border:none;border-radius:20px;margin-left:8px;cursor:pointer;">বন্ধ করুন</button>
+              </div>
+            </div>
+            <div class="grid-container">
+              ${labelsHtml}
+            </div>
+            <script>
+              window.onload = function() {
+                try { JsBarcode(".barcode-svg").init(); } catch(e){}
+              };
+            <\/script>
+          </body>
+          </html>
+        `);
+        w.document.close();
+      };
+
+      // Print Customer QR VIP Pass
+      const printCustomerQrPassWindow = (customerData) => {
+        if (!customerData) return;
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(JSON.stringify({
+          customer: customerData.customer || customerData.customerName || "Customer",
+          phone: customerData.phone || customerData.customerPhone || "",
+          orderId: customerData.id || ""
+        }))}`;
+
+        w.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Customer Pass - ${customerData.customer || "VIP"}</title>
+            <style>
+              body { font-family: 'Hind Siliguri', sans-serif, Arial; margin: 0; padding: 20px; background: #fff; color: #2c1810; display:flex; justify-content:center; }
+              .pass-card { width: 340px; border: 2px solid #7a1c2b; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff8f0; }
+              .pass-header { background: #7a1c2b; color: #fff; padding: 14px; text-align: center; }
+              .pass-body { padding: 16px; text-align: center; }
+              .qr-box { background: #fff; padding: 10px; border-radius: 12px; display: inline-block; border: 1px solid #d4a574; margin: 10px 0; }
+              @media print { .no-print { display: none !important; } }
+            </style>
+          </head>
+          <body>
+            <div>
+              <div class="no-print" style="text-align:center;margin-bottom:15px;">
+                <button onclick="window.print()" style="background:#7a1c2b;color:#fff;padding:8px 20px;border:none;border-radius:20px;font-weight:bold;cursor:pointer;">🖨️ প্রিন্ট করুন</button>
+                <button onclick="window.close()" style="background:#eee;color:#333;padding:8px 16px;border:none;border-radius:20px;margin-left:8px;cursor:pointer;">বন্ধ করুন</button>
+              </div>
+              <div class="pass-card">
+                <div class="pass-header">
+                  <h3 style="margin:0;">${config.storeName || "SAJGOJ FASHION"}</h3>
+                  <div style="font-size:11px;color:#d4a574;">কাস্টমার মেম্বারশিপ ও কুইক সার্ভিস পাস</div>
+                </div>
+                <div class="pass-body">
+                  <h4 style="margin:4px 0;font-size:16px;">${customerData.customer || customerData.customerName || "সম্মানিত ক্রেতা"}</h4>
+                  <div style="font-size:13px;color:#555;font-family:monospace;">📞 ${customerData.phone || customerData.customerPhone || "N/A"}</div>
+                  ${customerData.id ? `<div style="font-size:11px;color:#7a1c2b;margin-top:2px;">অর্ডার #${customerData.id}</div>` : ''}
+                  <div class="qr-box">
+                    <img src="${qrUrl}" width="150" height="150" alt="Customer QR" />
+                  </div>
+                  <div style="font-size:10px;color:#666;">ইনভয়েস বের করতে বা পণ্য রিটার্ন/এক্সচেঞ্জের সময় এই QR কোডটি স্ক্যান করুন।</div>
+                </div>
+              </div>
+            </div>
+          </body>
+          </html>
+        `);
+        w.document.close();
+      };
+
+      // Effect to initialize live camera scanner
+      useEffect(() => {
+        let scannerInstance = null;
+        if (isScannerModalOpen && window.Html5Qrcode) {
+          const timer = setTimeout(() => {
+            try {
+              const el = document.getElementById("universal-barcode-reader");
+              if (el) {
+                scannerInstance = new Html5Qrcode("universal-barcode-reader");
+                scannerInstance.start(
+                  { facingMode: "environment" },
+                  { fps: 12, qrbox: { width: 230, height: 230 } },
+                  (decodedText) => {
+                    handleBarcodeOrQrScanResult(decodedText);
+                    try { scannerInstance.stop(); } catch(e){}
+                  },
+                  () => {}
+                ).catch(err => {
+                  console.warn("Live camera start failed, fallback to file/manual:", err);
+                });
+              }
+            } catch (e) {
+              console.warn("Html5Qrcode init error:", e);
+            }
+          }, 250);
+
+          return () => {
+            clearTimeout(timer);
+            if (scannerInstance) {
+              try {
+                scannerInstance.stop().then(() => scannerInstance.clear()).catch(()=>{});
+              } catch(e) {}
+            }
+          };
+        }
+      }, [isScannerModalOpen]);
+
+      // Effect to render product barcode in modal
+      useEffect(() => {
+        if (productBarcodeModal && window.JsBarcode) {
+          const t = setTimeout(() => {
+            try {
+              window.JsBarcode("#modal-barcode-svg", productBarcodeModal.sku || productBarcodeModal.id, {
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: true,
+                fontSize: 13,
+                lineColor: "#2c1810"
+              });
+            } catch (e) {
+              console.warn("JsBarcode render err:", e);
+            }
+          }, 150);
+          return () => clearTimeout(t);
+        }
+      }, [productBarcodeModal]);
 
       // Toggle item selection in return order
       const toggleReturnItemSelection = (idx) => {
@@ -2908,24 +3283,136 @@
         return () => window.removeEventListener("hashchange", checkDeepLink);
       }, [products]);
 
-      // Review System State
+      // Review System State (With Photo Upload & Verified Buyer Enforcement)
       const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
       const [reviewRating, setReviewRating] = useState(5);
       const [reviewerName, setReviewerName] = useState("");
       const [reviewComment, setReviewComment] = useState("");
+      const [reviewImage, setReviewImage] = useState("");
       const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+      
+      // Customer Account Write Review Modal States
+      const [isWriteReviewModalOpen, setIsWriteReviewModalOpen] = useState(false);
+      const [writeReviewProduct, setWriteReviewProduct] = useState(null);
+      const [writeReviewOrder, setWriteReviewOrder] = useState(null);
+      const [zoomReviewImage, setZoomReviewImage] = useState(null);
+
+      // Helper: Check if user has purchased this product and order is Delivered/Received
+      const hasUserPurchasedProduct = (user, productId) => {
+        if (!user || !productId) return false;
+        const uPhone = normalizePhone(user.phone);
+        const uEmail = (user.email || "").toLowerCase().trim();
+
+        return (orders || []).some(ord => {
+          const oPhone = normalizePhone(ord.phone || ord.customerPhone);
+          const oEmail = (ord.customerEmail || "").toLowerCase().trim();
+          const isUserMatch = (uPhone && oPhone === uPhone) || (uEmail && oEmail === uEmail);
+          if (!isUserMatch) return false;
+
+          // Must be delivered/received
+          const isDelivered = ord.status === "Delivered" || ord.status === "রিসিভড";
+          if (!isDelivered) return false;
+
+          // Must contain product ID or matching SKU/Name
+          return (ord.items || []).some(it => 
+            String(it.productId || it.id) === String(productId) || 
+            (it.name && it.name === (products.find(p => p.id === productId)?.name))
+          );
+        });
+      };
+
+      // Helper: Check if an order is within the return policy time window
+      const isReturnWindowValid = (order) => {
+        if (!order) return { valid: false, daysPassed: 999, remainingDays: 0, maxDays: 7 };
+        const maxDays = Math.max(1, Number(config?.returnPolicyDays) || 7);
+
+        let orderTimestamp = order.timestamp || order.createdAt;
+        if (!orderTimestamp && order.date) {
+          try {
+            const parsed = Date.parse(order.date);
+            if (!isNaN(parsed)) orderTimestamp = parsed;
+          } catch(e){}
+        }
+        if (!orderTimestamp) orderTimestamp = Date.now();
+
+        const msPassed = Date.now() - orderTimestamp;
+        const daysPassed = Math.max(0, Math.floor(msPassed / (1000 * 60 * 60 * 24)));
+        const remainingDays = Math.max(0, maxDays - daysPassed);
+        const valid = daysPassed <= maxDays;
+        return { valid, daysPassed, remainingDays, maxDays };
+      };
+
+      // Helper: Compress/resize uploaded review photo to Base64
+      const handleImageUploadForReview = (file, callback) => {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          notify("অনুগ্রহ করে একটি সঠিক ছবির ফাইল নির্বাচন করুন!");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxDim = 800;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+            callback(dataUrl);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      // Open Write Review Modal from Customer Account Order
+      const openWriteReviewModal = (product, order) => {
+        if (!product) return;
+        setWriteReviewProduct(product);
+        setWriteReviewOrder(order || null);
+        setReviewRating(5);
+        setReviewerName(currentUser?.name || order?.customer || order?.customerName || "");
+        setReviewComment("");
+        setReviewImage("");
+        setIsWriteReviewModalOpen(true);
+      };
 
       // Reset review form when opened product changes
       useEffect(() => {
         setIsReviewFormOpen(false);
         setReviewRating(5);
-        setReviewerName("");
+        setReviewerName(currentUser?.name || "");
         setReviewComment("");
+        setReviewImage("");
       }, [viewProduct?.id]);
 
-      const handleSubmitReview = async (e) => {
+      // Submit Review (Enforcing Verified Buyer Only)
+      const handleSubmitReview = async (e, customTargetProduct = null, customOrder = null) => {
         if (e) e.preventDefault();
-        if (!viewProduct) return;
+        const targetProduct = customTargetProduct || viewProduct;
+        if (!targetProduct) return;
+
+        // 1. VERIFIED BUYER SECURITY GATE:
+        // একমাত্র প্রোডাক্ট কেনা ছাড়া কেহ রিভিউ দিতে পারবেনা
+        const isBuyer = hasUserPurchasedProduct(currentUser, targetProduct.id);
+        if (!isBuyer && !customOrder) {
+          notify("🔒 শুধুমাত্র এই পণ্যটি ক্রয় করে ডেলিভারি প্রাপ্ত ভেরিফাইড ক্রেতাগণ রিভিউ লিখতে পারবেন!");
+          return;
+        }
+
         if (!reviewComment.trim()) {
           notify("অনুগ্রহ করে আপনার মূল্যবান রিভিউ বা মন্তব্যটি লিখুন!");
           return;
@@ -2935,10 +3422,14 @@
         const reviewDate = new Date().toISOString().split("T")[0];
         const newReview = {
           id: "rev-" + Date.now(),
-          productId: viewProduct.id,
-          customerName: reviewerName.trim() || "ভেরিফাইড ক্রেতা",
+          productId: targetProduct.id,
+          productName: targetProduct.name,
+          customerName: reviewerName.trim() || currentUser?.name || customOrder?.customer || "ভেরিফাইড ক্রেতা",
+          customerPhone: currentUser?.phone || customOrder?.phone || "",
+          orderId: customOrder?.id || "",
           rating: Number(reviewRating),
           comment: reviewComment.trim(),
+          image: reviewImage || "", // Customer uploaded photo
           date: reviewDate,
           createdAt: Date.now(),
           verified: true
@@ -2949,30 +3440,35 @@
         setStored("reviews", updatedReviews);
 
         // Calculate updated rating & reviews count
-        const productReviews = updatedReviews.filter(r => r.productId === viewProduct.id);
+        const productReviews = updatedReviews.filter(r => r.productId === targetProduct.id);
         const newCount = productReviews.length;
         const sumRating = productReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0);
         const newAvg = parseFloat((sumRating / newCount).toFixed(1));
 
         const updatedProduct = {
-          ...viewProduct,
+          ...targetProduct,
           rating: newAvg,
           reviewsCount: newCount
         };
 
-        setViewProduct(updatedProduct);
-        setProducts(prev => prev.map(p => p.id === viewProduct.id ? updatedProduct : p));
+        if (viewProduct?.id === targetProduct.id) {
+          setViewProduct(updatedProduct);
+        }
+        setProducts(prev => prev.map(p => p.id === targetProduct.id ? updatedProduct : p));
 
         // Sync with Firestore Cloud
         await syncDocToCloud("reviews", newReview.id, newReview);
-        await syncDocToCloud("products", viewProduct.id, updatedProduct);
+        await syncDocToCloud("products", targetProduct.id, updatedProduct);
 
+        playScannerBeep();
         setIsSubmittingReview(false);
         setIsReviewFormOpen(false);
+        setIsWriteReviewModalOpen(false);
         setReviewerName("");
         setReviewComment("");
+        setReviewImage("");
         setReviewRating(5);
-        notify("ধন্যবাদ! আপনার রিভিউটি সফলভাবে যুক্ত হয়েছে! ⭐");
+        notify("🎉 ধন্যবাদ! আপনার ছবি ও রিভিউটি সফলভাবে প্রকাশিত হয়েছে! ⭐");
       };
 
       // Checkout form state
@@ -4298,8 +4794,11 @@
                 </div>
                 <div style="text-align:right;">
                   <h3 style="margin:0;color:#d4a574;">INVOICE</h3>
-                  <p style="margin:2px 0;font-size:13px;"># ${order.id}</p>
+                  <p style="margin:2px 0;font-size:13px;font-weight:bold;"># ${order.id}</p>
                   <p style="margin:0;font-size:11px;">তারিখ: ${order.date}</p>
+                  <div style="margin-top:5px;background:#fff;padding:3px;border-radius:8px;display:inline-block;border:1px solid #d4a574;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(JSON.stringify({ orderId: order.id, phone: order.phone, customer: order.customer }))}" width="70" height="70" alt="Order QR" style="display:block;" />
+                  </div>
                 </div>
               </div>
               <div style="padding: 24px;">
@@ -6854,6 +7353,34 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <div className="flex flex-wrap gap-2.5">
                         <button 
                           onClick={() => {
+                            setReturnOrder(orders[0] || null);
+                            setIsReturnModalOpen(true);
+                            setActiveReturnTab("new");
+                          }}
+                          className="bg-gradient-to-r from-orange-500 via-amber-500 to-[#7a1c2b] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-extrabold shadow-lg hover:brightness-110 transition flex items-center gap-1.5 active:scale-95 border border-white/30"
+                          title="ড্যাশবোর্ড থেকে সরাসরি ১ ক্লিকে রিটার্ন ও এক্সচেঞ্জ শুরু করুন"
+                        >
+                          <span className="text-base">🔄</span>
+                          <span>রিটার্ন ও এক্সচেঞ্জ</span>
+                        </button>
+                        <button 
+                          onClick={() => openUniversalScanner("return_order_search", "অর্ডার বা ইনভয়েস স্ক্যান করতে ক্যামেরা ধরুন...")}
+                          className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:brightness-110 transition flex items-center gap-1.5 active:scale-95"
+                          title="ক্যামেরা বারকোড ও কিউআর স্ক্যানার"
+                        >
+                          <span>📷</span>
+                          <span>লাইভ স্ক্যানার</span>
+                        </button>
+                        <button 
+                          onClick={() => setStockInOutModal(true)}
+                          className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow hover:brightness-110 transition flex items-center gap-1.5 active:scale-95"
+                          title="পণ্য কেনা ও বেচা (স্টক ইন / আউট)"
+                        >
+                          <span>📦</span>
+                          <span>স্টক In/Out</span>
+                        </button>
+                        <button 
+                          onClick={() => {
                             setEditingProduct(null);
                             setProductForm({ 
                               name: "", 
@@ -6971,8 +7498,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
                     )}
 
-                    {/* KPI Metrics: Now 5 Metrics Including Combos */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                    {/* KPI Metrics: 6 Metrics Including Return & Exchange and Combos */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
                       <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
                         <p className="text-xs text-[#b8956a] font-semibold">মোট বিক্রয়</p>
                         <h3 className="text-2xl font-bold text-[#7a1c2b] mt-1">{totalRevenue.toLocaleString()} ৳</h3>
@@ -6988,11 +7515,35 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <h3 className="text-2xl font-bold mt-1 text-[#2c1810]">{orders.length}</h3>
                         <p className="text-[11px] text-amber-600 mt-2 font-medium">{orders.filter(o => o.status === "Pending").length} টি পেন্ডিং অর্ডার</p>
                       </div>
+
+                      {/* DEDICATED RETURN & EXCHANGE KPI CARD */}
+                      <div 
+                        onClick={() => {
+                          setReturnOrder(orders[0] || null);
+                          setIsReturnModalOpen(true);
+                          setActiveReturnTab(returns.length > 0 ? "history" : "new");
+                        }}
+                        className="bg-gradient-to-br from-[#fff7ed] to-[#ffedd5] p-5 rounded-3xl border-2 border-orange-400 shadow-sm cursor-pointer hover:shadow-md transition group"
+                        title="ড্যাশবোর্ড থেকে ১-ক্লিক রিটার্ন ও এক্সচেঞ্জ পরিচালনা করুন"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-[#c2410c] font-bold flex items-center gap-1">
+                            <span>🔄</span> রিটার্ন ও এক্সচেঞ্জ
+                          </p>
+                          <span className="text-[10px] bg-[#c2410c] text-white px-2 py-0.5 rounded-full font-bold">
+                            {returns.length} টি
+                          </span>
+                        </div>
+                        <h3 className="text-2xl font-bold text-[#c2410c] mt-1 group-hover:scale-105 transition-transform">{returns.length} টি</h3>
+                        <p className="text-[11px] text-orange-800 mt-2 font-bold">১-ক্লিক কন্ট্রোল →</p>
+                      </div>
+
                       <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
                         <p className="text-xs text-[#b8956a] font-semibold">মোট প্রোডাক্ট</p>
                         <h3 className="text-2xl font-bold mt-1 text-[#2c1810]">{products.length}</h3>
                         <p className="text-[11px] text-[#b8956a] mt-2 font-medium">{categories.length} টি ক্যাটাগরিতে</p>
                       </div>
+                      
                       {/* DEDICATED KPI CARD FOR COMBOS */}
                       <div 
                         onClick={() => setActiveTab("Combos")}
@@ -7008,12 +7559,117 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </span>
                         </div>
                         <h3 className="text-2xl font-bold text-[#7a1c2b] mt-1 group-hover:scale-105 transition-transform">{combos.length} টি</h3>
-                        <p className="text-[11px] text-[#b8956a] mt-2 font-semibold">পণ্য চয়েস করে বান্ডেল অফার →</p>
+                        <p className="text-[11px] text-[#b8956a] mt-2 font-semibold">বান্ডেল অফার →</p>
                       </div>
                       <div className="bg-red-50 p-5 rounded-3xl border border-red-200 shadow-sm col-span-2 md:col-span-1">
                         <p className="text-xs text-red-600 font-semibold">কম স্টক সতর্কতা</p>
                         <h3 className="text-2xl font-bold text-red-700 mt-1">{lowStockProducts.length}</h3>
                         <p className="text-[11px] text-red-600 mt-2 font-medium">রিস্টক প্রয়োজন</p>
+                      </div>
+                    </div>
+
+                    {/* ========================================================= */}
+                    {/* FAST ACTION DASHBOARD COMMAND CENTER: RETURN, EXCHANGE & BARCODE SCANNER */}
+                    {/* ========================================================= */}
+                    <div className="bg-gradient-to-r from-orange-50 via-[#fff8f0] to-amber-50 p-6 rounded-3xl border-2 border-orange-300 shadow-md space-y-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#e65100] to-amber-600 text-white flex items-center justify-center text-2xl shadow-md">
+                            ⚡
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-base sm:text-lg font-black text-[#7a1c2b]">
+                                রিটার্ন, এক্সচেঞ্জ ও বারকোড স্ক্যানার সেন্টার (Instant 1-Click Operations)
+                              </h3>
+                              <span className="text-[10px] bg-orange-600 text-white font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                ড্যাশবোর্ড শর্টকাট
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-0.5">
+                              গ্রাহকের ইনভয়েস, কিউআর কোড বা প্রোডাক্ট বারকোড স্ক্যান করে ১ সেকেন্ডে রিটার্ন, এক্সচেঞ্জ ও স্টক ইন-আউট সম্পন্ন করুন
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                          <button
+                            onClick={() => {
+                              setReturnOrder(orders[0] || null);
+                              setIsReturnModalOpen(true);
+                              setActiveReturnTab("new");
+                            }}
+                            className="bg-gradient-to-r from-[#e65100] to-amber-600 hover:brightness-110 text-white px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black shadow-md transition flex items-center gap-1.5 active:scale-95"
+                          >
+                            <span>🔄</span>
+                            <span>১-ক্লিকে রিটার্ন ও এক্সচেঞ্জ</span>
+                          </button>
+                          <button
+                            onClick={() => openUniversalScanner("return_order_search", "ইনভয়েস বা কাস্টমার QR কোড স্ক্যান করুন...")}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5 active:scale-95"
+                          >
+                            <span>📷</span>
+                            <span>ক্যামেরা স্ক্যান</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Fast Live Search Bar with Instant Camera Scan Button */}
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-orange-200">
+                        <div className="sm:col-span-8 flex gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              value={returnSearchFilter}
+                              onChange={(e) => setReturnSearchFilter(e.target.value)}
+                              placeholder="🔍 গ্রাহকের নাম, মোবাইল, অর্ডার #ID অথবা প্রোডাক্ট SKU লিখুন..."
+                              className="w-full bg-white border-2 border-amber-300 focus:border-[#e65100] rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium outline-none shadow-xs"
+                            />
+                            <span className="absolute left-3.5 top-3 text-gray-400 text-sm">🔎</span>
+                            {returnSearchFilter && (
+                              <button
+                                onClick={() => setReturnSearchFilter("")}
+                                className="absolute right-3 top-2.5 text-xs text-gray-400 hover:text-black font-bold"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => openUniversalScanner("return_order_search", "অর্ডার #ID, কাস্টমার QR কোড বা ইনভয়েস বারকোড স্ক্যান করুন...")}
+                            className="bg-[#2c1810] hover:bg-[#7a1c2b] text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow transition flex items-center gap-1.5 shrink-0"
+                            title="ক্যামেরা অন করে সরাসরি স্ক্যান করুন"
+                          >
+                            <span>📷</span>
+                            <span className="hidden sm:inline">স্ক্যান করুন</span>
+                          </button>
+                        </div>
+
+                        {/* Quick Action Buttons */}
+                        <div className="sm:col-span-4 flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setStockInOutType("in");
+                              setStockInOutModal(true);
+                            }}
+                            className="flex-1 bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-800 px-3 py-2.5 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-xs"
+                            title="পণ্য কেনা / রিস্টক ইন করুন"
+                          >
+                            <span>📥</span>
+                            <span>স্টক ইন (কেনা)</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setStockInOutType("out");
+                              setStockInOutModal(true);
+                            }}
+                            className="flex-1 bg-white hover:bg-rose-50 border border-rose-300 text-rose-800 px-3 py-2.5 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-xs"
+                            title="পণ্য বিক্রয় / স্টক আউট করুন"
+                          >
+                            <span>📤</span>
+                            <span>স্টক আউট (বেচা)</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -7351,6 +8007,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   স্টক: {p.stock}
                                 </span>
                                 <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => setProductBarcodeModal(p)}
+                                    className="px-2 py-1 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-[10px] font-bold hover:bg-amber-600 hover:text-white transition flex items-center gap-1 shadow-xs"
+                                    title="বারকোড দেখুন ও স্টিকার শিট প্রিন্ট করুন"
+                                  >
+                                    🏷️ বারকোড
+                                  </button>
                                   <button
                                     onClick={() => handleOpenNewComboModal([p.id])}
                                     className="px-2 py-1 bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] rounded-full text-[10px] font-bold hover:bg-[#7a1c2b] hover:text-white transition flex items-center gap-1 shadow-xs"
@@ -13140,6 +13803,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </button>
 
                     <button
+                      onClick={() => setCustomerQrModal(viewInvoiceOrder)}
+                      className="px-4 py-2.5 bg-gradient-to-r from-sky-600 to-indigo-700 text-white rounded-full text-xs font-bold hover:brightness-110 transition flex items-center gap-1.5 shadow-sm"
+                      title="কাস্টমার QR কোড দেখুন ও প্রিন্ট করুন"
+                    >
+                      <span>📱</span>
+                      <span>কাস্টমার QR</span>
+                    </button>
+
+                    <button
                       onClick={() => {
                         const o = viewInvoiceOrder;
                         setViewInvoiceOrder(null);
@@ -13206,7 +13878,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                     {/* Top Right: Toggle Tabs + Close Button (Matches Screenshot) */}
                     <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <div className="bg-[#f7ebe0] p-1 rounded-2xl flex items-center gap-1 border border-[#e6d0bc]">
+                      <div className="bg-[#f7ebe0] p-1 rounded-2xl flex items-center gap-1 border border-[#e6d0bc] flex-wrap">
                         <button
                           type="button"
                           onClick={() => setActiveReturnTab("new")}
@@ -13227,7 +13899,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               : "text-gray-700 hover:bg-white/60"
                           }`}
                         >
-                          <span>পূর্ববর্তী রিটার্ন তালিকা ({returns.length})</span>
+                          <span>পূর্ববর্তী রিটার্ন ({returns.length})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveReturnTab("policy")}
+                          className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                            activeReturnTab === "policy"
+                              ? "bg-[#e65100] text-white shadow-sm"
+                              : "text-gray-700 hover:bg-white/60"
+                          }`}
+                          title="রিটার্ন ও এক্সচেঞ্জের সময়সীমা যেমন ৩ দিন বা ৭ দিন সেটআপ করুন"
+                        >
+                          <span>⚙️ পলিসি মেয়াদ ({config.returnPolicyDays || 7} দিন)</span>
                         </button>
                       </div>
 
@@ -13249,27 +13933,38 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   {activeReturnTab === "new" && (
                     <div className="space-y-6">
                       
-                      {/* Step A: Order Selector (If not preselected or wants to change) */}
+                      {/* Step A: Order Selector (With Instant Camera QR / Barcode Scanner) */}
                       <div className="bg-white p-4 rounded-2xl border border-[#f3e2d0] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex-1 w-full sm:w-auto">
                           <label className="text-xs font-bold text-gray-600 block mb-1">
-                            ১. ইনভয়েস / অর্ডার নির্বাচন করুন:
+                            ১. ইনভয়েস / অর্ডার নির্বাচন করুন বা সরাসরি স্ক্যান করুন:
                           </label>
-                          <select
-                            value={returnOrder?.id || ""}
-                            onChange={(e) => {
-                              const found = orders.find(o => o.id === e.target.value);
-                              if (found) openReturnModalForOrder(found);
-                            }}
-                            className="w-full bg-[#fffaf5] border border-[#d4a574] rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold outline-none focus:border-[#7a1c2b]"
-                          >
-                            <option value="">-- অর্ডার বেছে নিন --</option>
-                            {orders.map(o => (
-                              <option key={o.id} value={o.id}>
-                                #{o.id} - {o.customer} ({o.phone}) - {o.total} ৳ [{o.date}]
-                              </option>
-                            ))}
-                          </select>
+                          <div className="flex gap-2">
+                            <select
+                              value={returnOrder?.id || ""}
+                              onChange={(e) => {
+                                const found = orders.find(o => o.id === e.target.value);
+                                if (found) openReturnModalForOrder(found);
+                              }}
+                              className="flex-1 bg-[#fffaf5] border border-[#d4a574] rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold outline-none focus:border-[#7a1c2b]"
+                            >
+                              <option value="">-- অর্ডার বেছে নিন --</option>
+                              {orders.map(o => (
+                                <option key={o.id} value={o.id}>
+                                  #{o.id} - {o.customer} ({o.phone}) - {o.total} ৳ [{o.date}]
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => openUniversalScanner("return_order_search", "ইনভয়েস বা কাস্টমার QR কোড স্ক্যান করুন...")}
+                              className="bg-gradient-to-r from-orange-500 to-amber-600 hover:brightness-110 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 shrink-0 active:scale-95"
+                              title="ক্যামেরা অন করে ইনভয়েস বারকোড বা কিউআর কোড স্ক্যান করুন"
+                            >
+                              <span>📷</span>
+                              <span>স্ক্যান</span>
+                            </button>
+                          </div>
                         </div>
 
                         {returnOrder && (
@@ -13472,6 +14167,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     onChange={(e) => setExchangeSearchQuery(e.target.value)}
                                     className="flex-1 bg-white border border-[#d4a574] rounded-2xl px-4 py-2 text-xs sm:text-sm outline-none focus:border-[#e65100]"
                                   />
+                                  <button
+                                    type="button"
+                                    onClick={() => openUniversalScanner("return_order_search", "এক্সচেঞ্জ করার পণ্যের বারকোড বা QR কোড স্ক্যান করুন...")}
+                                    className="bg-gradient-to-r from-orange-500 to-amber-600 hover:brightness-110 text-white px-3.5 py-2 rounded-2xl text-xs font-bold shadow transition flex items-center gap-1.5 shrink-0 active:scale-95"
+                                    title="বারকোড স্ক্যানার দিয়ে এক্সচেঞ্জ পণ্য দ্রুত বের করুন"
+                                  >
+                                    <span>📷</span>
+                                    <span className="hidden sm:inline">বারকোড স্ক্যান</span>
+                                  </button>
                                   {exchangeSearchQuery && (
                                     <button
                                       type="button"
@@ -14087,6 +14791,105 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       )}
                     </div>
                   )}
+
+                  {/* TAB 3: RETURN & EXCHANGE POLICY & TIME WINDOW SETTINGS */}
+                  {activeReturnTab === "policy" && (
+                    <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-5 animate-fadeIn">
+                      <div className="flex items-center gap-3 pb-3 border-b border-[#f3e2d0]">
+                        <div className="w-11 h-11 rounded-2xl bg-[#e65100] text-white flex items-center justify-center text-xl font-bold shadow-md">
+                          ⚙️
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-sm sm:text-base text-[#7a1c2b]">
+                            রিটার্ন ও এক্সচেঞ্জ সময়সীমা সেটিংস (Return Window Configuration)
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            কাস্টমার পণ্য রিসিভ করার পর কত দিনের মধ্যে রিটার্ন বা এক্সচেঞ্জ করতে পারবেন তা সেট করুন (যেমন ৩ দিন বা ৭ দিন)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Return Period Quick Chips */}
+                      <div className="space-y-2.5">
+                        <label className="text-xs font-bold text-gray-700 block">
+                          নির্দিষ্ট রিটার্ন মেয়াদ নির্বাচন করুন (Quick Presets):
+                        </label>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[3, 5, 7, 10, 14, 21, 30].map(days => (
+                            <button
+                              key={days}
+                              type="button"
+                              onClick={() => {
+                                const updatedCfg = { ...config, returnPolicyDays: days };
+                                setConfig(updatedCfg);
+                                setStored("config", updatedCfg);
+                                syncDocToCloud("config", "store", updatedCfg);
+                                notify(`✅ রিটার্নের সময়সীমা ${days} দিনে সেট করা হয়েছে!`);
+                              }}
+                              className={`px-4 py-2 rounded-2xl text-xs font-black transition shadow-xs flex items-center gap-1.5 ${
+                                Number(config.returnPolicyDays) === days
+                                  ? "bg-[#e65100] text-white shadow-md scale-105"
+                                  : "bg-[#fffaf5] text-gray-700 border border-[#d4a574] hover:bg-amber-100"
+                              }`}
+                            >
+                              <span>📅</span>
+                              <span>{days} দিন {days === 7 ? "(ডিফল্ট)" : ""}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Custom Days Input */}
+                      <div className="bg-amber-50/70 p-4 sm:p-5 rounded-2xl border-2 border-amber-300 space-y-3.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <span className="text-xs font-black text-amber-950 block">কাস্টম দিনের সংখ্যা লিখুন:</span>
+                            <span className="text-[11px] text-gray-600">
+                              ডেলিভারির পর কত দিন গ্রাহক রিটার্ন ও এক্সচেঞ্জ করতে পারবেন (বর্তমানে: <b>{config.returnPolicyDays || 7} দিন</b>)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min="1"
+                              max="90"
+                              value={config.returnPolicyDays || 7}
+                              onChange={(e) => {
+                                const val = Math.max(1, Number(e.target.value) || 1);
+                                setConfig(prev => ({ ...prev, returnPolicyDays: val }));
+                              }}
+                              className="w-24 bg-white border-2 border-amber-400 rounded-xl px-3 py-2 text-xs font-black text-center outline-none focus:border-[#e65100]"
+                            />
+                            <span className="text-xs font-bold text-gray-700">দিন</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setStored("config", config);
+                                syncDocToCloud("config", "store", config);
+                                notify(`✅ রিটার্ন ও এক্সচেঞ্জ মেয়াদ ${config.returnPolicyDays || 7} দিনে সফলভাবে সংরক্ষিত হয়েছে!`);
+                              }}
+                              className="bg-[#7a1c2b] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#681727] transition shadow-xs active:scale-95"
+                            >
+                              সংরক্ষণ করুন
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Customer Explanation Note */}
+                        <div className="p-3.5 bg-white rounded-xl border border-amber-300 text-xs text-gray-700 space-y-1.5 shadow-xs">
+                          <p className="font-bold text-[#e65100] flex items-center gap-1.5">
+                            <span>🛡️</span> <span>পলিসি প্রয়োগের স্বয়ংক্রিয় নিয়মাবলী:</span>
+                          </p>
+                          <p className="text-[11px] leading-relaxed">
+                            ১. কাস্টমার অ্যাকাউন্ট অর্ডারের পাশে নির্ধারিত <b>{config.returnPolicyDays || 7} দিন</b> পর্যন্ত <i>"🔄 রিটার্ন / এক্সচেঞ্জ"</i> বাটন সক্রিয় থাকবে।
+                          </p>
+                          <p className="text-[11px] leading-relaxed">
+                            ২. ডেলিভারি তারিখ থেকে <b>{config.returnPolicyDays || 7} দিন পার</b> হয়ে গেলে কাস্টমার অ্যাকাউন্টে বাটনটি স্বয়ংক্রিয়ভাবে লক হয়ে যাবে এবং <i>"🔒 রিটার্নের মেয়াদ শেষ ({config.returnPolicyDays || 7} দিন পার)"</i> নোটিশ দেখাবে।
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 3. Sticky Bottom Action & Summary Footer (Matches Screenshot) */}
@@ -14260,12 +15063,510 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </button>
                 </div>
               </div>
+          {/* ========================================================= */}
+          {/* 1. UNIVERSAL CAMERA BARCODE & QR SCANNER MODAL */}
+          {/* ========================================================= */}
+          {isScannerModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden border-2 border-orange-400 shadow-2xl flex flex-col">
+                <div className="p-4 bg-gradient-to-r from-[#2c1810] to-[#7a1c2b] text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">📷</span>
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base">
+                        ইউনিভার্সাল লাইভ স্ক্যানার (Live Barcode & QR)
+                      </h3>
+                      <p className="text-[11px] text-[#ffdcc0]">
+                        {scannerActiveMessage || "বারকোড বা QR কোড স্ক্যান করুন..."}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsScannerModalOpen(false)}
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white font-bold flex items-center justify-center transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-4 sm:p-5 space-y-4">
+                  {/* Scanner Mode Indicator */}
+                  <div className="flex items-center justify-between bg-orange-50 border border-orange-200 px-3 py-2 rounded-xl text-xs">
+                    <span className="text-gray-600 font-medium">স্ক্যানার মুড:</span>
+                    <span className="font-bold text-[#e65100]">
+                      {scannerTargetMode === "return_order_search"
+                        ? "🔄 রিটার্ন / ইনভয়েস / অর্ডার"
+                        : scannerTargetMode === "stock_in_out"
+                        ? (stockInOutType === "in" ? "📥 স্টক ইন (Purchase/কেনা)" : "📤 স্টক আউট (Sale/বেচা)")
+                        : "🏷️ প্রোডাক্ট বারকোড"}
+                    </span>
+                  </div>
+
+                  {/* Live Camera Viewfinder Box */}
+                  <div className="relative bg-black rounded-2xl overflow-hidden border-2 border-dashed border-amber-400 min-h-[250px] flex items-center justify-center">
+                    <div id="universal-barcode-reader" className="w-full"></div>
+                    
+                    {/* Targeting Laser Line Overlay */}
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <div className="w-48 h-48 border-2 border-amber-400/80 rounded-2xl relative shadow-lg">
+                        <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-amber-400 rounded-tl-lg"></div>
+                        <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-amber-400 rounded-tr-lg"></div>
+                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-amber-400 rounded-bl-lg"></div>
+                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-amber-400 rounded-br-lg"></div>
+                        <div className="w-full h-0.5 bg-red-500/90 shadow-md animate-pulse absolute top-1/2 -translate-y-1/2"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Photo File Scan from Device */}
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <label className="flex-1 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 py-2.5 px-3 rounded-xl font-bold cursor-pointer transition flex items-center justify-center gap-1.5 text-center shadow-xs">
+                      <span>🖼️</span>
+                      <span>গ্যালারি থেকে ফটো / স্ক্রিনশট স্ক্যান</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (window.Html5Qrcode) {
+                            const html5QrCode = new Html5Qrcode("universal-barcode-reader");
+                            html5QrCode.scanFile(file, true)
+                              .then(decodedText => {
+                                handleBarcodeOrQrScanResult(decodedText);
+                              })
+                              .catch(err => {
+                                notify("⚠️ ছবিতে কোনো স্পষ্ট বারকোড বা QR কোড সনাক্ত করা যায়নি।");
+                              });
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Manual Barcode / SKU / Order Number Entry */}
+                  <div className="pt-3 border-t border-gray-100 space-y-1.5">
+                    <label className="text-[11px] font-bold text-gray-600 block">
+                      ক্যামেরা কাজ না করলে বারকোড, SKU বা অর্ডার নম্বর লিখুন:
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        id="scanner-manual-input"
+                        type="text"
+                        placeholder="যেমন: SAJ-101 বা #1001..."
+                        className="flex-1 bg-[#fffaf5] border border-amber-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && e.target.value.trim()) {
+                            handleBarcodeOrQrScanResult(e.target.value.trim());
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const inp = document.getElementById("scanner-manual-input");
+                          if (inp && inp.value.trim()) {
+                            handleBarcodeOrQrScanResult(inp.value.trim());
+                          }
+                        }}
+                        className="bg-[#7a1c2b] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#681727] transition"
+                      >
+                        সাবমিট
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* POS THERMAL RECEIPT PREVIEW MODAL (ক্যাশ কাউন্টার মেমো ভিউ) */}
+          {/* 2. PRODUCT BARCODE & LABEL PRINTING MODAL */}
           {/* ========================================================= */}
+          {productBarcodeModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-5 sm:p-6 border-2 border-amber-400 shadow-2xl space-y-5">
+                <div className="flex justify-between items-start pb-3 border-b border-[#f3e2d0]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">🏷️</span>
+                    <div>
+                      <h3 className="font-extrabold text-base sm:text-lg text-[#7a1c2b]">
+                        প্রোডাক্ট বারকোড ও স্টিকার শিট
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        Code128 স্ট্যান্ডার্ড বারকোড ও 2D কিউআর কোড লেবেল
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setProductBarcodeModal(null)}
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Product Summary Card */}
+                <div className="flex items-center gap-3.5 bg-[#fffaf5] p-3.5 rounded-2xl border border-amber-200">
+                  <img
+                    src={productBarcodeModal.images?.[0] || imgSharee}
+                    alt={productBarcodeModal.name}
+                    className="w-16 h-16 rounded-xl object-cover border bg-white flex-shrink-0"
+                    onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-extrabold text-sm text-gray-900 truncate">
+                      {productBarcodeModal.name}
+                    </h4>
+                    <p className="text-xs font-mono font-bold text-amber-800 mt-0.5">
+                      SKU: {productBarcodeModal.sku || productBarcodeModal.id}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-black text-[#7a1c2b]">৳{productBarcodeModal.price}</span>
+                      <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">
+                        স্টক: {productBarcodeModal.stock} টি
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Generated Barcode Preview */}
+                <div className="bg-white p-5 rounded-2xl border-2 border-dashed border-[#7a1c2b]/40 text-center space-y-3">
+                  <p className="text-xs font-bold text-gray-500">
+                    সাজগোজ কোড ১২৮ (Code128) বারকোড লেবেল:
+                  </p>
+                  <div className="flex justify-center overflow-x-auto py-2">
+                    <svg id="modal-barcode-svg" className="max-w-full h-auto"></svg>
+                  </div>
+                  
+                  {/* QR Code Preview */}
+                  <div className="flex items-center justify-center gap-4 pt-2 border-t border-gray-100">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(JSON.stringify({
+                        id: productBarcodeModal.id,
+                        sku: productBarcodeModal.sku || productBarcodeModal.id,
+                        name: productBarcodeModal.name,
+                        price: productBarcodeModal.price
+                      }))}`}
+                      alt="Product QR"
+                      className="w-20 h-20 border rounded-xl p-1 bg-white shadow-xs"
+                    />
+                    <div className="text-left text-xs text-gray-600">
+                      <p className="font-bold text-gray-900">2D ডিজিটাল QR কোড</p>
+                      <p className="text-[11px] text-gray-500">মোবাইল ক্যামেরা বা স্ক্যানার দিয়ে স্ক্যান করলে তৎক্ষণাৎ স্টক ইন-আউট বা এক্সচেঞ্জ হবে।</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Print Sheet Options */}
+                <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-700">
+                      প্রিন্ট করার জন্য স্টিকার সংখ্যা বেছে নিন:
+                    </label>
+                    <span className="text-xs font-mono font-bold text-[#7a1c2b]">
+                      {barcodeStickerCount} টি লেবেল
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {[1, 4, 12, 24, 40].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => setBarcodeStickerCount(cnt)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                          barcodeStickerCount === cnt
+                            ? "bg-[#7a1c2b] text-white shadow-sm"
+                            : "bg-white text-gray-700 border border-gray-200 hover:bg-amber-100"
+                        }`}
+                      >
+                        {cnt} টি
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => printBarcodeLabelsWindow(productBarcodeModal, barcodeStickerCount)}
+                    className="w-full py-2.5 bg-gradient-to-r from-[#7a1c2b] to-amber-600 hover:brightness-110 text-white rounded-xl text-xs sm:text-sm font-black shadow-md transition flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <span>🖨️</span>
+                    <span>বারকোড স্টিকার শিট প্রিন্ট করুন</span>
+                  </button>
+                </div>
+
+                {/* Quick Stock In / Out Operations */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      executeStockInOut(productBarcodeModal, "in", 1);
+                    }}
+                    className="flex-1 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-xs"
+                  >
+                    <span>📥</span>
+                    <span>+১ স্টক ইন (কেনা)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      executeStockInOut(productBarcodeModal, "out", 1);
+                    }}
+                    className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-xs"
+                  >
+                    <span>📤</span>
+                    <span>-১ স্টক আউট (বেচা)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 3. STOCK IN / OUT HUB (পণ্য কেনা ও বেচা ব্যবস্থাপনা) */}
+          {/* ========================================================= */}
+          {stockInOutModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 border-2 border-emerald-400 shadow-2xl space-y-5">
+                <div className="flex justify-between items-start pb-3 border-b border-[#f3e2d0]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">📦</span>
+                    <div>
+                      <h3 className="font-extrabold text-base sm:text-lg text-[#7a1c2b]">
+                        ইনভেন্টরি স্টক ইন ও স্টক আউট হাব (Stock In/Out)
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        বারকোড বা QR কোড স্ক্যান করে পণ্য কেনা ও বিক্রয় ম্যানেজমেন্ট
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setStockInOutModal(false)}
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* In/Out Action Tabs */}
+                <div className="grid grid-cols-2 gap-2 bg-[#fff8f0] p-1.5 rounded-2xl border border-amber-200">
+                  <button
+                    type="button"
+                    onClick={() => setStockInOutType("in")}
+                    className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                      stockInOutType === "in"
+                        ? "bg-emerald-600 text-white shadow-md"
+                        : "text-emerald-900 hover:bg-emerald-100"
+                    }`}
+                  >
+                    <span>📥</span>
+                    <span>স্টক ইন (Purchase / পণ্য কেনা)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockInOutType("out")}
+                    className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                      stockInOutType === "out"
+                        ? "bg-rose-600 text-white shadow-md"
+                        : "text-rose-900 hover:bg-rose-100"
+                    }`}
+                  >
+                    <span>📤</span>
+                    <span>স্টক আউট (Sale / পণ্য বেচা)</span>
+                  </button>
+                </div>
+
+                {/* Big Camera Scanner Trigger */}
+                <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-300 text-center space-y-2.5">
+                  <p className="text-xs text-gray-600 font-medium">
+                    সরাসরি ক্যামেরা অন করে পণ্যের বারকোড বা QR স্ক্যান করলেই স্বয়ংক্রিয়ভাবে স্টক আপডেট হবে:
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openUniversalScanner("stock_in_out", stockInOutType === "in" ? "পণ্য কেনা / রিস্টক ইন করতে বারকোড স্ক্যান করুন..." : "পণ্য বেচা / বিক্রয় আউট করতে বারকোড স্ক্যান করুন...")}
+                    className="px-6 py-3 bg-gradient-to-r from-[#2c1810] to-[#7a1c2b] hover:brightness-110 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg transition flex items-center justify-center gap-2 mx-auto active:scale-95"
+                  >
+                    <span>📷</span>
+                    <span>ক্যামেরা দিয়ে বারকোড স্ক্যান করুন ({stockInOutType === "in" ? "স্টক ইন" : "স্টক আউট"})</span>
+                  </button>
+                </div>
+
+                {/* Manual Product Selector Form */}
+                <div className="bg-[#fffaf5] p-4 rounded-2xl border border-[#ecd9c6] space-y-3 text-xs">
+                  <h4 className="font-bold text-gray-800">অথবা তালিকা থেকে পণ্য নির্বাচন করুন:</h4>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-600">পণ্য নির্বাচন:</label>
+                    <select
+                      value={stockInOutSelectedProductId || (products[0]?.id || "")}
+                      onChange={(e) => setStockInOutSelectedProductId(e.target.value)}
+                      className="w-full bg-white border border-[#d4a574] rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-[#7a1c2b]"
+                    >
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} (SKU: {p.sku || p.id}) • বর্তমান স্টক: {p.stock} টি
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-gray-600">পরিমাণ (Quantity):</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={stockInOutQty}
+                        onChange={(e) => setStockInOutQty(Math.max(1, Number(e.target.value) || 1))}
+                        className="w-full bg-white border border-[#d4a574] rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#7a1c2b]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-gray-600">উৎস / বিবরণ:</label>
+                      <input
+                        type="text"
+                        value={stockInOutSource}
+                        onChange={(e) => setStockInOutSource(e.target.value)}
+                        placeholder="যেমন: নতুন কারখানা থেকে কেনা"
+                        className="w-full bg-white border border-[#d4a574] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prodId = stockInOutSelectedProductId || products[0]?.id;
+                      const prod = products.find(p => p.id === prodId);
+                      if (prod) {
+                        executeStockInOut(prod, stockInOutType, stockInOutQty);
+                      }
+                    }}
+                    className={`w-full py-2.5 rounded-xl text-xs font-black shadow-md text-white transition active:scale-95 flex items-center justify-center gap-1.5 ${
+                      stockInOutType === "in" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                    }`}
+                  >
+                    <span>{stockInOutType === "in" ? "📥" : "📤"}</span>
+                    <span>
+                      {stockInOutType === "in" ? `স্টক ইন কনফার্ম করুন (+${stockInOutQty}টি)` : `স্টক আউট কনফার্ম করুন (-${stockInOutQty}টি)`}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Stock Movement Logs History */}
+                <div className="space-y-2 pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-xs sm:text-sm text-gray-800 flex items-center gap-1.5">
+                      <span>📜</span>
+                      <span>সাম্প্রতিক স্টক মুভমেন্ট লগ ({stockLogs.length} টি)</span>
+                    </h4>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                    {stockLogs.map((log) => (
+                      <div key={log.id} className="p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-xs flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                              log.type === "in" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                            }`}>
+                              {log.type === "in" ? `📥 স্টক ইন (+${log.qty})` : `📤 স্টক আউট (-${log.qty})`}
+                            </span>
+                            <span className="font-bold text-gray-900">{log.productName}</span>
+                          </div>
+                          <p className="text-[10px] text-gray-500 mt-0.5">
+                            উৎস: {log.source || "N/A"} • স্টক পরিবর্তন: {log.oldStock ?? "N/A"} → {log.newStock ?? "N/A"}
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-mono">{log.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 4. CUSTOMER QR CODE & QUICK SERVICE PASS MODAL */}
+          {/* ========================================================= */}
+          {customerQrModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-sm max-h-[92vh] overflow-y-auto p-5 sm:p-6 border-2 border-[#7a1c2b] shadow-2xl space-y-4 text-center">
+                <div className="flex justify-between items-center pb-2 border-b border-[#f3e2d0]">
+                  <h3 className="font-extrabold text-sm sm:text-base text-[#7a1c2b]">
+                    কাস্টমার QR কোড পাস
+                  </h3>
+                  <button
+                    onClick={() => setCustomerQrModal(null)}
+                    className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="font-extrabold text-base text-gray-900">
+                    {customerQrModal.customer || customerQrModal.customerName || "সম্মানিত গ্রাহক"}
+                  </h4>
+                  <p className="text-xs font-mono text-gray-600">
+                    📞 {customerQrModal.phone || customerQrModal.customerPhone || "N/A"}
+                  </p>
+                  {customerQrModal.id && (
+                    <span className="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-bold inline-block">
+                      অর্ডার #{customerQrModal.id}
+                    </span>
+                  )}
+                </div>
+
+                {/* Auto-generated QR Code */}
+                <div className="p-3 bg-[#fffaf5] rounded-2xl border-2 border-dashed border-[#d4a574] inline-block shadow-inner">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(JSON.stringify({
+                      customer: customerQrModal.customer || customerQrModal.customerName || "Customer",
+                      phone: customerQrModal.phone || customerQrModal.customerPhone || "",
+                      orderId: customerQrModal.id || ""
+                    }))}`}
+                    alt="Customer QR Code"
+                    className="w-36 h-36 mx-auto rounded-xl border bg-white p-1"
+                  />
+                </div>
+
+                <p className="text-[11px] text-gray-500">
+                  গ্রাহক এই QR কোডটি নিয়ে দোকানে আসলে বা দেখালে ১ ক্লিকে তার সকল অর্ডার, রিটার্ন ও এক্সচেঞ্জ সম্পন্ন করা যাবে।
+                </p>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => printCustomerQrPassWindow(customerQrModal)}
+                    className="flex-1 py-2.5 bg-[#7a1c2b] text-white rounded-xl text-xs font-bold hover:bg-[#681727] transition flex items-center justify-center gap-1.5 shadow"
+                  >
+                    <span>🖨️</span>
+                    <span>পাস প্রিন্ট করুন</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ord = orders.find(o => o.id === customerQrModal.id || o.phone === customerQrModal.phone);
+                      if (ord) {
+                        setCustomerQrModal(null);
+                        openReturnModalForOrder(ord);
+                      } else {
+                        notify("এই গ্রাহকের অর্ডার লোড করা হচ্ছে...");
+                      }
+                    }}
+                    className="flex-1 py-2.5 bg-orange-600 text-white rounded-xl text-xs font-bold hover:bg-orange-700 transition flex items-center justify-center gap-1 shadow"
+                  >
+                    <span>🔄</span>
+                    <span>রিটার্ন / এক্সচেঞ্জ</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {viewPosReceipt && (
             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
               <div className="bg-white rounded-3xl w-full max-w-md max-h-[94vh] overflow-y-auto p-5 sm:p-6 border-2 border-orange-400 shadow-2xl animate-fadeIn space-y-4">
@@ -15017,22 +16318,118 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 </div>
                               )}
 
-                              {/* Items list */}
-                              <div className="space-y-1.5">
-                                {(order.items || []).map((it, idx) => (
-                                  <div key={idx} className="flex items-center justify-between text-xs bg-[#fffaf5] p-2 rounded-xl">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-[#7a1c2b] flex-shrink-0"></span>
-                                      <span className="font-semibold text-gray-800 truncate">{it.name}</span>
-                                      <span className="text-gray-400 font-mono">× {it.qty}</span>
-                                      {it.bogo && <span className="bg-amber-100 text-amber-900 text-[9px] font-black px-1.5 py-0.2 rounded">+১টি ফ্রি</span>}
-                                      {it.isFreeGift && <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.2 rounded">🎁 ফ্রি গিফট (০ ৳)</span>}
+                              {/* Items list with Return and Write Review actions */}
+                              <div className="space-y-2.5">
+                                {(order.items || []).map((it, idx) => {
+                                  const returnInfo = isReturnWindowValid(order);
+                                  const matchedProduct = products.find(p => p.id === it.productId || p.id === it.id || p.name === it.name);
+                                  const targetProdId = matchedProduct?.id || it.productId || it.id;
+                                  const hasReviewed = reviews.some(r => r.productId === targetProdId && (r.customerPhone === currentUser?.phone || r.orderId === order.id));
+                                  const isDelivered = order.status === 'Delivered' || order.status === 'রিসিভড';
+
+                                  return (
+                                    <div key={idx} className="bg-[#fffaf5] p-3 rounded-2xl border border-[#ecd9c6] space-y-2.5">
+                                      {/* Item Header / Details */}
+                                      <div className="flex items-center justify-between gap-2 text-xs">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                          <img
+                                            src={it.image || matchedProduct?.images?.[0] || imgSharee}
+                                            alt={it.name}
+                                            className="w-12 h-12 rounded-xl object-cover border bg-white flex-shrink-0 shadow-xs"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                          />
+                                          <div className="min-w-0">
+                                            <p className="font-bold text-gray-900 truncate" title={it.name}>{it.name}</p>
+                                            <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-gray-500 mt-0.5">
+                                              <span>{it.price} ৳ × {it.qty || 1} টি</span>
+                                              {(it.color || it.selectedColor) && (
+                                                <span className="bg-white border px-1.5 py-0.2 rounded text-[10px] text-[#7a1c2b] font-medium">
+                                                  কালার: {cleanVariation(it.color || it.selectedColor)}
+                                                </span>
+                                              )}
+                                              {(it.size || it.selectedSize) && (
+                                                <span className="bg-white border px-1.5 py-0.2 rounded text-[10px] text-[#7a1c2b] font-medium">
+                                                  সাইজ: {cleanVariation(it.size || it.selectedSize)}
+                                                </span>
+                                              )}
+                                              {it.bogo && <span className="bg-amber-100 text-amber-900 text-[9px] font-black px-1.5 py-0.2 rounded">+১টি ফ্রি</span>}
+                                              {it.isFreeGift && <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.2 rounded">🎁 ফ্রি উপহার</span>}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <span className="font-black text-[#7a1c2b] font-mono text-xs flex-shrink-0">
+                                          {(it.price || 0) * (it.qty || 1)} ৳
+                                        </span>
+                                      </div>
+
+                                      {/* ACTION BUTTONS: RETURN & WRITE REVIEW */}
+                                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#f3e2d0]/80 flex-wrap">
+                                        {isDelivered ? (
+                                          <>
+                                            {/* 1. Return & Exchange Button */}
+                                            {returnInfo.valid ? (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  openReturnModalForOrder(order);
+                                                  setIsProfileModalOpen(false);
+                                                }}
+                                                className="px-3 py-1.5 bg-gradient-to-r from-[#e65100] to-amber-600 hover:brightness-110 text-white rounded-full text-[11px] font-bold shadow-xs flex items-center gap-1.5 active:scale-95 transition"
+                                                title={`রিটার্ন বা এক্সচেঞ্জের সময় বাকি: ${returnInfo.remainingDays} দিন`}
+                                              >
+                                                <span>🔄</span>
+                                                <span>রিটার্ন / এক্সচেঞ্জ</span>
+                                                <span className="text-[9px] bg-black/25 px-1.5 py-0.2 rounded-full font-mono">
+                                                  {returnInfo.remainingDays} দিন বাকি
+                                                </span>
+                                              </button>
+                                            ) : (
+                                              <div 
+                                                className="px-2.5 py-1 bg-gray-100 text-gray-400 border border-gray-200 rounded-full text-[10px] font-medium flex items-center gap-1 cursor-not-allowed"
+                                                title={`অর্ডারের নির্দিষ্ট রিটার্ন সময়সীমা (${returnInfo.maxDays} দিন) অতিবাহিত হয়েছে।`}
+                                              >
+                                                <span>🔒</span>
+                                                <span>রিটার্নের মেয়াদ শেষ ({returnInfo.maxDays} দিন পার)</span>
+                                              </div>
+                                            )}
+
+                                            {/* 2. Write Review Button with Photo */}
+                                            {hasReviewed ? (
+                                              <span className="px-3 py-1.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full text-[11px] font-bold flex items-center gap-1">
+                                                <span>✓</span>
+                                                <span>রিভিউ প্রকাশিত হয়েছে</span>
+                                              </span>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const prod = matchedProduct || {
+                                                    id: targetProdId,
+                                                    name: it.name,
+                                                    price: it.price,
+                                                    images: [it.image || imgSharee]
+                                                  };
+                                                  openWriteReviewModal(prod, order);
+                                                }}
+                                                className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-[#7a1c2b] hover:brightness-110 text-white rounded-full text-[11px] font-bold shadow-xs flex items-center gap-1.5 active:scale-95 transition"
+                                                title="এই পণ্যের বাস্তব ছবি সহ রিভিউ লিখুন"
+                                              >
+                                                <span>✍️</span>
+                                                <span>Write রিভিউ</span>
+                                                <span className="text-[10px] bg-white/25 px-1 rounded-full">📷 ছবি সহ</span>
+                                              </button>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <div className="text-[10px] text-amber-800 bg-amber-50/90 border border-amber-200 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
+                                            <span>⏳</span>
+                                            <span>ডেলিভারি সম্পন্ন হলে রিটার্ন ও ছবি সহ রিভিউ অপশন চালু হবে</span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                    <span className="font-bold text-[#7a1c2b] font-mono flex-shrink-0">
-                                      {(it.price || 0) * (it.qty || 1)} ৳
-                                    </span>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
 
                               {/* Customer's Delivery Instruction Note */}
@@ -15806,91 +17203,183 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     );
                   })()}
 
-                  {/* Interactive Review Form */}
+                  {/* Interactive Review Form / Verified Buyer Check */}
                   {isReviewFormOpen && (
-                    <form onSubmit={handleSubmitReview} className="bg-[#fff8f0] rounded-2xl p-4 sm:p-5 border border-[#d4a574]/40 mb-6 space-y-4 animate-fadeIn shadow-inner">
-                      <div className="flex items-center justify-between pb-2 border-b border-[#f3e2d0]">
-                        <h5 className="font-bold text-sm text-[#7a1c2b] flex items-center gap-1.5">
-                          <span>✨</span> আপনার মতামত জানান
-                        </h5>
-                        <span className="text-[11px] text-[#b8956a]">ভেরিফাইড কাস্টমার রিভিউ</span>
-                      </div>
-
-                      {/* Star Rating Selector */}
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                          রেটিং নির্বাচন করুন: <span className="text-red-500">*</span>
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full border border-[#f3e2d0] shadow-sm">
-                            {[1, 2, 3, 4, 5].map(star => (
-                              <button
-                                type="button"
-                                key={star}
-                                onClick={() => setReviewRating(star)}
-                                className={`text-2xl transition hover:scale-125 focus:outline-none ${star <= reviewRating ? "text-amber-500" : "text-gray-300"}`}
-                              >
-                                ★
-                              </button>
-                            ))}
-                          </div>
-                          <span className="text-xs font-bold text-[#7a1c2b]">
-                            {reviewRating === 5 && "অসাধারণ! (৫/৫)"}
-                            {reviewRating === 4 && "খুব ভালো (৪/৫)"}
-                            {reviewRating === 3 && "ভালো (৩/৫)"}
-                            {reviewRating === 2 && "সন্তোষজনক নয় (২/৫)"}
-                            {reviewRating === 1 && "খারাপ (১/৫)"}
-                          </span>
+                    <div className="mb-6 animate-fadeIn">
+                      {!currentUser ? (
+                        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 text-center">
+                          <span className="text-2xl mb-1 block">🔐</span>
+                          <h5 className="font-bold text-xs sm:text-sm text-amber-900 mb-1">
+                            রিভিউ লিখতে লগইন প্রয়োজন
+                          </h5>
+                          <p className="text-xs text-amber-800/80 mb-3">
+                            শুধুমাত্র পণ্যটি ক্রয়কারী ক্রেতারা রিভিউ দিতে পারেন। অনুগ্রহ করে আপনার একাউন্টে সাইন ইন করুন।
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setIsAuthModalOpen(true)}
+                            className="px-4 py-2 bg-[#7a1c2b] text-white rounded-full text-xs font-bold hover:bg-[#681727] transition shadow-xs"
+                          >
+                            লগইন / সাইন ইন করুন →
+                          </button>
                         </div>
-                      </div>
+                      ) : !hasUserPurchasedProduct(currentUser, viewProduct.id) ? (
+                        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 text-center">
+                          <span className="text-2xl mb-1 block">🔒</span>
+                          <h5 className="font-bold text-xs sm:text-sm text-rose-900 mb-1">
+                            শুধুমাত্র ভেরিফাইড ক্রেতাদের জন্য উন্মুক্ত
+                          </h5>
+                          <p className="text-xs text-rose-800/90 leading-relaxed max-w-md mx-auto">
+                            নিরাপত্তা ও শতভাগ আসল পর্যালোচনার স্বার্থে—একমাত্র এই পণ্যটি অর্ডার করে <strong>ডেলিভারি প্রাপ্ত</strong> ক্রেতাগণই রিভিউ লিখতে পারবেন। পণ্যটি কেনা ছাড়া বা ডেলিভারির পূর্বে রিভিউ দেওয়া সম্ভব নয়।
+                          </p>
+                          <div className="mt-3 flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsProfileModalOpen(true)}
+                              className="px-4 py-1.5 bg-white border border-rose-300 text-rose-800 rounded-full text-xs font-bold hover:bg-rose-100 transition shadow-2xs"
+                            >
+                              আমার অর্ডার হিস্ট্রি দেখুন 📦
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsReviewFormOpen(false)}
+                              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
+                            >
+                              বন্ধ করুন
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSubmitReview} className="bg-[#fff8f0] rounded-2xl p-4 sm:p-5 border border-[#d4a574]/40 space-y-4 shadow-inner">
+                          <div className="flex items-center justify-between pb-2 border-b border-[#f3e2d0]">
+                            <h5 className="font-bold text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                              <span>✨</span> আপনার মূল্যবান রিভিউ ও ছবি দিন
+                            </h5>
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                              ✓ ভেরিফাইড ক্রেতা
+                            </span>
+                          </div>
 
-                      {/* Name Field */}
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          আপনার নাম (ঐচ্ছিক):
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="উদাঃ নুসরাত জাহান"
-                          value={reviewerName}
-                          onChange={(e) => setReviewerName(e.target.value)}
-                          className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#f3e2d0] bg-white focus:outline-none focus:border-[#7a1c2b]"
-                        />
-                      </div>
+                          {/* Star Rating Selector */}
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                              রেটিং নির্বাচন করুন: <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full border border-[#f3e2d0] shadow-sm">
+                                {[1, 2, 3, 4, 5].map(star => (
+                                  <button
+                                    type="button"
+                                    key={star}
+                                    onClick={() => setReviewRating(star)}
+                                    className={`text-2xl transition hover:scale-125 focus:outline-none ${star <= reviewRating ? "text-amber-500" : "text-gray-300"}`}
+                                  >
+                                    ★
+                                  </button>
+                                ))}
+                              </div>
+                              <span className="text-xs font-bold text-[#7a1c2b]">
+                                {reviewRating === 5 && "অসাধারণ! (৫/৫)"}
+                                {reviewRating === 4 && "খুব ভালো (৪/৫)"}
+                                {reviewRating === 3 && "ভালো (৩/৫)"}
+                                {reviewRating === 2 && "সন্তোষজনক নয় (২/৫)"}
+                                {reviewRating === 1 && "খারাপ (১/৫)"}
+                              </span>
+                            </div>
+                          </div>
 
-                      {/* Comment Field */}
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          আপনার রিভিউ বা মন্তব্য: <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          required
-                          rows="3"
-                          placeholder="প্রোডাক্টটি কেমন লেগেছে? কাপড়ের কোয়ালিটি, ফিনিশিং বা কালার সম্পর্কে লিখুন..."
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#f3e2d0] bg-white focus:outline-none focus:border-[#7a1c2b]"
-                        ></textarea>
-                      </div>
+                          {/* Name Field */}
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">
+                              আপনার নাম:
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="উদাঃ নুসরাত জাহান"
+                              value={reviewerName}
+                              onChange={(e) => setReviewerName(e.target.value)}
+                              className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#f3e2d0] bg-white focus:outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="submit"
-                          disabled={isSubmittingReview}
-                          className="flex-1 sm:flex-none px-6 py-2.5 bg-[#7a1c2b] text-white rounded-full font-bold text-xs shadow hover:bg-[#681727] transition flex items-center justify-center gap-1.5"
-                        >
-                          {isSubmittingReview ? "সংরক্ষণ হচ্ছে..." : "রিভিউ জমা দিন ✓"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsReviewFormOpen(false)}
-                          className="px-4 py-2.5 border border-gray-300 bg-white text-gray-600 rounded-full font-semibold text-xs hover:bg-gray-50 transition"
-                        >
-                          বাতিল
-                        </button>
-                      </div>
-                    </form>
+                          {/* Comment Field */}
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">
+                              আপনার অভিজ্ঞতা বা মন্তব্য: <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                              required
+                              rows="3"
+                              placeholder="প্রোডাক্টটি কেমন পেয়েছেন? কাপড়ের কোয়ালিটি, কালার, সাইজ ও ফিনিশিং সম্পর্কে বিস্তারিত লিখুন..."
+                              value={reviewComment}
+                              onChange={(e) => setReviewComment(e.target.value)}
+                              className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#f3e2d0] bg-white focus:outline-none focus:border-[#7a1c2b]"
+                            ></textarea>
+                          </div>
+
+                          {/* Photo Upload with Preview */}
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                              <span>📷</span> পণ্যের ছবি আপলোড করুন (ঐচ্ছিক):
+                            </label>
+                            {reviewImage ? (
+                              <div className="relative inline-block mt-1">
+                                <img
+                                  src={reviewImage}
+                                  alt="Review preview"
+                                  className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-2xl border-2 border-[#7a1c2b] shadow-md cursor-pointer"
+                                  onClick={() => setZoomReviewImage(reviewImage)}
+                                  title="বড় করে দেখুন"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setReviewImage("")}
+                                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-600 text-white font-bold text-xs flex items-center justify-center shadow-lg hover:bg-red-700"
+                                  title="ছবি মুছে ফেলুন"
+                                >
+                                  ✕
+                                </button>
+                                <span className="block text-[10px] text-gray-500 mt-1 font-medium">✓ ছবি সংযুক্ত হয়েছে</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <label className="flex items-center gap-2 px-4 py-2.5 bg-white border border-dashed border-[#7a1c2b] text-[#7a1c2b] rounded-2xl text-xs font-bold cursor-pointer hover:bg-[#fff8f0] transition shadow-2xs active:scale-95">
+                                  <span>📸 ছবি সিলেক্ট করুন</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files && e.target.files[0];
+                                      if (file) handleImageUploadForReview(file, (b64) => setReviewImage(b64));
+                                    }}
+                                  />
+                                </label>
+                                <span className="text-[11px] text-gray-500">ক্যামেরা বা গ্যালারি থেকে বাস্তব ছবি যোগ করুন</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 pt-2">
+                            <button
+                              type="submit"
+                              disabled={isSubmittingReview}
+                              className="flex-1 sm:flex-none px-6 py-2.5 bg-[#7a1c2b] text-white rounded-full font-bold text-xs shadow hover:bg-[#681727] transition flex items-center justify-center gap-1.5"
+                            >
+                              {isSubmittingReview ? "সংরক্ষণ হচ্ছে..." : "রিভিউ জমা দিন ✓"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsReviewFormOpen(false)}
+                              className="px-4 py-2.5 border border-gray-300 bg-white text-gray-600 rounded-full font-semibold text-xs hover:bg-gray-50 transition"
+                            >
+                              বাতিল
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
                   )}
 
                   {/* Reviews List */}
@@ -15901,7 +17390,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <div className="text-center py-8 bg-[#fffdfa] rounded-2xl border border-dashed border-[#f3e2d0] p-6">
                           <span className="text-3xl">💬</span>
                           <p className="font-bold text-sm text-gray-700 mt-2">এখনও কোনো রিভিউ যুক্ত হয়নি</p>
-                          <p className="text-xs text-gray-500 mt-1 mb-4">এই পণ্যের প্রথম রিভিউটি আপনিই লিখুন!</p>
+                          <p className="text-xs text-gray-500 mt-1 mb-4">এই পণ্যের প্রথম ভেরিফাইড রিভিউটি আপনিই লিখুন!</p>
                           <button
                             onClick={() => setIsReviewFormOpen(true)}
                             className="px-4 py-2 bg-[#7a1c2b] text-white rounded-full text-xs font-bold shadow hover:bg-[#681727] transition"
@@ -15926,7 +17415,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     <span className="font-bold text-xs text-gray-900">{rev.customerName || "ভেরিফাইড ক্রেতা"}</span>
                                     {rev.verified && (
                                       <span className="bg-green-100 text-green-700 text-[9px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5">
-                                        ✓ ভেরিফাইড
+                                        ✓ ভেরিফাইড ক্রেতা
                                       </span>
                                     )}
                                   </div>
@@ -15944,6 +17433,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             <p className="text-xs text-gray-700 leading-relaxed pl-10 pr-2">
                               {rev.comment}
                             </p>
+
+                            {/* Customer Uploaded Photo */}
+                            {rev.image && (
+                              <div className="pl-10 mt-3">
+                                <div className="relative inline-block group">
+                                  <img
+                                    src={rev.image}
+                                    alt="Customer review attachment"
+                                    onClick={() => setZoomReviewImage(rev.image)}
+                                    className="max-h-32 sm:max-h-40 rounded-2xl border border-[#d4a574]/60 object-cover cursor-zoom-in hover:opacity-95 shadow-xs transition active:scale-95 group-hover:border-[#7a1c2b]"
+                                    title="বড় করে দেখতে ক্লিক করুন"
+                                  />
+                                  <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-md backdrop-blur-xs flex items-center gap-0.5 pointer-events-none">
+                                    🔍 জুম
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -17512,6 +19019,217 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     রিলস পাবলিশ করুন ✓
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* ✍️ DEDICATED WRITE REVIEW MODAL (Triggered from Customer Orders) */}
+          {/* ========================================================= */}
+          {isWriteReviewModalOpen && writeReviewProduct && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-lg p-6 border shadow-2xl space-y-4 animate-fadeIn max-h-[92vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex justify-between items-start pb-3 border-b border-[#f3e2d0]">
+                  <div>
+                    <h3 className="font-bold text-lg text-[#7a1c2b] flex items-center gap-2">
+                      <span>✍️</span> রিভিউ ও বাস্তব ছবি দিন
+                    </h3>
+                    <p className="text-xs text-[#b8956a]">
+                      অর্ডার #{writeReviewOrder?.id || writeReviewOrder?.invoiceNo || "N/A"} • ভেরিফাইড ক্রয়
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsWriteReviewModalOpen(false);
+                      setReviewImage("");
+                    }}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 hover:text-black hover:bg-gray-200 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Purchased Product Preview Card */}
+                <div className="flex items-center gap-3 p-3 bg-[#fff8f0] rounded-2xl border border-[#d4a574]/40">
+                  <img
+                    src={writeReviewProduct.images?.[0] || banner1}
+                    alt={writeReviewProduct.name}
+                    className="w-14 h-14 object-cover rounded-xl border border-[#d4a574] flex-shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-xs sm:text-sm text-gray-900 truncate">
+                      {writeReviewProduct.name}
+                    </h4>
+                    <p className="text-xs text-[#7a1c2b] font-extrabold mt-0.5">
+                      {Number(writeReviewProduct.price || 0).toLocaleString()} ৳
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full mt-1">
+                      ✓ ভেরিফাইড ক্রয় (ডেলিভারি সম্পন্ন)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Form */}
+                <form
+                  onSubmit={(e) => handleSubmitReview(e, writeReviewProduct, writeReviewOrder)}
+                  className="space-y-4"
+                >
+                  {/* Rating Selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                      আপনার রেটিং দিন: <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 bg-[#fff8f0] px-3.5 py-1.5 rounded-full border border-[#f3e2d0] shadow-sm">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <button
+                            type="button"
+                            key={star}
+                            onClick={() => setReviewRating(star)}
+                            className={`text-2xl transition hover:scale-125 focus:outline-none ${star <= reviewRating ? "text-amber-500" : "text-gray-300"}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-xs font-bold text-[#7a1c2b]">
+                        {reviewRating === 5 && "অসাধারণ! (৫/৫)"}
+                        {reviewRating === 4 && "খুব ভালো (৪/৫)"}
+                        {reviewRating === 3 && "ভালো (৩/৫)"}
+                        {reviewRating === 2 && "সন্তোষজনক নয় (২/৫)"}
+                        {reviewRating === 1 && "খারাপ (১/৫)"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Reviewer Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      আপনার নাম:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="যেমন: নুসরাত জাহান"
+                      value={reviewerName}
+                      onChange={(e) => setReviewerName(e.target.value)}
+                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#f3e2d0] bg-white focus:outline-none focus:border-[#7a1c2b]"
+                    />
+                  </div>
+
+                  {/* Photo Upload Section */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span>📷</span> পণ্যের বাস্তব ছবি যুক্ত করুন:
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-normal">ঐচ্ছিক কিন্তু সহায়ক</span>
+                    </label>
+
+                    {reviewImage ? (
+                      <div className="relative inline-block mt-1">
+                        <img
+                          src={reviewImage}
+                          alt="Review attachment preview"
+                          onClick={() => setZoomReviewImage(reviewImage)}
+                          className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-2xl border-2 border-[#7a1c2b] shadow-md cursor-zoom-in"
+                          title="বড় করে দেখতে ক্লিক করুন"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setReviewImage("")}
+                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-600 text-white font-bold text-xs flex items-center justify-center shadow-lg hover:bg-red-700"
+                          title="ছবি মুছে ফেলুন"
+                        >
+                          ✕
+                        </button>
+                        <span className="block text-[10px] text-emerald-600 font-bold mt-1">✓ ছবি রেডি</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 px-4 py-2.5 bg-[#fff8f0] border border-dashed border-[#7a1c2b] text-[#7a1c2b] rounded-2xl text-xs font-bold cursor-pointer hover:bg-[#faebd7] transition shadow-2xs active:scale-95">
+                          <span>📸 ছবি আপলোড করুন</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files && e.target.files[0];
+                              if (file) handleImageUploadForReview(file, (b64) => setReviewImage(b64));
+                            }}
+                          />
+                        </label>
+                        <span className="text-[11px] text-gray-500">
+                          ক্যামেরা দিয়ে তোলা আসল ছবি দিলে রিভিউ বেশি গ্রহণযোগ্য হবে
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Comment */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      আপনার বিস্তারিত রিভিউ বা মন্তব্য: <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      required
+                      rows="3"
+                      placeholder="পণ্যটি ব্যবহার করে কেমন লাগলো? ফেব্রিক, সাইজ ও কালার কেমন ছিল? অন্যান্য ক্রেতাদের জানান..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#f3e2d0] bg-white focus:outline-none focus:border-[#7a1c2b]"
+                    ></textarea>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview}
+                      className="flex-1 px-6 py-3 bg-[#7a1c2b] text-white rounded-full font-bold text-xs shadow-md hover:bg-[#681727] transition flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
+                    >
+                      {isSubmittingReview ? "রিভিউ সেভ হচ্ছে..." : "রিভিউ ও ছবি প্রকাশ করুন ✓"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsWriteReviewModalOpen(false);
+                        setReviewImage("");
+                      }}
+                      className="px-4 py-3 border border-gray-300 bg-white text-gray-600 rounded-full font-semibold text-xs hover:bg-gray-50 transition"
+                    >
+                      বাতিল
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 🔍 LIGHTBOX PHOTO ZOOM MODAL FOR REVIEWS */}
+          {/* ========================================================= */}
+          {zoomReviewImage && (
+            <div
+              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadeIn"
+              onClick={() => setZoomReviewImage(null)}
+            >
+              <div className="relative max-w-2xl max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setZoomReviewImage(null)}
+                  className="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/40 flex items-center justify-center font-bold text-lg transition"
+                  title="বন্ধ করুন"
+                >
+                  ✕
+                </button>
+                <img
+                  src={zoomReviewImage}
+                  alt="Customer Review Real Photo"
+                  className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border-2 border-white/20"
+                />
+                <p className="text-white/80 text-xs mt-3 flex items-center gap-1.5">
+                  <span>📸</span> গ্রাহকের আপলোডকৃত বাস্তব ছবি
+                </p>
               </div>
             </div>
           )}

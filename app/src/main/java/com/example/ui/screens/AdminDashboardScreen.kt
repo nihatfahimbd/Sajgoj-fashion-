@@ -301,10 +301,15 @@ fun AdminDashboardScreen(
             products = products,
             orders = orders,
             categories = categories,
+            returnsCount = returns.size,
             onGoToTab = onSelectTab,
             onAddProductClick = {
               editingProduct = null
               showProductDialog = true
+            },
+            onOpenNewReturn = {
+              returnTargetOrder = null
+              showReturnDialog = true
             }
           )
         }
@@ -495,8 +500,10 @@ fun AdminOverviewTab(
   products: List<Product>,
   orders: List<Order>,
   categories: List<Category>,
+  returnsCount: Int = 0,
   onGoToTab: (AdminTab) -> Unit,
-  onAddProductClick: () -> Unit
+  onAddProductClick: () -> Unit,
+  onOpenNewReturn: () -> Unit = {}
 ) {
   val totalRevenue = orders.sumOf { it.total }
   val pendingOrders = orders.filter { it.status == "Pending" }
@@ -591,8 +598,33 @@ fun AdminOverviewTab(
       }
     }
 
-    // Quick Shortcuts
-    Text(text = "দ্রুত অপশন সমূহ:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+    // Quick Shortcuts Header
+    Text(text = "দ্রুত অপশন সমূহ (Dashboard Quick Actions):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+
+    // Fast 1-Click Return & Exchange Action Card on Dashboard
+    Button(
+      onClick = onOpenNewReturn,
+      colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFF3E0), contentColor = Color(0xFFE65100)),
+      border = BorderStroke(1.5.dp, Color(0xFFFB8C00)),
+      shape = RoundedCornerShape(16.dp),
+      modifier = Modifier
+        .fillMaxWidth()
+        .height(50.dp)
+        .testTag("dashboard_quick_return_button")
+    ) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Text(text = "🔄", fontSize = 18.sp)
+        Text(
+          text = "১-ক্লিকে রিটার্ন ও এক্সচেঞ্জ (Return & Exchange) • $returnsCount টি সম্পন্ন",
+          fontSize = 13.sp,
+          fontWeight = FontWeight.Bold,
+          color = Color(0xFFBF360C)
+        )
+      }
+    }
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       Button(

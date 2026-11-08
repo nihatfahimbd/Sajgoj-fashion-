@@ -93,7 +93,8 @@ data class StoreConfig(
   val bkashEnabled: Boolean = true,
   val nagadEnabled: Boolean = true,
   val rocketEnabled: Boolean = true,
-  val codEnabled: Boolean = true
+  val codEnabled: Boolean = true,
+  val returnPolicyDays: Int = 7
 )
 
 data class CourierConfig(
@@ -115,8 +116,11 @@ data class ProductReview(
   val id: String = "",
   val productId: String = "",
   val customerName: String = "",
+  val customerPhone: String = "",
+  val orderId: String = "",
   val rating: Int = 5,
   val comment: String = "",
+  val image: String = "",
   val date: String = "",
   val createdAt: Long = System.currentTimeMillis(),
   val verified: Boolean = true

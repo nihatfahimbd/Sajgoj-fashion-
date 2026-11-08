@@ -1004,6 +1004,18 @@ fun ProductDetailDialog(
                       color = DarkEspresso,
                       lineHeight = 17.sp
                     )
+
+                    if (rev.image.isNotBlank()) {
+                      Spacer(modifier = Modifier.height(8.dp))
+                      AppImage(
+                        model = rev.image,
+                        contentDescription = "Review attachment photo",
+                        modifier = Modifier
+                          .height(110.dp)
+                          .clip(RoundedCornerShape(10.dp))
+                          .border(1.dp, BorderGold.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                      )
+                    }
                   }
                 }
               }
