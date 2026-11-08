@@ -131,12 +131,29 @@ class StoreRepository(private val context: Context) {
   )
 
   private val initialCategories = listOf(
-    Category("c1", "শাড়ি", "👗"),
-    Category("c2", "নেকলেস", "📿"),
-    Category("c3", "চুড়ি", "💍"),
-    Category("c4", "ব্রেসলেট", "✨"),
-    Category("c5", "ব্রাইডাল সেট", "👑"),
-    Category("c6", "বাচ্চাদের পোশাক", "👶")
+    // Parent Categories
+    Category("pcat-women", "মহিলাদের ফ্যাশন", "👗", type = "parent", badge = "জনপ্রিয়"),
+    Category("pcat-jewelry", "গহনা ও জুয়েলারি", "💍", type = "parent", badge = "রাজকীয়"),
+    Category("pcat-kids", "বাচ্চাদের আয়োজন", "👶", type = "parent", badge = "স্পেশাল"),
+    Category("pcat-men", "পুরুষদের কালেকশন", "👕", type = "parent", badge = "ট্রেন্ডি"),
+
+    // Main Categories (Shown in Slider)
+    Category("c1", "শাড়ি", "👗", type = "main", parentId = "pcat-women", badge = "হট 🔥", showInSlider = true),
+    Category("c2", "জামা / কামিজ", "🥻", type = "main", parentId = "pcat-women", badge = "নতুন", showInSlider = true),
+    Category("c5", "ব্রাইডাল সেট", "👑", type = "main", parentId = "pcat-jewelry", badge = "বেস্ট", showInSlider = true),
+    Category("c3", "নেকলেস", "📿", type = "main", parentId = "pcat-jewelry", badge = "অফার", showInSlider = true),
+    Category("c4", "চুড়ি ও বালা", "💍", type = "main", parentId = "pcat-jewelry", badge = "", showInSlider = true),
+    Category("c6", "বাচ্চাদের পোশাক", "👶", type = "main", parentId = "pcat-kids", badge = "কিউট", showInSlider = true),
+    Category("c7", "টি-শার্ট", "👕", type = "main", parentId = "pcat-men", badge = "", showInSlider = true),
+    Category("c8", "প্যান্ট", "👖", type = "main", parentId = "pcat-men", badge = "", showInSlider = true),
+
+    // Sub Categories
+    Category("sub-c1-1", "কাতান শাড়ি", "✨", type = "sub", parentId = "c1"),
+    Category("sub-c1-2", "জামদানি শাড়ি", "🥻", type = "sub", parentId = "c1"),
+    Category("sub-c6-1", "০-২ বছর বয়স", "🍼", type = "sub", parentId = "c6"),
+    Category("sub-c6-2", "৩-৫ বছর বয়স", "🎈", type = "sub", parentId = "c6"),
+    Category("sub-c6-3", "৬-১০ বছর বয়স", "🎒", type = "sub", parentId = "c6"),
+    Category("sub-c6-4", "পার্টি ফ্রক", "🎀", type = "sub", parentId = "c6")
   )
 
   private val initialBanners = listOf(

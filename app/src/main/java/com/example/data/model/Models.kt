@@ -20,7 +20,12 @@ data class Product(
 data class Category(
   val id: String,
   val name: String,
-  val icon: String
+  val icon: String = "✨",
+  val imageUrl: String = "",
+  val type: String = "main", // "parent", "main", "sub"
+  val parentId: String = "",
+  val badge: String = "",
+  val showInSlider: Boolean = true
 )
 
 data class CartItem(

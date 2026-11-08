@@ -121,6 +121,9 @@ class MainActivity : ComponentActivity() {
                     products = products,
                     banners = banners,
                     config = storeConfig,
+                    categories = categories,
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { viewModel.setSelectedCategory(it) },
                     onProductClick = { viewModel.openProductDetail(it) },
                     onAddToCart = { viewModel.addToCart(it, 1) },
                     onBannerClick = { /* scroll or search */ }

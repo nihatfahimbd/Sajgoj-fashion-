@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -45,8 +48,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.BannerItem
+import com.example.data.model.Category
 import com.example.data.model.Product
 import com.example.data.model.StoreConfig
+import com.example.ui.components.AppImage
 import com.example.ui.components.BannerCarousel
 import com.example.ui.components.ProductCard
 import com.example.ui.theme.AntiqueGold
@@ -62,6 +67,9 @@ fun StorefrontScreen(
   products: List<Product>,
   banners: List<BannerItem>,
   config: StoreConfig,
+  categories: List<Category> = emptyList(),
+  selectedCategory: String = "All",
+  onCategorySelected: (String) -> Unit = {},
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
   onBannerClick: (BannerItem) -> Unit,
@@ -99,6 +107,164 @@ fun StorefrontScreen(
           onBannerClick = onBannerClick,
           modifier = Modifier.padding(bottom = 6.dp)
         )
+      }
+
+      // 2. Daraz-Style Horizontal Sliding Categories
+      if (categories.isNotEmpty()) {
+        item(span = { GridItemSpan(2) }) {
+          Column(
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(16.dp))
+              .background(Color.White)
+              .padding(vertical = 10.dp, horizontal = 4.dp)
+          ) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                Box(
+                  modifier = Modifier
+                    .size(width = 4.dp, height = 14.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(RoyalMaroon)
+                )
+                Text(
+                  text = "প্রধান ক্যাটাগরি (Main Categories)",
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon
+                )
+              }
+              Text(
+                text = "👉 স্লাইড করুন",
+                fontSize = 10.sp,
+                color = AntiqueGoldDark,
+                fontWeight = FontWeight.Medium
+              )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LazyRow(
+              contentPadding = PaddingValues(horizontal = 8.dp),
+              horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+              // "All" item
+              item {
+                val isSelected = selectedCategory == "All"
+                Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  modifier = Modifier
+                    .width(62.dp)
+                    .clickable { onCategorySelected("All") }
+                ) {
+                  Box(
+                    modifier = Modifier
+                      .size(54.dp)
+                      .clip(RoundedCornerShape(16.dp))
+                      .background(
+                        if (isSelected) RoyalMaroon else CreamSurface
+                      )
+                      .border(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) AntiqueGold else BorderGold,
+                        shape = RoundedCornerShape(16.dp)
+                      ),
+                    contentAlignment = Alignment.Center
+                  ) {
+                    Text(
+                      text = "🌟",
+                      fontSize = 24.sp
+                    )
+                  }
+                  Spacer(modifier = Modifier.height(4.dp))
+                  Text(
+                    text = "সব কালেকশন",
+                    fontSize = 10.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) RoyalMaroon else DarkEspresso,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
+                  )
+                }
+              }
+
+              // Category items
+              items(categories.filter { it.type == "main" || it.showInSlider }) { cat ->
+                val isSelected = selectedCategory == cat.name
+                Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  modifier = Modifier
+                    .width(62.dp)
+                    .clickable { onCategorySelected(cat.name) }
+                ) {
+                  Box(
+                    modifier = Modifier
+                      .size(54.dp)
+                      .clip(RoundedCornerShape(16.dp))
+                      .background(
+                        if (isSelected) CreamSurface else Color.White
+                      )
+                      .border(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) RoyalMaroon else BorderGold,
+                        shape = RoundedCornerShape(16.dp)
+                      ),
+                    contentAlignment = Alignment.Center
+                  ) {
+                    if (cat.imageUrl.isNotBlank()) {
+                      AppImage(
+                        model = cat.imageUrl,
+                        contentDescription = cat.name,
+                        modifier = Modifier
+                          .fillMaxSize()
+                          .clip(RoundedCornerShape(15.dp))
+                      )
+                    } else {
+                      Text(
+                        text = cat.icon.ifBlank { "✨" },
+                        fontSize = 24.sp
+                      )
+                    }
+
+                    if (cat.badge.isNotBlank()) {
+                      Surface(
+                        color = RoyalMaroon,
+                        shape = RoundedCornerShape(bottomStart = 8.dp),
+                        modifier = Modifier.align(Alignment.TopEnd)
+                      ) {
+                        Text(
+                          text = cat.badge,
+                          color = Color.White,
+                          fontSize = 8.sp,
+                          fontWeight = FontWeight.Bold,
+                          modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        )
+                      }
+                    }
+                  }
+                  Spacer(modifier = Modifier.height(4.dp))
+                  Text(
+                    text = cat.name,
+                    fontSize = 10.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) RoyalMaroon else DarkEspresso,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
+                  )
+                }
+              }
+            }
+          }
+        }
       }
 
       // 2. Section Header
