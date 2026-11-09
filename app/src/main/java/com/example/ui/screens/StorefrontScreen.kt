@@ -256,31 +256,27 @@ fun StorefrontScreen(
               )
             }
 
-            // Right Cell: Collect All Action Button
-            val allCollected = defaultVouchersList.all { collectedVoucherIds.contains(it.id) }
+            // Right Cell: Collect All Button (Opens Voucher Center Page as requested)
             Box(
               modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
-                .background(
-                  if (allCollected) Color(0xFFE8F5E9) else Color(0xFFFF8F00)
-                )
+                .background(Color(0xFFFF8F00))
                 .border(
                   width = 1.dp,
-                  color = if (allCollected) Color(0xFFA5D6A7) else Color(0xFFFFB300),
+                  color = Color(0xFFFFB300),
                   shape = RoundedCornerShape(10.dp)
                 )
                 .clickable {
-                  val allIds = defaultVouchersList.map { it.id }.toSet()
-                  collectedVoucherIds = collectedVoucherIds + allIds
-                  Toast.makeText(context, "সকল ভাউচার সফলভাবে সংগৃহীত হয়েছে! 🎟️", Toast.LENGTH_SHORT).show()
+                  voucherCenterTab = "all"
+                  showVoucherCenter = true
                 }
                 .padding(horizontal = 12.dp, vertical = 7.dp)
             ) {
               Text(
-                text = if (allCollected) "✓ Collect All" else "Collect All",
+                text = "Collect All ›",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
-                color = if (allCollected) Color(0xFF2E7D32) else Color.White
+                color = Color.White
               )
             }
           }
@@ -653,12 +649,23 @@ fun StorefrontScreen(
         collectedVoucherIds = collectedVoucherIds,
         initialTab = voucherCenterTab,
         onCollectVoucher = { id ->
-          collectedVoucherIds = collectedVoucherIds + id
-          Toast.makeText(context, "ভাউচার কালেক্ট করা হয়েছে! ✓", Toast.LENGTH_SHORT).show()
+          if (collectedVoucherIds.contains(id)) {
+            collectedVoucherIds = collectedVoucherIds - id
+            Toast.makeText(context, "ভাউচার আনসিলেক্ট করা হয়েছে", Toast.LENGTH_SHORT).show()
+          } else {
+            collectedVoucherIds = collectedVoucherIds + id
+            Toast.makeText(context, "ভাউচার কালেক্ট করা হয়েছে! ✓ (আবার ট্যাপ করলে আনসিলেক্ট হবে)", Toast.LENGTH_SHORT).show()
+          }
         },
         onCollectAll = { ids ->
-          collectedVoucherIds = collectedVoucherIds + ids.toSet()
-          Toast.makeText(context, "সকল ভাউচার সফলভাবে কালেক্ট করা হয়েছে! 🎟️", Toast.LENGTH_SHORT).show()
+          val allAlready = ids.isNotEmpty() && ids.all { collectedVoucherIds.contains(it) }
+          if (allAlready) {
+            collectedVoucherIds = collectedVoucherIds - ids.toSet()
+            Toast.makeText(context, "সেকশনের ভাউচারগুলো আনসিলেক্ট করা হয়েছে", Toast.LENGTH_SHORT).show()
+          } else {
+            collectedVoucherIds = collectedVoucherIds + ids.toSet()
+            Toast.makeText(context, "সকল ভাউচার সফলভাবে কালেক্ট করা হয়েছে! 🎟️", Toast.LENGTH_SHORT).show()
+          }
         },
         onDismiss = { showVoucherCenter = false }
       )

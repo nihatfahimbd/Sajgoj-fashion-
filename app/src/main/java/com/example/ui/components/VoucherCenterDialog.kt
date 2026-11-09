@@ -510,13 +510,13 @@ fun VoucherCenterDialog(
                           )
 
                           Button(
-                            onClick = { if (!isCollected) onCollectVoucher(v.id) },
-                            enabled = !isCollected,
+                            onClick = { onCollectVoucher(v.id) },
                             shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.buttonColors(
-                              containerColor = if (isCollected) Color(0xFFE0E0E0) else Color(0xFFE53935),
-                              contentColor = if (isCollected) Color.Gray else Color.White
+                              containerColor = if (isCollected) Color(0xFFE8F5E9) else Color(0xFFE53935),
+                              contentColor = if (isCollected) Color(0xFF2E7D32) else Color.White
                             ),
+                            border = if (isCollected) BorderStroke(1.dp, Color(0xFFA5D6A7)) else null,
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                             modifier = Modifier.height(30.dp)
                           ) {
@@ -582,18 +582,19 @@ fun VoucherCenterDialog(
                       }
                     }
 
+                    val megaIds = defaultVouchersList.filter { it.section == "mega" }.map { it.id }
+                    val allMegaCollected = megaIds.isNotEmpty() && megaIds.all { collectedVoucherIds.contains(it) }
                     OutlinedButton(
-                      onClick = {
-                        val megaIds = defaultVouchersList.filter { it.section == "mega" }.map { it.id }
-                        onCollectAll(megaIds)
-                      },
+                      onClick = { onCollectAll(megaIds) },
                       shape = RoundedCornerShape(20.dp),
-                      border = BorderStroke(1.dp, Color(0xFFE53935)),
-                      colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE53935)),
+                      border = BorderStroke(1.dp, if (allMegaCollected) Color(0xFF4CAF50) else Color(0xFFE53935)),
+                      colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (allMegaCollected) Color(0xFF2E7D32) else Color(0xFFE53935)
+                      ),
                       contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                       modifier = Modifier.height(28.dp)
                     ) {
-                      Text(text = "Collect all", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                      Text(text = if (allMegaCollected) "✓ Collected all" else "Collect all", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                   }
 
@@ -689,15 +690,15 @@ fun VoucherCenterDialog(
                             }
                           }
 
-                          // Right Collect Button
+                          // Right Collect Button (Toggleable)
                           Button(
-                            onClick = { if (!isCollected) onCollectVoucher(v.id) },
-                            enabled = !isCollected,
+                            onClick = { onCollectVoucher(v.id) },
                             shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.buttonColors(
-                              containerColor = if (isCollected) Color(0xFFEEEEEE) else Color(0xFFE53935),
-                              contentColor = if (isCollected) Color.Gray else Color.White
+                              containerColor = if (isCollected) Color(0xFFE8F5E9) else Color(0xFFE53935),
+                              contentColor = if (isCollected) Color(0xFF2E7D32) else Color.White
                             ),
+                            border = if (isCollected) BorderStroke(1.dp, Color(0xFFA5D6A7)) else null,
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                             modifier = Modifier.height(30.dp)
                           ) {
@@ -763,18 +764,19 @@ fun VoucherCenterDialog(
                       }
                     }
 
+                    val shipIds = defaultVouchersList.filter { it.section == "shipping" }.map { it.id }
+                    val allShipCollected = shipIds.isNotEmpty() && shipIds.all { collectedVoucherIds.contains(it) }
                     OutlinedButton(
-                      onClick = {
-                        val shipIds = defaultVouchersList.filter { it.section == "shipping" }.map { it.id }
-                        onCollectAll(shipIds)
-                      },
+                      onClick = { onCollectAll(shipIds) },
                       shape = RoundedCornerShape(20.dp),
-                      border = BorderStroke(1.dp, Color(0xFF00897B)),
-                      colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00897B)),
+                      border = BorderStroke(1.dp, if (allShipCollected) Color(0xFF00897B) else Color(0xFF00897B)),
+                      colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF00897B)
+                      ),
                       contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                       modifier = Modifier.height(28.dp)
                     ) {
-                      Text(text = "Collect all", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                      Text(text = if (allShipCollected) "✓ Collected all" else "Collect all", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                   }
 
@@ -881,13 +883,13 @@ fun VoucherCenterDialog(
                             }
 
                             Button(
-                              onClick = { if (!isCollected) onCollectVoucher(v.id) },
-                              enabled = !isCollected,
+                              onClick = { onCollectVoucher(v.id) },
                               shape = RoundedCornerShape(20.dp),
                               colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isCollected) Color(0xFFEEEEEE) else Color(0xFF00897B),
-                                contentColor = if (isCollected) Color.Gray else Color.White
+                                containerColor = if (isCollected) Color(0xFFE8F5E9) else Color(0xFF00897B),
+                                contentColor = if (isCollected) Color(0xFF00695C) else Color.White
                               ),
+                              border = if (isCollected) BorderStroke(1.dp, Color(0xFF80CBC4)) else null,
                               contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                               modifier = Modifier.height(30.dp)
                             ) {
@@ -1007,13 +1009,38 @@ fun VoucherCenterDialog(
           )
 
           Spacer(modifier = Modifier.height(16.dp))
-          Button(
-            onClick = { selectedTcItem = null },
+          Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            Text("বুঝেছি", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            val isItemCollected = collectedVoucherIds.contains(item.id)
+            Button(
+              onClick = {
+                onCollectVoucher(item.id)
+                selectedTcItem = null
+              },
+              modifier = Modifier.weight(1f),
+              shape = RoundedCornerShape(12.dp),
+              colors = ButtonDefaults.buttonColors(
+                containerColor = if (isItemCollected) Color(0xFFE8F5E9) else (if (item.section == "shipping") Color(0xFF00897B) else Color(0xFFE53935)),
+                contentColor = if (isItemCollected) Color(0xFF2E7D32) else Color.White
+              ),
+              border = if (isItemCollected) BorderStroke(1.dp, Color(0xFFA5D6A7)) else null
+            ) {
+              Text(
+                text = if (isItemCollected) "✓ সংগৃহীত (আনসিলেক্ট)" else "কালেক্ট করুন ✓",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+              )
+            }
+
+            OutlinedButton(
+              onClick = { selectedTcItem = null },
+              modifier = Modifier.weight(0.6f),
+              shape = RoundedCornerShape(12.dp)
+            ) {
+              Text("বন্ধ করুন", fontSize = 12.sp)
+            }
           }
         }
       }

@@ -5034,19 +5034,23 @@
       const giftWrapFee = isGiftWrap ? 50 : 0;
       const cartGrandTotal = Math.max(0, cartSubtotal - totalDiscounts) + finalDeliveryCharge + giftWrapFee;
 
-      // Voucher Collection Handlers
+      // Voucher Collection Handlers (With Toggle / Unselect support)
       const handleCollectVoucher = (voucherId) => {
         if (!voucherId) return;
         setCollectedVouchers(prev => {
           if (prev.includes(voucherId)) {
-            notify("এই ভাউচারটি আপনি ইতিমধ্যে সংগ্রহ করেছেন ✓");
-            return prev;
+            // Uncollect / Deselect voucher
+            const updated = prev.filter(id => id !== voucherId);
+            setStored("collected_vouchers", updated);
+            notify("ভাউচারটি আনসিলেক্ট করা হয়েছে। আপনি চাইলে যেকোনো সময় আবার কালেক্ট করতে পারবেন।");
+            return updated;
           }
+          // Collect voucher
           const updated = [...prev, voucherId];
           setStored("collected_vouchers", updated);
+          notify("🎉 ভাউচার সফলভাবে সংগৃহীত হয়েছে! (আবার ট্যাপ করলে আনসিলেক্ট হবে)");
           return updated;
         });
-        notify("🎉 ভাউচার সফলভাবে সংগৃহীত হয়েছে! চেকআউটে স্বয়ংক্রিয়ভাবে ছাড় মিলবে।");
       };
 
       const handleCollectAllVouchers = (specificList) => {
@@ -5055,11 +5059,21 @@
           : vouchers.filter(v => v.active).map(v => v.id);
         
         setCollectedVouchers(prev => {
-          const combined = Array.from(new Set([...prev, ...listToCollect]));
-          setStored("collected_vouchers", combined);
-          return combined;
+          const allAlreadyCollected = listToCollect.length > 0 && listToCollect.every(id => prev.includes(id));
+          if (allAlreadyCollected) {
+            // Unselect all in this section
+            const updated = prev.filter(id => !listToCollect.includes(id));
+            setStored("collected_vouchers", updated);
+            notify("এই সেকশনের ভাউচারগুলো আনসিলেক্ট করা হয়েছে।");
+            return updated;
+          } else {
+            // Collect all in this section
+            const combined = Array.from(new Set([...prev, ...listToCollect]));
+            setStored("collected_vouchers", combined);
+            notify("🎉 সকল ভাউচার সফলভাবে সংগৃহীত হয়েছে! আপনার অর্ডারে সর্বোচ্চ সাশ্রয় পাবেন।");
+            return combined;
+          }
         });
-        notify("🎉 সকল ভাউচার সফলভাবে সংগৃহীত হয়েছে! আপনার অর্ডারে সর্বোচ্চ সাশ্রয় পাবেন।");
       };
 
       // Apply Coupon
@@ -6015,25 +6029,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </span>
                     </div>
 
-                    {/* Right Cell: Collect All Action */}
+                    {/* Right Cell: Collect All Button (Opens Voucher Center Page directly as requested) */}
                     <div className="pl-2 shrink-0">
                       <button
                         type="button"
                         onClick={() => {
-                          const activeIds = vouchers.filter(v => v.active).map(v => v.id);
-                          handleCollectAllVouchers(activeIds);
+                          setVoucherCenterTab("all");
+                          setIsVoucherCenterOpen(true);
                         }}
-                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black shadow transition active:scale-95 flex items-center gap-1 ${
-                          vouchers.length > 0 && vouchers.every(v => collectedVouchers.includes(v.id))
-                            ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
-                            : "bg-gradient-to-r from-[#ff6f00] via-[#ff8f00] to-[#ffa000] text-white hover:brightness-105 shadow-amber-200"
-                        }`}
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black shadow transition active:scale-95 flex items-center gap-1 bg-gradient-to-r from-[#ff6f00] via-[#ff8f00] to-[#ffa000] text-white hover:brightness-105 shadow-amber-200 cursor-pointer"
+                        title="ভাউচার সেন্টারে যান এবং ভাউচার কালেক্ট করুন"
                       >
-                        {vouchers.length > 0 && vouchers.every(v => collectedVouchers.includes(v.id)) ? (
-                          <span>✓ Collect All</span>
-                        ) : (
-                          <span>Collect All</span>
-                        )}
+                        <span>Collect All</span>
+                        <span className="text-[11px] font-black">›</span>
                       </button>
                     </div>
                   </div>
@@ -20650,13 +20658,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 </button>
                                 <button
                                   type="button"
-                                  disabled={isCollected}
                                   onClick={() => handleCollectVoucher(v.id)}
-                                  className={`px-4 py-1.5 rounded-full font-bold text-xs transition active:scale-95 shadow-sm ${
+                                  className={`px-4 py-1.5 rounded-full font-bold text-xs transition active:scale-95 shadow-sm flex items-center gap-1 cursor-pointer ${
                                     isCollected
-                                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
                                       : "bg-[#e53935] hover:bg-[#c62828] text-white shadow-rose-200"
                                   }`}
+                                  title={isCollected ? "ক্লিক করে আনসিলেক্ট করুন" : "ভাউচার কালেক্ট করুন"}
                                 >
                                   {isCollected ? "Collected ✓" : "Collect"}
                                 </button>
@@ -20695,9 +20703,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             const megaIds = vouchers.filter(v => v.section === "mega" && v.active).map(v => v.id);
                             handleCollectAllVouchers(megaIds);
                           }}
-                          className="px-3 py-1 rounded-full border border-[#e53935] text-[#e53935] hover:bg-rose-50 text-[11px] font-bold transition active:scale-95 shadow-2xs"
+                          className={`px-3 py-1 rounded-full text-[11px] font-bold transition active:scale-95 shadow-2xs cursor-pointer ${
+                            vouchers.filter(v => v.section === "mega" && v.active).every(v => collectedVouchers.includes(v.id))
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700"
+                              : "border border-[#e53935] text-[#e53935] hover:bg-rose-50"
+                          }`}
+                          title="ক্লিক করে এই সেকশনের সবগুলো কালেক্ট বা আনসিলেক্ট করুন"
                         >
-                          Collect all
+                          {vouchers.filter(v => v.section === "mega" && v.active).every(v => collectedVouchers.includes(v.id)) ? "✓ Collected all" : "Collect all"}
                         </button>
                       </div>
 
@@ -20750,13 +20763,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <div className="shrink-0">
                                 <button
                                   type="button"
-                                  disabled={isCollected}
                                   onClick={() => handleCollectVoucher(v.id)}
-                                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs transition active:scale-95 shadow-sm ${
+                                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs transition active:scale-95 shadow-sm flex items-center gap-1 cursor-pointer ${
                                     isCollected
-                                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
                                       : "bg-[#e53935] hover:bg-[#c62828] text-white shadow-rose-200"
                                   }`}
+                                  title={isCollected ? "ক্লিক করে আনসিলেক্ট করুন" : "ভাউচার কালেক্ট করুন"}
                                 >
                                   {isCollected ? "Collected ✓" : "Collect"}
                                 </button>
@@ -20795,9 +20808,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             const shipIds = vouchers.filter(v => v.section === "shipping" && v.active).map(v => v.id);
                             handleCollectAllVouchers(shipIds);
                           }}
-                          className="px-3 py-1 rounded-full border border-[#00897b] text-[#00897b] hover:bg-teal-50 text-[11px] font-bold transition active:scale-95 shadow-2xs"
+                          className={`px-3 py-1 rounded-full text-[11px] font-bold transition active:scale-95 shadow-2xs cursor-pointer ${
+                            vouchers.filter(v => v.section === "shipping" && v.active).every(v => collectedVouchers.includes(v.id))
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-teal-50 hover:text-teal-700"
+                              : "border border-[#00897b] text-[#00897b] hover:bg-teal-50"
+                          }`}
+                          title="ক্লিক করে এই সেকশনের সবগুলো কালেক্ট বা আনসিলেক্ট করুন"
                         >
-                          Collect all
+                          {vouchers.filter(v => v.section === "shipping" && v.active).every(v => collectedVouchers.includes(v.id)) ? "✓ Collected all" : "Collect all"}
                         </button>
                       </div>
 
@@ -20852,13 +20870,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 )}
                                 <button
                                   type="button"
-                                  disabled={isCollected}
                                   onClick={() => handleCollectVoucher(v.id)}
-                                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs transition active:scale-95 shadow-sm ${
+                                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs transition active:scale-95 shadow-sm flex items-center gap-1 cursor-pointer ${
                                     isCollected
-                                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200"
                                       : "bg-[#00897b] hover:bg-[#00695c] text-white shadow-teal-200"
                                   }`}
+                                  title={isCollected ? "ক্লিক করে আনসিলেক্ট করুন" : "ভাউচার কালেক্ট করুন"}
                                 >
                                   {isCollected ? "Collected ✓" : (v.badge ? `Collect ${v.badge}` : "Collect")}
                                 </button>
@@ -20950,9 +20968,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     handleCollectVoucher(selectedVoucherForTc.id);
                     setSelectedVoucherForTc(null);
                   }}
-                  className="w-full py-2.5 rounded-full bg-[#7a1c2b] text-white font-bold text-xs shadow hover:bg-[#681727] transition"
+                  className={`w-full py-2.5 rounded-full font-bold text-xs shadow transition cursor-pointer ${
+                    collectedVouchers.includes(selectedVoucherForTc.id)
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-[#7a1c2b] text-white hover:bg-[#681727]"
+                  }`}
                 >
-                  {collectedVouchers.includes(selectedVoucherForTc.id) ? "✓ ইতিমধ্যে সংগৃহীত" : "এখনই ভাউচারটি কালেক্ট করুন ✓"}
+                  {collectedVouchers.includes(selectedVoucherForTc.id) ? "✓ সংগৃহীত (আনসিলেক্ট করতে চাপুন)" : "এখনই ভাউচারটি কালেক্ট করুন ✓"}
                 </button>
               </div>
             </div>
