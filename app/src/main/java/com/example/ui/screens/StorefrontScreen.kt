@@ -137,8 +137,8 @@ fun StorefrontScreen(
                     .background(RoyalMaroon)
                 )
                 Text(
-                  text = "প্রধান ক্যাটাগরি (Main Categories)",
-                  fontSize = 13.sp,
+                  text = "সকল ক্যাটাগরি",
+                  fontSize = 14.sp,
                   fontWeight = FontWeight.Bold,
                   color = RoyalMaroon
                 )
@@ -155,7 +155,7 @@ fun StorefrontScreen(
 
             LazyRow(
               contentPadding = PaddingValues(horizontal = 8.dp),
-              horizontalArrangement = Arrangement.spacedBy(12.dp)
+              horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
               // "All" item
               item {
@@ -163,7 +163,7 @@ fun StorefrontScreen(
                 Column(
                   horizontalAlignment = Alignment.CenterHorizontally,
                   modifier = Modifier
-                    .width(62.dp)
+                    .width(70.dp)
                     .clickable { onCategorySelected("All") }
                 ) {
                   Box(
@@ -187,8 +187,8 @@ fun StorefrontScreen(
                   }
                   Spacer(modifier = Modifier.height(4.dp))
                   Text(
-                    text = "সব কালেকশন",
-                    fontSize = 10.sp,
+                    text = "সকল পণ্য",
+                    fontSize = 11.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     color = if (isSelected) RoyalMaroon else DarkEspresso,
                     textAlign = TextAlign.Center,
@@ -198,12 +198,14 @@ fun StorefrontScreen(
               }
 
               // Category items
-              items(categories.filter { it.type == "main" || it.showInSlider }) { cat ->
+              val displayCats = categories.filter { it.type != "sub" && it.type != "parent" }
+                .ifEmpty { categories }
+              items(displayCats) { cat ->
                 val isSelected = selectedCategory == cat.name
                 Column(
                   horizontalAlignment = Alignment.CenterHorizontally,
                   modifier = Modifier
-                    .width(62.dp)
+                    .width(70.dp)
                     .clickable { onCategorySelected(cat.name) }
                 ) {
                   Box(

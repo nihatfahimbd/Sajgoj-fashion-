@@ -167,7 +167,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect, useRef, useMemo } = React;
 
     // Self-contained high quality SVG Fallback Images
     const imgSharee = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0e6'/><rect x='40' y='60' width='520' height='480' rx='28' fill='#7a1c2b'/><circle cx='300' cy='280' r='120' fill='#d4a574' opacity='0.25'/><text x='50%' y='46%' dominant-baseline='middle' text-anchor='middle' fill='#fff8f0' font-size='32' font-weight='700'>ডিজাইনার কাতান শাড়ি</text><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#d4a574' font-size='22'>SAJ-001 • ৩৫০০ ৳</text></svg>");
@@ -182,8 +182,8 @@
     const imgInnerwear = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff5f5'/><circle cx='230' cy='320' r='75' fill='#e53e3e'/><circle cx='370' cy='320' r='75' fill='#e53e3e'/><rect x='280' y='305' width='40' height='30' rx='8' fill='#c53030'/><text x='50%' y='75%' dominant-baseline='middle' text-anchor='middle' fill='#7a1c2b' font-size='24' font-weight='bold'>বডি ফিট ইনার ওয়্যার</text></svg>");
     const imgKids = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fefcbf'/><path d='M220,150 L380,150 L420,460 L180,460 Z' fill='#dd6b20'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='26' font-weight='bold'>বাচ্চাদের কিউট পোশাক</text></svg>");
 
-    const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#7a1c2b'/><circle cx='950' cy='220' r='260' fill='#d4a574' opacity='0.3'/><circle cx='1050' cy='400' r='180' fill='#53111c' opacity='0.4'/><text x='80' y='200' fill='#fff8f0' font-size='60' font-weight='800'>Eid Collection 2026</text><text x='80' y='270' fill='#ffdcc0' font-size='26'>এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি</text><rect x='80' y='320' width='220' height='56' rx='28' fill='#d4a574'/><text x='190' y='355' text-anchor='middle' fill='#2c1810' font-size='20' font-weight='bold'>কালেকশন দেখুন</text></svg>");
-    const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><rect width='1200' height='550' fill='#2c1810'/><rect x='0' y='0' width='550' height='550' fill='#7a1c2b' opacity='0.85'/><circle cx='600' cy='275' r='160' fill='#d4a574' opacity='0.25'/><text x='80' y='210' fill='#fff' font-size='52' font-weight='800'>রাজওয়াড়ি ব্রাইডাল কালেকশন</text><text x='80' y='275' fill='#ffdcc0' font-size='24'>ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত হাতের কাজ</text><rect x='80' y='325' width='220' height='56' rx='28' fill='#fff8f0'/><text x='190' y='360' text-anchor='middle' fill='#7a1c2b' font-size='20' font-weight='bold'>অফার লুফে নিন</text></svg>");
+    const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><defs><linearGradient id='g1' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='#7a1c2b'/><stop offset='50%' stop-color='#53111c'/><stop offset='100%' stop-color='#2c1810'/></linearGradient></defs><rect width='1200' height='550' fill='url(#g1)'/><circle cx='950' cy='220' r='260' fill='#d4a574' opacity='0.25'/><circle cx='1050' cy='400' r='180' fill='#fff8f0' opacity='0.1'/><circle cx='150' cy='100' r='80' fill='#d4a574' opacity='0.15'/><path d='M800,0 Q900,200 1200,220 L1200,0 Z' fill='#d4a574' opacity='0.2'/></svg>");
+    const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><defs><linearGradient id='g2' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='#2c1810'/><stop offset='60%' stop-color='#7a1c2b'/><stop offset='100%' stop-color='#3a0d15'/></linearGradient></defs><rect width='1200' height='550' fill='url(#g2)'/><circle cx='600' cy='275' r='160' fill='#d4a574' opacity='0.2'/><circle cx='1000' cy='180' r='220' fill='#ffd700' opacity='0.15'/><circle cx='1100' cy='420' r='150' fill='#fff8f0' opacity='0.1'/><path d='M0,400 Q200,300 450,550 L0,550 Z' fill='#d4a574' opacity='0.15'/></svg>");
 
     // Variation Cleaner: Removes redundant words, parentheses, and prefixes like "সাইজ:", "(Black)", "(বডি ৩২)"
     const cleanVariation = (str) => {
@@ -803,6 +803,55 @@
       const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
       const [loyalty, setLoyalty] = useState(() => getStored("loyalty", initialLoyaltyConfig));
       const [loyaltyCustomerMap, setLoyaltyCustomerMap] = useState(() => getStored("loyalty_customers", {}));
+
+      // Robust normalized list of categories for Daraz-style horizontal slider
+      const displayCategories = useMemo(() => {
+        const list = [];
+        const seen = new Set();
+        
+        const addCat = (c) => {
+          if (!c) return;
+          const item = typeof c === "string" 
+            ? { id: `cat-${c}`, name: c, icon: "🏷️", type: "main" } 
+            : { ...c };
+          const name = (item.name || "").trim();
+          if (!name || seen.has(name)) return;
+          // Subcategories appear as filter pills below when a category is picked
+          if (item.type === "sub") return;
+          seen.add(name);
+          
+          // Image fallback matching
+          if (!item.imageUrl) {
+            const matchedInit = initialCategories.find(ic => ic.name === name);
+            if (matchedInit && matchedInit.imageUrl) {
+              item.imageUrl = matchedInit.imageUrl;
+            } else {
+              const matchedProd = (products || []).find(p => p.category === name && p.images && p.images[0]);
+              if (matchedProd) item.imageUrl = matchedProd.images[0];
+            }
+          }
+          if (!item.icon) {
+            const matchedInit = initialCategories.find(ic => ic.name === name);
+            item.icon = matchedInit ? matchedInit.icon : "✨";
+          }
+          list.push(item);
+        };
+
+        // 1. All saved categories from state/localStorage/cloud
+        if (Array.isArray(categories)) {
+          categories.forEach(addCat);
+        }
+        // 2. Built-in initial categories (guarantees saree, jewelry, kids, etc. are always present)
+        if (Array.isArray(initialCategories)) {
+          initialCategories.forEach(addCat);
+        }
+        // 3. Products categories from live inventory
+        (products || []).forEach(p => {
+          if (p.category) addCat(p.category);
+        });
+
+        return list;
+      }, [categories, products]);
 
       // Online/Offline Network Status Detection
       const [isOnline, setIsOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
@@ -5594,48 +5643,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 )}
 
                 {/* --------------------------------------------------------- */}
-                {/* 🚚 TRUST & ASSURANCE STRIP (Safe Payment, Fast Delivery, Return) */}
+                {/* 🏷️ DARAZ-STYLE HORIZONTAL SLIDING CATEGORIES (বানারের নিচে সরাসরি) */}
                 {/* --------------------------------------------------------- */}
-                <div className="bg-[#fffdfa] rounded-2xl border border-[#f3e2d0] p-2.5 sm:p-3 shadow-2xs">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[11px] sm:text-xs font-bold text-gray-700 divide-x divide-gray-100">
-                    <div className="flex items-center justify-center gap-1.5 py-1 text-[#7a1c2b]">
-                      <span>💳</span>
-                      <span>নিরাপদ পেমেন্ট (bKash/COD)</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1.5 py-1 text-emerald-800">
-                      <span>⚡</span>
-                      <span>দ্রুততম হোম ডেলিভারি</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1.5 py-1 text-amber-900">
-                      <span>🔄</span>
-                      <span>{config?.returnPolicyDays || 7} দিনের সহজ রিটার্ন</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1.5 py-1 text-[#7a1c2b]">
-                      <span>👑</span>
-                      <span>১০০% খাঁটি ও আসল পণ্য</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* --------------------------------------------------------- */}
-                {/* 🏷️ DARAZ-STYLE HORIZONTAL SLIDING MAIN CATEGORIES */}
-                {/* --------------------------------------------------------- */}
-                <div className="bg-white rounded-3xl p-3 sm:p-4 border border-[#f3e2d0] shadow-sm space-y-2">
+                <div className="bg-white rounded-3xl p-3 sm:p-4 border border-[#f3e2d0] shadow-sm space-y-2.5">
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-4 bg-[#7a1c2b] rounded-full"></span>
                       <h3 className="font-extrabold text-sm sm:text-base text-[#7a1c2b] tracking-tight">
-                        প্রধান ক্যাটাগরি (Main Categories)
+                        সকল ক্যাটাগরি
                       </h3>
-                      <span className="text-[10px] bg-rose-100 text-[#7a1c2b] px-2 py-0.5 rounded-full font-bold">
-                        স্লাইডার
-                      </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-[#b8956a] hidden sm:inline flex items-center gap-1">
-                        👉 স্লাইড করে ক্যাটাগরি বেছে নিন
-                      </span>
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => {
@@ -5666,7 +5685,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     id="category-slider-scroll"
                     className="flex items-start gap-3 sm:gap-4 overflow-x-auto pb-2 pt-1 px-1 scroll-smooth scrollbar-none snap-x"
                   >
-                    {/* "All" Item */}
+                    {/* "All" Item (সকল পণ্য) */}
                     <div
                       onClick={() => {
                         setSelectedCat("All");
@@ -5674,29 +5693,29 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         const el = document.getElementById("products-section");
                         if (el) el.scrollIntoView({ behavior: "smooth" });
                       }}
-                      className="flex flex-col items-center flex-shrink-0 w-[58px] sm:w-[68px] cursor-pointer group snap-start"
+                      className="flex flex-col items-center flex-shrink-0 w-[68px] sm:w-[78px] cursor-pointer group snap-start"
                     >
                       <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl p-1 bg-gradient-to-br from-amber-500 via-[#7a1c2b] to-[#4a1019] text-white flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300 active:scale-95 border-2 ${selectedCat === "All" ? "border-amber-400 ring-2 ring-amber-300" : "border-transparent"}`}>
                         <span className="text-2xl animate-pulse">🌟</span>
                       </div>
-                      <span className={`text-[10px] sm:text-[11px] font-bold text-center leading-tight mt-1.5 truncate max-w-[62px] sm:max-w-[70px] ${selectedCat === "All" ? "text-[#7a1c2b]" : "text-gray-800"}`}>
+                      <span className={`text-[11px] sm:text-xs font-semibold text-center leading-tight mt-1.5 break-words w-full px-0.5 line-clamp-2 ${selectedCat === "All" ? "text-[#7a1c2b] font-bold" : "text-gray-800"}`}>
                         সকল পণ্য
                       </span>
                     </div>
 
-                    {/* Main Categories matching user's Daraz screenshot */}
-                    {categories.filter(c => c.type === "main" || (!c.type && c.parentId) || c.showInSlider).map(cat => {
+                    {/* All Categories in the catalog */}
+                    {displayCategories.map(cat => {
                       const isSelected = selectedCat === cat.name;
                       return (
                         <div
-                          key={cat.id}
+                          key={cat.id || cat.name}
                           onClick={() => {
                             setSelectedCat(cat.name);
                             setSelectedSubCat("All");
                             const el = document.getElementById("products-section");
                             if (el) el.scrollIntoView({ behavior: "smooth" });
                           }}
-                          className="flex flex-col items-center flex-shrink-0 w-[58px] sm:w-[68px] cursor-pointer group snap-start"
+                          className="flex flex-col items-center flex-shrink-0 w-[68px] sm:w-[78px] cursor-pointer group snap-start"
                         >
                           {/* Squircle Card */}
                           <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl p-0.5 bg-gradient-to-br from-white to-[#fff8f0] border-2 shadow-xs group-hover:shadow-md transition-all duration-300 flex items-center justify-center overflow-hidden active:scale-95 ${isSelected ? "border-[#7a1c2b] ring-2 ring-[#7a1c2b]/30 shadow-sm" : "border-[#f3e2d0] group-hover:border-[#7a1c2b]"}`}>
@@ -5725,13 +5744,37 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             )}
                           </div>
 
-                          {/* 2-line title */}
-                          <span className={`text-[10px] sm:text-[11px] font-bold text-center leading-tight mt-1.5 line-clamp-2 max-w-[62px] sm:max-w-[70px] transition ${isSelected ? "text-[#7a1c2b] font-black" : "text-gray-800 group-hover:text-[#7a1c2b]"}`}>
+                          {/* Responsive 2-line title */}
+                          <span className={`text-[11px] sm:text-xs font-semibold text-center leading-tight mt-1.5 break-words w-full px-0.5 line-clamp-2 transition ${isSelected ? "text-[#7a1c2b] font-extrabold" : "text-gray-800 group-hover:text-[#7a1c2b]"}`}>
                             {cat.name}
                           </span>
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* --------------------------------------------------------- */}
+                {/* 🚚 TRUST & ASSURANCE STRIP (ক্যাটাগরির নিচে) */}
+                {/* --------------------------------------------------------- */}
+                <div className="bg-[#fffdfa] rounded-2xl border border-[#f3e2d0] p-2.5 sm:p-3 shadow-2xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[10px] sm:text-xs font-semibold text-gray-700 divide-x divide-gray-100">
+                    <div className="flex items-center justify-center gap-1.5 py-1 text-[#7a1c2b]">
+                      <span>💳</span>
+                      <span>নিরাপদ পেমেন্ট (bKash/COD)</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5 py-1 text-emerald-800">
+                      <span>⚡</span>
+                      <span>দ্রুততম হোম ডেলিভারি</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5 py-1 text-amber-900">
+                      <span>🔄</span>
+                      <span>{config?.returnPolicyDays || 7} দিনের সহজ রিটার্ন</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5 py-1 text-[#7a1c2b]">
+                      <span>👑</span>
+                      <span>১০০% খাঁটি ও আসল পণ্য</span>
+                    </div>
                   </div>
                 </div>
 
