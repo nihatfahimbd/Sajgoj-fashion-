@@ -292,6 +292,234 @@
       { id: "cp3", code: "SAJGOJ20", type: "%", value: 20, minOrder: 4000, expiry: "2026-12-31", active: true }
     ];
 
+    // Daraz-Style Vouchers (Voucher Max, সাজগোজ Mega Voucher, Free Shipping Vouchers)
+    const initialVouchers = [
+      // 1. Voucher Max (শীর্ষ স্পেশাল বড় ভাউচার)
+      {
+        id: "v-max-1",
+        code: "VMAX2250",
+        title: "Flat Tk. 2,250 Off",
+        banglaTitle: "ফ্ল্যাট ২,২৫০ ৳ বিশেষ ছাড়",
+        discountType: "flat",
+        discountValue: 2250,
+        minSpend: 24999,
+        category: "All",
+        targetType: "spend",
+        section: "max",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-max-2",
+        code: "VMAX3500",
+        title: "Flat Tk. 3,500 Off",
+        banglaTitle: "ফ্ল্যাট ৩,৫০০ ৳ মেগা ছাড়",
+        discountType: "flat",
+        discountValue: 3500,
+        minSpend: 34999,
+        category: "All",
+        targetType: "spend",
+        section: "max",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-max-3",
+        code: "VMAX500",
+        title: "Flat Tk. 500 Off",
+        banglaTitle: "ফ্ল্যাট ৫০০ ৳ শপিং ছাড়",
+        discountType: "flat",
+        discountValue: 500,
+        minSpend: 4999,
+        category: "All",
+        targetType: "spend",
+        section: "max",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+
+      // 2. সাজগোজ Mega Voucher (ক্যাটাগরি, নির্দিষ্ট অ্যামাউন্ট ও নির্দিষ্ট প্রোডাক্ট ভিত্তিক)
+      // Category based:
+      {
+        id: "v-cat-1",
+        code: "FASHION10",
+        title: "Fashion & Sarees",
+        banglaTitle: "শাড়ি ও লেডিস ফ্যাশন কালেকশন",
+        discountType: "percent",
+        discountValue: 10,
+        maxDiscount: 350,
+        minSpend: 1499,
+        category: "শাড়ি",
+        targetType: "category",
+        section: "mega",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-cat-2",
+        code: "JEWEL12",
+        title: "Health & Beauty",
+        banglaTitle: "রাজওয়াড়ি ব্রাইডাল ও গহনা",
+        discountType: "percent",
+        discountValue: 10,
+        maxDiscount: 500,
+        minSpend: 199,
+        category: "ব্রাইডাল সেট",
+        targetType: "category",
+        section: "mega",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-cat-3",
+        code: "KIDS15",
+        title: "Kids Collection",
+        banglaTitle: "বাচ্চাদের সকল পোশাক ও আয়োজন",
+        discountType: "percent",
+        discountValue: 15,
+        maxDiscount: 250,
+        minSpend: 999,
+        category: "বাচ্চাদের পোশাক",
+        targetType: "category",
+        section: "mega",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      // Spend / Amount based:
+      {
+        id: "v-spend-1",
+        code: "UPTO50",
+        title: "Upto Tk. 50 Off",
+        banglaTitle: "৮% ছাড় (সর্বোচ্চ ৫০ ৳ ছাড়)",
+        discountType: "percent",
+        discountValue: 8,
+        maxDiscount: 50,
+        minSpend: 349,
+        category: "All",
+        targetType: "spend",
+        section: "mega",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-spend-2",
+        code: "UPTO175",
+        title: "Upto Tk. 175 Off",
+        banglaTitle: "৮% ছাড় (সর্বোচ্চ ১৭৫ ৳ ছাড়)",
+        discountType: "percent",
+        discountValue: 8,
+        maxDiscount: 175,
+        minSpend: 1500,
+        category: "All",
+        targetType: "spend",
+        section: "mega",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-spend-3",
+        code: "MEGA10OFF",
+        title: "10% Platform Wide",
+        banglaTitle: "১০% পুরো স্টোর জুড়ে অফার",
+        discountType: "percent",
+        discountValue: 10,
+        maxDiscount: 300,
+        minSpend: 1999,
+        category: "All",
+        targetType: "spend",
+        section: "mega",
+        tag: "Voucher Max",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      // Product specific:
+      {
+        id: "v-prod-1",
+        code: "SAREE300",
+        title: "কাতান শাড়ি স্পেশাল ভাউচার",
+        banglaTitle: "কাতান শাড়িতে ৩০০ ৳ ইনস্ট্যান্ট ছাড়",
+        discountType: "flat",
+        discountValue: 300,
+        minSpend: 2500,
+        category: "শাড়ি",
+        targetProductId: "p1",
+        targetType: "product",
+        section: "mega",
+        tag: "Product Voucher",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+
+      // 3. Free shipping vouchers (ফ্রি শিপিং ভাউচার)
+      {
+        id: "v-ship-1",
+        code: "SHIP45",
+        title: "Selected Sellers",
+        banglaTitle: "ডেলিভারি চার্জে ৪৫ ৳ নিশ্চিত ছাড়",
+        discountType: "shipping",
+        discountValue: 45,
+        minSpend: 99,
+        category: "All",
+        targetType: "shipping",
+        section: "shipping",
+        badge: "x2",
+        validity: "01/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-ship-2",
+        code: "SHIP95",
+        title: "Save on Delivery",
+        banglaTitle: "হোম ডেলিভারিতে ৯৫ ৳ বিশেষ ছাড়",
+        discountType: "shipping",
+        discountValue: 95,
+        minSpend: 299,
+        category: "All",
+        targetType: "shipping",
+        section: "shipping",
+        badge: "x2",
+        validity: "03/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-ship-3",
+        code: "SHIP120",
+        title: "Selected Sellers",
+        banglaTitle: "১২০ ৳ সম্পূর্ণ ডেলিভারি চার্জ ফ্রি",
+        discountType: "shipping",
+        discountValue: 120,
+        minSpend: 499,
+        category: "All",
+        targetType: "shipping",
+        section: "shipping",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      },
+      {
+        id: "v-ship-4",
+        code: "SHIPFASHION",
+        title: "Fashion Free Shipping",
+        banglaTitle: "ফ্যাশন অর্ডারে ১০০% ফ্রি ডেলিভারি",
+        discountType: "shipping",
+        discountValue: 150,
+        minSpend: 1999,
+        category: "শাড়ি",
+        targetType: "shipping",
+        section: "shipping",
+        badge: "x2",
+        validity: "10/11/2026 - 30/11/2026",
+        active: true
+      }
+    ];
+
     const initialBanners = [
       { id: "b1", title: "Eid Collection 2026", subtitle: "এক্সক্লুসিভ ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন", buttonText: "কালেকশন দেখুন", link: "#products", image: banner1, active: true, order: 1 },
       { id: "b2", title: "রাজওয়াড়ি ব্রাইডাল কালেকশন", subtitle: "ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত কাজ", buttonText: "অফার লুফে নিন", link: "#products", image: banner2, active: true, order: 2 }
@@ -796,6 +1024,13 @@
       const [orders, setOrders] = useState(() => getStored("orders", initialOrders));
       const [returns, setReturns] = useState(() => getStored("returns", initialReturns));
       const [coupons, setCoupons] = useState(() => getStored("coupons", initialCoupons));
+      const [vouchers, setVouchers] = useState(() => getStored("vouchers", initialVouchers));
+      const [collectedVouchers, setCollectedVouchers] = useState(() => getStored("collected_vouchers", []));
+      const [isVoucherCenterOpen, setIsVoucherCenterOpen] = useState(false);
+      const [voucherCenterTab, setVoucherCenterTab] = useState("all");
+      const [appliedVoucher, setAppliedVoucher] = useState(null);
+      const [appliedShippingVoucher, setAppliedShippingVoucher] = useState(null);
+      const [selectedVoucherForTc, setSelectedVoucherForTc] = useState(null);
       const [banners, setBanners] = useState(() => getStored("banners", initialBanners));
       const [config, setConfig] = useState(() => getStored("config", initialStoreConfig));
       const [courier, setCourier] = useState(() => getStored("courier", initialCourierConfig));
@@ -933,7 +1168,7 @@
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
-          const keys = ["config", "banners", "products", "combos", "categories", "orders", "returns", "coupons", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes", "wishlist"];
+          const keys = ["config", "banners", "products", "combos", "categories", "orders", "returns", "coupons", "vouchers", "collected_vouchers", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes", "wishlist"];
           for (const k of keys) {
             try {
               const val = await idbStore.get(k);
@@ -946,6 +1181,8 @@
                 else if (k === "orders") setOrders(val);
                 else if (k === "returns") setReturns(val);
                 else if (k === "coupons") setCoupons(val);
+                else if (k === "vouchers") setVouchers(val);
+                else if (k === "collected_vouchers") setCollectedVouchers(val);
                 else if (k === "reviews") setReviews(val);
                 else if (k === "courier") setCourier(val);
                 else if (k === "pixel") setPixel(val);
@@ -981,6 +1218,8 @@
       useEffect(() => { if (hasHydratedRef.current) setStored("spin_prizes", spinPrizes); }, [spinPrizes]);
       useEffect(() => { if (hasHydratedRef.current) setStored("orders", orders); }, [orders]);
       useEffect(() => { if (hasHydratedRef.current) setStored("coupons", coupons); }, [coupons]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("vouchers", vouchers); }, [vouchers]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("collected_vouchers", collectedVouchers); }, [collectedVouchers]);
       useEffect(() => { if (hasHydratedRef.current) setStored("banners", banners); }, [banners]);
       useEffect(() => { if (hasHydratedRef.current) setStored("config", config); }, [config]);
       useEffect(() => { if (hasHydratedRef.current) setStored("courier", courier); }, [courier]);
@@ -4733,6 +4972,40 @@
         }
       }
 
+      // Daraz-Style Vouchers Auto-Application
+      const applicableMegaVouchers = (vouchers || [])
+        .filter(v => v.active && collectedVouchers.includes(v.id) && v.section !== "shipping")
+        .filter(v => cartSubtotal >= (Number(v.minSpend) || 0))
+        .sort((a, b) => {
+          const valA = a.discountType === "percent" ? Math.min((cartSubtotal * a.discountValue)/100, a.maxDiscount || 99999) : a.discountValue;
+          const valB = b.discountType === "percent" ? Math.min((cartSubtotal * b.discountValue)/100, b.maxDiscount || 99999) : b.discountValue;
+          return valB - valA;
+        });
+
+      const applicableShippingVouchers = (vouchers || [])
+        .filter(v => v.active && collectedVouchers.includes(v.id) && (v.section === "shipping" || v.discountType === "shipping"))
+        .filter(v => cartSubtotal >= (Number(v.minSpend) || 0))
+        .sort((a, b) => (Number(b.discountValue) || 0) - (Number(a.discountValue) || 0));
+
+      const activeMegaVoucher = appliedVoucher || (applicableMegaVouchers.length > 0 ? applicableMegaVouchers[0] : null);
+      const activeShippingVoucher = appliedShippingVoucher || (applicableShippingVouchers.length > 0 ? applicableShippingVouchers[0] : null);
+
+      let voucherDiscountAmount = 0;
+      if (activeMegaVoucher) {
+        if (activeMegaVoucher.discountType === "percent") {
+          const raw = Math.round((cartSubtotal * activeMegaVoucher.discountValue) / 100);
+          voucherDiscountAmount = activeMegaVoucher.maxDiscount ? Math.min(raw, activeMegaVoucher.maxDiscount) : raw;
+        } else {
+          voucherDiscountAmount = Number(activeMegaVoucher.discountValue) || 0;
+        }
+      }
+
+      let shippingVoucherDiscount = 0;
+      if (activeShippingVoucher && deliveryCharge > 0) {
+        shippingVoucherDiscount = Math.min(deliveryCharge, Number(activeShippingVoucher.discountValue) || deliveryCharge);
+      }
+      const finalDeliveryCharge = Math.max(0, deliveryCharge - shippingVoucherDiscount);
+
       // Member Tier & Loyalty Discount Computation
       const detectedLoyalty = getCustomerLoyalty(checkoutForm.phone);
       const isLoyaltyEnabled = Boolean(loyalty?.enabled);
@@ -4757,9 +5030,37 @@
       const spendPerPointRate = Number(loyalty?.spendPerPoint) || 10;
       const pointsEarnedThisOrder = isLoyaltyEnabled ? Math.floor(cartSubtotal / spendPerPointRate) : 0;
 
-      const totalDiscounts = discountAmount + tierDiscountAmount + pointsDiscountAmount;
+      const totalDiscounts = discountAmount + voucherDiscountAmount + tierDiscountAmount + pointsDiscountAmount;
       const giftWrapFee = isGiftWrap ? 50 : 0;
-      const cartGrandTotal = Math.max(0, cartSubtotal - totalDiscounts) + deliveryCharge + giftWrapFee;
+      const cartGrandTotal = Math.max(0, cartSubtotal - totalDiscounts) + finalDeliveryCharge + giftWrapFee;
+
+      // Voucher Collection Handlers
+      const handleCollectVoucher = (voucherId) => {
+        if (!voucherId) return;
+        setCollectedVouchers(prev => {
+          if (prev.includes(voucherId)) {
+            notify("এই ভাউচারটি আপনি ইতিমধ্যে সংগ্রহ করেছেন ✓");
+            return prev;
+          }
+          const updated = [...prev, voucherId];
+          setStored("collected_vouchers", updated);
+          return updated;
+        });
+        notify("🎉 ভাউচার সফলভাবে সংগৃহীত হয়েছে! চেকআউটে স্বয়ংক্রিয়ভাবে ছাড় মিলবে।");
+      };
+
+      const handleCollectAllVouchers = (specificList) => {
+        const listToCollect = specificList && specificList.length > 0
+          ? specificList
+          : vouchers.filter(v => v.active).map(v => v.id);
+        
+        setCollectedVouchers(prev => {
+          const combined = Array.from(new Set([...prev, ...listToCollect]));
+          setStored("collected_vouchers", combined);
+          return combined;
+        });
+        notify("🎉 সকল ভাউচার সফলভাবে সংগৃহীত হয়েছে! আপনার অর্ডারে সর্বোচ্চ সাশ্রয় পাবেন।");
+      };
 
       // Apply Coupon
       const handleApplyCoupon = () => {
@@ -4816,7 +5117,13 @@
           pointsRedeemed: pointsRedeemedCount,
           pointsDiscount: pointsDiscountAmount,
           pointsEarned: pointsEarnedThisOrder,
-          deliveryCharge,
+          megaVoucherDiscount: voucherDiscountAmount,
+          megaVoucherCode: activeMegaVoucher ? activeMegaVoucher.code : "",
+          megaVoucherTitle: activeMegaVoucher ? activeMegaVoucher.title : "",
+          shippingVoucherDiscount: shippingVoucherDiscount,
+          shippingVoucherCode: activeShippingVoucher ? activeShippingVoucher.code : "",
+          deliveryCharge: finalDeliveryCharge,
+          originalDeliveryCharge: deliveryCharge,
           paymentMethod: checkoutForm.paymentMethod,
           status: "Pending",
           date: new Date().toISOString().split("T")[0],
@@ -5641,6 +5948,96 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     )}
                   </div>
                 )}
+
+                {/* --------------------------------------------------------- */}
+                {/* 🎟️ DARAZ-STYLE SLIM CLAIM VOUCHERS STRIP (বানারের নিচে ক্যাটাগরির উপর) */}
+                {/* --------------------------------------------------------- */}
+                <div className="bg-gradient-to-r from-[#fff3f3] via-[#fff8f5] to-[#f0fbf9] rounded-2xl border border-rose-200/80 shadow-xs p-2 sm:p-2.5 space-y-1.5 transition-all">
+                  {/* Top Bar with Title & More Voucher Link */}
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs sm:text-sm font-extrabold text-gray-900 tracking-tight flex items-center gap-1">
+                        Claim Vouchers to Save More!
+                      </span>
+                      <span className="bg-gradient-to-r from-[#7a1c2b] to-[#a02338] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                        11.11 / SAJGOJ
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVoucherCenterTab("all");
+                        setIsVoucherCenterOpen(true);
+                      }}
+                      className="text-[11px] sm:text-xs font-bold text-[#7a1c2b] hover:text-[#53111c] flex items-center gap-0.5 transition active:scale-95 group cursor-pointer"
+                    >
+                      <span>More Voucher</span>
+                      <span className="text-sm font-black group-hover:translate-x-0.5 transition-transform">›</span>
+                    </button>
+                  </div>
+
+                  {/* Slim Block Table / Ticket Strip (Matches Screenshot 1) */}
+                  <div className="bg-white rounded-xl border border-rose-100/90 shadow-2xs flex items-center justify-between p-2 sm:p-2.5 divide-x divide-gray-100">
+                    {/* Left Cell: Voucher Max */}
+                    <div
+                      onClick={() => {
+                        setVoucherCenterTab("max");
+                        setIsVoucherCenterOpen(true);
+                      }}
+                      className="flex-1 cursor-pointer flex flex-col justify-center pr-2 group"
+                    >
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm sm:text-lg font-black text-[#e53935] leading-none group-hover:scale-105 transition-transform origin-left">
+                          ৳২,২৫০
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-medium text-gray-500 mt-0.5 leading-none">
+                        Voucher Max
+                      </span>
+                    </div>
+
+                    {/* Middle Cell: Free Shipping */}
+                    <div
+                      onClick={() => {
+                        setVoucherCenterTab("shipping");
+                        setIsVoucherCenterOpen(true);
+                      }}
+                      className="flex-1 cursor-pointer flex flex-col justify-center px-2.5 sm:px-3 group"
+                    >
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm sm:text-lg font-black text-[#00897b] leading-none group-hover:scale-105 transition-transform origin-left">
+                          ৳৪৫
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-medium text-gray-500 mt-0.5 leading-none">
+                        Free shipping
+                      </span>
+                    </div>
+
+                    {/* Right Cell: Collect All Action */}
+                    <div className="pl-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const activeIds = vouchers.filter(v => v.active).map(v => v.id);
+                          handleCollectAllVouchers(activeIds);
+                        }}
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black shadow transition active:scale-95 flex items-center gap-1 ${
+                          vouchers.length > 0 && vouchers.every(v => collectedVouchers.includes(v.id))
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                            : "bg-gradient-to-r from-[#ff6f00] via-[#ff8f00] to-[#ffa000] text-white hover:brightness-105 shadow-amber-200"
+                        }`}
+                      >
+                        {vouchers.length > 0 && vouchers.every(v => collectedVouchers.includes(v.id)) ? (
+                          <span>✓ Collect All</span>
+                        ) : (
+                          <span>Collect All</span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
                 {/* --------------------------------------------------------- */}
                 {/* 🏷️ DARAZ-STYLE HORIZONTAL SLIDING CATEGORIES (বানারের নিচে সরাসরি) */}
@@ -14280,9 +14677,51 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
                     )}
 
+                    {/* সাজগোজ Mega Voucher Discount */}
+                    {voucherDiscountAmount > 0 && activeMegaVoucher && (
+                      <div className="flex justify-between text-[#e53935] font-black bg-rose-50/80 px-2 py-1 rounded-lg border border-rose-200">
+                        <span>🎟️ সাজগোজ Mega Voucher ({activeMegaVoucher.title}):</span>
+                        <span>- {voucherDiscountAmount} ৳</span>
+                      </div>
+                    )}
+
+                    {/* Delivery Charge with Free Shipping Voucher */}
                     <div className="flex justify-between">
                       <span>ডেলিভারি চার্জ</span>
-                      <span>{deliveryCharge === 0 ? "ফ্রি (Free)" : `${deliveryCharge} ৳`}</span>
+                      <div className="text-right">
+                        {shippingVoucherDiscount > 0 ? (
+                          <span className="space-x-1.5">
+                            <span className="line-through text-gray-400 text-[11px]">{deliveryCharge} ৳</span>
+                            <span className="font-bold text-[#00897b]">
+                              {finalDeliveryCharge === 0 ? "ফ্রি (Free 🚚)" : `${finalDeliveryCharge} ৳`}
+                            </span>
+                          </span>
+                        ) : (
+                          <span>{deliveryCharge === 0 ? "ফ্রি (Free)" : `${deliveryCharge} ৳`}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {shippingVoucherDiscount > 0 && activeShippingVoucher && (
+                      <div className="flex justify-between text-[#00897b] font-bold bg-teal-50/80 px-2 py-1 rounded-lg border border-teal-200">
+                        <span>🚚 ফ্রি শিপিং ভাউচার ({activeShippingVoucher.title}):</span>
+                        <span>- {shippingVoucherDiscount} ৳</span>
+                      </div>
+                    )}
+
+                    {/* Vouchers Status / Quick Voucher Center Link */}
+                    <div className="flex items-center justify-between text-[11px] text-gray-600 bg-white p-2 rounded-xl border border-gray-200 mt-1">
+                      <div className="flex items-center gap-1.5">
+                        <span>🎟️</span>
+                        <span>সংগৃহীত ভাউচার: <b className="text-[#7a1c2b]">{collectedVouchers.length} টি প্রযোজ্য</b></span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsVoucherCenterOpen(true)}
+                        className="text-[#7a1c2b] font-bold hover:underline"
+                      >
+                        ভাউচার দেখুন ›
+                      </button>
                     </div>
 
                     {isGiftWrap && (
@@ -20085,6 +20524,440 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </div>
             </div>
           )}
+
+          {/* ========================================================= */}
+          {/* 🎟️ VOUCHER CENTER FULLSCREEN / RESPONSIVE MODAL (স্ক্রিনশট ২ ও ৩ এর মতো) */}
+          {/* ========================================================= */}
+          {isVoucherCenterOpen && (
+            <div 
+              className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fadeIn"
+              onClick={() => setIsVoucherCenterOpen(false)}
+            >
+              <div 
+                className="bg-[#fef8f4] w-full max-w-xl h-full max-h-[94vh] rounded-3xl shadow-2xl border-2 border-rose-200/90 flex flex-col overflow-hidden animate-fadeIn relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* 1. Header (Matches Screenshot 2 & 3: Back button, Voucher Center title, coupon icon) */}
+                <div className="bg-white px-4 py-3 border-b border-rose-100 flex items-center justify-between shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsVoucherCenterOpen(false)}
+                      className="w-9 h-9 rounded-full bg-rose-50 text-[#7a1c2b] flex items-center justify-center font-bold text-lg hover:bg-rose-100 transition active:scale-90"
+                      title="ফিরে যান"
+                    >
+                      ‹
+                    </button>
+                    <div>
+                      <h2 className="font-black text-base sm:text-lg text-gray-900 tracking-tight flex items-center gap-1.5">
+                        <span>Voucher Center</span>
+                        <span className="text-xs bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full font-bold">সাজগোজ</span>
+                      </h2>
+                      <p className="text-[11px] text-[#b8956a] font-medium leading-none mt-0.5">
+                        ভাউচার কালেক্ট করুন ও চেকআউটে স্বয়ংক্রিয় ছাড় পান
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl" title="Vouchers">🎟️</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsVoucherCenterOpen(false)}
+                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 hover:text-black hover:bg-gray-200 transition"
+                      title="বন্ধ করুন"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Top Filter Category Tabs (Matches Screenshot 2) */}
+                <div className="bg-white px-3 py-2 border-b border-gray-100 flex items-center gap-2 overflow-x-auto scrollbar-none">
+                  {[
+                    { id: "all", label: "All Vouchers", icon: "✨" },
+                    { id: "max", label: "Voucher Max", icon: "🔥" },
+                    { id: "shipping", label: "Free Shipping Voucher", icon: "🚚" },
+                    { id: "category", label: "Category Voucher", icon: "👗" }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setVoucherCenterTab(tab.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 border ${
+                        voucherCenterTab === tab.id
+                          ? "bg-rose-50 text-[#e53935] border-[#e53935] shadow-xs"
+                          : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                      }`}
+                    >
+                      <span>{tab.icon}</span>
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* 3. Scrollable Voucher List Content */}
+                <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
+
+                  {/* TOP HORIZONTAL CAROUSEL: VOUCHER MAX (Matches Screenshot 2 top cards) */}
+                  {(voucherCenterTab === "all" || voucherCenterTab === "max") && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-1">
+                          <span>👑</span>
+                          <span>শীর্ষ মেগা সেভার্স (Voucher Max)</span>
+                        </span>
+                        <span className="text-[10px] text-gray-500">বড় অর্ডারে সর্বোচ্চ সাশ্রয়</span>
+                      </div>
+
+                      <div className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-none snap-x">
+                        {vouchers.filter(v => v.section === "max" && v.active).map(v => {
+                          const isCollected = collectedVouchers.includes(v.id);
+                          return (
+                            <div
+                              key={v.id}
+                              className="w-[260px] sm:w-[280px] shrink-0 bg-white rounded-2xl border-2 border-rose-200 shadow-sm p-3 flex flex-col justify-between relative overflow-hidden group snap-start"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <span className="text-[9px] bg-rose-100 text-[#e53935] font-black px-1.5 py-0.5 rounded-full">
+                                    {v.tag || "Voucher Max"}
+                                  </span>
+                                  <h3 className="text-xl sm:text-2xl font-black text-[#e53935] mt-1 leading-none">
+                                    ৳{Number(v.discountValue).toLocaleString()}
+                                  </h3>
+                                  <p className="text-[11px] text-gray-500 mt-1">
+                                    Min. Spend ৳{Number(v.minSpend).toLocaleString()}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-black text-xs text-gray-800 block leading-tight">
+                                    {v.title}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 block mt-1">
+                                    {v.validity}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 pt-2 border-t border-dashed border-gray-200 flex items-center justify-between">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedVoucherForTc(v)}
+                                  className="text-[10px] text-gray-400 hover:text-gray-600 underline"
+                                >
+                                  T&C
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isCollected}
+                                  onClick={() => handleCollectVoucher(v.id)}
+                                  className={`px-4 py-1.5 rounded-full font-bold text-xs transition active:scale-95 shadow-sm ${
+                                    isCollected
+                                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                      : "bg-[#e53935] hover:bg-[#c62828] text-white shadow-rose-200"
+                                  }`}
+                                >
+                                  {isCollected ? "Collected ✓" : "Collect"}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ========================================================= */}
+                  {/* SECTION 1: সাজগোজ Mega Voucher (Matches Screenshot 2) */}
+                  {/* ========================================================= */}
+                  {(voucherCenterTab === "all" || voucherCenterTab === "max" || voucherCenterTab === "category") && (
+                    <div className="bg-white rounded-3xl p-3.5 sm:p-4 border border-rose-100 shadow-sm space-y-3">
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-xl bg-rose-100 text-[#e53935] flex items-center justify-center font-bold text-sm">
+                            🎟️
+                          </div>
+                          <div>
+                            <h3 className="font-black text-sm sm:text-base text-gray-900 leading-none">
+                              সাজগোজ Mega Voucher
+                            </h3>
+                            <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 leading-none">
+                              Platform Wide Sajgoj Vouchers
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const megaIds = vouchers.filter(v => v.section === "mega" && v.active).map(v => v.id);
+                            handleCollectAllVouchers(megaIds);
+                          }}
+                          className="px-3 py-1 rounded-full border border-[#e53935] text-[#e53935] hover:bg-rose-50 text-[11px] font-bold transition active:scale-95 shadow-2xs"
+                        >
+                          Collect all
+                        </button>
+                      </div>
+
+                      {/* Mega Voucher Tickets List */}
+                      <div className="space-y-2.5">
+                        {vouchers.filter(v => (v.section === "mega" || (voucherCenterTab === "category" && v.targetType === "category")) && v.active).map(v => {
+                          const isCollected = collectedVouchers.includes(v.id);
+                          return (
+                            <div
+                              key={v.id}
+                              className="relative bg-gradient-to-r from-white via-white to-rose-50/40 rounded-2xl border border-rose-100 p-3 shadow-2xs flex items-center justify-between gap-3 overflow-hidden group hover:border-rose-300 transition-all"
+                            >
+                              {/* Left Voucher Amount Badge */}
+                              <div className="w-[88px] sm:w-[98px] shrink-0 border-r border-dashed border-rose-200 pr-2">
+                                <span className="inline-block text-[8px] bg-rose-100 text-[#e53935] font-black px-1.5 py-0.2 rounded-full mb-0.5">
+                                  {v.tag || "Voucher Max"}
+                                </span>
+                                <div className="text-base sm:text-lg font-black text-[#e53935] leading-tight">
+                                  {v.discountType === "percent" ? `${v.discountValue}% OFF` : `৳${v.discountValue} OFF`}
+                                </div>
+                                <div className="text-[10px] text-gray-500 leading-tight mt-0.5">
+                                  Min. Spend ৳{Number(v.minSpend).toLocaleString()}
+                                </div>
+                              </div>
+
+                              {/* Middle Description */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <h4 className="font-extrabold text-xs sm:text-sm text-gray-900 truncate">
+                                    {v.title}
+                                  </h4>
+                                </div>
+                                <p className="text-[11px] text-[#7a1c2b] font-medium mt-0.5 truncate">
+                                  {v.banglaTitle}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                                  <span>{v.validity}</span>
+                                  <span>•</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedVoucherForTc(v)}
+                                    className="text-gray-400 hover:text-gray-700 underline"
+                                  >
+                                    T&C
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Right Collect Button */}
+                              <div className="shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={isCollected}
+                                  onClick={() => handleCollectVoucher(v.id)}
+                                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs transition active:scale-95 shadow-sm ${
+                                    isCollected
+                                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                      : "bg-[#e53935] hover:bg-[#c62828] text-white shadow-rose-200"
+                                  }`}
+                                >
+                                  {isCollected ? "Collected ✓" : "Collect"}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ========================================================= */}
+                  {/* SECTION 2: Free shipping vouchers (Matches Screenshot 3) */}
+                  {/* ========================================================= */}
+                  {(voucherCenterTab === "all" || voucherCenterTab === "shipping") && (
+                    <div className="bg-white rounded-3xl p-3.5 sm:p-4 border border-teal-100 shadow-sm space-y-3">
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-xl bg-teal-100 text-[#00897b] flex items-center justify-center font-bold text-sm">
+                            🚚
+                          </div>
+                          <div>
+                            <h3 className="font-black text-sm sm:text-base text-gray-900 leading-none">
+                              Free shipping vouchers
+                            </h3>
+                            <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 leading-none">
+                              ফ্রি ও ছাড়যুক্ত ডেলিভারি ভাউচার
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const shipIds = vouchers.filter(v => v.section === "shipping" && v.active).map(v => v.id);
+                            handleCollectAllVouchers(shipIds);
+                          }}
+                          className="px-3 py-1 rounded-full border border-[#00897b] text-[#00897b] hover:bg-teal-50 text-[11px] font-bold transition active:scale-95 shadow-2xs"
+                        >
+                          Collect all
+                        </button>
+                      </div>
+
+                      {/* Free Shipping Tickets List */}
+                      <div className="space-y-2.5">
+                        {vouchers.filter(v => v.section === "shipping" && v.active).map(v => {
+                          const isCollected = collectedVouchers.includes(v.id);
+                          return (
+                            <div
+                              key={v.id}
+                              className="relative bg-gradient-to-r from-white via-white to-teal-50/40 rounded-2xl border border-teal-100 p-3 shadow-2xs flex items-center justify-between gap-3 overflow-hidden group hover:border-teal-300 transition-all"
+                            >
+                              {/* Left Voucher Amount Badge */}
+                              <div className="w-[88px] sm:w-[98px] shrink-0 border-r border-dashed border-teal-200 pr-2">
+                                <div className="text-base sm:text-lg font-black text-[#00897b] leading-tight">
+                                  ৳{v.discountValue}
+                                </div>
+                                <div className="text-[10px] text-gray-500 leading-tight mt-0.5">
+                                  Min. Spend ৳{Number(v.minSpend).toLocaleString()}
+                                </div>
+                              </div>
+
+                              {/* Middle Description */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <h4 className="font-extrabold text-xs sm:text-sm text-gray-900 truncate">
+                                    {v.title}
+                                  </h4>
+                                </div>
+                                <p className="text-[11px] text-teal-800 font-medium mt-0.5 truncate">
+                                  {v.banglaTitle}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                                  <span>{v.validity}</span>
+                                  <span>•</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedVoucherForTc(v)}
+                                    className="text-gray-400 hover:text-gray-700 underline"
+                                  >
+                                    T&C
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Right Collect Button */}
+                              <div className="shrink-0 flex flex-col items-end gap-1">
+                                {v.badge && (
+                                  <span className="text-[9px] bg-teal-500 text-white font-black px-1.5 py-0.2 rounded-full">
+                                    {v.badge}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  disabled={isCollected}
+                                  onClick={() => handleCollectVoucher(v.id)}
+                                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs transition active:scale-95 shadow-sm ${
+                                    isCollected
+                                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                      : "bg-[#00897b] hover:bg-[#00695c] text-white shadow-teal-200"
+                                  }`}
+                                >
+                                  {isCollected ? "Collected ✓" : (v.badge ? `Collect ${v.badge}` : "Collect")}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* 4. Bottom Quick Checkout / Shop Bar */}
+                <div className="bg-white p-3 border-t border-rose-100 flex items-center justify-between gap-3 shadow-lg">
+                  <div className="text-xs">
+                    <span className="text-gray-500">সংগৃহীত ভাউচার: </span>
+                    <span className="font-black text-[#7a1c2b]">{collectedVouchers.length} টি</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsVoucherCenterOpen(false);
+                      const el = document.getElementById("products-section");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="px-5 py-2.5 rounded-full bg-[#7a1c2b] text-white text-xs font-bold shadow hover:bg-[#681727] transition active:scale-95"
+                  >
+                    🛍️ স্টোরে পণ্য ব্রাউজ করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 📄 VOUCHER TERMS & CONDITIONS (T&C) MODAL */}
+          {/* ========================================================= */}
+          {selectedVoucherForTc && (
+            <div 
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+              onClick={() => setSelectedVoucherForTc(null)}
+            >
+              <div 
+                className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-gray-200 space-y-3 animate-fadeIn text-left"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                  <h4 className="font-black text-sm text-gray-900">
+                    📜 ভাউচার ব্যবহারের শর্তাবলী (T&C)
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVoucherForTc(null)}
+                    className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 hover:text-black"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-2 text-xs text-gray-600">
+                  <div className="p-2.5 rounded-xl bg-[#fff8f0] border border-amber-200">
+                    <span className="font-bold text-gray-900 block text-sm">
+                      {selectedVoucherForTc.title}
+                    </span>
+                    <span className="text-[#7a1c2b] font-bold block mt-0.5">
+                      {selectedVoucherForTc.banglaTitle}
+                    </span>
+                  </div>
+
+                  <ul className="space-y-1.5 list-disc pl-4 text-[11px] text-gray-600">
+                    <li>সর্বনিম্ন ক্রয়ের পরিমাণ: <b>৳{Number(selectedVoucherForTc.minSpend).toLocaleString()}</b> বা তার বেশি।</li>
+                    <li>মেয়াদকাল: <b>{selectedVoucherForTc.validity}</b> পর্যন্ত কার্যকর।</li>
+                    {selectedVoucherForTc.discountType === "shipping" ? (
+                      <li>এই ভাউচারটি সরাসরি আপনার ডেলিভারি চার্জ বা কুরিয়ার ফি থেকে ছাড় দেওয়া হবে।</li>
+                    ) : (
+                      <li>এই ভাউচারটি পণ্য মূল্যের সাবটোটাল থেকে স্বয়ংক্রিয়ভাবে ডিসকাউন্ট প্রযোজ্য হবে।</li>
+                    )}
+                    {selectedVoucherForTc.category && selectedVoucherForTc.category !== "All" && (
+                      <li>প্রযোজ্য ক্যাটাগরি: <b>{selectedVoucherForTc.category}</b> পণ্যের ক্ষেত্রে।</li>
+                    )}
+                    <li>ভাউচারটি একবার ব্যবহারে একজন গ্রাহক একবারের জন্য সুযোগ পাবেন।</li>
+                  </ul>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCollectVoucher(selectedVoucherForTc.id);
+                    setSelectedVoucherForTc(null);
+                  }}
+                  className="w-full py-2.5 rounded-full bg-[#7a1c2b] text-white font-bold text-xs shadow hover:bg-[#681727] transition"
+                >
+                  {collectedVouchers.includes(selectedVoucherForTc.id) ? "✓ ইতিমধ্যে সংগৃহীত" : "এখনই ভাউচারটি কালেক্ট করুন ✓"}
+                </button>
+              </div>
+            </div>
+          )}
+
           <a 
             href={`https://wa.me/${config.whatsapp}?text=Hello%20SAJGOJ%20FASHION,%20I%20want%20to%20order`} 
             target="_blank" 

@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,9 +38,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -54,6 +60,8 @@ import com.example.data.model.StoreConfig
 import com.example.ui.components.AppImage
 import com.example.ui.components.BannerCarousel
 import com.example.ui.components.ProductCard
+import com.example.ui.components.VoucherCenterDialog
+import com.example.ui.components.defaultVouchersList
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
@@ -76,6 +84,9 @@ fun StorefrontScreen(
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
+  var showVoucherCenter by remember { mutableStateOf(false) }
+  var voucherCenterTab by remember { mutableStateOf("all") }
+  var collectedVoucherIds by remember { mutableStateOf(setOf<String>()) }
 
   fun openWhatsApp() {
     try {
@@ -107,6 +118,173 @@ fun StorefrontScreen(
           onBannerClick = onBannerClick,
           modifier = Modifier.padding(bottom = 6.dp)
         )
+      }
+
+      // 1.5 🎟️ Daraz-Style Slim Block Table Strip: Claim Vouchers to Save More! (বানারের নিচে ক্যাটাগরির উপর)
+      item(span = { GridItemSpan(2) }) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+              Brush.horizontalGradient(
+                listOf(Color(0xFFFFF3F3), Color(0xFFFFF8F5), Color(0xFFF0FBF9))
+              )
+            )
+            .border(1.dp, Color(0xFFFFCDD2), RoundedCornerShape(16.dp))
+            .padding(10.dp)
+        ) {
+          // Top Bar with Title & More Voucher Link
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 4.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              Text(
+                text = "Claim Vouchers to Save More!",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                color = DarkEspresso
+              )
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(10.dp))
+                  .background(RoyalMaroon)
+                  .padding(horizontal = 6.dp, vertical = 2.dp)
+              ) {
+                Text(
+                  text = "11.11 / SAJGOJ",
+                  fontSize = 8.sp,
+                  fontWeight = FontWeight.Black,
+                  color = Color.White
+                )
+              }
+            }
+
+            Row(
+              modifier = Modifier.clickable {
+                voucherCenterTab = "all"
+                showVoucherCenter = true
+              },
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "More Voucher",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = RoyalMaroon
+              )
+              Text(
+                text = " ›",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Black,
+                color = RoyalMaroon
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(6.dp))
+
+          // Slim Block Table / Ticket Strip (Matches Screenshot 1)
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(12.dp))
+              .background(Color.White)
+              .border(1.dp, Color(0xFFFFEBEE), RoundedCornerShape(12.dp))
+              .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            // Left Cell: Voucher Max
+            Column(
+              modifier = Modifier
+                .weight(1f)
+                .clickable {
+                  voucherCenterTab = "max"
+                  showVoucherCenter = true
+                }
+            ) {
+              Text(
+                text = "৳২,২৫০",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFFE53935)
+              )
+              Text(
+                text = "Voucher Max",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Gray
+              )
+            }
+
+            Box(
+              modifier = Modifier
+                .width(1.dp)
+                .height(28.dp)
+                .background(Color(0xFFEEEEEE))
+            )
+
+            // Middle Cell: Free Shipping
+            Column(
+              modifier = Modifier
+                .weight(1f)
+                .padding(start = 10.dp)
+                .clickable {
+                  voucherCenterTab = "shipping"
+                  showVoucherCenter = true
+                }
+            ) {
+              Text(
+                text = "৳৪৫",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF00897B)
+              )
+              Text(
+                text = "Free shipping",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Gray
+              )
+            }
+
+            // Right Cell: Collect All Action Button
+            val allCollected = defaultVouchersList.all { collectedVoucherIds.contains(it.id) }
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(
+                  if (allCollected) Color(0xFFE8F5E9) else Color(0xFFFF8F00)
+                )
+                .border(
+                  width = 1.dp,
+                  color = if (allCollected) Color(0xFFA5D6A7) else Color(0xFFFFB300),
+                  shape = RoundedCornerShape(10.dp)
+                )
+                .clickable {
+                  val allIds = defaultVouchersList.map { it.id }.toSet()
+                  collectedVoucherIds = collectedVoucherIds + allIds
+                  Toast.makeText(context, "সকল ভাউচার সফলভাবে সংগৃহীত হয়েছে! 🎟️", Toast.LENGTH_SHORT).show()
+                }
+                .padding(horizontal = 12.dp, vertical = 7.dp)
+            ) {
+              Text(
+                text = if (allCollected) "✓ Collect All" else "Collect All",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                color = if (allCollected) Color(0xFF2E7D32) else Color.White
+              )
+            }
+          }
+        }
       }
 
       // 2. Daraz-Style Horizontal Sliding Categories
@@ -467,6 +645,23 @@ fun StorefrontScreen(
         Icon(imageVector = Icons.Default.Chat, contentDescription = "WhatsApp", modifier = Modifier.size(20.dp))
         Text(text = "WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold)
       }
+    }
+
+    // Voucher Center Modal Dialog (Screenshots 2 & 3)
+    if (showVoucherCenter) {
+      VoucherCenterDialog(
+        collectedVoucherIds = collectedVoucherIds,
+        initialTab = voucherCenterTab,
+        onCollectVoucher = { id ->
+          collectedVoucherIds = collectedVoucherIds + id
+          Toast.makeText(context, "ভাউচার কালেক্ট করা হয়েছে! ✓", Toast.LENGTH_SHORT).show()
+        },
+        onCollectAll = { ids ->
+          collectedVoucherIds = collectedVoucherIds + ids.toSet()
+          Toast.makeText(context, "সকল ভাউচার সফলভাবে কালেক্ট করা হয়েছে! 🎟️", Toast.LENGTH_SHORT).show()
+        },
+        onDismiss = { showVoucherCenter = false }
+      )
     }
   }
 }
