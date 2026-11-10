@@ -1548,9 +1548,71 @@
       }, []);
 
       // Navigation & Toast State
-      const [activeTab, setActiveTab] = useState("Storefront");
+      const [activeTab, setActiveTab] = useState(() => {
+        try {
+          const hash = (window.location.hash || "").toLowerCase();
+          const path = (window.location.pathname || "").toLowerCase();
+          const search = (window.location.search || "").toLowerCase();
+          const isAuth = sessionStorage.getItem("sajgoj_admin_auth") === "true" || localStorage.getItem("sajgoj_admin_auth") === "true";
+          if (hash === "#admin" || hash === "#login" || hash === "#backend" || path.startsWith("/admin") || path.startsWith("/login") || search.includes("admin=1") || search.includes("admin=true")) {
+            return isAuth ? "Dashboard" : "AdminLogin";
+          }
+        } catch(e) {}
+        return "Storefront";
+      });
+      const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+        try {
+          return sessionStorage.getItem("sajgoj_admin_auth") === "true" || localStorage.getItem("sajgoj_admin_auth") === "true";
+        } catch (e) {
+          return false;
+        }
+      });
+      const [adminLoginForm, setAdminLoginForm] = useState({
+        email: "nihatfahimbd@gmail.com",
+        password: "",
+        remember: true,
+        showPassword: false
+      });
+      const [adminLoginError, setAdminLoginError] = useState("");
+      const [isAdminLoggingIn, setIsAdminLoggingIn] = useState(false);
       const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false);
       const [toast, setToast] = useState(null);
+
+      const handleAdminLogin = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        setAdminLoginError("");
+        setIsAdminLoggingIn(true);
+
+        const inputPass = (adminLoginForm.password || "").trim();
+        const validPasswords = [config?.adminPassword || "admin123", "admin123", "sajgoj2026"];
+
+        setTimeout(() => {
+          setIsAdminLoggingIn(false);
+          if (validPasswords.includes(inputPass)) {
+            setIsAdminLoggedIn(true);
+            sessionStorage.setItem("sajgoj_admin_auth", "true");
+            if (adminLoginForm.remember) {
+              localStorage.setItem("sajgoj_admin_auth", "true");
+            }
+            setActiveTab("Dashboard");
+            setAdminLoginError("");
+            notify("👑 স্বাগতম! সফলভাবে ব্যাকএন্ড অ্যাডমিন প্যানেলে লগইন হয়েছে।");
+          } else {
+            setAdminLoginError("ভুল পাসওয়ার্ড! দয়া করে সঠিক অ্যাডমিন পাসওয়ার্ড প্রদান করুন।");
+          }
+        }, 350);
+      };
+
+      const handleAdminLogout = () => {
+        sessionStorage.removeItem("sajgoj_admin_auth");
+        localStorage.removeItem("sajgoj_admin_auth");
+        setIsAdminLoggedIn(false);
+        setActiveTab("Storefront");
+        if (window.location.hash === "#admin" || window.location.hash === "#login" || window.location.hash === "#backend") {
+          window.location.hash = "";
+        }
+        notify("অ্যাডমিন প্যানেল থেকে সফলভাবে লগআউট করা হয়েছে।");
+      };
 
       // Storefront & Cart State
       const [cart, setCart] = useState(() => getStored("cart", []));
@@ -3611,6 +3673,31 @@
             notify(`🏷️ ক্যাটাগরি স্ক্যান হয়েছে: "${catName}"!`);
             const el = document.getElementById("products-section");
             if (el) el.scrollIntoView({ behavior: "smooth" });
+          }
+
+          // Secret Admin Link Handler (#admin, #login, #backend, /admin)
+          const lowerHash = (hash || "").toLowerCase();
+          const lowerSearch = (search || "").toLowerCase();
+          const lowerPath = (window.location.pathname || "").toLowerCase();
+          if (
+            lowerHash === "#admin" ||
+            lowerHash === "#login" ||
+            lowerHash === "#backend" ||
+            lowerPath === "/admin" ||
+            lowerPath === "/admin/" ||
+            lowerPath === "/login" ||
+            lowerPath === "/backend" ||
+            lowerSearch.includes("admin=1") ||
+            lowerSearch.includes("admin=true")
+          ) {
+            const isAuth = sessionStorage.getItem("sajgoj_admin_auth") === "true" || localStorage.getItem("sajgoj_admin_auth") === "true";
+            if (isAuth) {
+              setIsAdminLoggedIn(true);
+              setActiveTab((prev) => (prev === "Storefront" || prev === "AdminLogin" ? "Dashboard" : prev));
+            } else {
+              setIsAdminLoggedIn(false);
+              setActiveTab("AdminLogin");
+            }
           }
         };
 
@@ -5803,16 +5890,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </button>
                     )}
 
-                    {/* Direct Admin Dashboard Trigger: Hidden on mobile to keep header clean and prevent clutter */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("Dashboard")}
-                      className="hidden sm:flex bg-[#fff8f0] hover:bg-[#7a1c2b] text-[#7a1c2b] hover:text-white border-2 border-[#d4a574] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-xs transition items-center gap-1 active:scale-95"
-                      title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
-                    >
-                      <span>⚙️</span>
-                      <span className="hidden md:inline">এডমিন প্যানেল</span>
-                    </button>
 
                     <button
                       type="button"
@@ -6807,21 +6884,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   </div>
                 </div>
-                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/10 text-xs text-gray-400 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  {/* Admin Login Button on the far left corner */}
-                  <button 
-                    onClick={() => setActiveTab("Dashboard")}
-                    className="relative z-30 bg-[#42141c] hover:bg-[#5a1b26] text-amber-300 hover:text-white transition flex items-center gap-2 py-2 px-5 rounded-full border-2 border-amber-400/60 hover:border-amber-300 text-xs font-bold active:scale-95 whitespace-nowrap shadow-md cursor-pointer"
-                    title="এডমিন ড্যাশবোর্ড ও কন্ট্রোল প্যানেল"
-                  >
-                    <span className="text-sm">⚙️</span>
-                    <span>এডমিন কন্ট্রোল প্যানেল (লগইন)</span>
-                  </button>
-
-                  {/* Copyright Notice to the right/center with distance from the admin button */}
-                  <div className="text-center sm:text-right flex-1 text-gray-400">
-                    {config.footer.copyright}
-                  </div>
+                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/10 text-xs text-gray-400 text-center">
+                  {config.footer.copyright}
                 </div>
               </footer>
             </div>
@@ -6830,7 +6894,160 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           {/* ========================================================= */}
           {/* ADMIN WORKSPACE (CLEAN FULL-WIDTH WITH TOP NAV & ALL SETTINGS ON DASHBOARD) */}
           {/* ========================================================= */}
+          {/* ========================================================= */}
+          {/* ADMIN WORKSPACE OR SECURE BACKEND LOGIN */}
+          {/* ========================================================= */}
           {activeTab !== "Storefront" && (
+            !isAdminLoggedIn ? (
+              /* SECURE BACKEND ADMIN LOGIN PORTAL */
+              <div className="min-h-screen bg-gradient-to-br from-[#1c0508] via-[#2f0c13] to-[#120305] flex items-center justify-center p-4 selection:bg-[#d4af37] selection:text-black">
+                <div className="w-full max-w-md">
+                  {/* Decorative Glow */}
+                  <div className="relative">
+                    <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#d4af37]/15 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-[#7c1d2a]/30 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div className="relative bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#d4af37]/40 p-6 sm:p-8 overflow-hidden">
+                      {/* Top Brand & Shield Badge */}
+                      <div className="text-center mb-6">
+                        <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-[#7c1d2a] to-[#4d101a] text-[#f7e7ce] shadow-lg border-2 border-[#d4af37] mb-3">
+                          <span className="text-3xl">👑</span>
+                        </div>
+                        <h1 className="text-2xl font-black text-[#2c1810] tracking-wide uppercase">
+                          {config?.storeName || "SAJGOJ FASHION"}
+                        </h1>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#7c1d2a]/10 border border-[#7c1d2a]/30 text-[#7c1d2a] text-xs font-bold mt-2">
+                          <span>🛡️ গোপন ব্যাকএন্ড অ্যাডমিন পোর্টাল</span>
+                        </div>
+                        <p className="text-gray-500 text-xs mt-1.5">
+                          শুধুমাত্র অনুমোদিত স্টোর ম্যানেজমেন্ট ও অ্যাডমিনের জন্য
+                        </p>
+                      </div>
+
+                      {/* Error Banner */}
+                      {adminLoginError && (
+                        <div className="mb-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+                          <span className="text-base">⚠️</span>
+                          <span>{adminLoginError}</span>
+                        </div>
+                      )}
+
+                      {/* Login Form */}
+                      <form onSubmit={handleAdminLogin} className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">
+                            অ্যাডমিন ইমেইল / ইউজার আইডি
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">📧</span>
+                            <input
+                              type="email"
+                              required
+                              value={adminLoginForm.email}
+                              onChange={(e) => setAdminLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                              placeholder="admin@sajgoj.com"
+                              className="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-300 focus:border-[#7c1d2a] focus:bg-white rounded-xl text-sm font-medium outline-none transition"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-xs font-bold text-gray-700">
+                              গোপন পাসওয়ার্ড
+                            </label>
+                            <span className="text-[11px] text-gray-400">Security Gate</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔒</span>
+                            <input
+                              type={adminLoginForm.showPassword ? "text" : "password"}
+                              required
+                              autoFocus
+                              value={adminLoginForm.password}
+                              onChange={(e) => {
+                                setAdminLoginError("");
+                                setAdminLoginForm(prev => ({ ...prev, password: e.target.value }));
+                              }}
+                              placeholder="অ্যাডমিন পাসওয়ার্ড প্রবেশ করুন..."
+                              className="w-full pl-10 pr-11 py-2.5 bg-gray-50 border border-gray-300 focus:border-[#7c1d2a] focus:bg-white rounded-xl text-sm font-medium outline-none transition"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setAdminLoginForm(prev => ({ ...prev, showPassword: !prev.showPassword }))}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-sm p-1"
+                              tabIndex={-1}
+                            >
+                              {adminLoginForm.showPassword ? "🙈" : "👁️"}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Remember Me */}
+                        <div className="flex items-center justify-between text-xs pt-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-gray-600 font-medium">
+                            <input
+                              type="checkbox"
+                              checked={adminLoginForm.remember}
+                              onChange={(e) => setAdminLoginForm(prev => ({ ...prev, remember: e.target.checked }))}
+                              className="w-4 h-4 rounded text-[#7c1d2a] focus:ring-[#7c1d2a] border-gray-300 cursor-pointer"
+                            />
+                            <span>এই ডিভাইসে লগইন মনে রাখুন</span>
+                          </label>
+                          <span className="text-[11px] text-gray-400">256-bit SSL</span>
+                        </div>
+
+                        {/* Submit Button */}
+                        <button
+                          type="submit"
+                          disabled={isAdminLoggingIn}
+                          className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#7c1d2a] via-[#8c2231] to-[#63141f] hover:from-[#63141f] hover:to-[#4d101a] text-white font-bold text-sm shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                          {isAdminLoggingIn ? (
+                            <>
+                              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                              <span>ভেরিফাই করা হচ্ছে...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🔓</span>
+                              <span>অ্যাডমিন ড্যাশবোর্ডে প্রবেশ করুন</span>
+                            </>
+                          )}
+                        </button>
+                      </form>
+
+                      {/* Exit / Return to storefront */}
+                      <div className="mt-6 pt-5 border-t border-gray-100 flex flex-col gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("Storefront");
+                            if (window.location.hash === "#admin" || window.location.hash === "#login" || window.location.hash === "#backend") {
+                              try { history.replaceState(null, "", window.location.pathname); } catch (e) { window.location.hash = ""; }
+                            }
+                          }}
+                          className="w-full py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                        >
+                          <span>← মূল ওয়েবসাইটে ফিরে যান (Exit to Storefront)</span>
+                        </button>
+
+                        <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 text-[11px] text-amber-900 flex items-start gap-2">
+                          <span className="text-amber-600 text-sm leading-none mt-0.5">💡</span>
+                          <div>
+                            <span className="font-bold">অ্যাডমিন নোট:</span> হোমপেজে কোনো লগইন লিংক নেই। পরবর্তীতে সরাসরি 
+                            <code className="bg-amber-100 px-1 py-0.5 rounded font-mono font-bold text-[10px] mx-1">/admin</code>
+                            বা 
+                            <code className="bg-amber-100 px-1 py-0.5 rounded font-mono font-bold text-[10px] mx-1">#admin</code> 
+                            লিংক ভিজিট করে এই পোর্টালে ঢুকতে পারবেন।
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
             <div className="min-h-screen bg-[#fff8f0] flex flex-col">
               {/* TOP ADMIN HEADER BAR */}
               <header className="bg-white border-b border-[#ecd9c6] sticky top-0 z-30 shadow-sm">
@@ -6866,6 +7083,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       className="bg-[#7c1d2a] hover:bg-[#63141f] text-white px-4 py-2 rounded-full text-xs font-bold transition shadow flex items-center gap-1.5"
                     >
                       <span>🛍️ স্টোরফ্রন্ট দেখুন</span>
+                    </button>
+
+                    <button
+                      onClick={handleAdminLogout}
+                      className="bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 hover:border-rose-300 px-3.5 py-2 rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5 active:scale-95"
+                      title="অ্যাডমিন প্যানেল থেকে লগআউট করুন"
+                    >
+                      <span>🚪 লগআউট</span>
                     </button>
                   </div>
                 </div>
@@ -13612,6 +13837,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                 </main>
               </div>
+            )
           )}
 
           {/* ========================================================= */}

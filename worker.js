@@ -4,6 +4,9 @@ export default {
     if (url.pathname === '/pos') {
       return Response.redirect(`${url.origin}/pos/`, 301);
     }
+    if (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname === '/login' || url.pathname === '/backend') {
+      return Response.redirect(`${url.origin}/#admin`, 302);
+    }
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
