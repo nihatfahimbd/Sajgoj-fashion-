@@ -33,15 +33,10 @@ enum class AppScreen {
 
 enum class AdminTab(val title: String, val icon: String) {
   DASHBOARD("ড্যাশবোর্ড", "📊"),
-  PRODUCTS("পণ্যসমূহ", "👗"),
+  PRODUCTS("প্রোডাক্ট", "👗"),
   ORDERS("অর্ডার", "📦"),
-  RETURNS("রিটার্ন ও এক্সচেঞ্জ", "🔄"),
-  CATEGORIES("ক্যাটাগরি", "🏷️"),
-  COUPONS("কুপন", "🎟️"),
-  COURIER("কুরিয়ার", "🚚"),
-  BANNERS("ব্যানার", "🖼️"),
-  SETTINGS("সেটিংস", "⚙️"),
-  BACKUP("ব্যাকআপ", "💾")
+  MARKETING("মার্কেটিং", "🎁"),
+  SETTINGS("সেটিংস", "⚙️")
 }
 
 class StoreViewModel(application: Application) : AndroidViewModel(application) {

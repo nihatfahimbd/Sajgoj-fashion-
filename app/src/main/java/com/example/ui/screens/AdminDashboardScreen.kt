@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -315,8 +316,11 @@ fun AdminDashboardScreen(
         }
 
         AdminTab.PRODUCTS -> {
-          AdminProductsTab(
+          AdminProductsHub(
             products = products,
+            categories = categories,
+            orders = orders,
+            returns = returns,
             onAddClick = {
               editingProduct = null
               showProductDialog = true
@@ -325,87 +329,55 @@ fun AdminDashboardScreen(
               editingProduct = product
               showProductDialog = true
             },
-            onDeleteClick = onDeleteProduct
+            onDeleteClick = onDeleteProduct,
+            onAddCategory = { showCategoryDialog = true },
+            onDeleteCategory = onDeleteCategory
           )
         }
 
         AdminTab.ORDERS -> {
-          AdminOrdersTab(
+          AdminOrdersHub(
             orders = orders,
+            products = products,
+            returns = returns,
+            courierConfig = courierConfig,
             onUpdateStatus = onUpdateOrderStatus,
             onDispatchCourier = onDispatchCourier,
             onViewInvoice = onViewInvoice,
             onOpenReturn = { order ->
               returnTargetOrder = order
               showReturnDialog = true
-            }
-          )
-        }
-
-        AdminTab.RETURNS -> {
-          AdminReturnsTab(
-            returns = returns,
-            orders = orders,
-            products = products,
-            onOpenNewReturn = {
-              returnTargetOrder = null
-              showReturnDialog = true
             },
             onViewReturnSlip = { record ->
               viewingReturnSlip = record
-            }
+            },
+            onUpdateCourierConfig = onUpdateCourierConfig,
+            onShowToast = onShowToast
           )
         }
 
-        AdminTab.CATEGORIES -> {
-          AdminCategoriesTab(
-            categories = categories,
-            products = products,
-            onAddClick = { showCategoryDialog = true },
-            onDeleteCategory = onDeleteCategory
-          )
-        }
-
-        AdminTab.COUPONS -> {
-          AdminCouponsTab(
+        AdminTab.MARKETING -> {
+          AdminMarketingHub(
             coupons = coupons,
-            onAddClick = { showCouponDialog = true },
-            onToggle = onToggleCoupon,
-            onDelete = onDeleteCoupon
-          )
-        }
-
-        AdminTab.COURIER -> {
-          AdminCourierTab(
-            config = courierConfig,
-            onSave = onUpdateCourierConfig,
-            onTest = onShowToast
-          )
-        }
-
-        AdminTab.BANNERS -> {
-          AdminBannersTab(
             banners = banners,
-            onAddClick = { showBannerDialog = true },
-            onToggle = onToggleBanner,
-            onDelete = onDeleteBanner
+            onAddCouponClick = { showCouponDialog = true },
+            onToggleCoupon = onToggleCoupon,
+            onDeleteCoupon = onDeleteCoupon,
+            onAddBannerClick = { showBannerDialog = true },
+            onToggleBanner = onToggleBanner,
+            onDeleteBanner = onDeleteBanner
           )
         }
 
         AdminTab.SETTINGS -> {
-          AdminSettingsTab(
+          AdminSettingsHub(
             config = storeConfig,
             pixelConfig = pixelConfig,
-            onSaveConfig = onUpdateStoreConfig,
-            onSavePixel = onUpdatePixelConfig
-          )
-        }
-
-        AdminTab.BACKUP -> {
-          AdminBackupTab(
             productsCount = products.size,
             ordersCount = orders.size,
-            onReset = onResetDefaults,
+            onSaveConfig = onUpdateStoreConfig,
+            onSavePixel = onUpdatePixelConfig,
+            onResetDefaults = onResetDefaults,
             onShowToast = onShowToast
           )
         }
@@ -568,6 +540,9 @@ fun AdminOverviewTab(
       }
     }
 
+    val totalStockUnits = products.sumOf { it.stock }
+    val totalStockValuation = products.sumOf { it.price * it.stock }
+
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
       Card(
         modifier = Modifier.weight(1f),
@@ -576,10 +551,10 @@ fun AdminOverviewTab(
         border = BorderStroke(1.dp, BorderGold)
       ) {
         Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "মোট পণ্য", fontSize = 11.sp, color = AntiqueGoldDark, fontWeight = FontWeight.Medium)
+          Text(text = "ইনভেন্টরি স্টক ও মূল্য", fontSize = 11.sp, color = AntiqueGoldDark, fontWeight = FontWeight.Medium)
           Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "${products.size}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-          Text(text = "${categories.size} টি ক্যাটাগরি", fontSize = 10.sp, color = Color.Gray)
+          Text(text = "$totalStockUnits পিস", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "মোট মূল্য: ৳$totalStockValuation", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Bold)
         }
       }
 
@@ -599,7 +574,7 @@ fun AdminOverviewTab(
     }
 
     // Quick Shortcuts Header
-    Text(text = "দ্রুত অপশন সমূহ (Dashboard Quick Actions):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+    Text(text = "দ্রুত অপশন সমূহ (Dashboard Master Hubs):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
 
     // Fast 1-Click Return & Exchange Action Card on Dashboard
     Button(
@@ -609,7 +584,7 @@ fun AdminOverviewTab(
       shape = RoundedCornerShape(16.dp),
       modifier = Modifier
         .fillMaxWidth()
-        .height(50.dp)
+        .height(48.dp)
         .testTag("dashboard_quick_return_button")
     ) {
       Row(
@@ -619,7 +594,7 @@ fun AdminOverviewTab(
         Text(text = "🔄", fontSize = 18.sp)
         Text(
           text = "১-ক্লিকে রিটার্ন ও এক্সচেঞ্জ (Return & Exchange) • $returnsCount টি সম্পন্ন",
-          fontSize = 13.sp,
+          fontSize = 12.sp,
           fontWeight = FontWeight.Bold,
           color = Color(0xFFBF360C)
         )
@@ -628,42 +603,1041 @@ fun AdminOverviewTab(
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       Button(
+        onClick = { onGoToTab(AdminTab.PRODUCTS) },
+        colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
+        border = BorderStroke(1.dp, BorderGold),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.weight(1f),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+      ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+          Text(text = "👗", fontSize = 16.sp)
+          Text(text = "প্রোডাক্ট হাব", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+      }
+
+      Button(
         onClick = { onGoToTab(AdminTab.ORDERS) },
         colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
         border = BorderStroke(1.dp, BorderGold),
         shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(1f),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
       ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           Text(text = "📦", fontSize = 16.sp)
-          Text(text = "অর্ডার লিস্ট", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+          Text(text = "অর্ডার হাব", fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
       }
 
       Button(
-        onClick = { onGoToTab(AdminTab.COURIER) },
+        onClick = { onGoToTab(AdminTab.MARKETING) },
         colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
         border = BorderStroke(1.dp, BorderGold),
         shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(1f),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
       ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(text = "🚚", fontSize = 16.sp)
-          Text(text = "কুরিয়ার", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+          Text(text = "🎁", fontSize = 16.sp)
+          Text(text = "মার্কেটিং", fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
       }
 
       Button(
-        onClick = { onGoToTab(AdminTab.BACKUP) },
+        onClick = { onGoToTab(AdminTab.SETTINGS) },
         colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
         border = BorderStroke(1.dp, BorderGold),
         shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.weight(1f),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
       ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(text = "💾", fontSize = 16.sp)
-          Text(text = "ব্যাকআপ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+          Text(text = "⚙️", fontSize = 16.sp)
+          Text(text = "সেটিংস", fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
+      }
+    }
+  }
+}
+
+@Composable
+fun AdminProductsHub(
+  products: List<Product>,
+  categories: List<Category>,
+  orders: List<Order>,
+  returns: List<ReturnRecord>,
+  onAddClick: () -> Unit,
+  onEditClick: (Product) -> Unit,
+  onDeleteClick: (String) -> Unit,
+  onAddCategory: () -> Unit,
+  onDeleteCategory: (String) -> Unit
+) {
+  var selectedSubTab by remember { mutableStateOf("LIST") }
+  var selectedCategoryFilter by remember { mutableStateOf("All") }
+  var productSearchQuery by remember { mutableStateOf("") }
+
+  val totalStockUnits = remember(products) { products.sumOf { it.stock } }
+  val totalStockValuation = remember(products) { products.sumOf { it.price * it.stock } }
+  val lowStockProducts = remember(products) { products.filter { it.stock <= 5 } }
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    // Top Hub Header
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Column {
+        Text(
+          text = "প্রোডাক্ট ও ইনভেন্টরি হাব",
+          fontSize = 16.sp,
+          fontWeight = FontWeight.Bold,
+          color = RoyalMaroon
+        )
+        Text(
+          text = "মোট স্টক: $totalStockUnits পিস • ভ্যালু: ৳$totalStockValuation",
+          fontSize = 11.sp,
+          color = AntiqueGoldDark
+        )
+      }
+
+      Button(
+        onClick = onAddClick,
+        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+        shape = RoundedCornerShape(16.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+      ) {
+        Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = "নতুন পণ্য যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    // Sub Navigation Tabs
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .horizontalScroll(rememberScrollState()),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      val subTabs = listOf(
+        Triple("LIST", "পণ্য তালিকা", "📋"),
+        Triple("STOCK", "স্টক ও ভ্যালুয়েশন", "💰"),
+        Triple("SALES", "সেলস ও রিটার্ন", "📈"),
+        Triple("CATEGORIES", "ক্যাটাগরি", "🏷️")
+      )
+
+      subTabs.forEach { (key, label, icon) ->
+        val isSelected = selectedSubTab == key
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = if (isSelected) RoyalMaroon else CreamSurface,
+          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+          modifier = Modifier.clickable { selectedSubTab = key }
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Text(text = icon, fontSize = 12.sp)
+            Text(
+              text = label,
+              fontSize = 12.sp,
+              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+              color = if (isSelected) Color.White else DarkEspresso
+            )
+          }
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    when (selectedSubTab) {
+      "LIST" -> {
+        OutlinedTextField(
+          value = productSearchQuery,
+          onValueChange = { productSearchQuery = it },
+          modifier = Modifier.fillMaxWidth(),
+          placeholder = { Text("নাম বা SKU দিয়ে খুঁজুন...", fontSize = 12.sp) },
+          leadingIcon = {
+            Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+          },
+          trailingIcon = {
+            if (productSearchQuery.isNotEmpty()) {
+              IconButton(onClick = { productSearchQuery = "" }, modifier = Modifier.size(24.dp)) {
+                Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+              }
+            }
+          },
+          singleLine = true,
+          shape = RoundedCornerShape(12.dp),
+          colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = RoyalMaroon,
+            unfocusedBorderColor = BorderGold,
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = CreamSurface
+          )
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          val catNames = listOf("All") + categories.map { it.name }.distinct()
+          catNames.forEach { cat ->
+            val isCatSelected = selectedCategoryFilter == cat
+            val count = if (cat == "All") products.size else products.count { it.category == cat }
+            Surface(
+              shape = RoundedCornerShape(14.dp),
+              color = if (isCatSelected) AntiqueGoldDark else CreamSurface,
+              border = BorderStroke(1.dp, if (isCatSelected) AntiqueGoldDark else BorderGold),
+              modifier = Modifier.clickable { selectedCategoryFilter = cat }
+            ) {
+              Text(
+                text = if (cat == "All") "সকল পণ্য ($count)" else "$cat ($count)",
+                fontSize = 11.sp,
+                fontWeight = if (isCatSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isCatSelected) Color.White else DarkEspresso,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+              )
+            }
+          }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val filteredProducts = products.filter { p ->
+          val matchesCat = selectedCategoryFilter == "All" || p.category == selectedCategoryFilter
+          val q = productSearchQuery.trim().lowercase()
+          val matchesQ = q.isEmpty() || p.name.lowercase().contains(q) || p.sku.lowercase().contains(q)
+          matchesCat && matchesQ
+        }
+
+        AdminProductsTab(
+          products = filteredProducts,
+          onAddClick = onAddClick,
+          onEditClick = onEditClick,
+          onDeleteClick = onDeleteClick
+        )
+      }
+
+      "STOCK" -> {
+        LazyColumn(
+          verticalArrangement = Arrangement.spacedBy(10.dp),
+          modifier = Modifier.fillMaxSize()
+        ) {
+          item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "মোট স্টক সংখ্যা", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "$totalStockUnits পিস", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                  Text(text = "${products.size} টি আলাদা পণ্য", fontSize = 10.sp, color = DarkEspresso)
+                }
+              }
+
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "মোট স্টক মূল্য (Valuation)", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "৳$totalStockValuation", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                  Text(text = "ইনভেন্টরি অ্যাসেট", fontSize = 10.sp, color = AntiqueGoldDark)
+                }
+              }
+            }
+          }
+
+          item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                val avgPrice = if (products.isNotEmpty()) products.sumOf { it.price } / products.size else 0
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "গড় পণ্যের মূল্য", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "৳$avgPrice", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                  Text(text = "আইটেম প্রতি গড়", fontSize = 10.sp, color = Color.Gray)
+                }
+              }
+
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = if (lowStockProducts.isNotEmpty()) Color(0xFFFEF2F2) else Color.White),
+                border = BorderStroke(1.dp, if (lowStockProducts.isNotEmpty()) Color(0xFFFECACA) else BorderGold)
+              ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "কম স্টক সতর্কতা (≤৫)", fontSize = 11.sp, color = AccentRed)
+                  Text(text = "${lowStockProducts.size} টি পণ্য", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                  Text(text = "রিস্টক প্রয়োজন", fontSize = 10.sp, color = AccentRed)
+                }
+              }
+            }
+          }
+
+          item {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+              text = "ক্যাটাগরি অনুযায়ী স্টক ও টাকার হিসাব (Category Breakdown):",
+              fontSize = 13.sp,
+              fontWeight = FontWeight.Bold,
+              color = DarkEspresso
+            )
+          }
+
+          val catList = (categories.map { it.name } + products.map { it.category }).distinct()
+          items(catList) { catName ->
+            val catProducts = products.filter { it.category == catName }
+            val catPieces = catProducts.sumOf { it.stock }
+            val catValue = catProducts.sumOf { it.price * it.stock }
+            val pct = if (totalStockValuation > 0) (catValue * 100) / totalStockValuation else 0
+
+            Card(
+              modifier = Modifier.fillMaxWidth(),
+              shape = RoundedCornerShape(14.dp),
+              colors = CardDefaults.cardColors(containerColor = Color.White),
+              border = BorderStroke(1.dp, BorderGold)
+            ) {
+              Column(modifier = Modifier.padding(12.dp)) {
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(text = "🏷️", fontSize = 14.sp)
+                    Text(text = catName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                    Surface(
+                      shape = RoundedCornerShape(10.dp),
+                      color = CreamSurface,
+                      border = BorderStroke(0.5.dp, BorderGold)
+                    ) {
+                      Text(
+                        text = "${catProducts.size} টি পণ্য",
+                        fontSize = 10.sp,
+                        color = DarkEspresso,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                      )
+                    }
+                  }
+
+                  Text(
+                    text = "$pct% ইনভেন্টরি",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AntiqueGoldDark
+                  )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                  Column {
+                    Text(text = "মোট স্টক পরিমাণ:", fontSize = 10.sp, color = Color.Gray)
+                    Text(text = "$catPieces পিস", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                  }
+                  Column(horizontalAlignment = Alignment.End) {
+                    Text(text = "মোট স্টক মূল্য:", fontSize = 10.sp, color = Color.Gray)
+                    Text(text = "৳$catValue", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                  }
+                }
+
+                if (catProducts.isNotEmpty()) {
+                  HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CreamBackground)
+                  catProducts.forEach { cp ->
+                    Row(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                      horizontalArrangement = Arrangement.SpaceBetween,
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      Text(
+                        text = "• ${cp.name}",
+                        fontSize = 11.sp,
+                        color = DarkEspresso,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                      )
+                      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = "${cp.stock} পিস × ৳${cp.price}", fontSize = 10.sp, color = Color.Gray)
+                        Text(text = "= ৳${cp.stock * cp.price}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      "SALES" -> {
+        val completedOrders = orders.filter { it.status.equals("Delivered", ignoreCase = true) }
+        val completedRevenue = completedOrders.sumOf { it.total }
+
+        LazyColumn(
+          verticalArrangement = Arrangement.spacedBy(10.dp),
+          modifier = Modifier.fillMaxSize()
+        ) {
+          item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "মোট সম্পন্ন অর্ডার", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "${completedOrders.size} টি", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                  Text(text = "সফল ডেলিভারি", fontSize = 10.sp, color = DarkEspresso)
+                }
+              }
+
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "মোট সম্পন্ন বিক্রয় আয়", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "৳$completedRevenue", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                  Text(text = "ক্যাশ ও বিকাশ ক্যাশড", fontSize = 10.sp, color = AntiqueGoldDark)
+                }
+              }
+            }
+          }
+
+          item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "মোট রিটার্ন রেকর্ড", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "${returns.size} টি রেকর্ড", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
+                  val retPieces = returns.sumOf { r -> r.returnedItems.sumOf { it.quantity } }
+                  Text(text = "মোট $retPieces পিস ফেরত", fontSize = 10.sp, color = Color.Gray)
+                }
+              }
+
+              Card(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                  Text(text = "পণ্য এক্সচেঞ্জ রিপোর্ট", fontSize = 11.sp, color = Color.Gray)
+                  val exchangeCount = returns.count { it.exchangeItems.isNotEmpty() }
+                  Text(text = "$exchangeCount টি এক্সচেঞ্জ", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                  val diffSum = returns.sumOf { it.priceDifference }
+                  Text(text = "নিষ্পত্তি: ৳$diffSum", fontSize = 10.sp, color = DarkEspresso)
+                }
+              }
+            }
+          }
+
+          item {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+              text = "সর্বশেষ সম্পন্ন অর্ডার তালিকা (${completedOrders.size}):",
+              fontSize = 13.sp,
+              fontWeight = FontWeight.Bold,
+              color = DarkEspresso
+            )
+          }
+
+          if (completedOrders.isEmpty()) {
+            item {
+              Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, BorderGold),
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                Text(
+                  text = "এখনও কোনো সম্পন্ন (Delivered) অর্ডার নেই।",
+                  fontSize = 12.sp,
+                  color = Color.Gray,
+                  modifier = Modifier.padding(16.dp)
+                )
+              }
+            }
+          } else {
+            items(completedOrders.take(15)) { co ->
+              Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold)
+              ) {
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Column {
+                    Text(text = "অর্ডার #${co.id}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                    Text(text = "গ্রাহক: ${co.customerName} (${co.phone})", fontSize = 11.sp, color = DarkEspresso)
+                    Text(text = "পণ্য: ${co.items.joinToString { "${it.name} ×${it.quantity}" }}", fontSize = 10.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                  }
+                  Column(horizontalAlignment = Alignment.End) {
+                    Text(text = "৳${co.total}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                    Surface(
+                      shape = RoundedCornerShape(8.dp),
+                      color = Color(0xFFDCFCE7)
+                    ) {
+                      Text(text = "Delivered", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF166534), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      "CATEGORIES" -> {
+        AdminCategoriesTab(
+          categories = categories,
+          products = products,
+          onAddClick = onAddCategory,
+          onDeleteCategory = onDeleteCategory
+        )
+      }
+    }
+  }
+}
+
+@Composable
+fun AdminOrdersHub(
+  orders: List<Order>,
+  products: List<Product>,
+  returns: List<ReturnRecord>,
+  courierConfig: CourierConfig,
+  onUpdateStatus: (String, String) -> Unit,
+  onDispatchCourier: (String, String) -> Unit,
+  onViewInvoice: (Order) -> Unit,
+  onOpenReturn: (Order?) -> Unit,
+  onViewReturnSlip: (ReturnRecord) -> Unit,
+  onUpdateCourierConfig: (CourierConfig) -> Unit,
+  onShowToast: (String) -> Unit
+) {
+  var selectedOrderSubTab by remember { mutableStateOf("NEW_ORDERS") }
+  val pendingOrders = remember(orders) { orders.filter { it.status.equals("Pending", ignoreCase = true) } }
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Column {
+        Text(
+          text = "অর্ডার ও কুরিয়ার হাব",
+          fontSize = 16.sp,
+          fontWeight = FontWeight.Bold,
+          color = RoyalMaroon
+        )
+        Text(
+          text = "মোট অর্ডার: ${orders.size} • পেন্ডিং অনুমোদন: ${pendingOrders.size}",
+          fontSize = 11.sp,
+          color = AntiqueGoldDark
+        )
+      }
+
+      if (pendingOrders.isNotEmpty()) {
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color(0xFFFEF2F2),
+          border = BorderStroke(1.dp, Color(0xFFFECACA))
+        ) {
+          Text(
+            text = "🔔 ${pendingOrders.size} টি নতুন অনুমোদন প্রয়োজন",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = AccentRed,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+          )
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .horizontalScroll(rememberScrollState()),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      val orderSubTabs = listOf(
+        Triple("NEW_ORDERS", "নতুন অর্ডার অনুমোদন", "🔔"),
+        Triple("ALL_ORDERS", "সকল অর্ডার ও ফিল্টার", "📋"),
+        Triple("COURIER", "কুরিয়ার ট্র্যাকিং", "🚚"),
+        Triple("RETURNS", "রিটার্ন ও এক্সচেঞ্জ", "🔄")
+      )
+
+      orderSubTabs.forEach { (key, label, icon) ->
+        val isSelected = selectedOrderSubTab == key
+        val badgeText = when (key) {
+          "NEW_ORDERS" -> if (pendingOrders.isNotEmpty()) "${pendingOrders.size}" else null
+          "ALL_ORDERS" -> "${orders.size}"
+          "RETURNS" -> "${returns.size}"
+          else -> null
+        }
+
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = if (isSelected) RoyalMaroon else CreamSurface,
+          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+          modifier = Modifier.clickable { selectedOrderSubTab = key }
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Text(text = icon, fontSize = 12.sp)
+            Text(
+              text = label,
+              fontSize = 12.sp,
+              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+              color = if (isSelected) Color.White else DarkEspresso
+            )
+            if (badgeText != null) {
+              Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = if (isSelected) Color.White.copy(alpha = 0.25f) else Color.White
+              ) {
+                Text(
+                  text = badgeText,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = if (isSelected) Color.White else RoyalMaroon,
+                  modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    when (selectedOrderSubTab) {
+      "NEW_ORDERS" -> {
+        if (pendingOrders.isEmpty()) {
+          Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, BorderGold)
+          ) {
+            Column(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+              horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+              Text(text = "🎉", fontSize = 36.sp)
+              Spacer(modifier = Modifier.height(8.dp))
+              Text(
+                text = "সব নতুন অর্ডার পর্যালোচনা সম্পন্ন হয়েছে!",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkEspresso
+              )
+              Text(
+                text = "বর্তমানে কোনো নতুন পেন্ডিং অর্ডার নেই। পূর্ববর্তী অর্ডার দেখতে 'সকল অর্ডার ও ফিল্টার' ট্যাবে যান।",
+                fontSize = 11.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp)
+              )
+              Spacer(modifier = Modifier.height(12.dp))
+              Button(
+                onClick = { selectedOrderSubTab = "ALL_ORDERS" },
+                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                shape = RoundedCornerShape(12.dp)
+              ) {
+                Text("📋 সকল অর্ডার দেখুন (${orders.size})", fontSize = 12.sp)
+              }
+            }
+          }
+        } else {
+          LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxSize()
+          ) {
+            item {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(
+                  text = "অপেক্ষমান নতুন অর্ডার (${pendingOrders.size} টি):",
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = DarkEspresso
+                )
+                Text(
+                  text = "১-ক্লিকে অনুমোদন করুন",
+                  fontSize = 11.sp,
+                  color = Color(0xFFD97706),
+                  fontWeight = FontWeight.Bold
+                )
+              }
+            }
+
+            items(pendingOrders, key = { it.id }) { order ->
+              Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.5.dp, Color(0xFFFBBF24))
+              ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                  ) {
+                    Column {
+                      Text(
+                        text = "অর্ডার #${order.id}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = RoyalMaroon
+                      )
+                      Text(text = order.date, fontSize = 10.sp, color = Color.Gray)
+                    }
+
+                    Surface(
+                      shape = RoundedCornerShape(10.dp),
+                      color = Color(0xFFFEF3C7),
+                      border = BorderStroke(1.dp, Color(0xFFF59E0B))
+                    ) {
+                      Text(
+                        text = "⏳ পেন্ডিং রিভিউ",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF92400E),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                      )
+                    }
+                  }
+
+                  Spacer(modifier = Modifier.height(8.dp))
+
+                  Text(text = "গ্রাহক: ${order.customerName} • 📞 ${order.phone}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                  Text(text = "ঠিকানা: ${order.address}", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "পেমেন্ট মেথড: ${order.paymentMethod} • সর্বমোট: ৳${order.total}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+
+                  Spacer(modifier = Modifier.height(6.dp))
+                  Column(
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .background(CreamBackground, RoundedCornerShape(8.dp))
+                      .padding(8.dp)
+                  ) {
+                    order.items.forEach { item ->
+                      Text(
+                        text = "• ${item.name} × ${item.quantity} (৳${item.price})",
+                        fontSize = 11.sp,
+                        color = DarkEspresso
+                      )
+                    }
+                  }
+
+                  Spacer(modifier = Modifier.height(10.dp))
+
+                  Text(text = "দ্রুত অ্যাকশন (Quick Approval):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                  Spacer(modifier = Modifier.height(4.dp))
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                  ) {
+                    Button(
+                      onClick = { onUpdateStatus(order.id, "Confirmed") },
+                      colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                      shape = RoundedCornerShape(10.dp),
+                      modifier = Modifier.weight(1f),
+                      contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                    ) {
+                      Text(text = "✅ কনফার্ম", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                      onClick = { onUpdateStatus(order.id, "Processing") },
+                      colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                      shape = RoundedCornerShape(10.dp),
+                      modifier = Modifier.weight(1f),
+                      contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                    ) {
+                      Text(text = "⚙️ প্রসেসিং", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                      onClick = { onDispatchCourier(order.id, "Steadfast") },
+                      colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                      shape = RoundedCornerShape(10.dp),
+                      modifier = Modifier.weight(1f),
+                      contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                    ) {
+                      Text(text = "🚚 কুরিয়ার", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                      onClick = { onUpdateStatus(order.id, "Cancelled") },
+                      colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                      shape = RoundedCornerShape(10.dp),
+                      modifier = Modifier.weight(1f),
+                      contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                    ) {
+                      Text(text = "❌ বাতিল", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                  }
+
+                  Spacer(modifier = Modifier.height(6.dp))
+                  Button(
+                    onClick = { onViewInvoice(order) },
+                    colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
+                    border = BorderStroke(1.dp, BorderGold),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)
+                  ) {
+                    Text(text = "📄 ইনভয়েস মেমো দেখুন ও প্রিন্ট", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      "ALL_ORDERS" -> {
+        AdminOrdersTab(
+          orders = orders,
+          onUpdateStatus = onUpdateStatus,
+          onDispatchCourier = onDispatchCourier,
+          onViewInvoice = onViewInvoice,
+          onOpenReturn = { onOpenReturn(it) }
+        )
+      }
+
+      "COURIER" -> {
+        AdminCourierTab(
+          config = courierConfig,
+          onSave = onUpdateCourierConfig,
+          onTest = onShowToast
+        )
+      }
+
+      "RETURNS" -> {
+        AdminReturnsTab(
+          returns = returns,
+          orders = orders,
+          products = products,
+          onOpenNewReturn = { onOpenReturn(null) },
+          onViewReturnSlip = onViewReturnSlip
+        )
+      }
+    }
+  }
+}
+
+@Composable
+fun AdminMarketingHub(
+  coupons: List<Coupon>,
+  banners: List<BannerItem>,
+  onAddCouponClick: () -> Unit,
+  onToggleCoupon: (String) -> Unit,
+  onDeleteCoupon: (String) -> Unit,
+  onAddBannerClick: () -> Unit,
+  onToggleBanner: (String) -> Unit,
+  onDeleteBanner: (String) -> Unit
+) {
+  var selectedSubTab by remember { mutableStateOf("COUPONS") }
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Column {
+        Text(text = "মার্কেটিং ও অফার হাব", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+        Text(text = "কুপন কোড ও প্রমোশনাল ব্যানার স্লাইডার", fontSize = 11.sp, color = Color.Gray)
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      val tabs = listOf(
+        Pair("COUPONS", "🎟️ কুপন কোড (${coupons.size})"),
+        Pair("BANNERS", "🖼️ ব্যানার ও স্লাইডার (${banners.size})")
+      )
+      tabs.forEach { (key, label) ->
+        val isSelected = selectedSubTab == key
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = if (isSelected) RoyalMaroon else CreamSurface,
+          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+          modifier = Modifier
+            .clickable { selectedSubTab = key }
+            .weight(1f)
+        ) {
+          Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            color = if (isSelected) Color.White else DarkEspresso,
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)
+          )
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    when (selectedSubTab) {
+      "COUPONS" -> {
+        AdminCouponsTab(
+          coupons = coupons,
+          onAddClick = onAddCouponClick,
+          onToggle = onToggleCoupon,
+          onDelete = onDeleteCoupon
+        )
+      }
+      "BANNERS" -> {
+        AdminBannersTab(
+          banners = banners,
+          onAddClick = onAddBannerClick,
+          onToggle = onToggleBanner,
+          onDelete = onDeleteBanner
+        )
+      }
+    }
+  }
+}
+
+@Composable
+fun AdminSettingsHub(
+  config: StoreConfig,
+  pixelConfig: PixelConfig,
+  productsCount: Int,
+  ordersCount: Int,
+  onSaveConfig: (StoreConfig) -> Unit,
+  onSavePixel: (PixelConfig) -> Unit,
+  onResetDefaults: () -> Unit,
+  onShowToast: (String) -> Unit
+) {
+  var selectedSubTab by remember { mutableStateOf("GENERAL") }
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Column {
+        Text(text = "সেটিংস ও ব্যাকআপ হাব", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+        Text(text = "স্টোর তথ্য, পেমেন্ট, পিক্সেল ও ডাটাবেজ ব্যাকআপ", fontSize = 11.sp, color = Color.Gray)
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      val tabs = listOf(
+        Pair("GENERAL", "⚙️ সাধারণ ও পেমেন্ট"),
+        Pair("BACKUP", "💾 ব্যাকআপ ও রিস্টোর")
+      )
+      tabs.forEach { (key, label) ->
+        val isSelected = selectedSubTab == key
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = if (isSelected) RoyalMaroon else CreamSurface,
+          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+          modifier = Modifier
+            .clickable { selectedSubTab = key }
+            .weight(1f)
+        ) {
+          Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            color = if (isSelected) Color.White else DarkEspresso,
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)
+          )
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    when (selectedSubTab) {
+      "GENERAL" -> {
+        AdminSettingsTab(
+          config = config,
+          pixelConfig = pixelConfig,
+          onSaveConfig = onSaveConfig,
+          onSavePixel = onSavePixel
+        )
+      }
+      "BACKUP" -> {
+        AdminBackupTab(
+          productsCount = productsCount,
+          ordersCount = ordersCount,
+          onReset = onResetDefaults,
+          onShowToast = onShowToast
+        )
       }
     }
   }
@@ -829,13 +1803,161 @@ fun AdminOrdersTab(
   onOpenReturn: (Order) -> Unit
 ) {
   val statuses = listOf("Pending", "Confirmed", "Shipped", "Delivered", "Cancelled")
+  var selectedStatusFilter by remember { mutableStateOf("All") }
+  var phoneSearchQuery by remember { mutableStateOf("") }
+
+  val filteredOrders = remember(orders, selectedStatusFilter, phoneSearchQuery) {
+    orders.filter { order ->
+      val matchesStatus = selectedStatusFilter == "All" || order.status.equals(selectedStatusFilter, ignoreCase = true)
+      val cleanQuery = phoneSearchQuery.trim().replace(Regex("[\\s-+()]"), "")
+      val cleanPhone = order.phone.replace(Regex("[\\s-+()]"), "")
+      val matchesPhone = cleanQuery.isEmpty() || cleanPhone.contains(cleanQuery)
+      matchesStatus && matchesPhone
+    }
+  }
 
   Column(modifier = Modifier.fillMaxSize()) {
-    Text(text = "কাস্টমার অর্ডার তালিকা (${orders.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Text(
+        text = "কাস্টমার অর্ডার তালিকা (${orders.size})",
+        fontSize = 15.sp,
+        fontWeight = FontWeight.Bold,
+        color = RoyalMaroon
+      )
+      if (selectedStatusFilter != "All" || phoneSearchQuery.isNotBlank()) {
+        Text(
+          text = "ফিল্টার ফলাফল: ${filteredOrders.size} টি",
+          fontSize = 11.sp,
+          fontWeight = FontWeight.Bold,
+          color = Color(0xFFD97706)
+        )
+      }
+    }
     Spacer(modifier = Modifier.height(8.dp))
 
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()) {
-      items(orders, key = { it.id }) { order ->
+    // 1. Customer Phone Number Filter Bar
+    OutlinedTextField(
+      value = phoneSearchQuery,
+      onValueChange = { phoneSearchQuery = it },
+      modifier = Modifier.fillMaxWidth(),
+      placeholder = { Text("গ্রাহকের ফোন নম্বর দিয়ে খুঁজুন (যেমন: 017...)", fontSize = 12.sp) },
+      leadingIcon = {
+        Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = Color.Gray, modifier = Modifier.size(18.dp))
+      },
+      trailingIcon = {
+        if (phoneSearchQuery.isNotEmpty()) {
+          IconButton(onClick = { phoneSearchQuery = "" }, modifier = Modifier.size(24.dp)) {
+            Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray, modifier = Modifier.size(16.dp))
+          }
+        }
+      },
+      singleLine = true,
+      shape = RoundedCornerShape(12.dp),
+      colors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = RoyalMaroon,
+        unfocusedBorderColor = BorderGold,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = CreamSurface
+      )
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    // 2. Status Filter Chips (All, Pending, Confirmed, Shipped, Delivered, Cancelled)
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .horizontalScroll(rememberScrollState()),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      val filterOptions = listOf("All") + statuses
+      filterOptions.forEach { statusKey ->
+        val count = if (statusKey == "All") orders.size else orders.count { it.status.equals(statusKey, ignoreCase = true) }
+        val isSelected = selectedStatusFilter == statusKey
+        Surface(
+          shape = RoundedCornerShape(20.dp),
+          color = if (isSelected) RoyalMaroon else CreamSurface,
+          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+          modifier = Modifier.clickable { selectedStatusFilter = statusKey }
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Text(
+              text = if (statusKey == "All") "সকল ($count)" else "$statusKey ($count)",
+              fontSize = 11.sp,
+              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+              color = if (isSelected) Color.White else DarkEspresso
+            )
+          }
+        }
+      }
+
+      if (selectedStatusFilter != "All" || phoneSearchQuery.isNotBlank()) {
+        Surface(
+          shape = RoundedCornerShape(20.dp),
+          color = Color(0xFFFFEBEE),
+          border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+          modifier = Modifier.clickable {
+            selectedStatusFilter = "All"
+            phoneSearchQuery = ""
+          }
+        ) {
+          Text(
+            text = "রিসেট ✕",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFC62828),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+          )
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    if (filteredOrders.isEmpty()) {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(32.dp),
+        contentAlignment = Alignment.Center
+      ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          Text(text = "🔍", fontSize = 36.sp)
+          Text(
+            text = "কোন অর্ডার খুঁজে পাওয়া যায়নি!",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkEspresso
+          )
+          Text(
+            text = "অন্য কোনো ফোন নম্বর বা স্ট্যাটাস দিয়ে চেষ্টা করুন।",
+            fontSize = 11.sp,
+            color = Color.Gray
+          )
+          Button(
+            onClick = {
+              selectedStatusFilter = "All"
+              phoneSearchQuery = ""
+            },
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon)
+          ) {
+            Text("ফিল্টার রিসেট করুন", fontSize = 12.sp)
+          }
+        }
+      }
+    } else {
+      LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()) {
+        items(filteredOrders, key = { it.id }) { order ->
         var isDropdownExpanded by remember { mutableStateOf(false) }
 
         Card(
@@ -986,6 +2108,7 @@ fun AdminOrdersTab(
       }
     }
   }
+}
 }
 
 @Composable

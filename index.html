@@ -1022,6 +1022,18 @@
       const [reviews, setReviews] = useState(() => getStored("reviews", initialReviews));
       const [categories, setCategories] = useState(() => getStored("categories", initialCategories));
       const [orders, setOrders] = useState(() => getStored("orders", initialOrders));
+      const [orderStatusFilter, setOrderStatusFilter] = useState("All");
+      const [orderPhoneFilter, setOrderPhoneFilter] = useState("");
+
+      const filteredOrders = useMemo(() => {
+        return orders.filter(o => {
+          const matchesStatus = orderStatusFilter === "All" || o.status === orderStatusFilter;
+          const cleanFilterPhone = orderPhoneFilter.trim().replace(/[\s-+()]/g, "");
+          const cleanOrderPhone = (o.phone || "").replace(/[\s-+()]/g, "");
+          const matchesPhone = !cleanFilterPhone || cleanOrderPhone.includes(cleanFilterPhone);
+          return matchesStatus && matchesPhone;
+        });
+      }, [orders, orderStatusFilter, orderPhoneFilter]);
       const [returns, setReturns] = useState(() => getStored("returns", initialReturns));
       const [coupons, setCoupons] = useState(() => getStored("coupons", initialCoupons));
       const [vouchers, setVouchers] = useState(() => getStored("vouchers", initialVouchers));
@@ -3861,6 +3873,9 @@
         sizes: []
       });
       const [adminProductBogoFilter, setAdminProductBogoFilter] = useState("All");
+      const [adminProductSubTab, setAdminProductSubTab] = useState("list"); // "list", "stock", "sales", "categories"
+      const [adminStockCatFilter, setAdminStockCatFilter] = useState("All");
+      const [adminOrderSubTab, setAdminOrderSubTab] = useState("new_orders"); // "new_orders", "all_orders", "courier", "returns"
       const [externalLinkInput, setExternalLinkInput] = useState("");
       const [imageUrlInput, setImageUrlInput] = useState("");
       const [isFetchingUrl, setIsFetchingUrl] = useState(false);
@@ -9568,6 +9583,322 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 </div>
 
+                {/* PRODUCT HUB SUB-NAVIGATION TABS */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {[
+                    { id: "list", label: "🛍️ পণ্য তালিকা ও ফিল্টার", count: products.length },
+                    { id: "stock", label: "💰 স্টক ও ইনভেন্টরি ভ্যালুয়েশন", badge: `${products.reduce((s, p) => s + (parseInt(p.stock) || 0), 0)} পিস` },
+                    { id: "sales", label: "📈 সেলস ও রিটার্ন রিপোর্ট", badge: `${orders.filter(o => o.status === "Delivered").length} সম্পন্ন` },
+                    { id: "categories", label: "🏷️ ক্যাটাগরি ম্যানেজমেন্ট", count: categories.length }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        if (tab.id === "categories") {
+                          setActiveTab("Categories");
+                        } else {
+                          setAdminProductSubTab(tab.id);
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border cursor-pointer ${
+                        adminProductSubTab === tab.id
+                          ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-sm scale-[1.02]"
+                          : "bg-white text-gray-700 border-[#ecd9c6] hover:bg-[#fff8f0]"
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      {tab.count !== undefined && (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          adminProductSubTab === tab.id ? "bg-white/25 text-white" : "bg-gray-100 text-gray-700"
+                        }`}>
+                          {tab.count}
+                        </span>
+                      )}
+                      {tab.badge && (
+                        <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${
+                          adminProductSubTab === tab.id ? "bg-white/25 text-white" : "bg-amber-100 text-amber-900"
+                        }`}>
+                          {tab.badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 💰 PRODUCT STOCK & VALUATION HUB VIEW */}
+                {adminProductSubTab === "stock" && (() => {
+                  const totalStockPieces = products.reduce((sum, p) => sum + (parseInt(p.stock) || 0), 0);
+                  const totalStockValue = products.reduce((sum, p) => sum + ((parseInt(p.price) || 0) * (parseInt(p.stock) || 0)), 0);
+                  const avgPrice = totalStockPieces > 0 ? Math.round(totalStockValue / totalStockPieces) : 0;
+                  const lowStockCount = products.filter(p => (parseInt(p.stock) || 0) <= 5).length;
+                  const catList = Array.from(new Set(products.map(p => p.category || "অন্যান্য")));
+
+                  const filteredByCat = adminStockCatFilter === "All" 
+                    ? products 
+                    : products.filter(p => (p.category || "অন্যান্য") === adminStockCatFilter);
+
+                  return (
+                    <div className="space-y-5 animate-fadeIn">
+                      {/* Top Metric Cards */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                          <p className="text-xs text-[#b8956a] font-bold">মোট স্টক সংখ্যা</p>
+                          <h3 className="text-2xl font-black text-[#7a1c2b] mt-1">{totalStockPieces.toLocaleString()} পিস</h3>
+                          <p className="text-[11px] text-gray-500 mt-1 font-medium">{products.length} টি আলাদা পণ্য</p>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                          <p className="text-xs text-[#b8956a] font-bold">মোট ইনভেন্টরি মূল্য (Valuation)</p>
+                          <h3 className="text-2xl font-black text-emerald-700 mt-1">৳{totalStockValue.toLocaleString()}</h3>
+                          <p className="text-[11px] text-emerald-600 mt-1 font-medium">সম্পূর্ণ স্টক অ্যাসেট</p>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                          <p className="text-xs text-[#b8956a] font-bold">গড় পণ্যের মূল্য</p>
+                          <h3 className="text-2xl font-black text-gray-800 mt-1">৳{avgPrice.toLocaleString()}</h3>
+                          <p className="text-[11px] text-gray-500 mt-1 font-medium">আইটেম প্রতি গড় হিসাব</p>
+                        </div>
+
+                        <div className="bg-red-50 p-5 rounded-3xl border border-red-200 shadow-sm">
+                          <p className="text-xs text-red-600 font-bold">কম স্টক সতর্কতা (≤৫ পিস)</p>
+                          <h3 className="text-2xl font-black text-red-700 mt-1">{lowStockCount} টি পণ্য</h3>
+                          <p className="text-[11px] text-red-600 mt-1 font-medium">রিস্টক প্রয়োজন</p>
+                        </div>
+                      </div>
+
+                      {/* Category-wise Breakdown Strip & Filter */}
+                      <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <h4 className="text-base font-bold text-[#7a1c2b] flex items-center gap-2">
+                              <span>🏷️</span>
+                              <span>ক্যাটাগরিভিত্তিক স্টক ও আর্থিক মূল্য বিবরণ (Category Stock & Valuation)</span>
+                            </h4>
+                            <p className="text-xs text-[#b8956a]">ক্যাটাগরি অনুযায়ী মোট পিস এবং মোট টাকার নিখুঁত হিসাব</p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-500 whitespace-nowrap">ক্যাটাগরি ফিল্টার:</span>
+                            <select
+                              value={adminStockCatFilter}
+                              onChange={(e) => setAdminStockCatFilter(e.target.value)}
+                              className="bg-[#fffaf5] border border-[#ecd9c6] rounded-xl px-3 py-1.5 text-xs font-bold text-[#7a1c2b] outline-none"
+                            >
+                              <option value="All">সকল ক্যাটাগরি ({catList.length})</option>
+                              {catList.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Category Summary Cards Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {catList
+                            .filter(c => adminStockCatFilter === "All" || c === adminStockCatFilter)
+                            .map(cat => {
+                              const cProds = products.filter(p => (p.category || "অন্যান্য") === cat);
+                              const cPieces = cProds.reduce((sum, p) => sum + (parseInt(p.stock) || 0), 0);
+                              const cVal = cProds.reduce((sum, p) => sum + ((parseInt(p.price) || 0) * (parseInt(p.stock) || 0)), 0);
+                              const cPct = totalStockValue > 0 ? Math.round((cVal / totalStockValue) * 100) : 0;
+
+                              return (
+                                <div 
+                                  key={cat} 
+                                  className={`p-4 rounded-2xl border transition ${
+                                    adminStockCatFilter === cat
+                                      ? "bg-amber-50/60 border-amber-400 ring-2 ring-amber-300/40"
+                                      : "bg-[#fffaf5] border-[#f3e2d0] hover:border-amber-300"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-black text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                                      <span>🏷️</span> {cat}
+                                    </span>
+                                    <span className="text-[10px] bg-[#7a1c2b] text-white px-2 py-0.5 rounded-full font-bold">
+                                      {cPct}% ভ্যালু
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-xs mt-3 pt-2 border-t border-[#ecd9c6]/60">
+                                    <div>
+                                      <span className="text-gray-500 text-[10px] block">মোট স্টক</span>
+                                      <span className="font-bold text-gray-800 text-sm">{cPieces} পিস</span>
+                                      <span className="text-gray-400 text-[10px] block">({cProds.length} টি পণ্য)</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-gray-500 text-[10px] block">মোট মূল্য</span>
+                                      <span className="font-black text-emerald-700 text-base">৳{cVal.toLocaleString()}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+
+                        {/* Detailed Table for Products in Selected Category */}
+                        <div className="mt-4 pt-4 border-t border-[#f3e2d0]">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="text-xs sm:text-sm font-bold text-gray-800">
+                              পণ্যভিত্তিক স্টক ও টাকার বিস্তারিত তালিকা ({filteredByCat.length} টি আইটেম)
+                            </h5>
+                          </div>
+
+                          <div className="overflow-x-auto border border-[#f3e2d0] rounded-2xl">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-[#fff8f0] text-[#7a1c2b] font-bold border-b border-[#f3e2d0]">
+                                <tr>
+                                  <th className="py-2.5 px-3">পণ্য</th>
+                                  <th className="py-2.5 px-3">ক্যাটাগরি</th>
+                                  <th className="py-2.5 px-3 text-center">স্টক (পিস)</th>
+                                  <th className="py-2.5 px-3 text-right">একক মূল্য</th>
+                                  <th className="py-2.5 px-3 text-right">মোট ভ্যালু (স্টক × মূল্য)</th>
+                                  <th className="py-2.5 px-3 text-center">কুইক স্টক</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#f3e2d0] bg-white">
+                                {filteredByCat.map(p => {
+                                  const st = parseInt(p.stock) || 0;
+                                  const pr = parseInt(p.price) || 0;
+                                  const totalVal = st * pr;
+                                  return (
+                                    <tr key={p.id} className="hover:bg-[#fffaf5] transition">
+                                      <td className="py-2.5 px-3 flex items-center gap-2">
+                                        <img src={p.imageUrl || p.image || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100"} alt="" className="w-8 h-8 rounded-lg object-cover border border-[#ecd9c6]" />
+                                        <div>
+                                          <p className="font-bold text-gray-800 line-clamp-1">{p.name}</p>
+                                          <p className="text-[10px] text-gray-400 font-mono">SKU: {p.sku || "N/A"}</p>
+                                        </div>
+                                      </td>
+                                      <td className="py-2.5 px-3 text-gray-600 font-medium">{p.category}</td>
+                                      <td className="py-2.5 px-3 text-center">
+                                        <span className={`px-2 py-0.5 rounded-full font-bold text-xs ${st <= 5 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                                          {st} পিস
+                                        </span>
+                                      </td>
+                                      <td className="py-2.5 px-3 text-right font-semibold text-gray-700">৳{pr.toLocaleString()}</td>
+                                      <td className="py-2.5 px-3 text-right font-black text-[#7a1c2b] text-sm">৳{totalVal.toLocaleString()}</td>
+                                      <td className="py-2.5 px-3 text-center">
+                                        <div className="inline-flex items-center gap-1">
+                                          <button 
+                                            type="button"
+                                            onClick={() => {
+                                              if (st > 0) {
+                                                const updated = products.map(x => x.id === p.id ? { ...x, stock: Math.max(0, st - 1) } : x);
+                                                setProducts(updated);
+                                                notify(`${p.name}-এর স্টক ১ পিস কমানো হয়েছে`);
+                                              }
+                                            }}
+                                            className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center text-xs"
+                                            title="স্টক -১"
+                                          >
+                                            -
+                                          </button>
+                                          <span className="font-mono font-bold text-xs px-1">{st}</span>
+                                          <button 
+                                            type="button"
+                                            onClick={() => {
+                                              const updated = products.map(x => x.id === p.id ? { ...x, stock: st + 1 } : x);
+                                              setProducts(updated);
+                                              notify(`${p.name}-এর স্টক ১ পিস বাড়ানো হয়েছে`);
+                                            }}
+                                            className="w-6 h-6 rounded-full bg-[#7a1c2b] text-white hover:bg-[#631422] font-bold flex items-center justify-center text-xs"
+                                            title="স্টক +১"
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 📈 SALES & RETURN REPORT VIEW */}
+                {adminProductSubTab === "sales" && (() => {
+                  const deliveredOrders = orders.filter(o => o.status === "Delivered");
+                  const deliveredRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+                  const returnedPieces = returns.reduce((sum, r) => sum + (r.returnedItems || []).reduce((s, it) => s + (it.quantity || 1), 0), 0);
+                  const exchangeCount = returns.filter(r => (r.exchangeItems || []).length > 0).length;
+                  const totalReturnVal = returns.reduce((sum, r) => sum + (r.totalReturnValue || 0), 0);
+                  const totalNetDiff = returns.reduce((sum, r) => sum + (r.netDifference || r.priceDifference || 0), 0);
+
+                  return (
+                    <div className="space-y-5 animate-fadeIn">
+                      {/* Metric Cards */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                          <p className="text-xs text-[#b8956a] font-bold">মোট সম্পন্ন সেলস</p>
+                          <h3 className="text-2xl font-black text-emerald-700 mt-1">{deliveredOrders.length} টি অর্ডার</h3>
+                          <p className="text-[11px] text-emerald-600 mt-1 font-medium">সফলভাবে ডেলিভার্ড</p>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                          <p className="text-xs text-[#b8956a] font-bold">মোট বিক্রয় আয় (Revenue)</p>
+                          <h3 className="text-2xl font-black text-[#7a1c2b] mt-1">৳{deliveredRevenue.toLocaleString()}</h3>
+                          <p className="text-[11px] text-gray-500 mt-1 font-medium">ক্যাশ ও বিকাশ সংগৃহীত</p>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                          <p className="text-xs text-orange-700 font-bold">মোট রিটার্ন ও এক্সচেঞ্জ</p>
+                          <h3 className="text-2xl font-black text-orange-800 mt-1">{returns.length} টি রেকর্ড</h3>
+                          <p className="text-[11px] text-gray-500 mt-1 font-medium">মোট {returnedPieces} পিস ফেরত</p>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm">
+                          <p className="text-xs text-indigo-700 font-bold">পণ্য এক্সচেঞ্জ সমন্বয়</p>
+                          <h3 className="text-2xl font-black text-indigo-900 mt-1">{exchangeCount} টি এক্সচেঞ্জ</h3>
+                          <p className="text-[11px] text-gray-500 mt-1 font-medium">নিষ্পত্তি তফাত: ৳{totalNetDiff}</p>
+                        </div>
+                      </div>
+
+                      {/* Completed Orders List */}
+                      <div className="bg-white p-5 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-4">
+                        <h4 className="font-bold text-sm sm:text-base text-[#7a1c2b] flex items-center gap-2">
+                          <span>📦</span>
+                          <span>সর্বশেষ সম্পন্ন বিক্রয় তালিকা ({deliveredOrders.length} টি)</span>
+                        </h4>
+
+                        {deliveredOrders.length === 0 ? (
+                          <p className="text-gray-500 text-xs py-4 text-center">এখনও কোনো ডেলিভার্ড বা সম্পন্ন অর্ডার নেই।</p>
+                        ) : (
+                          <div className="divide-y divide-[#f3e2d0]">
+                            {deliveredOrders.slice(0, 15).map(o => (
+                              <div key={o.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-xs text-[#7a1c2b]">#{o.id}</span>
+                                    <span className="text-xs font-semibold text-gray-800">{o.customer || o.customerName} ({o.phone || o.customerPhone})</span>
+                                    <span className="text-[10px] bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded-full">Delivered</span>
+                                  </div>
+                                  <p className="text-[11px] text-gray-500 mt-0.5">
+                                    পণ্য: {(o.items || []).map(it => `${it.productName || it.name} ×${it.quantity}`).join(", ")}
+                                  </p>
+                                </div>
+                                <div className="text-right sm:text-right">
+                                  <span className="font-black text-sm text-emerald-700">৳{o.total || 0}</span>
+                                  <p className="text-[10px] text-gray-400">{o.date}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 🛍️ PRODUCT LIST & FILTER VIEW */}
+                {adminProductSubTab === "list" && (
+                  <div className="space-y-4">
+
                 {/* BATCH MULTI-PRODUCT QR PRICE TAG ACTION BANNER */}
                 {selectedProductIdsForQr.length > 0 && (
                   <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-[#7a1c2b] text-white p-4 sm:p-5 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn border-2 border-amber-300">
@@ -9884,6 +10215,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       );
                     })}
                 </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -9944,15 +10277,367 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 </div>
 
+                {/* Sub-navigation Pills for Order Hub */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {[
+                    { id: "new_orders", label: "🔔 নতুন অর্ডার অনুমোদন", count: orders.filter(o => o.status === "Pending").length, highlight: orders.filter(o => o.status === "Pending").length > 0 },
+                    { id: "all_orders", label: "📋 সকল অর্ডার ও ফিল্টার", count: orders.length, highlight: false },
+                    { id: "courier", label: "🚚 কুরিয়ার ট্র্যাকিং ও বুকিং", count: orders.filter(o => o.courier && o.courier !== "None").length, highlight: false },
+                    { id: "returns", label: "🔄 রিটার্ন ও এক্সচেঞ্জ হিস্ট্রি", count: returns.length, highlight: false }
+                  ].map(st => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setAdminOrderSubTab(st.id)}
+                      className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 border cursor-pointer ${
+                        adminOrderSubTab === st.id
+                          ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-md scale-[1.02]"
+                          : "bg-white text-gray-700 hover:bg-[#fffaf5] border-[#f3e2d0]"
+                      }`}
+                    >
+                      <span>{st.label}</span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-black ${
+                        adminOrderSubTab === st.id
+                          ? (st.highlight ? "bg-amber-400 text-amber-950 animate-pulse" : "bg-white/20 text-white")
+                          : (st.highlight ? "bg-rose-500 text-white animate-bounce" : "bg-gray-100 text-gray-700")
+                      }`}>
+                        {st.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* ========================================================= */}
+                {/* SUBTAB 1: NEW ORDERS APPROVAL (নতুন অর্ডার অনুমোদন) */}
+                {/* ========================================================= */}
+                {adminOrderSubTab === "new_orders" && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 sm:p-5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shadow-xs">
+                          🔔
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-base text-amber-950">
+                            নতুন অর্ডার অনুমোদন ডেস্কে স্বাগতম
+                          </h4>
+                          <p className="text-xs text-amber-800">
+                            নতুন কাস্টমারদের পেন্ডিং অর্ডার দ্রুত রিভিউ করে ১-ক্লিকে কনফার্ম, প্রসেসিং, কুরিয়ারে বুকিং বা ক্যানসেল করুন।
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <span className="text-xs bg-amber-200/80 text-amber-950 font-bold px-3 py-1.5 rounded-full">
+                          পেন্ডিং অর্ডার: {orders.filter(o => o.status === "Pending").length} টি
+                        </span>
+                      </div>
+                    </div>
+
+                    {orders.filter(o => o.status === "Pending").length === 0 ? (
+                      <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8 shadow-sm space-y-3">
+                        <div className="w-16 h-16 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl border border-emerald-100">
+                          ✓
+                        </div>
+                        <h4 className="font-extrabold text-lg text-emerald-900">
+                          আলহামদুলিল্লাহ! কোনো নতুন পেন্ডিং অর্ডার নেই
+                        </h4>
+                        <p className="text-xs text-gray-500 max-w-md mx-auto">
+                          সকল অর্ডার সফলভাবে অনুমোদিত বা ডেলিভারিতে রয়েছে। নতুন কোনো কাস্টমার অর্ডার করার সাথে সাথে এখানে ভেসে উঠবে।
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setAdminOrderSubTab("all_orders")}
+                          className="px-5 py-2.5 rounded-full bg-[#7a1c2b] text-white text-xs font-bold hover:bg-[#681727] transition shadow-xs inline-flex items-center gap-2"
+                        >
+                          <span>📋 সকল অর্ডার তালিকা দেখুন</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {orders.filter(o => o.status === "Pending").map(o => (
+                          <div key={o.id} className="bg-white rounded-3xl border-2 border-amber-300 p-4 sm:p-5 shadow-sm space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-100 pb-3">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono font-black text-sm text-[#7a1c2b] bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                                  #{o.id}
+                                </span>
+                                <span className="text-xs text-gray-500 font-medium">
+                                  🕒 {new Date(o.date).toLocaleString('bn-BD', { dateStyle: 'medium', timeStyle: 'short' })}
+                                </span>
+                                <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-2xs flex items-center gap-1 animate-pulse">
+                                  <span>🔔</span> পেন্ডিং অনুমোদন
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs text-gray-500 mr-1.5 font-bold">মোট বিল:</span>
+                                <span className="font-mono font-black text-lg text-[#7a1c2b]">
+                                  ৳{o.total}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#fffaf5] p-3.5 rounded-2xl border border-[#ecd9c6] text-xs">
+                              <div>
+                                <span className="text-gray-400 font-bold block mb-0.5">গ্রাহক পরিচিতি:</span>
+                                <p className="font-extrabold text-gray-800 text-sm">👤 {o.customerName || "অজানা গ্রাহক"}</p>
+                                <a 
+                                  href={`tel:${o.phone}`}
+                                  className="font-mono text-emerald-700 font-bold hover:underline flex items-center gap-1 mt-0.5"
+                                  title="সরাসরি কল দিন"
+                                >
+                                  📞 {o.phone}
+                                </a>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 font-bold block mb-0.5">ডেলিভারি ঠিকানা:</span>
+                                <p className="text-gray-700 font-medium leading-relaxed">📍 {o.address || "ঠিকানা দেওয়া হয়নি"}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 font-bold block mb-0.5">পেমেন্ট মেথড:</span>
+                                <span className="inline-block px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-gray-800 font-bold">
+                                  💳 {o.paymentMethod || "ক্যাশ অন ডেলিভারি (COD)"}
+                                </span>
+                                {o.trxId && (
+                                  <p className="font-mono text-[11px] text-gray-600 mt-1">
+                                    TrxID: <span className="font-bold text-[#7a1c2b]">{o.trxId}</span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <span className="text-xs font-bold text-gray-500 block">অর্ডারের পণ্যসমূহ ({o.items?.length || 0} টি আইটেম):</span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {o.items?.map((it, idx) => (
+                                  <div key={idx} className="flex items-center gap-2.5 p-2 rounded-xl bg-gray-50 border border-gray-100">
+                                    <div className="w-10 h-10 rounded-lg bg-gray-200 overflow-hidden shrink-0">
+                                      <img src={it.image || it.imageUrl} alt={it.productName || it.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-bold text-gray-800 truncate">{it.productName || it.name}</p>
+                                      <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-gray-500 mt-0.5">
+                                        {it.color && <span className="bg-white px-1.5 py-0.2 rounded border">রং: {it.color}</span>}
+                                        {it.size && <span className="bg-white px-1.5 py-0.2 rounded border">সাইজ: {it.size}</span>}
+                                        {it.age && <span className="bg-white px-1.5 py-0.2 rounded border">বয়স: {it.age}</span>}
+                                        <span className="font-bold text-gray-700">পরিমাণ: {it.quantity || 1} টি</span>
+                                        <span className="font-mono font-bold text-[#7a1c2b]">৳{it.price}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-dashed border-[#f3e2d0]">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => updateOrderStatus(o.id, "Confirmed")}
+                                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
+                                  title="অর্ডার অনুমোদন করুন"
+                                >
+                                  <span>✅</span>
+                                  <span>কনফার্ম (অনুমোদন)</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => updateOrderStatus(o.id, "Processing")}
+                                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
+                                  title="প্যাকিং ও প্রসেসিংয়ে পাঠান"
+                                >
+                                  <span>⚙️</span>
+                                  <span>প্রসেসিং</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => dispatchCourier(o.id, "Steadfast")}
+                                  className="px-4 py-2 bg-[#2c1810] hover:bg-black text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
+                                  title="Steadfast কুরিয়ার বুকিং করুন"
+                                >
+                                  <span>📦</span>
+                                  <span>Steadfast কুরিয়ার</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => dispatchCourier(o.id, "Pathao")}
+                                  className="px-4 py-2 bg-[#e2136e] hover:bg-[#c20d5c] text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
+                                  title="Pathao কুরিয়ার বুকিং করুন"
+                                >
+                                  <span>🛵</span>
+                                  <span>Pathao কুরিয়ার</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => printInvoiceWindow(o)}
+                                  className="px-3.5 py-2 bg-[#fff8f0] border border-[#d4a574] text-gray-700 rounded-full text-xs font-bold hover:bg-gray-100 transition shadow-xs flex items-center gap-1.5"
+                                  title="চালান মেমো প্রিন্ট করুন"
+                                >
+                                  <span>🧾</span>
+                                  <span>মেমো প্রিন্ট</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => shareOrderToWhatsApp(o)}
+                                  className="px-3.5 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+                                  title="কাস্টমারকে হোয়াটসঅ্যাপে মেসেজ পাঠান"
+                                >
+                                  <span>💬</span>
+                                  <span>WhatsApp</span>
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm(`অর্ডার #${o.id} বাতিল (Cancel) করতে চান?`)) {
+                                      updateOrderStatus(o.id, "Cancelled");
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-full text-xs font-bold transition flex items-center gap-1"
+                                >
+                                  <span>❌</span>
+                                  <span>বাতিল</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteOrder(o.id)}
+                                  className="px-2.5 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 text-xs font-bold rounded-full transition"
+                                  title="অর্ডারটি স্থায়ীভাবে মুছুন"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ========================================================= */}
+                {/* SUBTAB 2: ALL ORDERS & FILTER (সকল অর্ডার ও ফিল্টার) */}
+                {/* ========================================================= */}
+                {adminOrderSubTab === "all_orders" && (
+                  <div className="space-y-4 animate-fadeIn">
+                {/* 🔍 ORDERS FILTER CONTROLS: BY STATUS & CUSTOMER PHONE NUMBER */}
+                <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-3.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Customer Phone Search Input */}
+                    <div className="flex-1 relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-gray-400">📞</span>
+                      <input
+                        type="text"
+                        value={orderPhoneFilter}
+                        onChange={(e) => setOrderPhoneFilter(e.target.value)}
+                        placeholder="গ্রাহকের ফোন নম্বর দিয়ে খুঁজুন (যেমন: 017...)"
+                        className="w-full bg-[#fffaf5] border border-[#ecd9c6] rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm font-mono outline-none focus:border-[#7a1c2b] focus:ring-1 focus:ring-[#7a1c2b] transition"
+                      />
+                      {orderPhoneFilter && (
+                        <button
+                          type="button"
+                          onClick={() => setOrderPhoneFilter("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold transition"
+                          title="ক্লিয়ার করুন"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Filter Active Reset / Clear action if filters applied */}
+                    {(orderStatusFilter !== "All" || orderPhoneFilter.trim()) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrderStatusFilter("All");
+                          setOrderPhoneFilter("");
+                        }}
+                        className="px-3.5 py-2 rounded-2xl bg-rose-50 text-[#7a1c2b] border border-rose-200 text-xs font-bold hover:bg-rose-100 transition flex items-center gap-1.5 shrink-0 active:scale-95 shadow-2xs"
+                      >
+                        <span>✕</span>
+                        <span>ফিল্টার রিসেট</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Status Filter Tabs / Chips */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                    <span className="text-xs font-bold text-gray-500 whitespace-nowrap mr-1">স্ট্যাটাস:</span>
+                    {[
+                      { key: "All", label: "All (সকল)", count: orders.length },
+                      { key: "Pending", label: "Pending (পেন্ডিং)", count: orders.filter(o => o.status === "Pending").length },
+                      { key: "Confirmed", label: "Confirmed (অনুমোদিত)", count: orders.filter(o => o.status === "Confirmed").length },
+                      { key: "Shipped", label: "Shipped (ডেলিভারিতে)", count: orders.filter(o => o.status === "Shipped").length },
+                      { key: "Delivered", label: "Delivered (সম্পন্ন)", count: orders.filter(o => o.status === "Delivered").length },
+                      { key: "Cancelled", label: "Cancelled (বাতিল)", count: orders.filter(o => o.status === "Cancelled").length }
+                    ].map(st => {
+                      const isSelected = orderStatusFilter === st.key;
+                      return (
+                        <button
+                          key={st.key}
+                          type="button"
+                          onClick={() => setOrderStatusFilter(st.key)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border cursor-pointer ${
+                            isSelected
+                              ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-xs scale-[1.02]"
+                              : "bg-[#fffaf5] text-gray-700 border-[#ecd9c6] hover:bg-[#f5e8db]"
+                          }`}
+                        >
+                          <span>{st.label}</span>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                            isSelected ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {st.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active Filter Summary Bar */}
+                  <div className="flex items-center justify-between text-[11px] text-[#b8956a] pt-1.5 border-t border-dashed border-[#f3e2d0]">
+                    <span>
+                      প্রদর্শিত হচ্ছে: <b className="text-[#7a1c2b]">{filteredOrders.length}</b> টি অর্ডার (মোট: {orders.length} টি)
+                    </span>
+                    {(orderStatusFilter !== "All" || orderPhoneFilter.trim()) && (
+                      <span className="text-gray-500 font-medium">
+                        {orderStatusFilter !== "All" && `স্ট্যাটাস: ${orderStatusFilter} `}
+                        {orderPhoneFilter.trim() && `| ফোন: ${orderPhoneFilter.trim()}`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 {orders.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8">
                     <p className="text-4xl mb-3">📦</p>
                     <h4 className="font-bold text-base text-gray-700">কোন অর্ডার নেই</h4>
                     <p className="text-xs text-gray-400 mt-1">গ্রাহক স্টোরফ্রন্ট থেকে অর্ডার করলে এখানে তালিকা চলে আসবে।</p>
                   </div>
+                ) : filteredOrders.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-3xl border border-[#f3e2d0] p-8 space-y-3">
+                    <p className="text-4xl">🔍</p>
+                    <h4 className="font-bold text-base text-gray-800">কোন অর্ডার খুঁজে পাওয়া যায়নি!</h4>
+                    <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                      {orderPhoneFilter.trim() && `ফোন নম্বর "${orderPhoneFilter.trim()}" `}
+                      {orderStatusFilter !== "All" && `স্ট্যাটাস "${orderStatusFilter}" `}
+                      অনুযায়ী কোনো অর্ডার মেলেনি। ফিল্টার রিসেট করে আবার চেষ্টা করুন।
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOrderStatusFilter("All");
+                        setOrderPhoneFilter("");
+                      }}
+                      className="px-4 py-2 rounded-full bg-[#7a1c2b] text-white text-xs font-bold hover:bg-[#681727] transition shadow-xs"
+                    >
+                      ফিল্টার রিসেট করুন 🔄
+                    </button>
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {orders.map(o => (
+                    {filteredOrders.map(o => (
                       <div key={o.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 sm:p-5 shadow-sm space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f3e2d0] pb-3">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -10170,6 +10855,204 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+                  </div>
+                )}
+
+                {/* ========================================================= */}
+                {/* SUBTAB 3: COURIER TRACKING (কুরিয়ার ট্র্যাকিং ও বুকিং) */}
+                {/* ========================================================= */}
+                {adminOrderSubTab === "courier" && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="bg-white p-4 rounded-3xl border border-[#ecd9c6] shadow-sm">
+                        <span className="text-xs text-gray-500 font-bold block">মোট কুরিয়ার বুকিং</span>
+                        <p className="text-2xl font-black text-[#7a1c2b] mt-1">
+                          {orders.filter(o => o.courier && o.courier !== "None").length} টি
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded-3xl border border-[#ecd9c6] shadow-sm">
+                        <span className="text-xs text-gray-500 font-bold block">📦 Steadfast পার্সেল</span>
+                        <p className="text-2xl font-black text-amber-800 mt-1">
+                          {orders.filter(o => o.courier === "Steadfast").length} টি
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded-3xl border border-[#ecd9c6] shadow-sm">
+                        <span className="text-xs text-gray-500 font-bold block">🛵 Pathao পার্সেল</span>
+                        <p className="text-2xl font-black text-[#e2136e] mt-1">
+                          {orders.filter(o => o.courier === "Pathao").length} টি
+                        </p>
+                      </div>
+                    </div>
+
+                    {orders.filter(o => o.courier && o.courier !== "None").length === 0 ? (
+                      <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8 shadow-sm space-y-3">
+                        <p className="text-4xl">🚚</p>
+                        <h4 className="font-extrabold text-base text-gray-800">কোনো পার্সেল কুরিয়ারে বুক করা হয়নি</h4>
+                        <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                          অর্ডার ট্যাবে গিয়ে যেকোনো পেন্ডিং বা কনফার্মড অর্ডারে "Steadfast" অথবা "Pathao" বুকিং বাটনে চাপ দিলে এখানে ট্র্যাকিং তালিকা দেখা যাবে।
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {orders.filter(o => o.courier && o.courier !== "None").map(o => (
+                          <div key={o.id} className="bg-white rounded-3xl border border-[#f3e2d0] p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono font-bold text-sm text-[#7a1c2b]">#{o.id}</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                  🚚 {o.courier}
+                                </span>
+                                {o.consignmentId && (
+                                  <span className="font-mono text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded border">
+                                    কন্সায়নমেন্ট: {o.consignmentId}
+                                  </span>
+                                )}
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                  o.status === "Delivered" ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"
+                                }`}>
+                                  {o.status}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-700 font-semibold">
+                                👤 {o.customerName} | 📞 {o.phone} | 📍 {o.address}
+                              </p>
+                              <p className="text-xs text-gray-500 font-mono">
+                                COD আদায়যোগ্য: <b className="text-[#7a1c2b]">৳{o.total}</b>
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                              <button
+                                type="button"
+                                onClick={() => printInvoiceWindow(o)}
+                                className="px-3.5 py-1.5 bg-[#fff8f0] border border-[#ecd9c6] rounded-full text-xs font-bold text-gray-700 hover:bg-gray-100 transition"
+                              >
+                                🧾 চালান
+                              </button>
+                              {o.status !== "Delivered" && (
+                                <button
+                                  type="button"
+                                  onClick={() => updateOrderStatus(o.id, "Delivered")}
+                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold transition shadow-xs"
+                                >
+                                  ✓ ডেলিভারি সম্পন্ন
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ========================================================= */}
+                {/* SUBTAB 4: RETURNS & EXCHANGES (রিটার্ন ও এক্সচেঞ্জ হিস্ট্রি) */}
+                {/* ========================================================= */}
+                {adminOrderSubTab === "returns" && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gradient-to-r from-orange-50 to-amber-50 p-5 rounded-3xl border border-orange-200 shadow-xs">
+                      <div>
+                        <h4 className="font-extrabold text-base text-orange-950 flex items-center gap-2">
+                          <span>🔄</span>
+                          <span>রিটার্ন ও এক্সচেঞ্জ রেকর্ড ও মূল্য নিষ্পত্তি</span>
+                        </h4>
+                        <p className="text-xs text-orange-800">
+                          গ্রাহকদের পণ্য ফেরত ও বদল, মূল্য পার্থক্য নিষ্পত্তি (Customer Collect / Store Refund) এবং ইনভেন্টরি স্টক আপডেট
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveReturnTab("new");
+                          if (!returnOrder && orders.length > 0) {
+                            openReturnModalForOrder(orders[0]);
+                          } else {
+                            setIsReturnModalOpen(true);
+                          }
+                        }}
+                        className="px-4 py-2 bg-gradient-to-r from-orange-500 to-[#e65100] text-white rounded-full text-xs font-bold shadow hover:brightness-110 transition flex items-center gap-1.5 active:scale-95"
+                      >
+                        <span>🔄</span>
+                        <span>+ নতুন রিটার্ন / এক্সচেঞ্জ শুরু করুন</span>
+                      </button>
+                    </div>
+
+                    {returns.length === 0 ? (
+                      <div className="text-center py-16 bg-white rounded-3xl border border-[#f3e2d0] p-8 shadow-sm space-y-3">
+                        <p className="text-4xl">📦</p>
+                        <h4 className="font-extrabold text-base text-gray-800">এখনো কোনো রিটার্ন বা এক্সচেঞ্জ রেকর্ড নেই</h4>
+                        <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                          গ্রাহকের পণ্য ফেরত বা সাইজ/কালার বদল করতে ওপরের বাটনে চাপ দিন অথবা যে কোনো অর্ডারের পাশে "🔄 রিটার্ন ও এক্সচেঞ্জ" ক্লিক করুন।
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {returns.map((ret, rIdx) => {
+                          const netDiff = ret.priceDifference || ret.netDifference || 0;
+                          return (
+                            <div key={ret.id || rIdx} className="bg-white rounded-3xl border border-[#ecd9c6] p-4 sm:p-5 shadow-sm space-y-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f3e2d0] pb-2.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-black text-xs text-orange-800 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200">
+                                    {ret.id}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    অর্ডার: <b className="text-[#7a1c2b]">#{ret.orderId}</b>
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    🕒 {new Date(ret.date).toLocaleDateString('bn-BD', { dateStyle: 'medium' })}
+                                  </span>
+                                </div>
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  {ret.status || "নিষ্পন্ন (Settled)"}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-[#fffaf5] p-3 rounded-2xl border border-[#ecd9c6]">
+                                <div>
+                                  <span className="text-gray-400 block font-bold mb-0.5">ফেরত পণ্য:</span>
+                                  <p className="font-semibold text-gray-800">{ret.returnedItems?.map(i => `${i.productName || i.name} (${i.quantity}টি)`).join(", ") || "পণ্য"}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400 block font-bold mb-0.5">নতুন এক্সচেঞ্জ পণ্য:</span>
+                                  <p className="font-semibold text-gray-800">{ret.exchangeItems?.length > 0 ? ret.exchangeItems.map(i => `${i.name} (${i.quantity}টি)`).join(", ") : "শুধুমাত্র ফেরত"}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400 block font-bold mb-0.5">মূল্য নিষ্পত্তি:</span>
+                                  {netDiff > 0 ? (
+                                    <span className="text-amber-800 font-black">
+                                      কাস্টমার থেকে সংগৃহীত: +৳{netDiff}
+                                    </span>
+                                  ) : netDiff < 0 ? (
+                                    <span className="text-emerald-700 font-black">
+                                      কাস্টমারকে রিফান্ড: ৳{Math.abs(netDiff)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-blue-700 font-bold">
+                                      সমমূল্য বদল (০ ৳ ব্যালেন্স)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => printReturnSlipWindow && printReturnSlipWindow(ret)}
+                                  className="px-3.5 py-1.5 bg-[#fff8f0] border border-[#d4a574] text-gray-700 rounded-full text-xs font-bold hover:bg-gray-100 transition shadow-2xs flex items-center gap-1.5"
+                                >
+                                  <span>🧾</span>
+                                  <span>রিটার্ন স্লিপ প্রিন্ট</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
