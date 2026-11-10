@@ -574,87 +574,139 @@ fun AdminOverviewTab(
     }
 
     // Quick Shortcuts Header
-    Text(text = "দ্রুত অপশন সমূহ (Dashboard Master Hubs):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+    Text(text = "মূল প্রশাসনিক হাবসমূহ (Master Function Hubs):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
 
-    // Fast 1-Click Return & Exchange Action Card on Dashboard
-    Button(
-      onClick = onOpenNewReturn,
-      colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFF3E0), contentColor = Color(0xFFE65100)),
-      border = BorderStroke(1.5.dp, Color(0xFFFB8C00)),
-      shape = RoundedCornerShape(16.dp),
+    // Master Hub 1: Product Hub Card
+    Card(
       modifier = Modifier
         .fillMaxWidth()
-        .height(48.dp)
-        .testTag("dashboard_quick_return_button")
+        .clickable { onGoToTab(AdminTab.PRODUCTS) }
+        .testTag("dashboard_product_hub_card"),
+      shape = RoundedCornerShape(18.dp),
+      colors = CardDefaults.cardColors(containerColor = Color.White),
+      border = BorderStroke(1.5.dp, Color(0xFFFCD34D))
     ) {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-      ) {
-        Text(text = "🔄", fontSize = 18.sp)
+      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text = "👗", fontSize = 22.sp)
+            Column {
+              Text(text = "১. প্রোডাক্ট ও ইনভেন্টরি হাব", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+              Text(text = "${products.size} টি পণ্য • ${categories.size} টি ক্যাটাগরি", fontSize = 11.sp, color = AntiqueGoldDark)
+            }
+          }
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFFEF3C7)
+          ) {
+            Text(
+              text = "পণ্য সংক্রান্ত সব",
+              fontSize = 10.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color(0xFF92400E),
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+          }
+        }
+
         Text(
-          text = "১-ক্লিকে রিটার্ন ও এক্সচেঞ্জ (Return & Exchange) • $returnsCount টি সম্পন্ন",
-          fontSize = 12.sp,
-          fontWeight = FontWeight.Bold,
-          color = Color(0xFFBF360C)
+          text = "নতুন পণ্য যোগ, স্টক ও টাকার ভ্যালুয়েশন, ক্যাটাগরিভিত্তিক স্টক ব্রেকডাউন (কোন ক্যাটাগরির কত পিস কত টাকা), সেলস ও রিটার্ন রিপোর্ট এবং ক্যাটাগরি ফিল্টার সহ প্রোডাক্ট তালিকা।",
+          fontSize = 11.sp,
+          color = Color(0xFF6B7280),
+          lineHeight = 15.sp
         )
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+          Text(text = "প্রোডাক্ট হাবে প্রবেশ করুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+        }
       }
     }
 
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      Button(
-        onClick = { onGoToTab(AdminTab.PRODUCTS) },
-        colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
-        border = BorderStroke(1.dp, BorderGold),
-        shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.weight(1f),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+    // Master Hub 2: Order Hub Card
+    Card(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clickable { onGoToTab(AdminTab.ORDERS) }
+        .testTag("dashboard_order_hub_card"),
+      shape = RoundedCornerShape(18.dp),
+      colors = CardDefaults.cardColors(containerColor = Color.White),
+      border = BorderStroke(1.5.dp, Color(0xFF6EE7B7))
+    ) {
+      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text = "📦", fontSize = 22.sp)
+            Column {
+              Text(text = "২. অর্ডার ম্যানেজমেন্ট হাব", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+              Text(text = "${orders.size} টি মোট অর্ডার • ${pendingOrders.size} টি নতুন পেন্ডিং", fontSize = 11.sp, color = Color(0xFF047857))
+            }
+          }
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = if (pendingOrders.isNotEmpty()) Color(0xFFFEE2E2) else Color(0xFFD1FAE5)
+          ) {
+            Text(
+              text = if (pendingOrders.isNotEmpty()) "${pendingOrders.size} পেন্ডিং অনুমোদন" else "সকল অর্ডার সম্পন্ন",
+              fontSize = 10.sp,
+              fontWeight = FontWeight.Bold,
+              color = if (pendingOrders.isNotEmpty()) Color(0xFFB91C1C) else Color(0xFF065F46),
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+          }
+        }
+
+        Text(
+          text = "নতুন অর্ডার অনুমোদন ডেস্কে সরাসরি কনফার্ম, প্রসেসিং, Steadfast/Pathao কুরিয়ার বুকিং, চালান মেমো প্রিন্ট, ক্যানসেল, অর্ডার স্ট্যাটাস ও রিটার্ন এক্সচেঞ্জ নিষ্পত্তি।",
+          fontSize = 11.sp,
+          color = Color(0xFF6B7280),
+          lineHeight = 15.sp
+        )
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+          Text(text = "অর্ডার হাবে প্রবেশ করুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF047857))
+        }
+      }
+    }
+
+    // Master Hub 3 & 4: Marketing & Settings Cards
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      Card(
+        modifier = Modifier
+          .weight(1f)
+          .clickable { onGoToTab(AdminTab.MARKETING) },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFFDA4AF))
       ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(text = "👗", fontSize = 16.sp)
-          Text(text = "প্রোডাক্ট হাব", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+          Text(text = "🎁", fontSize = 20.sp)
+          Text(text = "৩. মার্কেটিং হাব", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+          Text(text = "কুপন, ভাউচার, কম্বো, B2G1 ও ব্যানার", fontSize = 10.sp, color = Color(0xFF6B7280))
+          Text(text = "ম্যানেজ করুন →", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFBE123C))
         }
       }
 
-      Button(
-        onClick = { onGoToTab(AdminTab.ORDERS) },
-        colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
-        border = BorderStroke(1.dp, BorderGold),
-        shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.weight(1f),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+      Card(
+        modifier = Modifier
+          .weight(1f)
+          .clickable { onGoToTab(AdminTab.SETTINGS) },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFA5B4FC))
       ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(text = "📦", fontSize = 16.sp)
-          Text(text = "অর্ডার হাব", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-
-      Button(
-        onClick = { onGoToTab(AdminTab.MARKETING) },
-        colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
-        border = BorderStroke(1.dp, BorderGold),
-        shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.weight(1f),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-      ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(text = "🎁", fontSize = 16.sp)
-          Text(text = "মার্কেটিং", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-
-      Button(
-        onClick = { onGoToTab(AdminTab.SETTINGS) },
-        colors = ButtonDefaults.buttonColors(containerColor = CreamSurface, contentColor = DarkEspresso),
-        border = BorderStroke(1.dp, BorderGold),
-        shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.weight(1f),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-      ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(text = "⚙️", fontSize = 16.sp)
-          Text(text = "সেটিংস", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+          Text(text = "⚙️", fontSize = 20.sp)
+          Text(text = "৪. সেটিংস হাব", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+          Text(text = "শপ ইনফো, পেমেন্ট, কুরিয়ার ও ব্যাকআপ", fontSize = 10.sp, color = Color(0xFF6B7280))
+          Text(text = "কনফিগ করুন →", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4338CA))
         }
       }
     }
