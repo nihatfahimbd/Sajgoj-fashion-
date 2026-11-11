@@ -2116,6 +2116,7 @@
       // =========================================================
       const [selectedProductIdsForQr, setSelectedProductIdsForQr] = useState([]);
       const [isGeneratingBatchQrPdf, setIsGeneratingBatchQrPdf] = useState(false);
+      const [isGeneratingBarcodePdf, setIsGeneratingBarcodePdf] = useState(false);
       const [batchQrProgress, setBatchQrProgress] = useState(0);
 
       // Toggle Single Product selection for QR PDF
@@ -2131,6 +2132,273 @@
           setSelectedProductIdsForQr([]);
         } else {
           setSelectedProductIdsForQr(products.map(p => p.id));
+        }
+      };
+
+      // Helper: Draw single high-res barcode sticker on canvas for crisp PDF embedding and thermal printing
+      const renderBarcodeStickerCanvas = async (product) => {
+        return new Promise((resolve) => {
+          const width = 600;
+          const height = 360;
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+
+          // Clean White Card Background
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+
+          // Deep Maroon Border (#7a1c2b)
+          ctx.strokeStyle = "#7a1c2b";
+          ctx.lineWidth = 5;
+          ctx.strokeRect(5, 5, width - 10, height - 10);
+
+          // Inner Golden Border (#d4a574)
+          ctx.strokeStyle = "#ecd9c6";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(12, 12, width - 24, height - 24);
+
+          // Header Banner
+          ctx.fillStyle = "#7a1c2b";
+          ctx.fillRect(14, 14, width - 28, 48);
+
+          // Store Branding
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 20px 'Hind Siliguri', Arial, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(config?.storeName || "SAJGOJ FASHION", width / 2, 44);
+
+          // Product Name (truncated if long)
+          ctx.fillStyle = "#111827";
+          ctx.font = "bold 22px 'Hind Siliguri', Arial, sans-serif";
+          ctx.textAlign = "center";
+          const rawName = product.name || "পণ্য";
+          const shortName = rawName.length > 32 ? rawName.slice(0, 30) + "..." : rawName;
+          ctx.fillText(shortName, width / 2, 92);
+
+          // Price & Category Pill Bar
+          ctx.fillStyle = "#fff8f0";
+          ctx.fillRect(width / 2 - 160, 105, 320, 32);
+          ctx.strokeStyle = "#d4a574";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(width / 2 - 160, 105, 320, 32);
+
+          ctx.fillStyle = "#7a1c2b";
+          ctx.font = "bold 16px 'Hind Siliguri', Arial, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(`মূল্য: ৳${Number(product.price || 0).toLocaleString()}  •  ${product.category || 'কালেকশন'}`, width / 2, 127);
+
+          // Render 1D Barcode with JsBarcode to offscreen canvas
+          const barcodeCanvas = document.createElement("canvas");
+          try {
+            if (window.JsBarcode) {
+              window.JsBarcode(barcodeCanvas, String(product.sku || product.id), {
+                format: "CODE128",
+                width: 2.2,
+                height: 72,
+                displayValue: false,
+                margin: 4,
+                background: "#ffffff",
+                lineColor: "#000000"
+              });
+              const bcW = Math.min(barcodeCanvas.width, width - 60);
+              const bcH = 80;
+              const bcX = (width - bcW) / 2;
+              ctx.drawImage(barcodeCanvas, bcX, 145, bcW, bcH);
+            }
+          } catch (bcErr) {
+            console.warn("JsBarcode sticker error:", bcErr);
+          }
+
+          // Human-readable SKU (Large monospace for easy auditing)
+          ctx.fillStyle = "#000000";
+          ctx.font = "bold 22px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(`* ${product.sku || product.id} *`, width / 2, 252);
+
+          // Inventory tracking details line
+          ctx.fillStyle = "#555555";
+          ctx.font = "bold 12px 'Hind Siliguri', Arial, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(`SKU: ${product.sku || product.id}  |  স্টক: ${product.stock || 0} টি  |  সাজগোজ ইনভেন্টরি ম্যানেজমেন্ট`, width / 2, 280);
+
+          // Bottom gold accent line
+          ctx.fillStyle = "#d4a574";
+          ctx.fillRect(14, height - 22, width - 28, 8);
+
+          resolve(canvas.toDataURL("image/png"));
+        });
+      };
+
+      // Generate and Download Printable PDF Barcode Sticker for single product (A4 sheet or 60x40mm thermal)
+      const downloadProductBarcodePdf = async (product, count = 12, format = "sheet") => {
+        if (!product) return;
+        setIsGeneratingBarcodePdf(true);
+        notify(`📄 "${product.name}" এর জন্য বারকোড PDF স্টিকার তৈরি হচ্ছে...`);
+
+        try {
+          const { jsPDF } = window.jspdf || {};
+          if (!jsPDF) throw new Error("jsPDF লাইব্রেরি লোড হয়নি");
+
+          const stickerDataUrl = await renderBarcodeStickerCanvas(product);
+          if (!stickerDataUrl) throw new Error("Sticker canvas rendering failed");
+
+          const totalStickers = Math.max(1, Number(count) || 1);
+
+          if (format === "thermal") {
+            // 60mm x 40mm thermal roll sticker
+            const doc = new jsPDF({
+              orientation: "landscape",
+              unit: "mm",
+              format: [40, 60]
+            });
+
+            for (let i = 0; i < totalStickers; i++) {
+              if (i > 0) doc.addPage([40, 60], "landscape");
+              doc.addImage(stickerDataUrl, "PNG", 2, 2, 56, 36, undefined, "FAST");
+            }
+
+            const fileName = `barcode-sticker-${product.sku || product.id}-thermal-${totalStickers}pcs.pdf`;
+            doc.save(fileName);
+            notify(`🎉 ${totalStickers}টি থার্মাল বারকোড স্টিকার PDF সফলভাবে ডাউনলোড হয়েছে! 🏷️`);
+          } else {
+            // Standard A4 sheet (210mm x 297mm) - 12 stickers per page (2 columns x 6 rows)
+            const doc = new jsPDF({
+              orientation: "portrait",
+              unit: "mm",
+              format: "a4"
+            });
+
+            const cols = 2;
+            const rows = 6;
+            const stickersPerPage = cols * rows; // 12
+            const stickerWidth = 92;
+            const stickerHeight = 42;
+            const marginX = 9;
+            const marginY = 12;
+            const gapX = 8;
+            const gapY = 5;
+
+            for (let i = 0; i < totalStickers; i++) {
+              const pageIndex = Math.floor(i / stickersPerPage);
+              const indexOnPage = i % stickersPerPage;
+
+              if (pageIndex > 0 && indexOnPage === 0) {
+                doc.addPage();
+              }
+
+              const col = indexOnPage % cols;
+              const row = Math.floor(indexOnPage / cols);
+              const x = marginX + col * (stickerWidth + gapX);
+              const y = marginY + row * (stickerHeight + gapY);
+
+              doc.addImage(stickerDataUrl, "PNG", x, y, stickerWidth, stickerHeight, undefined, "FAST");
+
+              // Dashed cutting guide
+              doc.setDrawColor(200, 200, 200);
+              doc.setLineDashPattern([2, 2], 0);
+              doc.rect(x - 0.5, y - 0.5, stickerWidth + 1, stickerHeight + 1);
+              doc.setLineDashPattern([], 0);
+            }
+
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let p = 1; p <= totalPages; p++) {
+              doc.setPage(p);
+              doc.setFontSize(8);
+              doc.setTextColor(150, 150, 150);
+              doc.text(`${config?.storeName || 'SAJGOJ FASHION'} • Barcode Sticker Sheet (SKU: ${product.sku || product.id}) • Page ${p} of ${totalPages}`, 105, 292, { align: "center" });
+            }
+
+            const fileName = `barcode-stickers-${product.sku || product.id}-a4-sheet.pdf`;
+            doc.save(fileName);
+            notify(`🎉 ${totalStickers}টি বারকোড স্টিকার সম্বলিত A4 PDF শিট ডাউনলোড হয়েছে! 🖨️`);
+          }
+        } catch (err) {
+          console.error("Barcode PDF generation error:", err);
+          notify("⚠️ PDF তৈরিতে সমস্যা হয়েছে, প্রিন্ট প্রিভিউ উইন্ডো খোলা হচ্ছে...");
+          printBarcodeLabelsWindow(product, count);
+        } finally {
+          setIsGeneratingBarcodePdf(false);
+        }
+      };
+
+      // Generate and Download Multi-Product Barcode Stickers PDF
+      const downloadBatchBarcodePdf = async (customProductIds = null) => {
+        const targetIds = customProductIds || selectedProductIdsForQr;
+        if (!targetIds || targetIds.length === 0) {
+          notify("অনুগ্রহ করে অন্তত ১টি পণ্য সিলেক্ট করুন!");
+          return;
+        }
+        const selectedList = products.filter(p => targetIds.includes(p.id));
+        if (selectedList.length === 0) {
+          notify("কোনো বৈধ পণ্য পাওয়া যায়নি!");
+          return;
+        }
+
+        setIsGeneratingBarcodePdf(true);
+        notify(`📄 ${selectedList.length} টি পণ্যের বারকোড স্টিকার PDF শিট প্রস্তুত হচ্ছে...`);
+
+        try {
+          const { jsPDF } = window.jspdf || {};
+          if (!jsPDF) throw new Error("jsPDF লাইব্রেরি লোড হয়নি");
+
+          const doc = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4"
+          });
+
+          const cols = 2;
+          const rows = 6;
+          const stickersPerPage = cols * rows; // 12
+          const stickerWidth = 92;
+          const stickerHeight = 42;
+          const marginX = 9;
+          const marginY = 12;
+          const gapX = 8;
+          const gapY = 5;
+
+          for (let i = 0; i < selectedList.length; i++) {
+            const product = selectedList[i];
+            const pageIndex = Math.floor(i / stickersPerPage);
+            const indexOnPage = i % stickersPerPage;
+
+            if (pageIndex > 0 && indexOnPage === 0) {
+              doc.addPage();
+            }
+
+            const col = indexOnPage % cols;
+            const row = Math.floor(indexOnPage / cols);
+            const x = marginX + col * (stickerWidth + gapX);
+            const y = marginY + row * (stickerHeight + gapY);
+
+            const stickerDataUrl = await renderBarcodeStickerCanvas(product);
+            if (stickerDataUrl) {
+              doc.addImage(stickerDataUrl, "PNG", x, y, stickerWidth, stickerHeight, undefined, "FAST");
+            }
+
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineDashPattern([2, 2], 0);
+            doc.rect(x - 0.5, y - 0.5, stickerWidth + 1, stickerHeight + 1);
+            doc.setLineDashPattern([], 0);
+          }
+
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let p = 1; p <= totalPages; p++) {
+            doc.setPage(p);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`${config?.storeName || 'SAJGOJ FASHION'} • Multi-Product Barcode Stickers • Page ${p} of ${totalPages}`, 105, 292, { align: "center" });
+          }
+
+          doc.save(`sajgoj-batch-barcodes-${selectedList.length}-products.pdf`);
+          notify(`🎉 ${selectedList.length} টি পণ্যের বারকোড স্টিকার PDF ডাউনলোড সম্পন্ন! 🏷️`);
+        } catch (err) {
+          console.error("Batch barcode PDF error:", err);
+          notify("⚠️ বারকোড PDF তৈরিতে সমস্যা হয়েছে!");
+        } finally {
+          setIsGeneratingBarcodePdf(false);
         }
       };
 
@@ -9363,6 +9631,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                           >
                                             +
                                           </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setProductBarcodeModal(p);
+                                              setBarcodeStickerCount(Math.max(1, p.stock || 1));
+                                            }}
+                                            className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-[#7a1c2b] border border-amber-300 rounded-md text-[10px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer ml-1"
+                                            title="বারকোড তৈরি ও PDF স্টিকার ডাউনলোড"
+                                          >
+                                            <span>🏷️</span>
+                                            <span>বারকোড</span>
+                                          </button>
                                         </div>
                                       </td>
                                     </tr>
@@ -9491,6 +9771,26 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <>
                             <span>📥</span>
                             <span>সিঙ্গেল PDF ডাউনলোড ({selectedProductIdsForQr.length})</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isGeneratingBarcodePdf}
+                        onClick={() => downloadBatchBarcodePdf()}
+                        className="bg-amber-400 hover:bg-amber-300 text-amber-950 px-4 py-2.5 rounded-full text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                        title="নির্বাচিত সকল পণ্যের বারকোড স্টিকার সম্বলিত রেডি-টু-প্রিন্ট PDF ডাউনলোড করুন"
+                      >
+                        {isGeneratingBarcodePdf ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-amber-950 border-t-transparent rounded-full animate-spin"></span>
+                            <span>বারকোড PDF তৈরি হচ্ছে...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>🏷️</span>
+                            <span>বারকোড স্টিকার PDF ({selectedProductIdsForQr.length})</span>
                           </>
                         )}
                       </button>
@@ -9734,6 +10034,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               >
                                 <span>📄</span>
                                 <span>PDF ট্যাগ</span>
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  setProductBarcodeModal(p);
+                                  setBarcodeStickerCount(Math.max(1, p.stock || 1));
+                                }}
+                                className="px-2.5 py-1.5 bg-gradient-to-r from-[#7a1c2b] to-amber-700 hover:from-[#631422] hover:to-amber-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1 shadow-xs active:scale-95 cursor-pointer"
+                                title="এই পণ্যের জন্য বারকোড তৈরি ও প্রিন্টেবল PDF স্টিকার ডাউনলোড করুন"
+                              >
+                                <span>🏷️</span>
+                                <span>বারকোড PDF স্টিকার</span>
                               </button>
                               <button 
                                 onClick={() => {
@@ -17009,42 +17321,104 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 </div>
 
-                {/* Print Sheet Options */}
-                <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 space-y-3">
+                {/* Print & PDF Barcode Sticker Studio */}
+                <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/60 p-4 sm:p-5 rounded-3xl border border-amber-300 shadow-sm space-y-3.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-gray-700">
-                      প্রিন্ট করার জন্য স্টিকার সংখ্যা বেছে নিন:
-                    </label>
-                    <span className="text-xs font-mono font-bold text-[#7a1c2b]">
-                      {barcodeStickerCount} টি লেবেল
+                    <div>
+                      <h5 className="text-xs sm:text-sm font-extrabold text-amber-950 flex items-center gap-1.5">
+                        <span>🏷️</span>
+                        <span>প্রিন্টেবল বারকোড স্টিকার জেনারেটর (PDF Sticker Studio)</span>
+                      </h5>
+                      <p className="text-[11px] text-amber-800">
+                        ইনভেন্টরি পণ্য ট্র্যাকিং ও প্যাকেজিংয়ের জন্য স্টিকার সংখ্যা বেছে নিন
+                      </p>
+                    </div>
+                    <span className="text-xs font-mono font-black text-[#7a1c2b] bg-amber-100 px-2.5 py-1 rounded-full border border-amber-300">
+                      {barcodeStickerCount} টি স্টিকার
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {[1, 4, 12, 24, 40].map(cnt => (
+                  {/* Preset & Custom Count Buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { cnt: 1, label: "১টি (নমুনা)" },
+                      { cnt: 4, label: "৪টি" },
+                      { cnt: 12, label: "১২টি (১ পেজ A4)" },
+                      { cnt: 24, label: "২৪টি (২ পেজ A4)" },
+                      { cnt: Math.max(1, Number(productBarcodeModal.stock) || 1), label: `স্টক সমান (${productBarcodeModal.stock || 1}টি)` }
+                    ].map(item => (
                       <button
-                        key={cnt}
+                        key={item.label}
                         type="button"
-                        onClick={() => setBarcodeStickerCount(cnt)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                          barcodeStickerCount === cnt
-                            ? "bg-[#7a1c2b] text-white shadow-sm"
-                            : "bg-white text-gray-700 border border-gray-200 hover:bg-amber-100"
+                        onClick={() => setBarcodeStickerCount(item.cnt)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          barcodeStickerCount === item.cnt
+                            ? "bg-[#7a1c2b] text-white shadow-sm scale-102"
+                            : "bg-white text-gray-700 border border-amber-200 hover:bg-amber-100"
                         }`}
                       >
-                        {cnt} টি
+                        {item.label}
                       </button>
                     ))}
+                    <div className="flex items-center gap-1 ml-auto">
+                      <span className="text-[11px] font-bold text-gray-500">কাস্টম:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="200"
+                        value={barcodeStickerCount}
+                        onChange={(e) => setBarcodeStickerCount(Math.max(1, Math.min(200, parseInt(e.target.value) || 1)))}
+                        className="w-16 bg-white border border-amber-300 rounded-lg px-2 py-1 text-xs font-mono font-bold text-center outline-none focus:border-[#7a1c2b]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* PDF Download and Print Action Buttons */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      disabled={isGeneratingBarcodePdf}
+                      onClick={() => downloadProductBarcodePdf(productBarcodeModal, barcodeStickerCount, "sheet")}
+                      className="py-2.5 px-3 bg-gradient-to-r from-[#7a1c2b] to-[#992235] hover:brightness-110 text-white rounded-2xl text-xs sm:text-sm font-black shadow-md transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                      title="A4 পেপারের জন্য ১২টি/২৪টি গ্রিড সম্বলিত রেডি-টু-প্রিন্ট PDF ডাউনলোড করুন"
+                    >
+                      {isGeneratingBarcodePdf ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          <span>PDF তৈরি হচ্ছে...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>📥</span>
+                          <span>A4 স্টিকার শিট PDF ({barcodeStickerCount})</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isGeneratingBarcodePdf}
+                      onClick={() => downloadProductBarcodePdf(productBarcodeModal, barcodeStickerCount, "thermal")}
+                      className="py-2.5 px-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:brightness-110 text-white rounded-2xl text-xs sm:text-sm font-black shadow-md transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                      title="থার্মাল বারকোড প্রিন্টারের জন্য ৬০x৪০ মিমি স্ট্যান্ডার্ড স্টিকার PDF ডাউনলোড করুন"
+                    >
+                      <span>🏷️</span>
+                      <span>থার্মাল স্টিকার PDF (60x40mm)</span>
+                    </button>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => printBarcodeLabelsWindow(productBarcodeModal, barcodeStickerCount)}
-                    className="w-full py-2.5 bg-gradient-to-r from-[#7a1c2b] to-amber-600 hover:brightness-110 text-white rounded-xl text-xs sm:text-sm font-black shadow-md transition flex items-center justify-center gap-2 active:scale-95"
+                    className="w-full py-2 bg-white hover:bg-amber-50 text-[#7a1c2b] border border-amber-300 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-2xs active:scale-95 cursor-pointer"
                   >
                     <span>🖨️</span>
-                    <span>বারকোড স্টিকার শিট প্রিন্ট করুন</span>
+                    <span>সরাসরি প্রিন্ট প্রিভিউ উইন্ডো খুলুন (Instant Print)</span>
                   </button>
+
+                  <p className="text-[10px] text-gray-500 text-center leading-relaxed">
+                    💡 <b>ইনভেন্টরি পরামর্শ:</b> এই স্টিকারে পণ্যের নাম, SKU এবং কোড ১২৮ বারকোড অন্তর্ভুক্ত রয়েছে। স্টিকারটি পণ্যের গায়ে বা প্যাকেটে লাগিয়ে রাখলে POS ও ইনভেন্টরি অডিটে সরাসরি স্ক্যান করা যাবে।
+                  </p>
                 </div>
 
                 {/* Quick Stock In / Out Operations */}
