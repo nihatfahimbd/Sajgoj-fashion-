@@ -3706,6 +3706,317 @@
         return () => window.removeEventListener("hashchange", checkDeepLink);
       }, [products]);
 
+      // =========================================================
+      // SAJGOJ ADVANCED POS & INVENTORY REAL-TIME SYNCHRONIZATION BRIDGE
+      // =========================================================
+
+      // 1. Sync Website Customers to POS Customer List
+      const syncCustomerToPos = (cust) => {
+        if (!cust || !cust.phone) return;
+        try {
+          const raw = localStorage.getItem("sajgoj_customers");
+          let posCustomers = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(posCustomers)) posCustomers = [];
+          const cleanPhone = String(cust.phone).trim();
+          const existingIdx = posCustomers.findIndex(c => c.phone && String(c.phone).trim() === cleanPhone);
+
+          const orderAmount = Number(cust.total || cust.totalSpent || 0);
+
+          if (existingIdx !== -1) {
+            const existing = posCustomers[existingIdx];
+            const newTotal = (Number(existing.totalSpent) || 0) + (orderAmount > 0 ? orderAmount : 0);
+            posCustomers[existingIdx] = {
+              ...existing,
+              name: cust.name || existing.name,
+              address: cust.address || existing.address || "",
+              email: cust.email || existing.email || "",
+              totalSpent: newTotal,
+              orderCount: (Number(existing.orderCount) || 1) + (orderAmount > 0 ? 1 : 0),
+              points: Math.floor(newTotal / 100),
+              tier: newTotal > 10000 ? "Gold" : newTotal > 5000 ? "Silver" : "Bronze"
+            };
+          } else {
+            posCustomers.unshift({
+              id: `cust-${cleanPhone.replace(/[^0-9]/g, "") || Date.now()}`,
+              name: cust.name || "অনলাইন কাস্টমার",
+              phone: cleanPhone,
+              email: cust.email || "",
+              address: cust.address || "",
+              points: Math.floor(orderAmount / 100),
+              totalSpent: orderAmount,
+              orderCount: 1,
+              dueAmount: 0,
+              totalDueCollected: 0,
+              createdAt: new Date().toISOString().split("T")[0],
+              tier: orderAmount > 10000 ? "Gold" : orderAmount > 5000 ? "Silver" : "Bronze",
+              pointsHistory: []
+            });
+          }
+          localStorage.setItem("sajgoj_customers", JSON.stringify(posCustomers));
+          window.dispatchEvent(new Event("storage"));
+        } catch (err) {
+          console.error("Failed to sync customer to POS:", err);
+        }
+      };
+
+      // 2. Sync all website customers from orders list to POS
+      const syncAllWebsiteCustomersToPos = (ordersList) => {
+        if (!Array.isArray(ordersList) || ordersList.length === 0) return;
+        try {
+          ordersList.forEach(o => {
+            if (o && o.phone) {
+              syncCustomerToPos({
+                name: o.customer || o.name,
+                phone: o.phone,
+                address: o.address,
+                email: o.email,
+                total: o.total
+              });
+            }
+          });
+        } catch (e) {}
+      };
+
+      // 3. Sync Products & Stock to POS Catalog
+      const syncProductsToPos = (productsList) => {
+        if (!Array.isArray(productsList) || productsList.length === 0) return;
+        try {
+          const raw = localStorage.getItem("sajgoj_products");
+          let posProducts = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(posProducts)) posProducts = [];
+
+          productsList.forEach(p => {
+            if (!p) return;
+            if (p.enabledForPos === false) return;
+
+            const cleanStock = Number(p.stock) || 0;
+            const cleanPrice = Number(p.price) || 0;
+            const cleanCost = Number(p.costPrice || Math.round(cleanPrice * 0.7)) || 0;
+            const sku = p.sku || `SAJ-${p.id}`;
+
+            const existingIdx = posProducts.findIndex(pp => pp.id === p.id || (pp.sku && pp.sku === sku) || pp.nameBn === p.name || pp.nameEn === p.name);
+
+            const posItem = {
+              id: String(p.id),
+              nameEn: p.name,
+              nameBn: p.name,
+              name: p.name,
+              sku: sku,
+              barcode: p.barcode || sku,
+              category: p.category || "শাড়ি",
+              costPrice: cleanCost,
+              sellingPrice: cleanPrice,
+              price: cleanPrice,
+              stock: cleanStock,
+              minStockAlert: 5,
+              image: (p.images && p.images[0]) || p.image || "",
+              sizes: p.sizes || [],
+              colors: p.colors || [],
+              enabledForPos: true
+            };
+
+            if (existingIdx !== -1) {
+              posProducts[existingIdx] = { ...posProducts[existingIdx], ...posItem };
+            } else {
+              posProducts.unshift(posItem);
+            }
+          });
+
+          localStorage.setItem("sajgoj_products", JSON.stringify(posProducts));
+          window.dispatchEvent(new Event("storage"));
+
+          const frame = document.getElementById("sajgoj-fullpos-frame");
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ type: "SAJGOJ_PRODUCTS_SYNC", products: posProducts }, "*");
+          }
+        } catch (err) {
+          console.error("Failed to sync products to POS:", err);
+        }
+      };
+
+      // 4. Deduct Stock in POS when Website Checkout occurs
+      const deductPosStock = (itemsList) => {
+        if (!Array.isArray(itemsList) || itemsList.length === 0) return;
+        try {
+          const raw = localStorage.getItem("sajgoj_products");
+          if (!raw) return;
+          let posProducts = JSON.parse(raw);
+          if (!Array.isArray(posProducts)) return;
+
+          let changed = false;
+          itemsList.forEach(it => {
+            const qty = Number(it.qty || it.quantity || 1);
+            const target = posProducts.find(pp => pp.id === it.id || pp.sku === it.sku || pp.nameBn === it.name || pp.nameEn === it.name);
+            if (target) {
+              target.stock = Math.max(0, (Number(target.stock) || 0) - qty);
+              changed = true;
+            }
+          });
+
+          if (changed) {
+            localStorage.setItem("sajgoj_products", JSON.stringify(posProducts));
+            window.dispatchEvent(new Event("storage"));
+            const frame = document.getElementById("sajgoj-fullpos-frame");
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({ type: "SAJGOJ_STOCK_DEDUCTED", items: itemsList }, "*");
+            }
+          }
+        } catch (err) {
+          console.error("Failed to deduct POS stock:", err);
+        }
+      };
+
+      // 5. Record Delivered Online Order in POS Sales & Received Payments
+      const recordDeliveredOrderInPos = (order) => {
+        if (!order || !order.id) return;
+        try {
+          const rawSales = localStorage.getItem("sajgoj_sales");
+          let posSales = rawSales ? JSON.parse(rawSales) : [];
+          if (!Array.isArray(posSales)) posSales = [];
+
+          const invoiceNo = `WEB-ORD-${order.id}`;
+          const alreadyRecorded = posSales.some(s => s.invoiceNo === invoiceNo || s.orderId === order.id);
+
+          if (!alreadyRecorded) {
+            const posSale = {
+              id: `sale-web-${order.id}`,
+              invoiceNo: invoiceNo,
+              orderId: order.id,
+              date: new Date().toISOString().split("T")[0],
+              time: new Date().toLocaleTimeString("bn-BD"),
+              timestamp: Date.now(),
+              customerName: order.customer || order.name || "অনলাইন কাস্টমার",
+              customerPhone: order.phone || "",
+              customerAddress: order.address || "",
+              items: (order.items || []).map(it => ({
+                productId: it.id || `prod-${it.name}`,
+                productName: it.name,
+                sku: it.sku || `SAJ-${it.id || 'WEB'}`,
+                category: it.category || "অনলাইন পণ্য",
+                unitPrice: Number(it.price) || 0,
+                quantity: Number(it.qty) || 1,
+                total: (Number(it.price) || 0) * (Number(it.qty) || 1)
+              })),
+              subtotal: Number(order.subtotal || order.total) || 0,
+              discount: Number(order.discount) || 0,
+              shipping: Number(order.deliveryCharge || order.shipping) || 0,
+              total: Number(order.total) || 0,
+              paidAmount: Number(order.total) || 0,
+              paymentMethod: `${order.paymentMethod || 'ক্যাশ অন ডেলিভারি'} (অনলাইন ডেলিভারি সম্পন্ন)`,
+              paymentStatus: "paid",
+              status: "completed",
+              orderSource: "website_online_delivered",
+              notes: `ওয়েবসাইট অনলাইন অর্ডার #${order.id} - সফল ডেলিভারির পর POS পেমেন্ট রিসিভড`
+            };
+            posSales.unshift(posSale);
+            localStorage.setItem("sajgoj_sales", JSON.stringify(posSales));
+
+            const rawPayments = localStorage.getItem("sajgoj_received_payments");
+            let posPayments = rawPayments ? JSON.parse(rawPayments) : [];
+            if (!Array.isArray(posPayments)) posPayments = [];
+            posPayments.unshift({
+              id: `pay-web-${order.id}`,
+              invoiceNo: invoiceNo,
+              date: new Date().toISOString().split("T")[0],
+              timestamp: Date.now(),
+              customerName: order.customer || order.name || "অনলাইন কাস্টমার",
+              customerPhone: order.phone || "",
+              amount: Number(order.total) || 0,
+              paymentMethod: order.paymentMethod || "COD",
+              note: `অনলাইন অর্ডার #${order.id} ডেলিভারি সম্পন্ন ও পেমেন্ট রিসিভড`
+            });
+            localStorage.setItem("sajgoj_received_payments", JSON.stringify(posPayments));
+
+            syncCustomerToPos({
+              name: order.customer || order.name,
+              phone: order.phone,
+              address: order.address,
+              email: order.email,
+              total: order.total
+            });
+
+            window.dispatchEvent(new Event("storage"));
+            const frame = document.getElementById("sajgoj-fullpos-frame");
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({ type: "SAJGOJ_SALE_RECORDED", sale: posSale }, "*");
+            }
+          }
+        } catch (err) {
+          console.error("Failed to record delivered order in POS:", err);
+        }
+      };
+
+      // 6. Automated Synchronization Hooks (Products, Orders, Customers)
+      useEffect(() => {
+        if (products && products.length > 0) {
+          syncProductsToPos(products);
+        }
+      }, [products]);
+
+      useEffect(() => {
+        if (orders && orders.length > 0) {
+          syncAllWebsiteCustomersToPos(orders);
+        }
+      }, [orders]);
+
+      // 7. Bidirectional Stock Listener: When POS sells, update Website Catalog Stock
+      useEffect(() => {
+        const handleStorageChange = (e) => {
+          if (e.key === "sajgoj_products" && e.newValue) {
+            try {
+              const posProds = JSON.parse(e.newValue);
+              if (Array.isArray(posProds)) {
+                setProducts(prev => {
+                  let hasChanges = false;
+                  const updated = prev.map(p => {
+                    const match = posProds.find(pp => pp.id === p.id || (pp.sku && pp.sku === p.sku) || pp.nameBn === p.name || pp.nameEn === p.name);
+                    if (match && match.stock !== undefined && Number(match.stock) !== Number(p.stock)) {
+                      hasChanges = true;
+                      const newStock = Number(match.stock);
+                      syncDocToCloud("products", p.id, { stock: newStock });
+                      return { ...p, stock: newStock };
+                    }
+                    return p;
+                  });
+                  return hasChanges ? updated : prev;
+                });
+              }
+            } catch (err) {}
+          }
+        };
+
+        window.addEventListener("storage", handleStorageChange);
+        const pollInterval = setInterval(() => {
+          try {
+            const raw = localStorage.getItem("sajgoj_products");
+            if (raw) {
+              const posProds = JSON.parse(raw);
+              if (Array.isArray(posProds)) {
+                setProducts(prev => {
+                  let hasChanges = false;
+                  const updated = prev.map(p => {
+                    const match = posProds.find(pp => pp.id === p.id || (pp.sku && pp.sku === p.sku) || pp.nameBn === p.name || pp.nameEn === p.name);
+                    if (match && match.stock !== undefined && Number(match.stock) !== Number(p.stock)) {
+                      hasChanges = true;
+                      const newStock = Number(match.stock);
+                      syncDocToCloud("products", p.id, { stock: newStock });
+                      return { ...p, stock: newStock };
+                    }
+                    return p;
+                  });
+                  return hasChanges ? updated : prev;
+                });
+              }
+            }
+          } catch(e) {}
+        }, 3000);
+
+        return () => {
+          window.removeEventListener("storage", handleStorageChange);
+          clearInterval(pollInterval);
+        };
+      }, []);
+
       // Review System State (With Photo Upload & Verified Buyer Enforcement)
       const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
       const [reviewRating, setReviewRating] = useState(5);
@@ -3957,7 +4268,9 @@
         bogo: false,
         bogoText: "১টি কিনলে ১টি ফ্রি",
         colors: [],
-        sizes: []
+        sizes: [],
+        enabledForWeb: true,
+        enabledForPos: true
       });
       const [adminProductBogoFilter, setAdminProductBogoFilter] = useState("All");
       const [adminProductSubTab, setAdminProductSubTab] = useState("list"); // "list", "stock", "sales", "categories"
@@ -5273,6 +5586,18 @@
           return updatedP;
         }));
 
+        // 1. Automatically sync customer to POS customer list
+        syncCustomerToPos({
+          name: checkoutForm.name,
+          phone: checkoutForm.phone,
+          address: checkoutForm.address,
+          email: checkoutForm.email || "",
+          total: orderData.total
+        });
+
+        // 2. Automatically deduct stock in POS inventory
+        deductPosStock(cart);
+
         setOrders(prev => [orderData, ...prev]);
         syncDocToCloud("orders", newOrderId, orderData);
 
@@ -5299,10 +5624,30 @@
         notify(`অর্ডার #${orderId} সফলভাবে ${provider}-এ বুকিং করা হয়েছে! ট্র্যাকিং ID: ${tracking}`);
       };
 
-      // Change Order Status
+      // Change Order Status (With POS Payment Recording on Delivery)
       const updateOrderStatus = (orderId, newStatus) => {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        let deliveredOrder = null;
+        setOrders(prev => prev.map(o => {
+          if (o.id === orderId) {
+            const updated = { ...o, status: newStatus };
+            if (newStatus === "Delivered") {
+              deliveredOrder = updated;
+            }
+            return updated;
+          }
+          return o;
+        }));
         syncDocToCloud("orders", orderId, { status: newStatus });
+
+        // When order is Delivered: Automatically record payment received in POS!
+        if (newStatus === "Delivered") {
+          const target = deliveredOrder || orders.find(o => o.id === orderId);
+          if (target) {
+            recordDeliveredOrderInPos(target);
+            notify(`অর্ডার #${orderId} এর ডেলিভারি সম্পন্ন! POS সেলস ও ক্যাশ রেজিস্টারে পেমেন্ট রিসিভড হিসেবে যুক্ত হয়েছে! 💰`);
+            return;
+          }
+        }
         notify(`অর্ডার #${orderId} এর স্ট্যাটাস "${newStatus}" করা হয়েছে! ✅`);
       };
 
@@ -5746,6 +6091,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
       // Filtered Products (with BOGO, 3-Tier Category Hierarchy & Sub-Category filter support)
       const filteredProducts = products.filter(p => {
+        if (p.enabledForWeb === false) return false;
         const matchesSearch = p.name.toLowerCase().includes(storeSearch.toLowerCase()) || p.sku.toLowerCase().includes(storeSearch.toLowerCase());
 
         let matchesCat = true;
@@ -7317,1065 +7663,175 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               {/* Main Admin Content Body */}
               <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
                 {/* ========================================================= */}
-                {/* 1.1 IN-STORE POS CASH REGISTER & BILLING COUNTER */}
+                {/* 1.1 SAJGOJ ADVANCED UNIFIED POS & INVENTORY SYSTEM         */}
                 {/* ========================================================= */}
-                {activeTab === "POS" && (() => {
-                  const filteredPosProducts = products.filter(p => {
-                    const q = posSearchQuery.trim().toLowerCase();
-                    const matchesSearch = !q || 
-                      (p.name && p.name.toLowerCase().includes(q)) ||
-                      (p.sku && p.sku.toLowerCase().includes(q)) ||
-                      (p.category && p.category.toLowerCase().includes(q));
-                    const matchesCategory = posCategoryFilter === "All" || p.category === posCategoryFilter;
-                    return matchesSearch && matchesCategory;
-                  });
-
-                  const posOrdersList = orders.filter(o => o.orderType === "POS_SALE");
-                  const todayPosOrders = posOrdersList.filter(o => {
-                    const todayStr = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
-                    return o.date === todayStr || (o.timestamp && Date.now() - o.timestamp < 24 * 3600 * 1000);
-                  });
-                  const todayPosRevenue = todayPosOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-
-                  const filteredHistoryOrders = posOrdersList.filter(o => {
-                    if (!posHistoryFilter.trim()) return true;
-                    const f = posHistoryFilter.toLowerCase();
-                    return (o.id && o.id.toLowerCase().includes(f)) ||
-                           (o.customer && o.customer.toLowerCase().includes(f)) ||
-                           (o.phone && o.phone.includes(f));
-                  });
-
-                  return (
-                    <div className="space-y-6 animate-fadeIn pb-12">
-                      {/* POS TOP COMMAND BAR */}
-                      <div className="bg-gradient-to-r from-[#21110e] via-[#451817] to-[#7a1c2b] text-white p-5 sm:p-6 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4 border border-orange-500/20">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-3xl p-2 bg-orange-500/20 rounded-2xl border border-orange-400/30">🛒</span>
-                            <div>
-                              <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2">
-                                <span>সাজগোজ শোরুম POS ও ক্যাশ কাউন্টার</span>
-                                <span className="text-xs bg-emerald-500 text-white font-extrabold px-2 py-0.5 rounded-full tracking-wide">
-                                  LIVE
-                                </span>
+                {activeTab === "POS" && (
+                  <div className="space-y-5 animate-fadeIn pb-12">
+                    {/* MASTER COMMAND BAR */}
+                    <div className="bg-gradient-to-r from-[#1a0a0d] via-[#3d1017] to-[#7a1c2b] text-white p-5 sm:p-6 rounded-3xl shadow-xl border border-orange-500/20">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center text-2xl shadow-lg border border-amber-300/40">
+                            🛒
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h2 className="text-lg sm:text-2xl font-black tracking-wide text-white">
+                                সাজগোজ অল-ইন-ওয়ান পূর্ণাঙ্গ POS ও ইনভেন্টরি
                               </h2>
-                              <p className="text-xs sm:text-sm text-orange-200">
-                                অনলাইন স্টোরফ্রন্টের সাথে রিয়েল-টাইম স্টক সিঙ্ক ও তাৎক্ষণিক মেমো প্রিন্টিং
-                              </p>
+                              <span className="bg-emerald-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                Enterprise PRO
+                              </span>
                             </div>
+                            <p className="text-xs sm:text-sm text-orange-200 mt-0.5">
+                              আপনার নিজস্ব অ্যাডভান্সড POS অ্যাপ • ওয়েবসাইট ও POS-এর রিয়েল-টাইম অটো-স্টক সিঙ্ক
+                            </p>
                           </div>
                         </div>
 
-                        {/* Top Action Pills & Shift Metrics */}
+                        {/* Top Action Buttons */}
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <div className="bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/10 text-xs">
-                            <span className="text-orange-200 block text-[10px]">আজকের POS মোট সেলস</span>
-                            <span className="font-black text-amber-300 text-sm sm:text-base">৳{todayPosRevenue.toLocaleString()}</span>
-                            <span className="text-[10px] text-gray-300 ml-1.5">({todayPosOrders.length}টি মেমো)</span>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              syncProductsToPos(products);
+                              syncAllWebsiteCustomersToPos(orders);
+                              const frame = document.getElementById("sajgoj-fullpos-frame");
+                              if (frame) {
+                                frame.src = frame.src;
+                              }
+                              notify("✓ ওয়েবসাইট ও POS স্টক এবং কাস্টমার তালিকা সফলভাবে সিঙ্ক হয়েছে!");
+                            }}
+                            className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 border border-white/15 backdrop-blur-sm active:scale-95 shadow-sm"
+                            title="স্টক ও কাস্টমার ডেটা রিসিঙ্ক করুন"
+                          >
+                            <span>🔄</span>
+                            <span>রিসিঙ্ক ও রিলোড</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const frame = document.getElementById("sajgoj-fullpos-frame");
+                              if (frame && frame.requestFullscreen) {
+                                frame.requestFullscreen();
+                              } else {
+                                window.open("./pos/", "_blank");
+                              }
+                            }}
+                            className="px-3.5 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-2xl text-xs font-black transition flex items-center gap-1.5 shadow-md active:scale-95"
+                            title="ফুলস্ক্রিন মোডে বড় পর্দায় চালান"
+                          >
+                            <span>⛶</span>
+                            <span>ফুলস্ক্রিন ভিউ</span>
+                          </button>
 
                           <a
                             href="./pos/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3.5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-2xl font-black text-xs transition flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95"
+                            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black rounded-2xl text-xs transition flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 border border-amber-300"
                           >
                             <span>🚀</span>
-                            <span>ফুলস্ক্রিন অ্যাডভান্সড POS অ্যাপ ↗</span>
+                            <span>ফুলস্ক্রিন আলাদা অ্যাপ ↗</span>
                           </a>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsScannerOpen(true);
-                              startScanner();
-                            }}
-                            className="px-3.5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl font-bold text-xs transition flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95"
-                          >
-                            <span>📷</span>
-                            <span>বারকোড স্ক্যানার</span>
-                          </button>
                         </div>
                       </div>
 
-                      {/* SUB-TABS NAVIGATION */}
-                      <div className="flex items-center justify-between border-b border-gray-200 pb-2 overflow-x-auto gap-2">
+                      {/* Live Sync Status Bar */}
+                      <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-orange-200/90 gap-2">
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setPosActiveSubTab("advanced_pos")}
-                            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-black transition flex items-center gap-2 ${
-                              posActiveSubTab === "advanced_pos"
-                                ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md scale-105"
-                                : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-bold"
-                            }`}
-                          >
-                            <span>💎</span>
-                            <span>পূর্ণাঙ্গ সাজগোজ POS ও ইনভেন্টরি</span>
-                            <span className="bg-emerald-200 text-emerald-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
-                              PRO
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setPosActiveSubTab("counter")}
-                            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
-                              posActiveSubTab === "counter"
-                                ? "bg-[#7a1c2b] text-white shadow-md scale-105"
-                                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-                            }`}
-                          >
-                            <span>🛒</span>
-                            <span>বিলিং কাউন্টার</span>
-                            {posCart.length > 0 && (
-                              <span className="bg-amber-400 text-amber-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
-                                {posCart.reduce((s, i) => s + (i.qty || 1), 0)}
-                              </span>
-                            )}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setPosActiveSubTab("history")}
-                            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
-                              posActiveSubTab === "history"
-                                ? "bg-[#7a1c2b] text-white shadow-md scale-105"
-                                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-                            }`}
-                          >
-                            <span>📜</span>
-                            <span>POS সেলস হিস্ট্রি</span>
-                            <span className="text-[10px] px-1.5 py-0.2 bg-gray-100 text-gray-700 rounded-full font-bold">
-                              {posOrdersList.length}
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setPosActiveSubTab("held")}
-                            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
-                              posActiveSubTab === "held"
-                                ? "bg-[#7a1c2b] text-white shadow-md scale-105"
-                                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-                            }`}
-                          >
-                            <span>⏸️</span>
-                            <span>হোল্ড করা অর্ডার</span>
-                            {posHeldOrders.length > 0 && (
-                              <span className="bg-orange-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
-                                {posHeldOrders.length}
-                              </span>
-                            )}
-                          </button>
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                          <span className="font-semibold text-emerald-300">অটোমেটিক ২-ওয়ে স্টক সিঙ্ক সক্রিয়:</span>
+                          <span className="text-gray-300">যেকোনো চ্যানেল থেকে বিক্রি হলে উভয় জায়গাতেই তাৎক্ষণিক স্টক কমবে</span>
                         </div>
+                        <div className="flex items-center gap-3 text-[11px]">
+                          <span className="bg-black/30 px-2.5 py-1 rounded-xl border border-white/10">
+                            📦 মোট সিঙ্কড প্রোডাক্ট: <b>{products.length}</b>টি
+                          </span>
+                          <span className="bg-black/30 px-2.5 py-1 rounded-xl border border-white/10">
+                            👥 POS কাস্টমার ডেটাবেজ: <b>অটো-সিঙ্কড</b>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-                        {posActiveSubTab === "counter" && (
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={holdCurrentPosOrder}
-                              disabled={posCart.length === 0}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 disabled:opacity-40 transition flex items-center gap-1"
-                            >
-                              <span>⏸️</span>
-                              <span>অর্ডার হোল্ড</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={clearPosCart}
-                              disabled={posCart.length === 0}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100 disabled:opacity-40 transition flex items-center gap-1"
-                            >
-                              <span>🗑️</span>
-                              <span>ক্লিয়ার</span>
-                            </button>
-                          </div>
-                        )}
+                    {/* Feature Capabilities Strip */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">🛒</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">লাইভ বিলিং</span>
+                        <span className="text-[9px] text-[#7a1c2b]">থার্মাল মেমো প্রিন্ট</span>
+                      </div>
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">🏷️</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">বারকোড/QR</span>
+                        <span className="text-[9px] text-[#7a1c2b]">লেবেল স্টুডিও</span>
+                      </div>
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">📦</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">স্টক লেজার</span>
+                        <span className="text-[9px] text-[#7a1c2b]">এডজাস্টমেন্ট ও লগ</span>
+                      </div>
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">💰</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">বাকির খাতা</span>
+                        <span className="text-[9px] text-[#7a1c2b]">Due/Credit Book</span>
+                      </div>
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">🚚</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">সাপ্লায়ার খাতা</span>
+                        <span className="text-[9px] text-[#7a1c2b]">পারচেজ চালান</span>
+                      </div>
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">📊</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">ক্যাশ ক্লোজিং</span>
+                        <span className="text-[9px] text-[#7a1c2b]">দৈনিক শিফট রেজিস্টার</span>
+                      </div>
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">👑</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">VIP কাস্টমার</span>
+                        <span className="text-[9px] text-[#7a1c2b]">লয়ালটি পয়েন্ট</span>
+                      </div>
+                      <div className="bg-white border border-[#f3e2d0] p-2.5 rounded-2xl text-center shadow-xs">
+                        <span className="text-lg block">☁️</span>
+                        <span className="text-[11px] font-bold text-gray-800 block leading-tight">ড্রাইভ ব্যাকআপ</span>
+                        <span className="text-[9px] text-[#7a1c2b]">PWA অফলাইন</span>
+                      </div>
+                    </div>
+
+                    {/* EMBEDDED ADVANCED POS FRAME */}
+                    <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-2xl relative">
+                      <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between text-xs border-b border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                          <span className="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span>
+                          <span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+                          <span className="font-mono text-[11px] text-gray-400 ml-2">https://sajgoj.nfbd.workers.dev/pos/</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-emerald-400 text-[11px] font-semibold">● সিস্টেম অনলাইন ও সিঙ্কড</span>
+                          <a
+                            href="./pos/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-amber-300 hover:text-white font-bold underline text-[11px]"
+                          >
+                            নতুন উইন্ডোতে খুলুন ↗
+                          </a>
+                        </div>
                       </div>
 
-                      {/* ======================================================= */}
-                      {/* SUBTAB 1: LIVE BILLING COUNTER (2-COLUMN DUAL PANEL)   */}
-                      {/* ======================================================= */}
-                      {posActiveSubTab === "counter" && (
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                          
-                          {/* LEFT PANEL: PRODUCT CATALOG (7 COLS) */}
-                          <div className="lg:col-span-7 space-y-4">
-                            {/* Search & Category Filter Bar */}
-                            <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3">
-                              <div className="flex items-center gap-2">
-                                <div className="relative flex-1">
-                                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
-                                  <input
-                                    type="text"
-                                    value={posSearchQuery}
-                                    onChange={(e) => setPosSearchQuery(e.target.value)}
-                                    placeholder="প্রোডাক্টের নাম, SKU বা বারকোড দিয়ে সার্চ করুন..."
-                                    className="w-full pl-9 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#7a1c2b] focus:bg-white transition"
-                                  />
-                                  {posSearchQuery && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setPosSearchQuery("")}
-                                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs w-5 h-5 flex items-center justify-center rounded-full bg-gray-200"
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsScannerOpen(true);
-                                    startScanner();
-                                  }}
-                                  className="p-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-sm font-bold shadow-sm transition"
-                                  title="ক্যামেরা বারকোড স্ক্যানার"
-                                >
-                                  📷
-                                </button>
-                              </div>
-
-                              {/* Category Filter Pills */}
-                              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide text-xs">
-                                <button
-                                  type="button"
-                                  onClick={() => setPosCategoryFilter("All")}
-                                  className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition ${
-                                    posCategoryFilter === "All"
-                                      ? "bg-[#7a1c2b] text-white shadow-xs"
-                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                  }`}
-                                >
-                                  সকল ({products.length})
-                                </button>
-                                {categories.map(c => {
-                                  const cCount = products.filter(p => p.category === c.name).length;
-                                  return (
-                                    <button
-                                      key={c.id || c.name}
-                                      type="button"
-                                      onClick={() => setPosCategoryFilter(c.name)}
-                                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition ${
-                                        posCategoryFilter === c.name
-                                          ? "bg-[#7a1c2b] text-white shadow-xs"
-                                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                      }`}
-                                    >
-                                      {c.name} ({cCount})
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* Product Cards Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[640px] overflow-y-auto p-1 scrollbar-thin">
-                              {filteredPosProducts.length === 0 ? (
-                                <div className="col-span-full py-16 text-center bg-white rounded-3xl border border-dashed border-gray-300 p-6 space-y-2">
-                                  <span className="text-4xl block">🔍</span>
-                                  <p className="text-gray-500 font-bold text-sm">কোনো প্রোডাক্ট পাওয়া যায়নি!</p>
-                                  <p className="text-xs text-gray-400">অন্য কোনো নাম বা ক্যাটাগরি দিয়ে চেষ্টা করুন</p>
-                                </div>
-                              ) : (
-                                filteredPosProducts.map(p => {
-                                  const stockNum = Number(p.stock) || 0;
-                                  const isOut = stockNum <= 0;
-                                  const defaultSize = (p.sizes && p.sizes[0]) || (p.category === "শাড়ি" ? "Free" : "M");
-                                  const defaultColor = (p.colors && p.colors[0]) || (p.color || "Default");
-
-                                  return (
-                                    <div
-                                      key={p.id}
-                                      className={`bg-white rounded-2xl border p-2.5 flex flex-col justify-between transition-all duration-200 shadow-sm hover:shadow-md ${
-                                        isOut ? "border-rose-200 bg-rose-50/20 opacity-75" : "border-gray-200 hover:border-orange-400"
-                                      }`}
-                                    >
-                                      <div>
-                                        {/* Image Box */}
-                                        <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-50 mb-2">
-                                          <img
-                                            src={p.image || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400"}
-                                            alt={p.name}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                              e.target.onerror = null;
-                                              e.target.src = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400";
-                                            }}
-                                          />
-                                          {/* Stock Badge */}
-                                          <div className="absolute top-1.5 right-1.5">
-                                            {isOut ? (
-                                              <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
-                                                স্টক আউট
-                                              </span>
-                                            ) : stockNum <= 5 ? (
-                                              <span className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
-                                                বাকি {stockNum}টি
-                                              </span>
-                                            ) : (
-                                              <span className="bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
-                                                স্টক: {stockNum}
-                                              </span>
-                                            )}
-                                          </div>
-                                          {/* SKU Tag */}
-                                          {p.sku && (
-                                            <div className="absolute bottom-1 left-1 bg-black/60 backdrop-blur-xs text-white text-[8px] font-mono px-1 rounded">
-                                              {p.sku}
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {/* Title & Category */}
-                                        <div className="space-y-0.5 mb-1.5">
-                                          <span className="text-[10px] text-gray-500 block truncate font-medium">
-                                            {p.category}
-                                          </span>
-                                          <h4 className="font-bold text-xs text-gray-900 line-clamp-1 leading-snug" title={p.name}>
-                                            {p.name}
-                                          </h4>
-                                        </div>
-
-                                        {/* Price display */}
-                                        <div className="flex items-baseline gap-1.5 mb-2">
-                                          <span className="font-black text-[#7a1c2b] text-sm">৳{p.price}</span>
-                                          {p.regularPrice && Number(p.regularPrice) > Number(p.price) && (
-                                            <span className="text-[10px] text-gray-400 line-through">৳{p.regularPrice}</span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Add to Cart Button */}
-                                      <button
-                                        type="button"
-                                        disabled={isOut}
-                                        onClick={() => addToPosCart(p, defaultSize, defaultColor)}
-                                        className={`w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95 ${
-                                          isOut
-                                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                            : "bg-[#7a1c2b] hover:bg-[#631421] text-white"
-                                        }`}
-                                      >
-                                        <span>+</span>
-                                        <span>{isOut ? "স্টক নেই" : "কার্টে যোগ"}</span>
-                                      </button>
-                                    </div>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </div>
-
-                          {/* RIGHT PANEL: BILLING CART & CASH REGISTER (5 COLS) */}
-                          <div className="lg:col-span-5 space-y-4">
-                            <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-200/80 shadow-xl space-y-4 sticky top-4">
-                              
-                              {/* 1. Customer Selection Header */}
-                              <div className="bg-orange-50/70 p-3 rounded-2xl border border-orange-200/60 space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-extrabold text-[#7a1c2b] flex items-center gap-1.5">
-                                    <span>👤</span>
-                                    <span>কাস্টমার তথ্য</span>
-                                  </span>
-                                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-gray-700">
-                                    <input
-                                      type="checkbox"
-                                      checked={isWalkInCustomer}
-                                      onChange={(e) => setIsWalkInCustomer(e.target.checked)}
-                                      className="rounded text-orange-600 focus:ring-orange-500"
-                                    />
-                                    <span>ওয়াক-ইন (সাধারণ ক্রেতা)</span>
-                                  </label>
-                                </div>
-
-                                {!isWalkInCustomer && (
-                                  <div className="space-y-2 pt-1 animate-fadeIn">
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <input
-                                        type="text"
-                                        placeholder="কাস্টমারের নাম"
-                                        value={posCustomerName}
-                                        onChange={(e) => setPosCustomerName(e.target.value)}
-                                        className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                                      />
-                                      <input
-                                        type="tel"
-                                        placeholder="মোবাইল নম্বর"
-                                        value={posCustomerPhone}
-                                        onChange={(e) => {
-                                          const phoneVal = e.target.value;
-                                          setPosCustomerPhone(phoneVal);
-                                          // VIP / Existing Customer lookup
-                                          if (phoneVal.length >= 11) {
-                                            const existingC = customers.find(c => c.phone && c.phone.includes(phoneVal));
-                                            if (existingC && !posCustomerName) {
-                                              setPosCustomerName(existingC.name || "");
-                                              notify(`স্বাগত VIP মেম্বার: ${existingC.name}!`);
-                                            }
-                                          }
-                                        }}
-                                        className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                                      />
-                                    </div>
-                                    <input
-                                      type="text"
-                                      placeholder="ঠিকানা / নোট (ঐচ্ছিক)"
-                                      value={posCustomerAddress}
-                                      onChange={(e) => setPosCustomerAddress(e.target.value)}
-                                      className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* 2. Cart Items Table */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs font-bold text-gray-700 px-1">
-                                  <span>আইটেম তালিকা ({posCart.length})</span>
-                                  <span className="text-[11px] text-gray-500">মোট পিস: {posCart.reduce((s, i) => s + (i.qty || 1), 0)}</span>
-                                </div>
-
-                                <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1 divide-y divide-gray-100">
-                                  {posCart.length === 0 ? (
-                                    <div className="py-8 text-center text-gray-400 space-y-1">
-                                      <span className="text-3xl block">🛍️</span>
-                                      <p className="text-xs font-bold">কার্ট খালি</p>
-                                      <p className="text-[10px]">পণ্য ক্লিক করে কার্টে যোগ করুন</p>
-                                    </div>
-                                  ) : (
-                                    posCart.map((item, idx) => (
-                                      <div key={idx} className="pt-2 first:pt-0 flex items-center justify-between gap-2 text-xs">
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-1.5">
-                                            <h5 className="font-bold text-gray-900 truncate" title={item.product.name}>
-                                              {item.product.name}
-                                            </h5>
-                                          </div>
-                                          {/* Variant selectors / tags */}
-                                          <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
-                                            {item.product.sizes && item.product.sizes.length > 1 ? (
-                                              <select
-                                                value={item.selectedSize}
-                                                onChange={(e) => updatePosCartItemVariant(idx, "selectedSize", e.target.value)}
-                                                className="bg-gray-100 border border-gray-300 rounded px-1 py-0.5 text-[9px]"
-                                              >
-                                                {item.product.sizes.map(s => <option key={s} value={s}>{cleanVariation(s)}</option>)}
-                                              </select>
-                                            ) : (
-                                              <span>{cleanVariation(item.selectedSize)}</span>
-                                            )}
-                                            <span>•</span>
-                                            <span className="flex items-center gap-1">
-                                              <span>দর: ৳</span>
-                                              <input
-                                                type="number"
-                                                value={item.price}
-                                                onChange={(e) => updatePosCartItemPrice(idx, e.target.value)}
-                                                className="w-14 px-1 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] font-bold text-[#7a1c2b]"
-                                              />
-                                            </span>
-                                          </div>
-                                        </div>
-
-                                        {/* Quantity Stepper */}
-                                        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 border border-gray-200">
-                                          <button
-                                            type="button"
-                                            onClick={() => updatePosCartItemQty(idx, -1)}
-                                            className="w-5 h-5 flex items-center justify-center font-bold text-gray-700 hover:bg-white rounded transition"
-                                          >
-                                            -
-                                          </button>
-                                          <span className="w-5 text-center font-black text-xs">{item.qty}</span>
-                                          <button
-                                            type="button"
-                                            onClick={() => updatePosCartItemQty(idx, 1)}
-                                            className="w-5 h-5 flex items-center justify-center font-bold text-gray-700 hover:bg-white rounded transition"
-                                          >
-                                            +
-                                          </button>
-                                        </div>
-
-                                        {/* Line Total */}
-                                        <div className="text-right w-16">
-                                          <span className="font-black text-[#7a1c2b] text-xs">
-                                            ৳{(item.price * item.qty).toLocaleString()}
-                                          </span>
-                                        </div>
-
-                                        {/* Remove button */}
-                                        <button
-                                          type="button"
-                                          onClick={() => removePosCartItem(idx)}
-                                          className="text-gray-400 hover:text-rose-600 font-bold p-1 transition"
-                                          title="মুছুন"
-                                        >
-                                          ✕
-                                        </button>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* 3. Financial Calculation & Discounts */}
-                              <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200 space-y-2 text-xs">
-                                <div className="flex justify-between items-center text-gray-600 font-medium">
-                                  <span>সাবটোটাল:</span>
-                                  <span className="font-bold text-gray-900">৳{posSubtotal.toLocaleString()}</span>
-                                </div>
-
-                                {/* Discount Controls */}
-                                <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-200">
-                                  <span className="text-gray-600 font-medium">ছাড় (Discount):</span>
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="flex bg-white rounded-lg border border-gray-200 p-0.5 text-[10px] font-bold">
-                                      <button
-                                        type="button"
-                                        onClick={() => setPosDiscountType("flat")}
-                                        className={`px-1.5 py-0.5 rounded ${posDiscountType === "flat" ? "bg-orange-600 text-white" : "text-gray-600"}`}
-                                      >
-                                        ৳
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setPosDiscountType("percent")}
-                                        className={`px-1.5 py-0.5 rounded ${posDiscountType === "percent" ? "bg-orange-600 text-white" : "text-gray-600"}`}
-                                      >
-                                        %
-                                      </button>
-                                    </div>
-                                    <input
-                                      type="number"
-                                      placeholder="0"
-                                      value={posDiscountValue}
-                                      onChange={(e) => setPosDiscountValue(e.target.value)}
-                                      className="w-16 px-2 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-right focus:outline-none focus:ring-1 focus:ring-orange-500"
-                                    />
-                                    {posDiscount > 0 && (
-                                      <span className="text-rose-600 font-bold text-xs">
-                                        -৳{posDiscount}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Quick Discount Chips */}
-                                <div className="flex items-center gap-1 justify-end">
-                                  {["50", "100", "200"].map(amt => (
-                                    <button
-                                      key={amt}
-                                      type="button"
-                                      onClick={() => {
-                                        setPosDiscountType("flat");
-                                        setPosDiscountValue(amt);
-                                      }}
-                                      className="px-2 py-0.5 bg-white hover:bg-orange-50 border border-gray-200 text-gray-600 rounded text-[10px] font-bold transition"
-                                    >
-                                      ৳{amt}
-                                    </button>
-                                  ))}
-                                  {["5", "10"].map(pct => (
-                                    <button
-                                      key={pct}
-                                      type="button"
-                                      onClick={() => {
-                                        setPosDiscountType("percent");
-                                        setPosDiscountValue(pct);
-                                      }}
-                                      className="px-2 py-0.5 bg-white hover:bg-orange-50 border border-gray-200 text-gray-600 rounded text-[10px] font-bold transition"
-                                    >
-                                      {pct}%
-                                    </button>
-                                  ))}
-                                </div>
-
-                                {/* Grand Total Display */}
-                                <div className="flex justify-between items-center pt-2 border-t-2 border-gray-300">
-                                  <span className="font-extrabold text-sm text-gray-900">সর্বমোট প্রদেয় বিল:</span>
-                                  <span className="font-black text-xl text-[#7a1c2b]">
-                                    ৳{posGrandTotal.toLocaleString()}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* 4. Payment Tender & Methods */}
-                              <div className="space-y-2">
-                                <span className="text-xs font-bold text-gray-700 block">পেমেন্ট মাধ্যম নির্বাচন:</span>
-                                <div className="grid grid-cols-3 gap-1.5 text-xs font-bold">
-                                  {[
-                                    { id: "Cash", label: "💵 ক্যাশ", icon: "💵" },
-                                    { id: "bKash", label: "📱 বিকাশ", icon: "📱" },
-                                    { id: "Nagad", label: "💳 নগদ", icon: "💳" },
-                                    { id: "Card", label: "💳 কার্ড", icon: "💳" },
-                                    { id: "Split", label: "🔀 স্প্লিট", icon: "🔀" },
-                                    { id: "Due", label: "⏳ বাকি", icon: "⏳" }
-                                  ].map(pm => (
-                                    <button
-                                      key={pm.id}
-                                      type="button"
-                                      onClick={() => {
-                                        setPosPaymentMethod(pm.id);
-                                        if (pm.id === "Cash" && !posPaidAmount) {
-                                          setPosPaidAmount(String(posGrandTotal));
-                                        }
-                                      }}
-                                      className={`py-2 px-2 rounded-xl border text-center transition flex items-center justify-center gap-1 ${
-                                        posPaymentMethod === pm.id
-                                          ? "bg-gradient-to-r from-[#7a1c2b] to-[#922234] text-white border-transparent shadow-sm font-black"
-                                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                                      }`}
-                                    >
-                                      <span>{pm.label}</span>
-                                    </button>
-                                  ))}
-                                </div>
-
-                                {/* Cash Tender & Change Due Calculator */}
-                                {posPaymentMethod === "Cash" && (
-                                  <div className="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-2 animate-fadeIn">
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="font-bold text-emerald-950">কাস্টমার প্রদত্ত টাকা:</span>
-                                      <div className="flex items-center gap-1">
-                                        <span className="font-bold">৳</span>
-                                        <input
-                                          type="number"
-                                          value={posPaidAmount}
-                                          onChange={(e) => setPosPaidAmount(e.target.value)}
-                                          placeholder={String(posGrandTotal)}
-                                          className="w-24 px-2 py-1 bg-white border border-emerald-300 rounded-lg text-sm font-black text-right text-emerald-950 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                        />
-                                      </div>
-                                    </div>
-
-                                    {/* Quick cash denomination chips */}
-                                    <div className="flex items-center gap-1.5 justify-end flex-wrap">
-                                      <button
-                                        type="button"
-                                        onClick={() => setPosPaidAmount(String(posGrandTotal))}
-                                        className="px-2 py-0.5 bg-emerald-600 text-white rounded text-[10px] font-bold"
-                                      >
-                                        সঠিক টাকা (৳{posGrandTotal})
-                                      </button>
-                                      {[500, 1000, 1500, 2000].map(cashVal => (
-                                        <button
-                                          key={cashVal}
-                                          type="button"
-                                          onClick={() => setPosPaidAmount(String(cashVal))}
-                                          className="px-2 py-0.5 bg-white border border-emerald-300 text-emerald-900 rounded text-[10px] font-bold hover:bg-emerald-100"
-                                        >
-                                          ৳{cashVal}
-                                        </button>
-                                      ))}
-                                    </div>
-
-                                    {/* Change Due Highlight */}
-                                    {Number(posPaidAmount) >= posGrandTotal && (
-                                      <div className="flex justify-between items-center pt-1.5 border-t border-emerald-200">
-                                        <span className="font-bold text-xs text-emerald-900">💵 ফেরত দিতে হবে (Change):</span>
-                                        <span className="font-black text-base text-emerald-800">
-                                          ৳{posChangeDue.toLocaleString()}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Split Payment Box */}
-                                {posPaymentMethod === "Split" && (
-                                  <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 space-y-2 text-xs animate-fadeIn">
-                                    <p className="font-bold text-amber-950 text-[11px]">স্প্লিট পেমেন্ট বণ্টন:</p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                        <label className="text-[10px] text-gray-600 block mb-0.5">ক্যাশ অংশ (৳)</label>
-                                        <input
-                                          type="number"
-                                          placeholder="0"
-                                          value={posSplitCash}
-                                          onChange={(e) => {
-                                            const cash = Number(e.target.value) || 0;
-                                            setPosSplitCash(e.target.value);
-                                            setPosSplitDigital(String(Math.max(0, posGrandTotal - cash)));
-                                          }}
-                                          className="w-full px-2 py-1 bg-white border border-amber-300 rounded-lg font-bold"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="text-[10px] text-gray-600 block mb-0.5">ডিজিটাল অংশ (৳)</label>
-                                        <input
-                                          type="number"
-                                          value={posSplitDigital}
-                                          onChange={(e) => setPosSplitDigital(e.target.value)}
-                                          className="w-full px-2 py-1 bg-white border border-amber-300 rounded-lg font-bold"
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <select
-                                        value={posSplitDigitalMethod}
-                                        onChange={(e) => setPosSplitDigitalMethod(e.target.value)}
-                                        className="bg-white border border-amber-300 rounded-lg px-2 py-1 text-xs"
-                                      >
-                                        <option value="bKash">বিকাশ</option>
-                                        <option value="Nagad">নগদ</option>
-                                        <option value="Card">কার্ড</option>
-                                      </select>
-                                      <input
-                                        type="text"
-                                        placeholder="TrxID (ঐচ্ছিক)"
-                                        value={posTrxId}
-                                        onChange={(e) => setPosTrxId(e.target.value)}
-                                        className="flex-1 px-2 py-1 bg-white border border-amber-300 rounded-lg text-xs"
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Digital TrxID Box */}
-                                {["bKash", "Nagad", "Card"].includes(posPaymentMethod) && (
-                                  <div className="p-2.5 bg-gray-50 rounded-2xl border border-gray-200 animate-fadeIn">
-                                    <input
-                                      type="text"
-                                      placeholder={`ট্রানজেকশন আইডি (TrxID) - ${posPaymentMethod}`}
-                                      value={posTrxId}
-                                      onChange={(e) => setPosTrxId(e.target.value)}
-                                      className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-mono"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* 5. Complete Sale Primary Button */}
-                              <button
-                                type="button"
-                                disabled={posCart.length === 0}
-                                onClick={handleCompletePosSale}
-                                className="w-full py-3.5 bg-gradient-to-r from-[#7a1c2b] via-[#922234] to-[#e65100] hover:from-[#631421] hover:to-[#c44300] text-white rounded-2xl font-black text-sm sm:text-base shadow-xl hover:shadow-2xl transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
-                              >
-                                <span>🧾</span>
-                                <span>সেলস নিশ্চিত ও মেমো প্রিন্ট (৳{posGrandTotal.toLocaleString()})</span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ======================================================= */}
-                      {/* SUBTAB 2: POS SALES HISTORY RECORD                      */}
-                      {/* ======================================================= */}
-                      {posActiveSubTab === "history" && (
-                        <div className="space-y-4 bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-sm animate-fadeIn">
-                          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                            <div>
-                              <h3 className="font-extrabold text-base text-gray-900">
-                                শোরুম POS বিক্রয় রেকর্ড
-                              </h3>
-                              <p className="text-xs text-gray-500">
-                                কাউন্টার থেকে বিক্রি হওয়া সমস্ত অর্ডারের সম্পূর্ণ বিবরণ ও রসিদ রি-প্রিন্ট
-                              </p>
-                            </div>
-
-                            <div className="relative w-full sm:w-64">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
-                              <input
-                                type="text"
-                                value={posHistoryFilter}
-                                onChange={(e) => setPosHistoryFilter(e.target.value)}
-                                placeholder="মেমো আইডি, ফোন বা নাম..."
-                                className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-                              />
-                            </div>
-                          </div>
-
-                          {filteredHistoryOrders.length === 0 ? (
-                            <div className="py-16 text-center text-gray-400 space-y-2">
-                              <span className="text-4xl block">📜</span>
-                              <p className="text-sm font-bold text-gray-500">কোনো POS বিক্রয় রেকর্ড পাওয়া যায়নি!</p>
-                            </div>
-                          ) : (
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-left text-xs border-collapse">
-                                <thead>
-                                  <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-extrabold">
-                                    <th className="py-2.5 px-3">মেমো আইডি</th>
-                                    <th className="py-2.5 px-3">তারিখ ও সময়</th>
-                                    <th className="py-2.5 px-3">কাস্টমার</th>
-                                    <th className="py-2.5 px-3">আইটেম বিবরণ</th>
-                                    <th className="py-2.5 px-3">পেমেন্ট মাধ্যম</th>
-                                    <th className="py-2.5 px-3 text-right">মোট বিল</th>
-                                    <th className="py-2.5 px-3 text-center">একশন</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                  {filteredHistoryOrders.map(order => (
-                                    <tr key={order.id} className="hover:bg-orange-50/40 transition">
-                                      <td className="py-3 px-3 font-mono font-bold text-[#7a1c2b]">
-                                        #{order.id}
-                                      </td>
-                                      <td className="py-3 px-3 text-gray-500">
-                                        {order.date}
-                                      </td>
-                                      <td className="py-3 px-3">
-                                        <div className="font-bold text-gray-900">{order.customer}</div>
-                                        {order.phone && order.phone !== "N/A" && (
-                                          <div className="text-[10px] text-gray-500">📞 {order.phone}</div>
-                                        )}
-                                      </td>
-                                      <td className="py-3 px-3">
-                                        <span className="font-bold text-gray-700">
-                                          {(order.items || []).length} টি আইটেম
-                                        </span>
-                                        <div className="text-[10px] text-gray-500 truncate max-w-[200px]">
-                                          {(order.items || []).map(i => `${i.name} (${i.qty}টি)`).join(", ")}
-                                        </div>
-                                      </td>
-                                      <td className="py-3 px-3">
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                          {order.paymentMethod}
-                                        </span>
-                                      </td>
-                                      <td className="py-3 px-3 text-right font-black text-[#7a1c2b] text-sm">
-                                        ৳{Number(order.total || 0).toLocaleString()}
-                                      </td>
-                                      <td className="py-3 px-3 text-center">
-                                        <div className="flex items-center justify-center gap-1.5">
-                                          <button
-                                            type="button"
-                                            onClick={() => printPosThermalReceiptWindow(order)}
-                                            className="px-2.5 py-1 bg-[#7a1c2b] hover:bg-[#601420] text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1"
-                                            title="মেমো প্রিন্ট"
-                                          >
-                                            <span>🖨️</span>
-                                            <span>প্রিন্ট</span>
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => setViewPosReceipt(order)}
-                                            className="p-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs"
-                                            title="বিস্তারিত দেখুন"
-                                          >
-                                            👁️
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* ======================================================= */}
-                      {/* SUBTAB 3: HELD ORDERS (PARKED BILLS)                    */}
-                      {/* ======================================================= */}
-                      {posActiveSubTab === "held" && (
-                        <div className="space-y-4 bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-sm animate-fadeIn">
-                          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                            <div>
-                              <h3 className="font-extrabold text-base text-gray-900">
-                                সাময়িকভাবে হোল্ড করা অর্ডার
-                              </h3>
-                              <p className="text-xs text-gray-500">
-                                কাস্টমার যাচাই করা শেষ হলে অর্ডারটি পুনরায় কাউন্টারে রিস্টোর করুন
-                              </p>
-                            </div>
-                            <span className="text-xs bg-amber-100 text-amber-900 px-3 py-1 rounded-full font-bold">
-                              মোট {posHeldOrders.length}টি পার্কড
-                            </span>
-                          </div>
-
-                          {posHeldOrders.length === 0 ? (
-                            <div className="py-16 text-center text-gray-400 space-y-2">
-                              <span className="text-4xl block">⏸️</span>
-                              <p className="text-sm font-bold text-gray-500">বর্তমানে কোনো হোল্ড করা অর্ডার নেই!</p>
-                              <p className="text-xs text-gray-400">কাউন্টারে বিল করার সময় "অর্ডার হোল্ড" বাটনে ক্লিক করে অর্ডার পার্ক করা যায়</p>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {posHeldOrders.map(h => {
-                                const hTotal = (h.items || []).reduce((sum, it) => sum + (it.price * it.qty), 0);
-                                return (
-                                  <div key={h.id} className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200/80 space-y-3">
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <span className="text-xs font-mono font-black text-amber-900 block">
-                                          #{h.id}
-                                        </span>
-                                        <span className="text-[10px] text-gray-500">হোল্ড সময়: {h.timeStr}</span>
-                                      </div>
-                                      <span className="font-black text-[#7a1c2b] text-sm">
-                                        ৳{hTotal.toLocaleString()}
-                                      </span>
-                                    </div>
-
-                                    <div className="text-xs space-y-1">
-                                      <p className="font-bold text-gray-800">
-                                        👤 {h.customerName} {h.customerPhone ? `(${h.customerPhone})` : ""}
-                                      </p>
-                                      <p className="text-[11px] text-gray-500">
-                                        📦 {h.items?.length || 0}টি আইটেম: {h.items?.map(i => i.product.name).join(", ")}
-                                      </p>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 pt-2 border-t border-amber-200">
-                                      <button
-                                        type="button"
-                                        onClick={() => resumeHeldPosOrder(h)}
-                                        className="flex-1 py-1.5 bg-[#7a1c2b] hover:bg-[#601420] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm"
-                                      >
-                                        <span>▶️</span>
-                                        <span>রিস্টোর করুন</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => deleteHeldPosOrder(h.id)}
-                                        className="px-2.5 py-1.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition"
-                                      >
-                                        মুছুন
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* ======================================================= */}
-                      {/* SUBTAB 4: ADVANCED FULL-FEATURED POS APP (SAJGOJ POS)   */}
-                      {/* ======================================================= */}
-                      {posActiveSubTab === "advanced_pos" && (
-                        <div className="space-y-4 animate-fadeIn">
-                          {/* Banner & Control Bar */}
-                          <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-5 rounded-3xl border border-emerald-500/30 shadow-xl flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center gap-3.5">
-                              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-2xl shadow-inner">
-                                💎
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-black text-base sm:text-lg text-emerald-300">
-                                    সাজগোজ অল-ইন-ওয়ান পূর্ণাঙ্গ POS ও ইনভেন্টরি সিস্টেম
-                                  </h3>
-                                  <span className="bg-emerald-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                    Enterprise
-                                  </span>
-                                </div>
-                                <p className="text-xs text-gray-300">
-                                  বিলিং কাউন্টার • বারকোড/QR স্টুডিও • রিয়েলটাইম স্টক • বাকির খাতা • সাপ্লায়ার লেজার • ক্যাশ ড্রয়ার ক্লোজিং • ড্রাইভ ব্যাকআপ
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const frame = document.getElementById("sajgoj-fullpos-frame");
-                                  if (frame) {
-                                    frame.src = frame.src;
-                                    notify("🔄 সাজগোজ POS রিলোড করা হচ্ছে...");
-                                  }
-                                }}
-                                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-white/10"
-                                title="রিফ্রেশ করুন"
-                              >
-                                <span>🔄</span>
-                                <span>রিফ্রেশ</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const frame = document.getElementById("sajgoj-fullpos-frame");
-                                  if (frame && frame.requestFullscreen) {
-                                    frame.requestFullscreen();
-                                  } else {
-                                    window.open('./pos/', '_blank');
-                                  }
-                                }}
-                                className="px-3.5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg active:scale-95"
-                              >
-                                <span>⛶</span>
-                                <span>ফুলস্ক্রিন মোড</span>
-                              </button>
-
-                              <a
-                                href="./pos/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg active:scale-95"
-                              >
-                                <span>🚀</span>
-                                <span>নতুন ট্যাবে খুলুন ↗</span>
-                              </a>
-                            </div>
-                          </div>
-
-                          {/* Quick Feature Badges */}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-                            <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">🛒</span>
-                              <span className="text-[11px] font-bold text-emerald-900 block leading-tight">লাইভ বিলিং</span>
-                              <span className="text-[9px] text-emerald-700">অডিও বিপ সহ</span>
-                            </div>
-                            <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">🏷️</span>
-                              <span className="text-[11px] font-bold text-blue-900 block leading-tight">বারকোড/QR</span>
-                              <span className="text-[9px] text-blue-700">লেবেল স্টুডিও</span>
-                            </div>
-                            <div className="bg-purple-50 border border-purple-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">📦</span>
-                              <span className="text-[11px] font-bold text-purple-900 block leading-tight">স্টক লেজার</span>
-                              <span className="text-[9px] text-purple-700">এডজাস্টমেন্ট ও লগ</span>
-                            </div>
-                            <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">💰</span>
-                              <span className="text-[11px] font-bold text-amber-900 block leading-tight">বাকির খাতা</span>
-                              <span className="text-[9px] text-amber-700">Due/Credit Book</span>
-                            </div>
-                            <div className="bg-rose-50 border border-rose-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">🚚</span>
-                              <span className="text-[11px] font-bold text-rose-900 block leading-tight">সাপ্লায়ার ডিরেক্টরি</span>
-                              <span className="text-[9px] text-rose-700">পারচেজ চালান</span>
-                            </div>
-                            <div className="bg-teal-50 border border-teal-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">📊</span>
-                              <span className="text-[11px] font-bold text-teal-900 block leading-tight">ক্যাশ ক্লোজিং</span>
-                              <span className="text-[9px] text-teal-700">দৈনিক শিফট রেজিস্টার</span>
-                            </div>
-                            <div className="bg-indigo-50 border border-indigo-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">👑</span>
-                              <span className="text-[11px] font-bold text-indigo-900 block leading-tight">কাস্টমার VIP</span>
-                              <span className="text-[9px] text-indigo-700">লয়ালটি পয়েন্ট</span>
-                            </div>
-                            <div className="bg-cyan-50 border border-cyan-200 p-2.5 rounded-2xl text-center">
-                              <span className="text-lg block">☁️</span>
-                              <span className="text-[11px] font-bold text-cyan-900 block leading-tight">ড্রাইভ ব্যাকআপ</span>
-                              <span className="text-[9px] text-cyan-700">PWA অফলাইন</span>
-                            </div>
-                          </div>
-
-                          {/* Embedded POS Container */}
-                          <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xl">
-                            <iframe
-                              id="sajgoj-fullpos-frame"
-                              src="./pos/"
-                              className="w-full h-[880px] border-0 bg-slate-900"
-                              title="SAJGOJ FASHION POS & Inventory Management System"
-                              allow="camera; microphone; clipboard-write; storage-access; fullscreen"
-                            />
-                          </div>
-                        </div>
-                      )}
+                      <iframe
+                        id="sajgoj-fullpos-frame"
+                        src="./pos/"
+                        className="w-full h-[900px] border-0 bg-slate-900"
+                        title="SAJGOJ FASHION POS & Inventory Management System"
+                        allow="camera; microphone; clipboard-write; storage-access; fullscreen"
+                      />
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
 
                 {/* ========================================================= */}
                 {/* 2. ADMIN DASHBOARD - FULL DIRECT SETTINGS & MODULES HUB */}
@@ -19535,6 +18991,53 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   </div>
 
+                  {/* SALES CHANNEL & POS SELECTION */}
+                  <div className="bg-[#fff8f0] p-4 rounded-3xl border-2 border-[#d4af37]/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-[#7a1c2b] flex items-center gap-1.5">
+                        <span>⚡</span>
+                        <span>বিক্রয় চ্যানেল ও ইনভেন্টরি সিলেকশন</span>
+                      </label>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                        স্বয়ংক্রিয় ২-ওয়ে স্টক সিঙ্ক
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-600">
+                      কোন কোন চ্যানেলে এই প্রোডাক্টটি বিক্রয় ও ইনভেন্টরির জন্য আপলোড হবে সিলেক্ট করুন:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      <label className={`flex items-center gap-3 p-3 rounded-2xl border transition cursor-pointer ${
+                        productForm.enabledForWeb !== false ? 'bg-white border-[#7a1c2b] shadow-xs' : 'bg-gray-50 border-gray-200 opacity-60'
+                      }`}>
+                        <input 
+                          type="checkbox" 
+                          checked={productForm.enabledForWeb !== false} 
+                          onChange={(e) => setProductForm({ ...productForm, enabledForWeb: e.target.checked })}
+                          className="w-4 h-4 text-[#7a1c2b] rounded focus:ring-[#7a1c2b] cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-xs text-gray-800 block">🌐 অনলাইন ওয়েবসাইট</span>
+                          <span className="text-[10px] text-gray-400">কাস্টমারদের জন্য স্টোরফ্রন্টে থাকবে</span>
+                        </div>
+                      </label>
+
+                      <label className={`flex items-center gap-3 p-3 rounded-2xl border transition cursor-pointer ${
+                        productForm.enabledForPos !== false ? 'bg-emerald-50/70 border-emerald-500 shadow-xs' : 'bg-gray-50 border-gray-200 opacity-60'
+                      }`}>
+                        <input 
+                          type="checkbox" 
+                          checked={productForm.enabledForPos !== false} 
+                          onChange={(e) => setProductForm({ ...productForm, enabledForPos: e.target.checked })}
+                          className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-xs text-emerald-950 block">🛒 শোরুম POS কাউন্টার (POS অ্যাপ)</span>
+                          <span className="text-[10px] text-emerald-700">বারকোড স্ক্যানার ও বিলিং সিস্টেমে থাকবে</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* IMAGE MANAGEMENT WITH FAST UPLOAD & LIVE PREVIEW */}
                   <div className="p-4 bg-[#fffaf5] rounded-3xl border border-[#f3e2d0] space-y-3">
                     <div className="flex items-center justify-between">
@@ -20020,11 +19523,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           stock: cleanStock,
                           colors: finalColors,
                           sizes: finalSizes,
-                          images: finalImages 
+                          images: finalImages,
+                          enabledForPos: productForm.enabledForPos !== false,
+                          enabledForWeb: productForm.enabledForWeb !== false
                         };
                         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
                         syncDocToCloud("products", editingProduct.id, updated);
-                        notify("প্রোডাক্ট সফলভাবে আপডেট হয়েছে! ✅");
+                        if (updated.enabledForPos !== false) {
+                          syncProductsToPos([updated]);
+                        }
+                        notify("প্রোডাক্ট সফলভাবে ওয়েবসাইট ও POS কাউন্টারে আপডেট হয়েছে! ✅");
                       } else {
                         const newP = {
                           id: "p" + Date.now(),
@@ -20036,11 +19544,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           images: finalImages,
                           sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
                           rating: 4.8,
-                          reviewsCount: 1
+                          reviewsCount: 1,
+                          enabledForPos: productForm.enabledForPos !== false,
+                          enabledForWeb: productForm.enabledForWeb !== false
                         };
                         setProducts(prev => [newP, ...prev]);
                         syncDocToCloud("products", newP.id, newP);
-                        notify("নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে! ✨");
+                        if (newP.enabledForPos !== false) {
+                          syncProductsToPos([newP]);
+                        }
+                        notify("নতুন প্রোডাক্ট ওয়েবসাইট ও POS কাউন্টারে সফলভাবে যুক্ত হয়েছে! ✨");
                       }
                       setIsProductModalOpen(false);
                       setImageUrlInput("");
