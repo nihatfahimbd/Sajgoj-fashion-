@@ -1024,6 +1024,9 @@
       const [orders, setOrders] = useState(() => getStored("orders", initialOrders));
       const [orderStatusFilter, setOrderStatusFilter] = useState("All");
       const [orderPhoneFilter, setOrderPhoneFilter] = useState("");
+      const [orderSkuOrProductLookup, setOrderSkuOrProductLookup] = useState("");
+      const [posSkuLookup, setPosSkuLookup] = useState("");
+      const [posLookupMatchedProduct, setPosLookupMatchedProduct] = useState(null);
 
       const filteredOrders = useMemo(() => {
         return orders.filter(o => {
@@ -1031,9 +1034,25 @@
           const cleanFilterPhone = orderPhoneFilter.trim().replace(/[\s-+()]/g, "");
           const cleanOrderPhone = (o.phone || "").replace(/[\s-+()]/g, "");
           const matchesPhone = !cleanFilterPhone || cleanOrderPhone.includes(cleanFilterPhone);
-          return matchesStatus && matchesPhone;
+
+          const q = orderSkuOrProductLookup.trim().toLowerCase();
+          let matchesSkuOrProduct = true;
+          if (q) {
+            const matchesOrderId = o.id && o.id.toLowerCase().includes(q);
+            const matchesCustomer = o.customer && o.customer.toLowerCase().includes(q);
+            const matchesTracking = o.trackingId && o.trackingId.toLowerCase().includes(q);
+            const matchesItem = (o.items || []).some(it => {
+              const itName = (it.name || it.productName || "").toLowerCase();
+              const itSku = (it.sku || "").toLowerCase();
+              const itId = String(it.productId || it.id || "").toLowerCase();
+              return itName.includes(q) || itSku.includes(q) || itId.includes(q);
+            });
+            matchesSkuOrProduct = matchesOrderId || matchesCustomer || matchesTracking || matchesItem;
+          }
+
+          return matchesStatus && matchesPhone && matchesSkuOrProduct;
         });
-      }, [orders, orderStatusFilter, orderPhoneFilter]);
+      }, [orders, orderStatusFilter, orderPhoneFilter, orderSkuOrProductLookup]);
       const [returns, setReturns] = useState(() => getStored("returns", initialReturns));
       const [coupons, setCoupons] = useState(() => getStored("coupons", initialCoupons));
       const [vouchers, setVouchers] = useState(() => getStored("vouchers", initialVouchers));
@@ -1721,16 +1740,45 @@
         stopScanner();
         setIsScannerOpen(false);
 
+        const scannedCode = target?.sku || (target ? String(target.id) : text);
+
+        // A) If scanned on POS screen: Auto-populate POS SKU field and notify POS app
         if (activeTab === "POS") {
+          setPosSkuLookup(scannedCode);
+          setPosLookupMatchedProduct(target || null);
+
+          // Send message to embedded POS frame
+          const frame = document.getElementById("sajgoj-fullpos-frame");
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({
+              type: "SAJGOJ_BARCODE_SCANNED",
+              barcode: text,
+              sku: scannedCode,
+              product: target || null
+            }, "*");
+          }
+
           if (target) {
-            addToPosCart(target);
+            notify(`✓ বারকোড স্ক্যান সফল! SKU: "${target.sku || target.id}" (${target.name})`);
           } else {
-            setPosSearchQuery(text);
-            notify(`স্ক্যান কোড: "${text}" দিয়ে প্রোডাক্ট খোঁজা হচ্ছে...`);
+            notify(`📷 স্ক্যান কোড: "${text}" POS লুকআপ ফিল্ডে যুক্ত হয়েছে!`);
           }
           return;
         }
 
+        // B) If scanned on Order Tracking screen: Auto-populate Order SKU/product lookup field
+        if (activeTab === "Orders") {
+          setOrderSkuOrProductLookup(scannedCode);
+          setAdminOrderSubTab("all_orders");
+          if (target) {
+            notify(`✓ বারকোড স্ক্যান সফল! SKU: "${target.sku || target.id}" (${target.name}) দিয়ে অর্ডার ফিল্টার করা হয়েছে! 📦`);
+          } else {
+            notify(`📷 স্ক্যান কোড: "${text}" অর্ডার লুকআপ ফিল্ডে যুক্ত ও ফিল্টার করা হয়েছে! 📦`);
+          }
+          return;
+        }
+
+        // C) Default Storefront lookup
         if (target) {
           setViewProduct(target);
           notify(`🎉 পণ্য পাওয়া গেছে: "${target.name}"!`);
@@ -7800,6 +7848,161 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
                     </div>
 
+                    {/* INTEGRATED PRODUCT BARCODE SCANNER & SKU LOOKUP TOOLBAR */}
+                    <div className="bg-white p-4 sm:p-5 rounded-3xl border-2 border-[#d4af37]/40 shadow-md space-y-3">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center text-xl shadow-xs">
+                            📷
+                          </div>
+                          <div>
+                            <h3 className="font-extrabold text-sm sm:text-base text-gray-900 flex items-center gap-2">
+                              <span>প্রোডাক্ট বারকোড স্ক্যানার ও SKU লুকআপ</span>
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                                Auto-Populate & Quick Scan
+                              </span>
+                            </h3>
+                            <p className="text-xs text-gray-500">
+                              ক্যামেরা দিয়ে বারকোড স্ক্যান করুন অথবা SKU দিয়ে সাথে সাথে প্রোডাক্ট স্টক ও বিবরণ দেখুন
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Scanner Launch Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsScannerOpen(true);
+                            startScanner();
+                          }}
+                          className="px-4 py-2.5 bg-gradient-to-r from-[#7a1c2b] to-[#a8253a] hover:from-[#681727] hover:to-[#8c1e30] text-white rounded-2xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-2 shadow-md active:scale-95 shrink-0"
+                          title="ক্যামেরা বারকোড স্ক্যানার চালু করুন"
+                        >
+                          <span className="text-base">📷</span>
+                          <span>ক্যামেরা স্ক্যানার চালু করুন</span>
+                        </button>
+                      </div>
+
+                      {/* Barcode / SKU Input Field */}
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-gray-400">🏷️</span>
+                          <input
+                            type="text"
+                            value={posSkuLookup}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPosSkuLookup(val);
+                              const match = products.find(p => (p.sku && p.sku.toLowerCase() === val.trim().toLowerCase()) || String(p.id) === val.trim() || (p.barcode && p.barcode === val.trim()));
+                              setPosLookupMatchedProduct(match || null);
+                            }}
+                            placeholder="বারকোড স্ক্যান করুন বা প্রোডাক্টের SKU লিখুন (যেমন: SAJ-101)..."
+                            className="w-full bg-[#fffaf5] border border-[#ecd9c6] rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm font-mono outline-none focus:border-[#7a1c2b] focus:ring-1 focus:ring-[#7a1c2b] transition"
+                          />
+                          {posSkuLookup && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPosSkuLookup("");
+                                setPosLookupMatchedProduct(null);
+                              }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold transition"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!posSkuLookup.trim()) return notify("দয়া করে SKU বা বারকোড লিখুন");
+                            const val = posSkuLookup.trim();
+                            const match = products.find(p => (p.sku && p.sku.toLowerCase() === val.toLowerCase()) || String(p.id) === val || (p.barcode && p.barcode === val));
+                            setPosLookupMatchedProduct(match || null);
+                            if (match) {
+                              notify(`✓ পণ্য পাওয়া গেছে: "${match.name}" (স্টক: ${match.stock}টি)`);
+                              const frame = document.getElementById("sajgoj-fullpos-frame");
+                              if (frame && frame.contentWindow) {
+                                frame.contentWindow.postMessage({
+                                  type: "SAJGOJ_BARCODE_SCANNED",
+                                  barcode: val,
+                                  sku: match.sku,
+                                  product: match
+                                }, "*");
+                              }
+                            } else {
+                              notify(`⚠️ "${val}" কোডে কোনো পণ্য পাওয়া যায়নি!`);
+                            }
+                          }}
+                          className="px-4 py-2.5 bg-[#7a1c2b] text-white rounded-2xl text-xs font-bold hover:bg-[#681727] transition shrink-0 active:scale-95 shadow-xs"
+                        >
+                          খুঁজুন
+                        </button>
+                      </div>
+
+                      {/* Live Matched Product Card Preview if found */}
+                      {posLookupMatchedProduct && (
+                        <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={(posLookupMatchedProduct.images && posLookupMatchedProduct.images[0]) || posLookupMatchedProduct.image || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400"}
+                              alt={posLookupMatchedProduct.name}
+                              className="w-12 h-12 object-cover rounded-xl border border-emerald-300 bg-white shadow-xs shrink-0"
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-extrabold text-xs sm:text-sm text-emerald-950">
+                                  {posLookupMatchedProduct.name}
+                                </h4>
+                                <span className="bg-emerald-600 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                  SKU: {posLookupMatchedProduct.sku || posLookupMatchedProduct.id}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-emerald-800 mt-0.5">
+                                <span>ক্যাটাগরি: <b>{posLookupMatchedProduct.category}</b></span>
+                                <span>বিক্রয় মূল্য: <b className="text-gray-900">৳{posLookupMatchedProduct.price}</b></span>
+                                <span className="bg-emerald-200 text-emerald-950 px-2 py-0.2 rounded-full font-bold text-[10px]">
+                                  বর্তমান স্টক: {posLookupMatchedProduct.stock}টি
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(posLookupMatchedProduct.sku || posLookupMatchedProduct.id);
+                                notify("✓ SKU কোড ক্লিপবোর্ডে কপি হয়েছে!");
+                              }}
+                              className="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-900 text-xs font-bold rounded-xl hover:bg-emerald-100 transition shadow-xs"
+                            >
+                              📋 SKU কপি
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const frame = document.getElementById("sajgoj-fullpos-frame");
+                                if (frame && frame.contentWindow) {
+                                  frame.contentWindow.postMessage({
+                                    type: "SAJGOJ_BARCODE_SCANNED",
+                                    barcode: posLookupMatchedProduct.sku || posLookupMatchedProduct.id,
+                                    sku: posLookupMatchedProduct.sku || posLookupMatchedProduct.id,
+                                    product: posLookupMatchedProduct
+                                  }, "*");
+                                  notify("✓ POS বিলিং সিস্টেমে আইটেম পাঠানো হয়েছে!");
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition shadow-xs"
+                            >
+                              🛒 POS-এ পাঠান
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {/* EMBEDDED ADVANCED POS FRAME */}
                     <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-2xl relative">
                       <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between text-xs border-b border-slate-800">
@@ -9621,6 +9824,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <span>📜</span>
                       <span>রিটার্ন তালিকা ({returns.length})</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdminOrderSubTab("all_orders");
+                        setIsScannerOpen(true);
+                        startScanner();
+                      }}
+                      className="bg-gradient-to-r from-[#7a1c2b] to-[#a8253a] hover:from-[#681727] hover:to-[#8c1e30] text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                      title="ক্যামেরা বারকোড স্ক্যানার দিয়ে অর্ডার বা পার্সেল খুঁজুন"
+                    >
+                      <span>📷</span>
+                      <span>বারকোড স্ক্যানার</span>
+                    </button>
                     <span className="text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-bold">
                       পেন্ডিং: {orders.filter(o => o.status === "Pending").length}
                     </span>
@@ -9873,46 +10089,130 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 {/* ========================================================= */}
                 {adminOrderSubTab === "all_orders" && (
                   <div className="space-y-4 animate-fadeIn">
-                {/* 🔍 ORDERS FILTER CONTROLS: BY STATUS & CUSTOMER PHONE NUMBER */}
+                {/* 🔍 ORDERS FILTER CONTROLS: BARCODE SCANNER, SKU/PRODUCT LOOKUP, PHONE & STATUS */}
                 <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#f3e2d0] shadow-sm space-y-3.5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+                    {/* Barcode / SKU / Order ID Search & Scanner Input */}
+                    <div className="md:col-span-7 relative flex items-center">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-gray-400">🏷️</span>
+                      <input
+                        type="text"
+                        value={orderSkuOrProductLookup}
+                        onChange={(e) => setOrderSkuOrProductLookup(e.target.value)}
+                        placeholder="বারকোড, প্রোডাক্ট SKU বা অর্ডার আইডি দিয়ে খুঁজুন..."
+                        className="w-full bg-[#fffaf5] border border-[#ecd9c6] rounded-2xl pl-10 pr-24 py-2.5 text-xs sm:text-sm font-mono outline-none focus:border-[#7a1c2b] focus:ring-1 focus:ring-[#7a1c2b] transition"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {orderSkuOrProductLookup && (
+                          <button
+                            type="button"
+                            onClick={() => setOrderSkuOrProductLookup("")}
+                            className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold transition mr-1 cursor-pointer"
+                            title="ক্লিয়ার করুন"
+                          >
+                            ✕
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsScannerOpen(true);
+                            startScanner();
+                          }}
+                          className="px-2.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition active:scale-95 cursor-pointer"
+                          title="ক্যামেরা বারকোড স্ক্যানার দিয়ে স্ক্যান করুন"
+                        >
+                          <span>📷</span>
+                          <span className="hidden sm:inline">স্ক্যান</span>
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Customer Phone Search Input */}
-                    <div className="flex-1 relative">
+                    <div className="md:col-span-5 relative flex items-center">
                       <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-gray-400">📞</span>
                       <input
                         type="text"
                         value={orderPhoneFilter}
                         onChange={(e) => setOrderPhoneFilter(e.target.value)}
-                        placeholder="গ্রাহকের ফোন নম্বর দিয়ে খুঁজুন (যেমন: 017...)"
+                        placeholder="গ্রাহকের ফোন (017...)"
                         className="w-full bg-[#fffaf5] border border-[#ecd9c6] rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm font-mono outline-none focus:border-[#7a1c2b] focus:ring-1 focus:ring-[#7a1c2b] transition"
                       />
                       {orderPhoneFilter && (
                         <button
                           type="button"
                           onClick={() => setOrderPhoneFilter("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold transition"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold transition cursor-pointer"
                           title="ক্লিয়ার করুন"
                         >
                           ✕
                         </button>
                       )}
                     </div>
+                  </div>
 
-                    {/* Filter Active Reset / Clear action if filters applied */}
-                    {(orderStatusFilter !== "All" || orderPhoneFilter.trim()) && (
+                  {/* Filter Active Reset / Clear chips if filters applied */}
+                  {(orderStatusFilter !== "All" || orderPhoneFilter.trim() || orderSkuOrProductLookup.trim()) && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-amber-50/70 p-2.5 rounded-2xl border border-amber-200/80">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="font-bold text-amber-950">সক্রিয় ফিল্টার:</span>
+                        {orderSkuOrProductLookup.trim() && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#7a1c2b] text-white font-mono text-[11px] shadow-2xs">
+                            <span>📷 SKU/বারকোড:</span>
+                            <span className="font-bold">{orderSkuOrProductLookup.trim()}</span>
+                            <button
+                              type="button"
+                              onClick={() => setOrderSkuOrProductLookup("")}
+                              className="ml-1 hover:text-amber-200 cursor-pointer"
+                              title="মুছে ফেলুন"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        )}
+                        {orderPhoneFilter.trim() && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-600 text-white font-mono text-[11px] shadow-2xs">
+                            <span>📞 ফোন:</span>
+                            <span className="font-bold">{orderPhoneFilter.trim()}</span>
+                            <button
+                              type="button"
+                              onClick={() => setOrderPhoneFilter("")}
+                              className="ml-1 hover:text-amber-200 cursor-pointer"
+                              title="মুছে ফেলুন"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        )}
+                        {orderStatusFilter !== "All" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-700 text-white text-[11px] shadow-2xs">
+                            <span>স্ট্যাটাস:</span>
+                            <span className="font-bold">{orderStatusFilter}</span>
+                            <button
+                              type="button"
+                              onClick={() => setOrderStatusFilter("All")}
+                              className="ml-1 hover:text-amber-200 cursor-pointer"
+                              title="মুছে ফেলুন"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
                           setOrderStatusFilter("All");
                           setOrderPhoneFilter("");
+                          setOrderSkuOrProductLookup("");
                         }}
-                        className="px-3.5 py-2 rounded-2xl bg-rose-50 text-[#7a1c2b] border border-rose-200 text-xs font-bold hover:bg-rose-100 transition flex items-center gap-1.5 shrink-0 active:scale-95 shadow-2xs"
+                        className="px-3 py-1 rounded-xl bg-white text-[#7a1c2b] border border-rose-200 text-xs font-bold hover:bg-rose-50 transition flex items-center gap-1 shrink-0 active:scale-95 shadow-2xs cursor-pointer ml-auto"
                       >
                         <span>✕</span>
-                        <span>ফিল্টার রিসেট</span>
+                        <span>সকল ফিল্টার রিসেট</span>
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Status Filter Tabs / Chips */}
                   <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -9953,9 +10253,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <span>
                       প্রদর্শিত হচ্ছে: <b className="text-[#7a1c2b]">{filteredOrders.length}</b> টি অর্ডার (মোট: {orders.length} টি)
                     </span>
-                    {(orderStatusFilter !== "All" || orderPhoneFilter.trim()) && (
+                    {(orderStatusFilter !== "All" || orderPhoneFilter.trim() || orderSkuOrProductLookup.trim()) && (
                       <span className="text-gray-500 font-medium">
                         {orderStatusFilter !== "All" && `স্ট্যাটাস: ${orderStatusFilter} `}
+                        {orderSkuOrProductLookup.trim() && `| SKU/বারকোড: ${orderSkuOrProductLookup.trim()} `}
                         {orderPhoneFilter.trim() && `| ফোন: ${orderPhoneFilter.trim()}`}
                       </span>
                     )}
@@ -9973,6 +10274,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <p className="text-4xl">🔍</p>
                     <h4 className="font-bold text-base text-gray-800">কোন অর্ডার খুঁজে পাওয়া যায়নি!</h4>
                     <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                      {orderSkuOrProductLookup.trim() && `SKU/বারকোড "${orderSkuOrProductLookup.trim()}" `}
                       {orderPhoneFilter.trim() && `ফোন নম্বর "${orderPhoneFilter.trim()}" `}
                       {orderStatusFilter !== "All" && `স্ট্যাটাস "${orderStatusFilter}" `}
                       অনুযায়ী কোনো অর্ডার মেলেনি। ফিল্টার রিসেট করে আবার চেষ্টা করুন।
@@ -9982,6 +10284,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       onClick={() => {
                         setOrderStatusFilter("All");
                         setOrderPhoneFilter("");
+                        setOrderSkuOrProductLookup("");
                       }}
                       className="px-4 py-2 rounded-full bg-[#7a1c2b] text-white text-xs font-bold hover:bg-[#681727] transition shadow-xs"
                     >

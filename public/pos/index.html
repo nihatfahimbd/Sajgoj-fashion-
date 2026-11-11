@@ -132,5 +132,40 @@
   <link rel="manifest" href="./manifest.webmanifest"></head>
   <body class="bg-[#FAF6F0] text-[#2C1F24] antialiased select-none font-sans overflow-x-hidden" data-theme="rosegold">
     <div id="root"></div>
+    <script>
+      // Automatically populate search/SKU lookup field when barcode is scanned
+      window.addEventListener("message", function(e) {
+        if (!e.data || e.data.type !== "SAJGOJ_BARCODE_SCANNED") return;
+        var code = e.data.sku || e.data.barcode || (e.data.product && (e.data.product.sku || e.data.product.barcode || e.data.product.id));
+        if (!code) return;
+        
+        // Find visible text/search inputs in the POS interface
+        var inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])');
+        for (var i = 0; i < inputs.length; i++) {
+          var input = inputs[i];
+          if (input.offsetParent !== null) {
+            try {
+              var valueSetter = Object.getOwnPropertyDescriptor(input, 'value')?.set;
+              var prototype = Object.getPrototypeOf(input);
+              var prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+              if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+                prototypeValueSetter.call(input, code);
+              } else if (valueSetter) {
+                valueSetter.call(input, code);
+              } else {
+                input.value = code;
+              }
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              input.focus();
+              input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
+              break;
+            } catch (err) {
+              console.warn("Could not auto-populate POS input:", err);
+            }
+          }
+        }
+      });
+    </script>
   </body>
 </html>
