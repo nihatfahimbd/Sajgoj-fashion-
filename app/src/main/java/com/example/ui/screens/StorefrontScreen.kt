@@ -111,192 +111,34 @@ fun StorefrontScreen(
         .fillMaxSize()
         .testTag("storefront_grid")
     ) {
-      // 1. Hero Banners Section
-      item(span = { GridItemSpan(2) }) {
-        BannerCarousel(
-          banners = banners,
-          onBannerClick = onBannerClick,
-          modifier = Modifier.padding(bottom = 6.dp)
-        )
-      }
-
-      // 1.5 🎟️ Daraz-Style Slim Block Table Strip: Claim Vouchers to Save More! (বানারের নিচে ক্যাটাগরির উপর)
+      // 1 + 1.5 + 2. Unified Tight Stack: Hero Banner -> Slim Voucher Strip -> Slim Category Strip
       item(span = { GridItemSpan(2) }) {
         Column(
-          modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-              Brush.horizontalGradient(
-                listOf(Color(0xFFFFF3F3), Color(0xFFFFF8F5), Color(0xFFF0FBF9))
-              )
-            )
-            .border(1.dp, Color(0xFFFFCDD2), RoundedCornerShape(16.dp))
-            .padding(10.dp)
+          modifier = Modifier.fillMaxWidth(),
+          verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-          // Top Bar with Title & More Voucher Link
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(horizontal = 4.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-              Text(
-                text = "Claim Vouchers to Save More!",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                color = DarkEspresso
-              )
-              Box(
-                modifier = Modifier
-                  .clip(RoundedCornerShape(10.dp))
-                  .background(RoyalMaroon)
-                  .padding(horizontal = 6.dp, vertical = 2.dp)
-              ) {
-                Text(
-                  text = "11.11 / SAJGOJ",
-                  fontSize = 8.sp,
-                  fontWeight = FontWeight.Black,
-                  color = Color.White
-                )
-              }
-            }
+          BannerCarousel(
+            banners = banners,
+            onBannerClick = onBannerClick
+          )
 
-            Row(
-              modifier = Modifier.clickable {
-                voucherCenterTab = "all"
-                showVoucherCenter = true
-              },
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "More Voucher",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = RoyalMaroon
-              )
-              Text(
-                text = " ›",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-                color = RoyalMaroon
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(6.dp))
-
-          // Slim Block Table / Ticket Strip (Matches Screenshot 1)
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .clip(RoundedCornerShape(12.dp))
-              .background(Color.White)
-              .border(1.dp, Color(0xFFFFEBEE), RoundedCornerShape(12.dp))
-              .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            // Left Cell: Voucher Max
-            Column(
-              modifier = Modifier
-                .weight(1f)
-                .clickable {
-                  voucherCenterTab = "max"
-                  showVoucherCenter = true
-                }
-            ) {
-              Text(
-                text = "৳২,২৫০",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFFE53935)
-              )
-              Text(
-                text = "Voucher Max",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Gray
-              )
-            }
-
-            Box(
-              modifier = Modifier
-                .width(1.dp)
-                .height(28.dp)
-                .background(Color(0xFFEEEEEE))
-            )
-
-            // Middle Cell: Free Shipping
-            Column(
-              modifier = Modifier
-                .weight(1f)
-                .padding(start = 10.dp)
-                .clickable {
-                  voucherCenterTab = "shipping"
-                  showVoucherCenter = true
-                }
-            ) {
-              Text(
-                text = "৳৪৫",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFF00897B)
-              )
-              Text(
-                text = "Free shipping",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Gray
-              )
-            }
-
-            // Right Cell: Collect All Button (Opens Voucher Center Page as requested)
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFFFF8F00))
-                .border(
-                  width = 1.dp,
-                  color = Color(0xFFFFB300),
-                  shape = RoundedCornerShape(10.dp)
-                )
-                .clickable {
-                  voucherCenterTab = "all"
-                  showVoucherCenter = true
-                }
-                .padding(horizontal = 12.dp, vertical = 7.dp)
-            ) {
-              Text(
-                text = "Collect All ›",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Black,
-                color = Color.White
-              )
-            }
-          }
-        }
-      }
-
-      // 2. Daraz-Style Horizontal Sliding Categories
-      if (categories.isNotEmpty()) {
-        item(span = { GridItemSpan(2) }) {
+          // 🎟️ Slim Voucher Block (Aligned snugly below Banner)
           Column(
             modifier = Modifier
               .fillMaxWidth()
-              .clip(RoundedCornerShape(16.dp))
-              .background(Color.White)
-              .padding(vertical = 10.dp, horizontal = 4.dp)
+              .clip(RoundedCornerShape(14.dp))
+              .background(
+                Brush.horizontalGradient(
+                  listOf(Color(0xFFFFF3F3), Color(0xFFFFF8F5), Color(0xFFF0FBF9))
+                )
+              )
+              .border(1.dp, Color(0xFFFFCDD2), RoundedCornerShape(14.dp))
+              .padding(horizontal = 8.dp, vertical = 6.dp)
           ) {
             Row(
               modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 2.dp),
+                .padding(horizontal = 2.dp),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically
             ) {
@@ -304,138 +146,248 @@ fun StorefrontScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
               ) {
+                Text(
+                  text = "Claim Vouchers to Save More!",
+                  fontSize = 11.5.sp,
+                  fontWeight = FontWeight.Black,
+                  color = DarkEspresso
+                )
                 Box(
                   modifier = Modifier
-                    .size(width = 4.dp, height = 14.dp)
-                    .clip(RoundedCornerShape(2.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(RoyalMaroon)
-                )
-                Text(
-                  text = "সকল ক্যাটাগরি",
-                  fontSize = 14.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = RoyalMaroon
-                )
-              }
-              Text(
-                text = "👉 স্লাইড করুন",
-                fontSize = 10.sp,
-                color = AntiqueGoldDark,
-                fontWeight = FontWeight.Medium
-              )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyRow(
-              contentPadding = PaddingValues(horizontal = 8.dp),
-              horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-              // "All" item
-              item {
-                val isSelected = selectedCategory == "All"
-                Column(
-                  horizontalAlignment = Alignment.CenterHorizontally,
-                  modifier = Modifier
-                    .width(70.dp)
-                    .clickable { onCategorySelected("All") }
+                    .padding(horizontal = 5.dp, vertical = 1.dp)
                 ) {
-                  Box(
-                    modifier = Modifier
-                      .size(54.dp)
-                      .clip(RoundedCornerShape(16.dp))
-                      .background(
-                        if (isSelected) RoyalMaroon else CreamSurface
-                      )
-                      .border(
-                        width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) AntiqueGold else BorderGold,
-                        shape = RoundedCornerShape(16.dp)
-                      ),
-                    contentAlignment = Alignment.Center
-                  ) {
-                    Text(
-                      text = "🌟",
-                      fontSize = 24.sp
-                    )
-                  }
-                  Spacer(modifier = Modifier.height(4.dp))
                   Text(
-                    text = "সকল পণ্য",
-                    fontSize = 11.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) RoyalMaroon else DarkEspresso,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2
+                    text = "11.11 / SAJGOJ",
+                    fontSize = 7.5.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
                   )
                 }
               }
 
-              // Category items
-              val displayCats = categories.filter { it.type != "sub" && it.type != "parent" }
-                .ifEmpty { categories }
-              items(displayCats) { cat ->
-                val isSelected = selectedCategory == cat.name
-                Column(
-                  horizontalAlignment = Alignment.CenterHorizontally,
-                  modifier = Modifier
-                    .width(70.dp)
-                    .clickable { onCategorySelected(cat.name) }
-                ) {
-                  Box(
-                    modifier = Modifier
-                      .size(54.dp)
-                      .clip(RoundedCornerShape(16.dp))
-                      .background(
-                        if (isSelected) CreamSurface else Color.White
-                      )
-                      .border(
-                        width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) RoyalMaroon else BorderGold,
-                        shape = RoundedCornerShape(16.dp)
-                      ),
-                    contentAlignment = Alignment.Center
-                  ) {
-                    if (cat.imageUrl.isNotBlank()) {
-                      AppImage(
-                        model = cat.imageUrl,
-                        contentDescription = cat.name,
-                        modifier = Modifier
-                          .fillMaxSize()
-                          .clip(RoundedCornerShape(15.dp))
-                      )
-                    } else {
-                      Text(
-                        text = cat.icon.ifBlank { "✨" },
-                        fontSize = 24.sp
-                      )
-                    }
+              Row(
+                modifier = Modifier.clickable {
+                  voucherCenterTab = "all"
+                  showVoucherCenter = true
+                },
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(
+                  text = "More Voucher",
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon
+                )
+                Text(
+                  text = " ›",
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Black,
+                  color = RoyalMaroon
+                )
+              }
+            }
 
-                    if (cat.badge.isNotBlank()) {
-                      Surface(
-                        color = RoyalMaroon,
-                        shape = RoundedCornerShape(bottomStart = 8.dp),
-                        modifier = Modifier.align(Alignment.TopEnd)
-                      ) {
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.White)
+                .border(1.dp, Color(0xFFFFEBEE), RoundedCornerShape(10.dp))
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Column(
+                modifier = Modifier
+                  .weight(1f)
+                  .clickable {
+                    voucherCenterTab = "max"
+                    showVoucherCenter = true
+                  }
+              ) {
+                Text(
+                  text = "৳২,২৫০",
+                  fontSize = 13.5.sp,
+                  fontWeight = FontWeight.Black,
+                  color = Color(0xFFE53935)
+                )
+                Text(
+                  text = "Voucher Max",
+                  fontSize = 9.sp,
+                  fontWeight = FontWeight.Medium,
+                  color = Color.Gray
+                )
+              }
+
+              Box(
+                modifier = Modifier
+                  .width(1.dp)
+                  .height(22.dp)
+                  .background(Color(0xFFEEEEEE))
+              )
+
+              Column(
+                modifier = Modifier
+                  .weight(1f)
+                  .padding(start = 8.dp)
+                  .clickable {
+                    voucherCenterTab = "shipping"
+                    showVoucherCenter = true
+                  }
+              ) {
+                Text(
+                  text = "৳৪৫",
+                  fontSize = 13.5.sp,
+                  fontWeight = FontWeight.Black,
+                  color = Color(0xFF00897B)
+                )
+                Text(
+                  text = "Free shipping",
+                  fontSize = 9.sp,
+                  fontWeight = FontWeight.Medium,
+                  color = Color.Gray
+                )
+              }
+
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(Color(0xFFFF8F00))
+                  .border(
+                    width = 1.dp,
+                    color = Color(0xFFFFB300),
+                    shape = RoundedCornerShape(8.dp)
+                  )
+                  .clickable {
+                    voucherCenterTab = "all"
+                    showVoucherCenter = true
+                  }
+                  .padding(horizontal = 10.dp, vertical = 5.dp)
+              ) {
+                Text(
+                  text = "Collect All ›",
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Black,
+                  color = Color.White
+                )
+              }
+            }
+          }
+
+          // 🏷️ Slim Horizontal Sliding Categories (Aligned snugly below Voucher)
+          if (categories.isNotEmpty()) {
+            Column(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.White)
+                .padding(vertical = 6.dp, horizontal = 4.dp)
+            ) {
+              LazyRow(
+                contentPadding = PaddingValues(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                item {
+                  val isSelected = selectedCategory == "All"
+                  Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                      .width(60.dp)
+                      .clickable { onCategorySelected("All") }
+                  ) {
+                    Box(
+                      modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) RoyalMaroon else CreamSurface)
+                        .border(
+                          width = if (isSelected) 2.dp else 1.dp,
+                          color = if (isSelected) AntiqueGold else BorderGold,
+                          shape = RoundedCornerShape(12.dp)
+                        ),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      Text(text = "🌟", fontSize = 20.sp)
+                    }
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                      text = "সকল পণ্য",
+                      fontSize = 10.sp,
+                      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                      color = if (isSelected) RoyalMaroon else DarkEspresso,
+                      textAlign = TextAlign.Center,
+                      maxLines = 1
+                    )
+                  }
+                }
+
+                val displayCats = categories.filter { it.type != "sub" && it.type != "parent" }
+                  .ifEmpty { categories }
+                items(displayCats) { cat ->
+                  val isSelected = selectedCategory == cat.name
+                  Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                      .width(60.dp)
+                      .clickable { onCategorySelected(cat.name) }
+                  ) {
+                    Box(
+                      modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) CreamSurface else Color.White)
+                        .border(
+                          width = if (isSelected) 2.dp else 1.dp,
+                          color = if (isSelected) RoyalMaroon else BorderGold,
+                          shape = RoundedCornerShape(12.dp)
+                        ),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      if (cat.imageUrl.isNotBlank()) {
+                        AppImage(
+                          model = cat.imageUrl,
+                          contentDescription = cat.name,
+                          modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(11.dp))
+                        )
+                      } else {
                         Text(
-                          text = cat.badge,
-                          color = Color.White,
-                          fontSize = 8.sp,
-                          fontWeight = FontWeight.Bold,
-                          modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                          text = cat.icon.ifBlank { "✨" },
+                          fontSize = 20.sp
                         )
                       }
+
+                      if (cat.badge.isNotBlank()) {
+                        Surface(
+                          color = RoyalMaroon,
+                          shape = RoundedCornerShape(bottomStart = 6.dp),
+                          modifier = Modifier.align(Alignment.TopEnd)
+                        ) {
+                          Text(
+                            text = cat.badge,
+                            color = Color.White,
+                            fontSize = 7.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                          )
+                        }
+                      }
                     }
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                      text = cat.name,
+                      fontSize = 9.5.sp,
+                      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                      color = if (isSelected) RoyalMaroon else DarkEspresso,
+                      textAlign = TextAlign.Center,
+                      maxLines = 1
+                    )
                   }
-                  Spacer(modifier = Modifier.height(4.dp))
-                  Text(
-                    text = cat.name,
-                    fontSize = 10.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) RoyalMaroon else DarkEspresso,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2
-                  )
                 }
               }
             }
