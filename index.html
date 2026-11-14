@@ -1575,9 +1575,23 @@
         }
       }, [currentUser]);
 
-      // Firebase Firestore Cloud Sync Status & Helpers
+      // Firebase Firestore Cloud Sync Status & Bidirectional Inventory Sync Helpers
       const [cloudSyncStatus, setCloudSyncStatus] = useState("connecting"); // "connected", "syncing", "offline"
       const [lastCloudSyncTime, setLastCloudSyncTime] = useState(new Date().toLocaleTimeString("bn-BD"));
+      const [inventorySyncEvents, setInventorySyncEvents] = useState(() => getStored("inventory_sync_events", []));
+      const [posInventoryCloudMap, setPosInventoryCloudMap] = useState({});
+      const [isSyncLogDrawerOpen, setIsSyncLogDrawerOpen] = useState(false);
+
+      const syncOriginIdRef = useRef("WEB-" + Math.random().toString(36).slice(2, 8));
+      const suppressPosPushRef = useRef(false);
+      const syncChannelRef = useRef(null);
+      const productsRef = useRef(products);
+      const ordersRef = useRef(orders);
+      useEffect(() => { productsRef.current = products; }, [products]);
+      useEffect(() => { ordersRef.current = orders; }, [orders]);
+      useEffect(() => {
+        try { setStored("inventory_sync_events", (inventorySyncEvents || []).slice(0, 60)); } catch (e) {}
+      }, [inventorySyncEvents]);
 
       // Realtime Order Alerts & Badge Indicators (Firebase Listener)
       const [newOrderAlert, setNewOrderAlert] = useState(null);
@@ -1846,6 +1860,95 @@
           }
         }, (err) => console.warn("Loyalty customers sync error:", err));
 
+        // 10. Returns & Exchanges Subscription
+        const unsubReturns = firestoreDb.collection("returns").onSnapshot((snapshot) => {
+          if (!isMounted) return;
+          if (!snapshot.empty) {
+            const list = [];
+            snapshot.forEach(doc => list.push(doc.data()));
+            list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            setReturns(list);
+            setStored("returns", list);
+          }
+        }, (err) => console.warn("Returns sync error:", err));
+
+        // 11. Real-time Bidirectional POS Inventory Mirror Subscription
+        const unsubPosInventory = firestoreDb.collection("pos_inventory").onSnapshot((snapshot) => {
+          if (!isMounted) return;
+          const map = {};
+          const posUpdates = [];
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            if (d && (d.productId || doc.id)) {
+              const pid = String(d.productId || doc.id);
+              map[pid] = d;
+              if (d.lastOrigin !== syncOriginIdRef.current) {
+                posUpdates.push({ ...d, productId: pid });
+              }
+            }
+          });
+          setPosInventoryCloudMap(map);
+
+          if (posUpdates.length > 0) {
+            const currentList = productsRef.current || [];
+            let changed = false;
+            const nextList = currentList.map(p => {
+              const remote = posUpdates.find(u =>
+                String(u.productId) === String(p.id) ||
+                (u.sku && p.sku && u.sku === p.sku)
+              );
+              if (remote && remote.stock !== undefined) {
+                const remoteStock = Math.max(0, Number(remote.stock) || 0);
+                const remoteTime = Number(remote.updatedAt) || 0;
+                const localTime = Number(p.stockUpdatedAt) || 0;
+                if (remoteStock !== Number(p.stock) && remoteTime > localTime) {
+                  changed = true;
+                  return {
+                    ...p,
+                    stock: remoteStock,
+                    stockUpdatedAt: remoteTime,
+                    lastSyncSource: remote.lastSource || "POS_CLOUD"
+                  };
+                }
+              }
+              return p;
+            });
+            if (changed) {
+              suppressPosPushRef.current = true;
+              setProducts(nextList);
+              setStored("products", nextList);
+              nextList.forEach(np => {
+                const matched = posUpdates.find(u => String(u.productId) === String(np.id));
+                if (matched && Number(matched.updatedAt || 0) === Number(np.stockUpdatedAt || 0)) {
+                  firestoreDb.collection("products").doc(String(np.id)).set({
+                    stock: np.stock,
+                    stockUpdatedAt: np.stockUpdatedAt
+                  }, { merge: true }).catch(() => {});
+                }
+              });
+              // Push clean updated list to POS iframe/localStorage without echoing back
+              setTimeout(() => {
+                suppressPosPushRef.current = false;
+                syncProductsToPos(nextList, { syncCloud: false });
+              }, 60);
+              setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+            }
+          }
+        }, (err) => console.warn("POS inventory sync error:", err));
+
+        // 12. Real-time Bidirectional Sync Audit Events Feed
+        const unsubSyncEvents = firestoreDb.collection("inventory_sync_events")
+          .orderBy("timestamp", "desc")
+          .limit(50)
+          .onSnapshot((snapshot) => {
+            if (!isMounted) return;
+            if (!snapshot.empty) {
+              const evList = [];
+              snapshot.forEach(doc => evList.push(doc.data()));
+              setInventorySyncEvents(evList);
+            }
+          }, (err) => console.warn("Inventory sync events error:", err));
+
         return () => {
           isMounted = false;
           unsubLoyalty();
@@ -1857,6 +1960,9 @@
           unsubCoupons();
           unsubBanners();
           unsubReviews();
+          unsubReturns();
+          unsubPosInventory();
+          unsubSyncEvents();
           unsubStore();
           unsubCourier();
           unsubPixel();
@@ -5727,13 +5833,18 @@
       const executeStockInOut = async (product, type, qty = 1) => {
         if (!product) return;
         const quantity = Math.max(1, Number(qty) || 1);
+        const delta = type === "in" ? quantity : -quantity;
         const oldStock = Number(product.stock) || 0;
-        const newStock = type === "in" ? oldStock + quantity : Math.max(0, oldStock - quantity);
+        const newStock = Math.max(0, oldStock + delta);
 
-        const updatedProducts = products.map(p => p.id === product.id ? { ...p, stock: newStock } : p);
-        setProducts(updatedProducts);
-        setStored("products", updatedProducts);
-        await syncDocToCloud("products", product.id, { stock: newStock });
+        await applyBidirectionalStockChanges(
+          [{ productId: product.id, sku: product.sku, name: product.name, delta }],
+          {
+            source: type === "in" ? "STOCK_IN" : "STOCK_OUT",
+            reason: type === "in" ? "বারকোড রিস্টক ইন (Purchase)" : "বারকোড বিক্রয় আউট (Sale)",
+            referenceId: "STK-" + Math.floor(1000 + Math.random() * 9000)
+          }
+        );
 
         const newLog = {
           id: "STK-" + Math.floor(1000 + Math.random() * 9000),
@@ -5756,8 +5867,8 @@
         playScannerBeep();
         notify(
           type === "in"
-            ? `📥 স্টক ইন সফল! ${product.name} (+${quantity}টি) • বর্তমান স্টক: ${newStock}টি`
-            : `📤 স্টক আউট সফল! ${product.name} (-${quantity}টি) • বর্তমান স্টক: ${newStock}টি`
+            ? `📥 স্টক ইন সফল! ${product.name} (+${quantity}টি) • POS ও স্টোরফ্রন্ট স্টক: ${newStock}টি`
+            : `📤 স্টক আউট সফল! ${product.name} (-${quantity}টি) • POS ও স্টোরফ্রন্ট স্টক: ${newStock}টি`
         );
       };
 
@@ -6202,39 +6313,44 @@
           };
         });
 
-        // 1. Update Product Stocks in Store Inventory:
+        // 1. Update Product Stocks Bidirectionally across Storefront, POS & Firestore:
         // A. Restock returned items if restock is true
         // B. Deduct new exchanged items from inventory stock
-        let updatedProducts = [...products];
+        const returnId = "RET-" + Math.floor(100000 + Math.random() * 900000);
+        const stockAdjustments = [];
 
         returnedProductsList.forEach(ret => {
           if (ret.restock) {
-            const pIdx = updatedProducts.findIndex(p => p.id === ret.productId || p.name === ret.name);
-            if (pIdx >= 0) {
-              const oldStock = Number(updatedProducts[pIdx].stock) || 0;
-              updatedProducts[pIdx] = { ...updatedProducts[pIdx], stock: oldStock + ret.qty };
-              syncDocToCloud("products", updatedProducts[pIdx].id, updatedProducts[pIdx]);
-            }
+            stockAdjustments.push({
+              productId: ret.productId,
+              name: ret.name,
+              delta: Number(ret.qty) || 1,
+              reason: `সেলস রিটার্ন রিস্টক (${returnOrder.id})`
+            });
           }
         });
 
         if (isExchange) {
           exchangeItems.forEach(ex => {
-            const pIdx = updatedProducts.findIndex(p => p.id === ex.product.id);
-            if (pIdx >= 0) {
-              const oldStock = Number(updatedProducts[pIdx].stock) || 0;
-              const newStock = Math.max(0, oldStock - ex.qty);
-              updatedProducts[pIdx] = { ...updatedProducts[pIdx], stock: newStock };
-              syncDocToCloud("products", updatedProducts[pIdx].id, updatedProducts[pIdx]);
-            }
+            stockAdjustments.push({
+              productId: ex.product.id,
+              sku: ex.product.sku,
+              name: ex.product.name,
+              delta: -(Number(ex.qty) || 1),
+              reason: `এক্সচেঞ্জ পণ্য ইস্যু (${returnOrder.id})`
+            });
           });
         }
 
-        setProducts(updatedProducts);
-        setStored("products", updatedProducts);
+        if (stockAdjustments.length > 0) {
+          await applyBidirectionalStockChanges(stockAdjustments, {
+            source: isExchange ? "RETURN_EXCHANGE" : "RETURN_RESTOCK",
+            reason: isExchange ? `রিটার্ন ও এক্সচেঞ্জ (${returnOrder.id})` : `সেলস রিটার্ন রিস্টক (${returnOrder.id})`,
+            referenceId: returnId
+          });
+        }
 
         // 2. Create the Sales Return Record
-        const returnId = "RET-" + Math.floor(100000 + Math.random() * 900000);
         const record = {
           id: returnId,
           orderId: returnOrder.id,
@@ -6699,19 +6815,19 @@
           }))
         };
 
-        // 1. Deduct Stock Immediately from Store Inventory
-        let updatedProducts = [...products];
-        posCart.forEach(ci => {
-          const pIdx = updatedProducts.findIndex(p => p.id === ci.product.id);
-          if (pIdx >= 0) {
-            const currentStock = Number(updatedProducts[pIdx].stock) || 0;
-            const newStock = Math.max(0, currentStock - ci.qty);
-            updatedProducts[pIdx] = { ...updatedProducts[pIdx], stock: newStock };
-            syncDocToCloud("products", updatedProducts[pIdx].id, updatedProducts[pIdx]);
-          }
+        // 1. Deduct Stock Immediately across Storefront, POS & Firestore (Bidirectional Sync)
+        const posStockAdjustments = posCart.map(ci => ({
+          productId: ci.product.id,
+          sku: ci.product.sku,
+          name: ci.product.name,
+          delta: -(Number(ci.qty) || 1),
+          reason: `POS কাউন্টার বিক্রয় (${saleId})`
+        }));
+        await applyBidirectionalStockChanges(posStockAdjustments, {
+          source: "POS_SALE",
+          reason: "POS কাউন্টার বিক্রয়",
+          referenceId: saleId
         });
-        setProducts(updatedProducts);
-        setStored("products", updatedProducts);
 
         // 2. Add to Orders List & Cloud Sync
         const updatedOrders = [saleOrder, ...orders];
@@ -7015,24 +7131,30 @@
         } catch (e) {}
       };
 
-      // 3. Sync Products & Stock to POS Catalog
-      const syncProductsToPos = (productsList) => {
+      // 3. Sync Products & Stock to POS Catalog & Firestore POS Mirror
+      const syncProductsToPos = (productsList, options = {}) => {
         if (!Array.isArray(productsList) || productsList.length === 0) return;
+        const { syncCloud = false, source = "STOREFRONT_SYNC", referenceId = "" } = options;
         try {
           const raw = localStorage.getItem("sajgoj_products");
           let posProducts = raw ? JSON.parse(raw) : [];
           if (!Array.isArray(posProducts)) posProducts = [];
+          const now = Date.now();
 
           productsList.forEach(p => {
-            if (!p) return;
-            if (p.enabledForPos === false) return;
+            if (!p || p.enabledForPos === false) return;
 
-            const cleanStock = Number(p.stock) || 0;
+            const cleanStock = Math.max(0, Number(p.stock) || 0);
             const cleanPrice = Number(p.price) || 0;
             const cleanCost = Number(p.costPrice || Math.round(cleanPrice * 0.7)) || 0;
             const sku = p.sku || `SAJ-${p.id}`;
 
-            const existingIdx = posProducts.findIndex(pp => pp.id === p.id || (pp.sku && pp.sku === sku) || pp.nameBn === p.name || pp.nameEn === p.name);
+            const existingIdx = posProducts.findIndex(pp =>
+              String(pp.id) === String(p.id) ||
+              (pp.sku && pp.sku === sku) ||
+              pp.nameBn === p.name ||
+              pp.nameEn === p.name
+            );
 
             const posItem = {
               id: String(p.id),
@@ -7046,6 +7168,7 @@
               sellingPrice: cleanPrice,
               price: cleanPrice,
               stock: cleanStock,
+              stockUpdatedAt: p.stockUpdatedAt || now,
               minStockAlert: 5,
               image: (p.images && p.images[0]) || p.image || "",
               sizes: p.sizes || [],
@@ -7058,49 +7181,290 @@
             } else {
               posProducts.unshift(posItem);
             }
+
+            if (syncCloud && firestoreDb) {
+              firestoreDb.collection("pos_inventory").doc(String(p.id)).set({
+                productId: String(p.id),
+                name: p.name,
+                sku: sku,
+                stock: cleanStock,
+                price: cleanPrice,
+                updatedAt: p.stockUpdatedAt || now,
+                lastSource: source,
+                lastOrigin: syncOriginIdRef.current,
+                lastReferenceId: referenceId || ""
+              }, { merge: true }).catch(() => {});
+            }
           });
 
-          localStorage.setItem("sajgoj_products", JSON.stringify(posProducts));
-          window.dispatchEvent(new Event("storage"));
+          const serialized = JSON.stringify(posProducts);
+          if (raw !== serialized) {
+            localStorage.setItem("sajgoj_products", serialized);
+            window.dispatchEvent(new Event("storage"));
+          }
+
+          const payload = {
+            type: "SAJGOJ_PRODUCTS_SYNC",
+            products: posProducts,
+            source: "STOREFRONT",
+            timestamp: now
+          };
 
           const frame = document.getElementById("sajgoj-fullpos-frame");
           if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({ type: "SAJGOJ_PRODUCTS_SYNC", products: posProducts }, "*");
+            frame.contentWindow.postMessage(payload, "*");
+          }
+          if (syncChannelRef.current) {
+            syncChannelRef.current.postMessage(payload);
           }
         } catch (err) {
           console.error("Failed to sync products to POS:", err);
         }
       };
 
-      // 4. Deduct Stock in POS when Website Checkout occurs
-      const deductPosStock = (itemsList) => {
-        if (!Array.isArray(itemsList) || itemsList.length === 0) return;
-        try {
-          const raw = localStorage.getItem("sajgoj_products");
-          if (!raw) return;
-          let posProducts = JSON.parse(raw);
-          if (!Array.isArray(posProducts)) return;
+      // 3B. Unified Bidirectional Inventory Sync Service (Storefront <-> POS <-> Firestore)
+      const expandOrderItemsToStockChanges = (itemsList, directionMultiplier = -1) => {
+        const aggregated = {};
+        const addDelta = (pid, sku, name, delta) => {
+          const key = String(pid || name || sku || "");
+          if (!key || !delta) return;
+          if (!aggregated[key]) {
+            aggregated[key] = { productId: pid, sku: sku || "", name: name || "", delta: 0 };
+          }
+          aggregated[key].delta += delta;
+        };
 
-          let changed = false;
-          itemsList.forEach(it => {
-            const qty = Number(it.qty || it.quantity || 1);
-            const target = posProducts.find(pp => pp.id === it.id || pp.sku === it.sku || pp.nameBn === it.name || pp.nameEn === it.name);
-            if (target) {
-              target.stock = Math.max(0, (Number(target.stock) || 0) - qty);
-              changed = true;
-            }
+        (itemsList || []).forEach(it => {
+          const qty = Math.max(1, Number(it.qty || it.quantity || 1));
+          if (it.isCombo && Array.isArray(it.bundledProducts) && it.bundledProducts.length > 0) {
+            it.bundledProducts.forEach(bp => {
+              const bpQty = Math.max(1, Number(bp.qty || bp.quantity || 1)) * qty;
+              addDelta(bp.id || bp.productId, bp.sku, bp.name, directionMultiplier * bpQty);
+            });
+          } else if (it.isFreeGift && it.freeGiftOriginId) {
+            addDelta(it.freeGiftOriginId, it.sku, it.name, directionMultiplier * qty);
+          } else {
+            addDelta(it.productId || it.id, it.sku, it.name, directionMultiplier * qty);
+          }
+        });
+        return Object.values(aggregated);
+      };
+
+      const applyBidirectionalStockChanges = async (changes, options = {}) => {
+        if (!Array.isArray(changes) || changes.length === 0) return;
+        const {
+          source = "STOREFRONT_SYNC",
+          reason = "স্টক আপডেট",
+          referenceId = "",
+          syncPos = true,
+          syncCloud = true
+        } = options;
+
+        const now = Date.now();
+        const currentList = productsRef.current || [];
+        const newEvents = [];
+        const deltaBroadcastItems = [];
+
+        const nextList = currentList.map(p => {
+          const matchedChanges = changes.filter(ch =>
+            (ch.productId && String(ch.productId) === String(p.id)) ||
+            (ch.sku && p.sku && String(ch.sku).toLowerCase() === String(p.sku).toLowerCase()) ||
+            (ch.name && p.name && ch.name === p.name)
+          );
+          if (matchedChanges.length === 0) return p;
+
+          const totalDelta = matchedChanges.reduce((sum, ch) => sum + (Number(ch.delta) || 0), 0);
+          if (totalDelta === 0) return p;
+
+          const prevStock = Number(p.stock) || 0;
+          const nextStock = Math.max(0, prevStock + totalDelta);
+          const updatedProduct = {
+            ...p,
+            stock: nextStock,
+            stockUpdatedAt: now,
+            lastSyncSource: source
+          };
+
+          const ev = {
+            id: `SYNC-${now}-${Math.random().toString(36).slice(2, 6)}`,
+            productId: String(p.id),
+            productName: p.name,
+            sku: p.sku || `SAJ-${p.id}`,
+            previousStock: prevStock,
+            newStock: nextStock,
+            delta: nextStock - prevStock,
+            source: source,
+            reason: matchedChanges[0].reason || reason,
+            referenceId: referenceId || "",
+            timestamp: now
+          };
+          newEvents.push(ev);
+          deltaBroadcastItems.push({
+            productId: String(p.id),
+            id: String(p.id),
+            sku: p.sku || `SAJ-${p.id}`,
+            name: p.name,
+            delta: totalDelta,
+            newStock: nextStock,
+            timestamp: now
           });
 
-          if (changed) {
-            localStorage.setItem("sajgoj_products", JSON.stringify(posProducts));
-            window.dispatchEvent(new Event("storage"));
+          if (syncCloud && firestoreDb) {
+            firestoreDb.collection("products").doc(String(p.id)).set({
+              stock: nextStock,
+              stockUpdatedAt: now,
+              lastSyncSource: source
+            }, { merge: true }).catch(() => {});
+
+            firestoreDb.collection("pos_inventory").doc(String(p.id)).set({
+              productId: String(p.id),
+              name: p.name,
+              sku: p.sku || `SAJ-${p.id}`,
+              stock: nextStock,
+              price: Number(p.price) || 0,
+              updatedAt: now,
+              lastSource: source,
+              lastOrigin: syncOriginIdRef.current,
+              lastReferenceId: referenceId || ""
+            }, { merge: true }).catch(() => {});
+
+            firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch(() => {});
+          }
+
+          return updatedProduct;
+        });
+
+        if (newEvents.length > 0) {
+          suppressPosPushRef.current = true;
+          productsRef.current = nextList;
+          setProducts(nextList);
+          setStored("products", nextList);
+          setInventorySyncEvents(prev => [...newEvents, ...(prev || [])].slice(0, 60));
+          setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+
+          if (syncPos) {
+            syncProductsToPos(nextList, { syncCloud: false, source, referenceId });
+            const deltaPayload = {
+              type: "SAJGOJ_STOCK_DELTA",
+              items: deltaBroadcastItems,
+              source: source,
+              timestamp: now
+            };
             const frame = document.getElementById("sajgoj-fullpos-frame");
             if (frame && frame.contentWindow) {
-              frame.contentWindow.postMessage({ type: "SAJGOJ_STOCK_DEDUCTED", items: itemsList }, "*");
+              frame.contentWindow.postMessage(deltaPayload, "*");
+            }
+            if (syncChannelRef.current) {
+              syncChannelRef.current.postMessage(deltaPayload);
             }
           }
-        } catch (err) {
-          console.error("Failed to deduct POS stock:", err);
+
+          setTimeout(() => { suppressPosPushRef.current = false; }, 60);
+        }
+      };
+
+      // Reconcile any stock drift between Storefront, Firestore pos_inventory, and local POS catalog
+      const reconcileStorefrontAndPos = async (silent = false) => {
+        const currentList = productsRef.current || [];
+        const now = Date.now();
+        let posLocal = [];
+        try {
+          const raw = localStorage.getItem("sajgoj_products");
+          if (raw) posLocal = JSON.parse(raw);
+          if (!Array.isArray(posLocal)) posLocal = [];
+        } catch (e) { posLocal = []; }
+
+        let fixedCount = 0;
+        const syncEvents = [];
+
+        const reconciled = currentList.map(p => {
+          const cloudPos = posInventoryCloudMap[String(p.id)];
+          const localPos = posLocal.find(pp =>
+            String(pp.id) === String(p.id) ||
+            (pp.sku && p.sku && pp.sku === p.sku) ||
+            pp.nameBn === p.name ||
+            pp.nameEn === p.name
+          );
+
+          const storeTime = Number(p.stockUpdatedAt) || 0;
+          const cloudPosTime = Number(cloudPos?.updatedAt) || 0;
+          const localPosTime = Number(localPos?.stockUpdatedAt) || 0;
+
+          let winningStock = Number(p.stock) || 0;
+          let winningSource = "STOREFRONT_RECONCILE";
+
+          if (cloudPos && cloudPos.stock !== undefined && cloudPosTime > storeTime && Number(cloudPos.stock) !== winningStock) {
+            winningStock = Math.max(0, Number(cloudPos.stock) || 0);
+            winningSource = cloudPos.lastSource || "POS_CLOUD";
+          } else if (localPos && localPos.stock !== undefined && localPosTime > storeTime && Number(localPos.stock) !== winningStock) {
+            winningStock = Math.max(0, Number(localPos.stock) || 0);
+            winningSource = "POS_LOCAL";
+          }
+
+          if (winningStock !== Number(p.stock) || !cloudPos || Number(cloudPos.stock) !== winningStock) {
+            fixedCount++;
+            if (winningStock !== Number(p.stock)) {
+              syncEvents.push({
+                id: `REC-${now}-${String(p.id)}`,
+                productId: String(p.id),
+                productName: p.name,
+                sku: p.sku || `SAJ-${p.id}`,
+                previousStock: Number(p.stock) || 0,
+                newStock: winningStock,
+                delta: winningStock - (Number(p.stock) || 0),
+                source: winningSource,
+                reason: "দ্বিমুখী স্টক রিকনসিলিয়েশন",
+                referenceId: "RECONCILE",
+                timestamp: now
+              });
+            }
+          }
+
+          return {
+            ...p,
+            stock: winningStock,
+            stockUpdatedAt: Math.max(storeTime, cloudPosTime, localPosTime, now)
+          };
+        });
+
+        suppressPosPushRef.current = true;
+        productsRef.current = reconciled;
+        setProducts(reconciled);
+        setStored("products", reconciled);
+        syncProductsToPos(reconciled, { syncCloud: true, source: "RECONCILE", referenceId: "MANUAL_SYNC" });
+
+        if (firestoreDb) {
+          reconciled.forEach(rp => {
+            firestoreDb.collection("products").doc(String(rp.id)).set({
+              stock: rp.stock,
+              stockUpdatedAt: rp.stockUpdatedAt
+            }, { merge: true }).catch(() => {});
+          });
+          syncEvents.forEach(ev => {
+            firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch(() => {});
+          });
+        }
+
+        if (syncEvents.length > 0) {
+          setInventorySyncEvents(prev => [...syncEvents, ...(prev || [])].slice(0, 60));
+        }
+        setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+        setTimeout(() => { suppressPosPushRef.current = false; }, 80);
+
+        if (!silent) {
+          notify(`🔄 দ্বিমুখী সিঙ্ক সম্পন্ন! ${reconciled.length}টি পণ্য ও POS ইনভেন্টরি ১০০% সিঙ্কড (${fixedCount}টি সমন্বিত)`);
+        }
+      };
+
+      // 4. Deduct Stock in POS when Website Checkout occurs (Legacy wrapper -> Bidirectional Service)
+      const deductPosStock = (itemsList, referenceId = "") => {
+        const changes = expandOrderItemsToStockChanges(itemsList, -1);
+        if (changes.length > 0) {
+          applyBidirectionalStockChanges(changes, {
+            source: "STOREFRONT_SALE",
+            reason: "অনলাইন স্টোরফ্রন্ট বিক্রয়",
+            referenceId
+          });
         }
       };
 
@@ -7127,7 +7491,7 @@
               customerPhone: order.phone || "",
               customerAddress: order.address || "",
               items: (order.items || []).map(it => ({
-                productId: it.id || `prod-${it.name}`,
+                productId: it.id || it.productId || `prod-${it.name}`,
                 productName: it.name,
                 sku: it.sku || `SAJ-${it.id || 'WEB'}`,
                 category: it.category || "অনলাইন পণ্য",
@@ -7184,10 +7548,88 @@
         }
       };
 
+      // Apply POS catalog snapshot updates into Storefront + Firestore without echo loops
+      const applyPosCatalogSnapshotToStorefront = (posProds, originLabel = "POS_TERMINAL") => {
+        if (!Array.isArray(posProds) || posProds.length === 0) return;
+        const currentList = productsRef.current || [];
+        if (currentList.length === 0) return;
+
+        const now = Date.now();
+        const detectedEvents = [];
+        let hasChanges = false;
+
+        const updated = currentList.map(p => {
+          const match = posProds.find(pp =>
+            String(pp.id) === String(p.id) ||
+            (pp.sku && p.sku && pp.sku === p.sku) ||
+            pp.nameBn === p.name ||
+            pp.nameEn === p.name
+          );
+          if (match && match.stock !== undefined) {
+            const posStock = Math.max(0, Number(match.stock) || 0);
+            const curStock = Number(p.stock) || 0;
+            const posTime = Number(match.stockUpdatedAt) || now;
+            const localTime = Number(p.stockUpdatedAt) || 0;
+            if (posStock !== curStock && posTime >= localTime) {
+              hasChanges = true;
+              const delta = posStock - curStock;
+              const ev = {
+                id: `POS-${now}-${String(p.id)}`,
+                productId: String(p.id),
+                productName: p.name,
+                sku: p.sku || `SAJ-${p.id}`,
+                previousStock: curStock,
+                newStock: posStock,
+                delta: delta,
+                source: delta < 0 ? "POS_SALE" : "POS_RETURN_OR_RESTOCK",
+                reason: delta < 0 ? `POS টার্মিনাল বিক্রয় (${originLabel})` : `POS রিটার্ন / রিস্টক (${originLabel})`,
+                referenceId: originLabel,
+                timestamp: now
+              };
+              detectedEvents.push(ev);
+
+              if (firestoreDb) {
+                firestoreDb.collection("products").doc(String(p.id)).set({
+                  stock: posStock,
+                  stockUpdatedAt: now,
+                  lastSyncSource: ev.source
+                }, { merge: true }).catch(() => {});
+
+                firestoreDb.collection("pos_inventory").doc(String(p.id)).set({
+                  productId: String(p.id),
+                  name: p.name,
+                  sku: p.sku || `SAJ-${p.id}`,
+                  stock: posStock,
+                  price: Number(p.price) || 0,
+                  updatedAt: now,
+                  lastSource: ev.source,
+                  lastOrigin: syncOriginIdRef.current,
+                  lastReferenceId: originLabel
+                }, { merge: true }).catch(() => {});
+
+                firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch(() => {});
+              }
+              return { ...p, stock: posStock, stockUpdatedAt: now, lastSyncSource: ev.source };
+            }
+          }
+          return p;
+        });
+
+        if (hasChanges) {
+          suppressPosPushRef.current = true;
+          productsRef.current = updated;
+          setProducts(updated);
+          setStored("products", updated);
+          setInventorySyncEvents(prev => [...detectedEvents, ...(prev || [])].slice(0, 60));
+          setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+          setTimeout(() => { suppressPosPushRef.current = false; }, 80);
+        }
+      };
+
       // 6. Automated Synchronization Hooks (Products, Orders, Customers)
       useEffect(() => {
-        if (products && products.length > 0) {
-          syncProductsToPos(products);
+        if (products && products.length > 0 && !suppressPosPushRef.current) {
+          syncProductsToPos(products, { syncCloud: true, source: "STOREFRONT_CATALOG" });
         }
       }, [products]);
 
@@ -7197,59 +7639,60 @@
         }
       }, [orders]);
 
-      // 7. Bidirectional Stock Listener: When POS sells, update Website Catalog Stock
+      // 7. Real-Time Bidirectional Stock Listener: BroadcastChannel + postMessage + storage + fallback check
       useEffect(() => {
+        let channel = null;
+        try {
+          if (typeof BroadcastChannel !== "undefined") {
+            channel = new BroadcastChannel("sajgoj_inventory_sync");
+            syncChannelRef.current = channel;
+            channel.onmessage = (ev) => {
+              const msg = ev && ev.data;
+              if (!msg || suppressPosPushRef.current) return;
+              if (msg.type === "SAJGOJ_POS_PRODUCTS_UPDATED" && Array.isArray(msg.data)) {
+                applyPosCatalogSnapshotToStorefront(msg.data, "POS_BROADCAST");
+              }
+            };
+          }
+        } catch (err) {}
+
+        const handleWindowMessage = (e) => {
+          const msg = e && e.data;
+          if (!msg || suppressPosPushRef.current) return;
+          if (msg.type === "SAJGOJ_POS_PRODUCTS_UPDATED" && Array.isArray(msg.data)) {
+            applyPosCatalogSnapshotToStorefront(msg.data, "POS_IFRAME");
+          }
+        };
+
         const handleStorageChange = (e) => {
-          if (e.key === "sajgoj_products" && e.newValue) {
+          if (e.key === "sajgoj_products" && e.newValue && !suppressPosPushRef.current) {
             try {
               const posProds = JSON.parse(e.newValue);
-              if (Array.isArray(posProds)) {
-                setProducts(prev => {
-                  let hasChanges = false;
-                  const updated = prev.map(p => {
-                    const match = posProds.find(pp => pp.id === p.id || (pp.sku && pp.sku === p.sku) || pp.nameBn === p.name || pp.nameEn === p.name);
-                    if (match && match.stock !== undefined && Number(match.stock) !== Number(p.stock)) {
-                      hasChanges = true;
-                      const newStock = Number(match.stock);
-                      syncDocToCloud("products", p.id, { stock: newStock });
-                      return { ...p, stock: newStock };
-                    }
-                    return p;
-                  });
-                  return hasChanges ? updated : prev;
-                });
-              }
+              applyPosCatalogSnapshotToStorefront(posProds, "POS_TAB_STORAGE");
             } catch (err) {}
           }
         };
 
+        window.addEventListener("message", handleWindowMessage);
         window.addEventListener("storage", handleStorageChange);
+
         const pollInterval = setInterval(() => {
+          if (suppressPosPushRef.current) return;
           try {
             const raw = localStorage.getItem("sajgoj_products");
             if (raw) {
               const posProds = JSON.parse(raw);
-              if (Array.isArray(posProds)) {
-                setProducts(prev => {
-                  let hasChanges = false;
-                  const updated = prev.map(p => {
-                    const match = posProds.find(pp => pp.id === p.id || (pp.sku && pp.sku === p.sku) || pp.nameBn === p.name || pp.nameEn === p.name);
-                    if (match && match.stock !== undefined && Number(match.stock) !== Number(p.stock)) {
-                      hasChanges = true;
-                      const newStock = Number(match.stock);
-                      syncDocToCloud("products", p.id, { stock: newStock });
-                      return { ...p, stock: newStock };
-                    }
-                    return p;
-                  });
-                  return hasChanges ? updated : prev;
-                });
-              }
+              applyPosCatalogSnapshotToStorefront(posProds, "POS_POLL_CHECK");
             }
-          } catch(e) {}
-        }, 3000);
+          } catch (e) {}
+        }, 4000);
 
         return () => {
+          if (channel) {
+            try { channel.close(); } catch (e) {}
+            syncChannelRef.current = null;
+          }
+          window.removeEventListener("message", handleWindowMessage);
           window.removeEventListener("storage", handleStorageChange);
           clearInterval(pollInterval);
         };
@@ -7513,7 +7956,8 @@
       const [adminProductBogoFilter, setAdminProductBogoFilter] = useState("All");
       const [adminProductSubTab, setAdminProductSubTab] = useState("list"); // "list", "stock", "sales", "categories"
       const [adminStockCatFilter, setAdminStockCatFilter] = useState("All");
-      const [adminOrderSubTab, setAdminOrderSubTab] = useState("new_orders"); // "new_orders", "all_orders", "courier", "returns"
+      const [adminOrderSubTab, setAdminOrderSubTab] = useState("new_orders"); // "new_orders", "delivery_tracking", "all_orders", "courier", "returns"
+      const [deliveryTrackingFilter, setDeliveryTrackingFilter] = useState("All"); // "All", "Pending", "Shipped", "Delivered"
       const [externalLinkInput, setExternalLinkInput] = useState("");
       const [imageUrlInput, setImageUrlInput] = useState("");
       const [isFetchingUrl, setIsFetchingUrl] = useState(false);
@@ -8815,15 +9259,6 @@
           trackingId: ""
         };
 
-        // Deduct stock (including for free gift)
-        setProducts(prev => prev.map(p => {
-          const inCart = cart.find(c => c.id === p.id || (c.isFreeGift && c.freeGiftOriginId === p.id));
-          const deductQty = inCart ? (inCart.qty || 1) : 0;
-          const updatedP = deductQty > 0 ? { ...p, stock: Math.max(0, p.stock - deductQty) } : p;
-          if (deductQty > 0) syncDocToCloud("products", p.id, updatedP);
-          return updatedP;
-        }));
-
         // 1. Automatically sync customer to POS customer list
         syncCustomerToPos({
           name: checkoutForm.name,
@@ -8833,8 +9268,8 @@
           total: orderData.total
         });
 
-        // 2. Automatically deduct stock in POS inventory
-        deductPosStock(cart);
+        // 2. Automatically deduct stock across Storefront, POS Inventory & Firestore (regular, combo bundled, and free gifts)
+        deductPosStock(cart, newOrderId);
 
         setOrders(prev => [orderData, ...prev]);
         syncDocToCloud("orders", newOrderId, orderData);
@@ -8862,12 +9297,26 @@
         notify(`অর্ডার #${orderId} সফলভাবে ${provider}-এ বুকিং করা হয়েছে! ট্র্যাকিং ID: ${tracking}`);
       };
 
-      // Change Order Status (With POS Payment Recording on Delivery)
+      // Change Order Status (With POS Payment Recording on Delivery & Bidirectional Restock on Cancel)
       const updateOrderStatus = (orderId, newStatus) => {
+        const existingOrder = (ordersRef.current || orders).find(o => o.id === orderId);
         let deliveredOrder = null;
+        let stockDeltaMultiplier = 0;
+        let nextRestockedFlag = existingOrder ? Boolean(existingOrder.stockRestockedOnCancel) : false;
+
+        if (existingOrder) {
+          if (newStatus === "Cancelled" && existingOrder.status !== "Cancelled" && !existingOrder.stockRestockedOnCancel) {
+            stockDeltaMultiplier = 1; // Restore stock back to Storefront & POS
+            nextRestockedFlag = true;
+          } else if (existingOrder.status === "Cancelled" && newStatus !== "Cancelled" && existingOrder.stockRestockedOnCancel) {
+            stockDeltaMultiplier = -1; // Re-deduct stock if cancelled order is reopened
+            nextRestockedFlag = false;
+          }
+        }
+
         setOrders(prev => prev.map(o => {
           if (o.id === orderId) {
-            const updated = { ...o, status: newStatus };
+            const updated = { ...o, status: newStatus, stockRestockedOnCancel: nextRestockedFlag };
             if (newStatus === "Delivered") {
               deliveredOrder = updated;
             }
@@ -8875,7 +9324,20 @@
           }
           return o;
         }));
-        syncDocToCloud("orders", orderId, { status: newStatus });
+        syncDocToCloud("orders", orderId, { status: newStatus, stockRestockedOnCancel: nextRestockedFlag });
+
+        if (existingOrder && stockDeltaMultiplier !== 0 && Array.isArray(existingOrder.items) && existingOrder.items.length > 0) {
+          const cancelChanges = expandOrderItemsToStockChanges(existingOrder.items, stockDeltaMultiplier);
+          if (cancelChanges.length > 0) {
+            applyBidirectionalStockChanges(cancelChanges, {
+              source: stockDeltaMultiplier > 0 ? "ORDER_CANCELLED_RESTOCK" : "ORDER_REOPENED_DEDUCT",
+              reason: stockDeltaMultiplier > 0
+                ? `অর্ডার #${orderId} বাতিল হওয়ায় অটো-রিস্টক`
+                : `অর্ডার #${orderId} পুনরায় সক্রিয় হওয়ায় স্টক সমন্বয়`,
+              referenceId: orderId
+            });
+          }
+        }
 
         // When order is Delivered: Automatically record payment received in POS!
         if (newStatus === "Delivered") {
@@ -8886,7 +9348,11 @@
             return;
           }
         }
-        notify(`অর্ডার #${orderId} এর স্ট্যাটাস "${newStatus}" করা হয়েছে! ✅`);
+        if (stockDeltaMultiplier > 0) {
+          notify(`অর্ডার #${orderId} বাতিল করা হয়েছে ও স্টক অটোমেটিক স্টোরফ্রন্ট + POS-এ ফেরত যোগ হয়েছে! 🔄`);
+        } else {
+          notify(`অর্ডার #${orderId} এর স্ট্যাটাস "${newStatus}" করা হয়েছে! ✅`);
+        }
       };
 
       // Delete Order
@@ -11297,20 +11763,29 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                           <button
                             type="button"
-                            onClick={() => {
-                              syncProductsToPos(products);
+                            onClick={async () => {
+                              await reconcileStorefrontAndPos(false);
                               syncAllWebsiteCustomersToPos(orders);
                               const frame = document.getElementById("sajgoj-fullpos-frame");
-                              if (frame) {
-                                frame.src = frame.src;
+                              if (frame && frame.contentWindow) {
+                                frame.contentWindow.postMessage({ type: "SAJGOJ_PRODUCTS_SYNC", products: JSON.parse(localStorage.getItem("sajgoj_products") || "[]") }, "*");
                               }
-                              notify("✓ ওয়েবসাইট ও POS স্টক এবং কাস্টমার তালিকা সফলভাবে সিঙ্ক হয়েছে!");
                             }}
                             className="red-black-tab px-3.5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-sm"
-                            title="স্টক ও কাস্টমার ডেটা রিসিঙ্ক করুন"
+                            title="স্টোরফ্রন্ট ও POS স্টক রিয়েল-টাইমে রিকনসিল করুন"
                           >
                             <span>🔄</span>
-                            <span>রিসিঙ্ক ও রিলোড</span>
+                            <span>রিকনসিল ও সিঙ্ক</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsSyncLogDrawerOpen(prev => !prev)}
+                            className="red-black-tab px-3.5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-sm"
+                            title="লাইভ স্টক সিঙ্ক লগ দেখুন"
+                          >
+                            <span>📡</span>
+                            <span>সিঙ্ক লগ ({(inventorySyncEvents || []).length})</span>
                           </button>
 
                           <button
@@ -11342,22 +11817,66 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       </div>
 
-                      {/* Live Sync Status Bar */}
+                      {/* Live Bidirectional Sync Status Bar */}
                       <div className="mt-4 pt-3 border-t border-black/10 flex flex-wrap items-center justify-between text-xs text-[#000000] gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                          <span className="font-bold text-[#000000]">অটোমেটিক ২-ওয়ে স্টক সিঙ্ক সক্রিয়:</span>
-                          <span className="text-[#000000] font-medium">যেকোনো চ্যানেল থেকে বিক্রি হলে উভয় জায়গাতেই তাৎক্ষণিক স্টক কমবে</span>
+                          <span className={`w-2.5 h-2.5 rounded-full ${cloudSyncStatus === "offline" ? "bg-amber-600" : "bg-emerald-600 animate-pulse"}`}></span>
+                          <span className="font-bold text-[#000000]">রিয়েল-টাইম ২-ওয়ে সিঙ্ক ({cloudSyncStatus === "offline" ? "লোকাল ব্রিজ" : "ক্লাউড + POS সক্রিয়"}):</span>
+                          <span className="text-[#000000] font-medium">স্টোরফ্রন্ট বা POS-এ বিক্রয়/রিটার্ন হলে স্বয়ংক্রিয়ভাবে উভয় দিকেই স্টক আপডেট হয় • শেষ সিঙ্ক: {lastCloudSyncTime}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-[11px]">
+                        <div className="flex items-center gap-2 text-[11px] flex-wrap">
                           <span className="red-black-tab px-2.5 py-1 rounded-xl">
-                            📦 মোট সিঙ্কড প্রোডাক্ট: <b>{products.length}</b>টি
+                            📦 সিঙ্কড SKU: <b>{products.length}</b>টি
+                          </span>
+                          <span className="red-black-tab px-2.5 py-1 rounded-xl">
+                            🔁 মোট ইভেন্ট: <b>{(inventorySyncEvents || []).length}</b>টি
                           </span>
                           <span className="red-black-tab px-2.5 py-1 rounded-xl">
                             👥 POS কাস্টমার ডেটাবেজ: <b>অটো-সিঙ্কড</b>
                           </span>
                         </div>
                       </div>
+
+                      {/* Collapsible Bidirectional Sync Audit Feed */}
+                      {isSyncLogDrawerOpen && (
+                        <div className="mt-4 pt-3 border-t border-black/15 space-y-2 animate-fadeIn">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs sm:text-sm font-black text-[#000000]">
+                              📡 রিয়েল-টাইম স্টক সিঙ্ক অডিট লগ (Storefront ↔ POS ↔ Firestore)
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => setIsSyncLogDrawerOpen(false)}
+                              className="red-black-tab px-2.5 py-1 rounded-xl text-[11px] font-bold"
+                            >
+                              বন্ধ করুন ✕
+                            </button>
+                          </div>
+                          {(inventorySyncEvents || []).length === 0 ? (
+                            <div className="bg-white/80 text-[#000000] p-3 rounded-2xl text-xs font-semibold border border-black/10">
+                              এখনো কোনো সিঙ্ক মুভমেন্ট রেকর্ড হয়নি। স্টোরফ্রন্ট অর্ডার, POS বিক্রয় বা রিটার্ন সম্পন্ন হলে এখানে রিয়েল-টাইম লগ দেখা যাবে।
+                            </div>
+                          ) : (
+                            <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                              {(inventorySyncEvents || []).slice(0, 20).map(ev => (
+                                <div key={ev.id} className="bg-white/90 border border-black/10 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[#000000]">
+                                  <div className="flex items-center gap-2">
+                                    <span className="red-black-tab px-2 py-0.5 rounded-lg text-[10px] font-black">{ev.source}</span>
+                                    <span className="font-bold">{ev.productName}</span>
+                                    <span className="font-mono text-[10px] bg-black/5 px-1.5 py-0.5 rounded">{ev.sku}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2.5 text-[11px]">
+                                    <span className="font-semibold">{ev.reason}</span>
+                                    <span className="font-black px-2 py-0.5 rounded-lg bg-black/5">
+                                      {ev.previousStock} → {ev.newStock} ({ev.delta > 0 ? `+${ev.delta}` : ev.delta})
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Feature Capabilities Strip (Bottom/Feature Cards -> Red Bg + Black Text) */}
@@ -12895,7 +13414,17 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   if (confirm(`আপনি কি "${p.name}" মুছে ফেলতে চান?`)) {
                                     setProducts(prev => prev.filter(item => item.id !== p.id));
                                     deleteDocFromCloud("products", p.id);
-                                    notify("প্রোডাক্ট মুছে ফেলা হয়েছে!");
+                                    deleteDocFromCloud("pos_inventory", String(p.id));
+                                    try {
+                                      const posRaw = localStorage.getItem("sajgoj_products");
+                                      if (posRaw) {
+                                        const posList = JSON.parse(posRaw);
+                                        if (Array.isArray(posList)) {
+                                          localStorage.setItem("sajgoj_products", JSON.stringify(posList.filter(pp => String(pp.id) !== String(p.id))));
+                                        }
+                                      }
+                                    } catch (e) {}
+                                    notify("প্রোডাক্ট ও POS ইনভেন্টরি থেকে মুছে ফেলা হয়েছে!");
                                   }
                                 }}
                                 className="cta-dark-pill px-2.5 py-1.5 rounded-full text-xs font-bold transition"
@@ -13009,6 +13538,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                   {[
                     { id: "new_orders", label: "🔔 নতুন অর্ডার অনুমোদন", count: orders.filter(o => o.status === "Pending").length, highlight: orders.filter(o => o.status === "Pending").length > 0 },
+                    { id: "delivery_tracking", label: "📊 ডেলিভারি ট্র্যাকিং", count: orders.filter(o => o.status === "Pending" || o.status === "Shipped" || o.status === "Delivered").length, highlight: false },
                     { id: "all_orders", label: "📋 সকল অর্ডার ও ফিল্টার", count: orders.length, highlight: false },
                     { id: "courier", label: "🚚 কুরিয়ার ট্র্যাকিং ও বুকিং", count: orders.filter(o => o.courier && o.courier !== "None").length, highlight: false },
                     { id: "returns", label: "🔄 রিটার্ন ও এক্সচেঞ্জ হিস্ট্রি", count: returns.length, highlight: false }
@@ -13762,6 +14292,306 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     )}
                   </div>
                 )}
+
+                {/* ========================================================= */}
+                {/* SUBTAB: DELIVERY TRACKING SUMMARY & CHART (ডেলিভারি ট্র্যাকিং) */}
+                {/* ========================================================= */}
+                {adminOrderSubTab === "delivery_tracking" && (() => {
+                  const pendingList = orders.filter(o => o.status === "Pending");
+                  const shippedList = orders.filter(o => o.status === "Shipped");
+                  const deliveredList = orders.filter(o => o.status === "Delivered");
+                  const trackedTotal = pendingList.length + shippedList.length + deliveredList.length;
+
+                  const pct = (n) => trackedTotal > 0 ? Math.round((n / trackedTotal) * 100) : 0;
+                  const pPct = pct(pendingList.length);
+                  const sPct = pct(shippedList.length);
+                  const dPct = pct(deliveredList.length);
+
+                  const radius = 52;
+                  const circumference = 2 * Math.PI * radius;
+                  const safeTotal = Math.max(trackedTotal, 1);
+                  const pLen = (pendingList.length / safeTotal) * circumference;
+                  const sLen = (shippedList.length / safeTotal) * circumference;
+                  const dLen = (deliveredList.length / safeTotal) * circumference;
+
+                  const maxStageCount = Math.max(pendingList.length, shippedList.length, deliveredList.length, 1);
+
+                  const visibleTrackingOrders = deliveryTrackingFilter === "All"
+                    ? orders.filter(o => o.status === "Pending" || o.status === "Shipped" || o.status === "Delivered")
+                    : orders.filter(o => o.status === deliveryTrackingFilter);
+
+                  return (
+                    <div className="space-y-4 animate-fadeIn">
+                      {/* Top KPI Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="text-white bg-black/55 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-amber-500/40 shadow-lg flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block">⏳ Pending (পেন্ডিং)</span>
+                            <p className="text-2xl font-black text-white mt-1">{pendingList.length} টি</p>
+                            <span className="text-[11px] text-slate-300 font-mono">৳{pendingList.reduce((sum, o) => sum + Number(o.total || 0), 0).toLocaleString()}</span>
+                          </div>
+                          <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            {pPct}%
+                          </span>
+                        </div>
+
+                        <div className="text-white bg-black/55 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-blue-500/40 shadow-lg flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-blue-300 uppercase tracking-wider block">🚚 Shipped (ডেলিভারিতে)</span>
+                            <p className="text-2xl font-black text-white mt-1">{shippedList.length} টি</p>
+                            <span className="text-[11px] text-slate-300 font-mono">৳{shippedList.reduce((sum, o) => sum + Number(o.total || 0), 0).toLocaleString()}</span>
+                          </div>
+                          <span className="px-3 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                            {sPct}%
+                          </span>
+                        </div>
+
+                        <div className="text-white bg-black/55 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-emerald-500/40 shadow-lg flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider block">✅ Delivered (সম্পন্ন)</span>
+                            <p className="text-2xl font-black text-white mt-1">{deliveredList.length} টি</p>
+                            <span className="text-[11px] text-slate-300 font-mono">৳{deliveredList.reduce((sum, o) => sum + Number(o.total || 0), 0).toLocaleString()}</span>
+                          </div>
+                          <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            {dPct}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Summary Chart Card (Donut + Stage Comparison Bars) */}
+                      <div className="text-white bg-black/55 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-red-900/35 shadow-lg space-y-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-red-900/35 pb-3">
+                          <div>
+                            <h4 className="font-extrabold text-base text-white flex items-center gap-2">
+                              <span>📊</span>
+                              <span>ডেলিভারি ডিস্ট্রিবিউশন সামারি চার্ট</span>
+                            </h4>
+                            <p className="text-xs text-slate-300 mt-0.5">
+                              Pending, Shipped এবং Delivered অর্ডারের অনুপাত ও তুলনামূলক চিত্র
+                            </p>
+                          </div>
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-950/70 text-rose-200 border border-red-700/50 self-start sm:self-auto">
+                            মোট ট্র্যাকড: {trackedTotal} টি
+                          </span>
+                        </div>
+
+                        {trackedTotal === 0 ? (
+                          <div className="text-center py-10 bg-black/40 rounded-2xl border border-dashed border-red-900/45 space-y-2">
+                            <p className="text-3xl">📦</p>
+                            <p className="font-bold text-sm text-white">এখনো কোনো Pending, Shipped বা Delivered অর্ডার নেই</p>
+                            <p className="text-xs text-slate-400">নতুন অর্ডার এলে এখানে ডেলিভারি চার্ট স্বয়ংক্রিয়ভাবে প্রদর্শিত হবে।</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                            {/* Left: SVG Donut Chart */}
+                            <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col items-center justify-center gap-4">
+                              <div className="relative w-40 h-40 flex items-center justify-center">
+                                <svg className="w-40 h-40 -rotate-90" viewBox="0 0 140 140">
+                                  <circle cx="70" cy="70" r={radius} fill="transparent" stroke="rgba(255,255,255,0.08)" strokeWidth="18" />
+                                  {pendingList.length > 0 && (
+                                    <circle
+                                      cx="70" cy="70" r={radius}
+                                      fill="transparent"
+                                      stroke="#f59e0b"
+                                      strokeWidth="18"
+                                      strokeDasharray={`${pLen} ${circumference}`}
+                                      strokeDashoffset={0}
+                                    />
+                                  )}
+                                  {shippedList.length > 0 && (
+                                    <circle
+                                      cx="70" cy="70" r={radius}
+                                      fill="transparent"
+                                      stroke="#3b82f6"
+                                      strokeWidth="18"
+                                      strokeDasharray={`${sLen} ${circumference}`}
+                                      strokeDashoffset={-pLen}
+                                    />
+                                  )}
+                                  {deliveredList.length > 0 && (
+                                    <circle
+                                      cx="70" cy="70" r={radius}
+                                      fill="transparent"
+                                      stroke="#10b981"
+                                      strokeWidth="18"
+                                      strokeDasharray={`${dLen} ${circumference}`}
+                                      strokeDashoffset={-(pLen + sLen)}
+                                    />
+                                  )}
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                  <span className="text-2xl font-black text-white">{trackedTotal}</span>
+                                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">মোট অর্ডার</span>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap justify-center gap-3 text-xs">
+                                <span className="flex items-center gap-1.5 text-amber-300 font-bold">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                  Pending ({pPct}%)
+                                </span>
+                                <span className="flex items-center gap-1.5 text-blue-300 font-bold">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                                  Shipped ({sPct}%)
+                                </span>
+                                <span className="flex items-center gap-1.5 text-emerald-300 font-bold">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                  Delivered ({dPct}%)
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Right: Stacked Bar + Vertical Comparison Column Chart */}
+                            <div className="lg:col-span-7 space-y-5">
+                              {/* Stacked Proportion Bar */}
+                              <div className="space-y-2 bg-[#14070a]/75 p-4 rounded-2xl border border-red-900/35">
+                                <div className="flex justify-between text-xs font-bold text-slate-200">
+                                  <span>মোট অনুপাত বার</span>
+                                  <span>{trackedTotal} টি অর্ডার</span>
+                                </div>
+                                <div className="w-full h-4 rounded-full bg-black/60 overflow-hidden flex border border-red-900/30">
+                                  {pendingList.length > 0 && (
+                                    <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${(pendingList.length / safeTotal) * 100}%` }} title={`Pending: ${pendingList.length}`} />
+                                  )}
+                                  {shippedList.length > 0 && (
+                                    <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${(shippedList.length / safeTotal) * 100}%` }} title={`Shipped: ${shippedList.length}`} />
+                                  )}
+                                  {deliveredList.length > 0 && (
+                                    <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${(deliveredList.length / safeTotal) * 100}%` }} title={`Delivered: ${deliveredList.length}`} />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Vertical Column Chart */}
+                              <div className="bg-[#14070a]/75 p-4 rounded-2xl border border-red-900/35 space-y-3">
+                                <span className="text-xs font-bold text-slate-200 block">স্ট্যাটাস তুলনামূলক বার চার্ট</span>
+                                <div className="grid grid-cols-3 gap-4 items-end h-36 pt-4 border-b border-red-900/35 pb-2">
+                                  {[
+                                    { label: "Pending", count: pendingList.length, barClass: "from-amber-400 to-amber-600", textClass: "text-amber-300" },
+                                    { label: "Shipped", count: shippedList.length, barClass: "from-blue-400 to-blue-600", textClass: "text-blue-300" },
+                                    { label: "Delivered", count: deliveredList.length, barClass: "from-emerald-400 to-emerald-600", textClass: "text-emerald-300" }
+                                  ].map(col => {
+                                    const barH = col.count > 0 ? Math.max(16, Math.round((col.count / maxStageCount) * 88)) : 6;
+                                    return (
+                                      <div key={col.label} className="flex flex-col items-center justify-end h-full gap-1.5">
+                                        <span className={`text-xs font-black ${col.textClass}`}>{col.count} টি</span>
+                                        <div
+                                          className={`w-12 sm:w-16 rounded-t-xl bg-gradient-to-t ${col.barClass} shadow-md transition-all duration-500`}
+                                          style={{ height: `${barH}px` }}
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 text-center text-[11px] font-bold text-slate-300">
+                                  <span>Pending</span>
+                                  <span>Shipped</span>
+                                  <span>Delivered</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Filter Chips */}
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                        {[
+                          { key: "All", label: `সকল (${trackedTotal})` },
+                          { key: "Pending", label: `⏳ Pending (${pendingList.length})` },
+                          { key: "Shipped", label: `🚚 Shipped (${shippedList.length})` },
+                          { key: "Delivered", label: `✅ Delivered (${deliveredList.length})` }
+                        ].map(chip => (
+                          <button
+                            key={chip.key}
+                            type="button"
+                            onClick={() => setDeliveryTrackingFilter(chip.key)}
+                            className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border cursor-pointer ${
+                              deliveryTrackingFilter === chip.key
+                                ? "bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white border-red-400/50 shadow"
+                                : "bg-black/50 text-slate-300 border-red-900/40 hover:bg-red-950/50 hover:text-white"
+                            }`}
+                          >
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Filtered Delivery Orders List */}
+                      {visibleTrackingOrders.length === 0 ? (
+                        <div className="text-white text-center py-12 bg-black/55 backdrop-blur-xl rounded-3xl border border-red-900/35 p-6">
+                          <p className="text-3xl mb-2">🚚</p>
+                          <p className="font-bold text-sm text-white">এই স্ট্যাটাসে কোনো অর্ডার নেই</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {visibleTrackingOrders.map(o => (
+                            <div key={o.id} className="text-white bg-black/55 backdrop-blur-xl rounded-3xl border border-red-900/35 p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-mono font-black text-sm text-rose-200">#{o.id}</span>
+                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                    o.status === "Delivered"
+                                      ? "bg-emerald-950/70 text-emerald-300 border-emerald-500/40"
+                                      : o.status === "Shipped"
+                                        ? "bg-blue-950/70 text-blue-300 border-blue-500/40"
+                                        : "bg-amber-950/70 text-amber-300 border-amber-500/40"
+                                  }`}>
+                                    {o.status}
+                                  </span>
+                                  {o.trackingId && (
+                                    <span className="font-mono text-[11px] bg-black/60 text-slate-200 px-2 py-0.5 rounded border border-red-900/40">
+                                      Tracking: {o.trackingId}
+                                    </span>
+                                  )}
+                                  {o.courier && o.courier !== "None" && (
+                                    <span className="text-[11px] bg-red-950/60 text-rose-200 px-2 py-0.5 rounded border border-red-800/40">
+                                      🚚 {o.courier}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-200 font-semibold">
+                                  👤 {o.customerName || o.customer} | 📞 {o.phone} | 📍 {o.address}
+                                </p>
+                                <p className="text-xs text-slate-300 font-mono">
+                                  মোট বিল: <b className="text-rose-300">৳{o.total}</b>
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                                {o.status === "Pending" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => updateOrderStatus(o.id, "Shipped")}
+                                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold transition shadow-xs"
+                                  >
+                                    🚚 Shipped করুন
+                                  </button>
+                                )}
+                                {o.status !== "Delivered" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => updateOrderStatus(o.id, "Delivered")}
+                                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold transition shadow-xs"
+                                  >
+                                    ✓ Delivered সম্পন্ন
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => printInvoiceWindow(o)}
+                                  className="px-3.5 py-1.5 bg-black/50 border border-red-900/50 rounded-full text-xs font-bold text-slate-200 hover:bg-red-950/60 transition"
+                                >
+                                  🧾 মেমো
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* ========================================================= */}
                 {/* SUBTAB 4: RETURNS & EXCHANGES (রিটার্ন ও এক্সচেঞ্জ হিস্ট্রি) */}

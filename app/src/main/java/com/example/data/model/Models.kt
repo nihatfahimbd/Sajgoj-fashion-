@@ -14,7 +14,9 @@ data class Product(
   val sourceUrl: String = "",
   val colors: List<String> = emptyList(),
   val sizes: List<String> = emptyList(),
-  val ageGroups: List<String> = emptyList()
+  val ageGroups: List<String> = emptyList(),
+  val stockUpdatedAt: Long = 0L,
+  val lastSyncSource: String = ""
 )
 
 data class Category(
@@ -64,7 +66,8 @@ data class Order(
   val paymentMethod: String,
   val status: String, // Pending, Confirmed, Shipped, Delivered, Cancelled
   val date: String,
-  val trackingId: String = ""
+  val trackingId: String = "",
+  val stockRestockedOnCancel: Boolean = false
 )
 
 data class Coupon(
@@ -186,5 +189,41 @@ data class ReturnRecord(
   val settlementStatus: String = "paid",
   val reason: String = "পণ্য পরিবর্তন / অপছন্দ",
   val note: String = ""
+)
+
+data class PosInventoryItem(
+  val productId: String = "",
+  val name: String = "",
+  val sku: String = "",
+  val stock: Int = 0,
+  val price: Int = 0,
+  val updatedAt: Long = 0L,
+  val lastSource: String = "STOREFRONT_SYNC",
+  val lastOrigin: String = "",
+  val lastReferenceId: String = ""
+)
+
+data class InventorySyncEvent(
+  val id: String = "",
+  val productId: String = "",
+  val productName: String = "",
+  val sku: String = "",
+  val previousStock: Int = 0,
+  val newStock: Int = 0,
+  val delta: Int = 0,
+  val source: String = "", // STOREFRONT_SALE, POS_SALE, RETURN_RESTOCK, RETURN_EXCHANGE, ORDER_CANCELLED_RESTOCK, RECONCILE
+  val reason: String = "",
+  val referenceId: String = "",
+  val timestamp: Long = System.currentTimeMillis()
+)
+
+data class SyncHealthState(
+  val status: String = "CONNECTED", // CONNECTED, SYNCING, LOCAL_ONLY
+  val lastSyncTimestamp: Long = System.currentTimeMillis(),
+  val totalSyncedEvents: Int = 0,
+  val storefrontProductCount: Int = 0,
+  val posProductCount: Int = 0,
+  val inSyncCount: Int = 0,
+  val driftCount: Int = 0
 )
 

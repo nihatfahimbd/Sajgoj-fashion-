@@ -133,39 +133,157 @@
   <body class="bg-[#FAF6F0] text-[#2C1F24] antialiased select-none font-sans overflow-x-hidden" data-theme="rosegold">
     <div id="root"></div>
     <script>
-      // Automatically populate search/SKU lookup field when barcode is scanned
-      window.addEventListener("message", function(e) {
-        if (!e.data || e.data.type !== "SAJGOJ_BARCODE_SCANNED") return;
-        var code = e.data.sku || e.data.barcode || (e.data.product && (e.data.product.sku || e.data.product.barcode || e.data.product.id));
-        if (!code) return;
-        
-        // Find visible text/search inputs in the POS interface
-        var inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])');
-        for (var i = 0; i < inputs.length; i++) {
-          var input = inputs[i];
-          if (input.offsetParent !== null) {
-            try {
-              var valueSetter = Object.getOwnPropertyDescriptor(input, 'value')?.set;
-              var prototype = Object.getPrototypeOf(input);
-              var prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
-              if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-                prototypeValueSetter.call(input, code);
-              } else if (valueSetter) {
-                valueSetter.call(input, code);
-              } else {
-                input.value = code;
-              }
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-              input.dispatchEvent(new Event('change', { bubbles: true }));
-              input.focus();
-              input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
-              break;
-            } catch (err) {
-              console.warn("Could not auto-populate POS input:", err);
+      (function () {
+        var SYNC_CHANNEL_NAME = "sajgoj_inventory_sync";
+        var isApplyingRemoteSync = false;
+        var syncChannel = null;
+        try {
+          if (typeof BroadcastChannel !== "undefined") {
+            syncChannel = new BroadcastChannel(SYNC_CHANNEL_NAME);
+          }
+        } catch (err) {}
+
+        // Hook localStorage.setItem to emit instant real-time updates when POS sells, returns, or adjusts stock
+        try {
+          var originalSetItem = Storage.prototype.setItem;
+          Storage.prototype.setItem = function (key, value) {
+            originalSetItem.apply(this, arguments);
+            if (!isApplyingRemoteSync && this === window.localStorage && (key === "sajgoj_products" || key === "sajgoj_sales")) {
+              try {
+                var parsed = JSON.parse(value);
+                var payload = {
+                  type: key === "sajgoj_products" ? "SAJGOJ_POS_PRODUCTS_UPDATED" : "SAJGOJ_POS_SALES_UPDATED",
+                  key: key,
+                  data: parsed,
+                  source: "POS_IFRAME",
+                  timestamp: Date.now()
+                };
+                if (window.parent && window.parent !== window) {
+                  window.parent.postMessage(payload, "*");
+                }
+                if (syncChannel) {
+                  syncChannel.postMessage(payload);
+                }
+              } catch (e) {}
             }
+          };
+        } catch (err) {}
+
+        function applyProductsToPosStorage(nextProducts) {
+          if (!Array.isArray(nextProducts)) return;
+          try {
+            var serialized = JSON.stringify(nextProducts);
+            var prev = window.localStorage.getItem("sajgoj_products");
+            if (prev === serialized) return;
+            isApplyingRemoteSync = true;
+            window.localStorage.setItem("sajgoj_products", serialized);
+            try {
+              window.dispatchEvent(new StorageEvent("storage", {
+                key: "sajgoj_products",
+                oldValue: prev,
+                newValue: serialized,
+                storageArea: window.localStorage
+              }));
+            } catch (se) {
+              window.dispatchEvent(new Event("storage"));
+            }
+          } catch (err) {
+            console.warn("POS storage sync apply error:", err);
+          } finally {
+            isApplyingRemoteSync = false;
           }
         }
-      });
+
+        function applyStockDeltaToPosStorage(items) {
+          if (!Array.isArray(items) || items.length === 0) return;
+          try {
+            var raw = window.localStorage.getItem("sajgoj_products");
+            if (!raw) return;
+            var posProducts = JSON.parse(raw);
+            if (!Array.isArray(posProducts)) return;
+            var changed = false;
+            items.forEach(function (it) {
+              var delta = typeof it.delta === "number" ? it.delta : -(Number(it.qty || it.quantity || 1));
+              var match = posProducts.find(function (pp) {
+                return String(pp.id) === String(it.productId || it.id) ||
+                  (it.sku && pp.sku === it.sku) ||
+                  (it.name && (pp.nameBn === it.name || pp.nameEn === it.name || pp.name === it.name));
+              });
+              if (match) {
+                var targetStock = typeof it.newStock === "number"
+                  ? Math.max(0, it.newStock)
+                  : Math.max(0, (Number(match.stock) || 0) + delta);
+                if (Number(match.stock) !== targetStock) {
+                  match.stock = targetStock;
+                  match.stockUpdatedAt = it.timestamp || Date.now();
+                  changed = true;
+                }
+              }
+            });
+            if (changed) {
+              applyProductsToPosStorage(posProducts);
+            }
+          } catch (err) {}
+        }
+
+        if (syncChannel) {
+          syncChannel.onmessage = function (ev) {
+            var msg = ev && ev.data;
+            if (!msg || msg.source === "POS_IFRAME") return;
+            if (msg.type === "SAJGOJ_PRODUCTS_SYNC" && Array.isArray(msg.products)) {
+              applyProductsToPosStorage(msg.products);
+            } else if (msg.type === "SAJGOJ_STOCK_DELTA" && Array.isArray(msg.items)) {
+              applyStockDeltaToPosStorage(msg.items);
+            }
+          };
+        }
+
+        window.addEventListener("message", function (e) {
+          var data = e && e.data;
+          if (!data) return;
+
+          if (data.type === "SAJGOJ_PRODUCTS_SYNC" && Array.isArray(data.products)) {
+            applyProductsToPosStorage(data.products);
+            return;
+          }
+
+          if (data.type === "SAJGOJ_STOCK_DELTA" && Array.isArray(data.items)) {
+            applyStockDeltaToPosStorage(data.items);
+            return;
+          }
+
+          // Automatically populate search/SKU lookup field when barcode is scanned
+          if (data.type !== "SAJGOJ_BARCODE_SCANNED") return;
+          var code = data.sku || data.barcode || (data.product && (data.product.sku || data.product.barcode || data.product.id));
+          if (!code) return;
+
+          var inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])');
+          for (var i = 0; i < inputs.length; i++) {
+            var input = inputs[i];
+            if (input.offsetParent !== null) {
+              try {
+                var valueSetter = Object.getOwnPropertyDescriptor(input, 'value')?.set;
+                var prototype = Object.getPrototypeOf(input);
+                var prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+                if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+                  prototypeValueSetter.call(input, code);
+                } else if (valueSetter) {
+                  valueSetter.call(input, code);
+                } else {
+                  input.value = code;
+                }
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                input.focus();
+                input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
+                break;
+              } catch (err) {
+                console.warn("Could not auto-populate POS input:", err);
+              }
+            }
+          }
+        });
+      })();
     </script>
   </body>
 </html>

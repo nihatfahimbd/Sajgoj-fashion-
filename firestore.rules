@@ -47,5 +47,20 @@ service cloud.firestore {
     match /customers/{customerId} {
       allow read, write: if true;
     }
+
+    // Returns and exchanges records
+    match /returns/{returnId} {
+      allow read, write: if true;
+    }
+
+    // POS Inventory mirror for real-time bidirectional synchronization
+    match /pos_inventory/{productId} {
+      allow read, write: if true;
+    }
+
+    // Real-time inventory sync audit events across Storefront and POS
+    match /inventory_sync_events/{eventId} {
+      allow read, write: if true;
+    }
   }
 }

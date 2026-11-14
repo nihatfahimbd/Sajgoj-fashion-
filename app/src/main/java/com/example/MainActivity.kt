@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
         val adminTab by viewModel.adminTab.collectAsStateWithLifecycle()
         val isAdminLoggedIn by viewModel.isAdminLoggedIn.collectAsStateWithLifecycle()
         val products by viewModel.filteredProducts.collectAsStateWithLifecycle()
+        val allProducts by viewModel.products.collectAsStateWithLifecycle()
         val categories by viewModel.categories.collectAsStateWithLifecycle()
         val banners by viewModel.banners.collectAsStateWithLifecycle()
         val cartItems by viewModel.cart.collectAsStateWithLifecycle()
@@ -57,6 +58,9 @@ class MainActivity : ComponentActivity() {
         val storeConfig by viewModel.storeConfig.collectAsStateWithLifecycle()
         val courierConfig by viewModel.courierConfig.collectAsStateWithLifecycle()
         val pixelConfig by viewModel.pixelConfig.collectAsStateWithLifecycle()
+        val posInventory by viewModel.posInventory.collectAsStateWithLifecycle()
+        val syncEvents by viewModel.syncEvents.collectAsStateWithLifecycle()
+        val syncHealth by viewModel.syncHealth.collectAsStateWithLifecycle()
         val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
         val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
 
@@ -137,7 +141,7 @@ class MainActivity : ComponentActivity() {
                     isAdminLoggedIn = isAdminLoggedIn,
                     onLogin = { pass -> viewModel.loginAdmin(pass) },
                     onLogout = { viewModel.logoutAdmin() },
-                    products = products,
+                    products = allProducts,
                     categories = categories,
                     orders = orders,
                     returns = returns,
@@ -165,7 +169,12 @@ class MainActivity : ComponentActivity() {
                     onUpdateCourierConfig = { viewModel.updateCourierConfig(it) },
                     onUpdatePixelConfig = { viewModel.updatePixelConfig(it) },
                     onResetDefaults = { viewModel.resetToDefaults() },
-                    onShowToast = { viewModel.emitToast(it) }
+                    onShowToast = { viewModel.emitToast(it) },
+                    posInventory = posInventory,
+                    syncEvents = syncEvents,
+                    syncHealth = syncHealth,
+                    onRecordPosSale = { prod, qty, cust, pay -> viewModel.recordPosSale(prod, qty, cust, pay) },
+                    onReconcileInventory = { viewModel.reconcileInventoryNow() }
                   )
                 }
               }

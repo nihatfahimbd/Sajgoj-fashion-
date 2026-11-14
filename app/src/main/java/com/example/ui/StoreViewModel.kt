@@ -8,12 +8,16 @@ import com.example.data.model.CartItem
 import com.example.data.model.Category
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
+import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
+import com.example.data.model.OrderItem
 import com.example.data.model.PixelConfig
+import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
+import com.example.data.model.SyncHealthState
 import com.example.data.repository.StoreRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +57,9 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val storeConfig: StateFlow<StoreConfig> = repository.storeConfig
   val courierConfig: StateFlow<CourierConfig> = repository.courierConfig
   val pixelConfig: StateFlow<PixelConfig> = repository.pixelConfig
+  val posInventory: StateFlow<Map<String, PosInventoryItem>> = repository.posInventory
+  val syncEvents: StateFlow<List<InventorySyncEvent>> = repository.syncEvents
+  val syncHealth: StateFlow<SyncHealthState> = repository.syncHealth
 
   // UI State
   private val _currentScreen = MutableStateFlow(AppScreen.STOREFRONT)
@@ -250,7 +257,40 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   fun updateOrderStatus(orderId: String, status: String) {
     repository.updateOrderStatus(orderId, status)
-    emitToast("অর্ডার $orderId এর স্ট্যাটাস \"$status\" এ আপডেট করা হয়েছে।")
+    if (status == "Cancelled") {
+      emitToast("অর্ডার $orderId বাতিল ও স্টক অটোমেটিক স্টোরফ্রন্ট + POS-এ রিস্টক হয়েছে! 🔄")
+    } else {
+      emitToast("অর্ডার $orderId এর স্ট্যাটাস \"$status\" এ আপডেট করা হয়েছে।")
+    }
+  }
+
+  fun recordPosSale(
+    product: Product,
+    quantity: Int,
+    customerName: String = "কাউন্টার ক্রেতা (POS)",
+    paymentMethod: String = "POS Cash"
+  ): Order? {
+    val qty = quantity.coerceIn(1, product.stock.coerceAtLeast(1))
+    val item = OrderItem(
+      productId = product.id,
+      name = product.name,
+      quantity = qty,
+      price = product.price
+    )
+    val order = repository.recordPosSale(
+      items = listOf(item),
+      customerName = customerName,
+      paymentMethod = paymentMethod
+    )
+    if (order != null) {
+      emitToast("🧾 POS বিক্রয় #${order.id} সম্পন্ন! স্টোরফ্রন্ট ও POS স্টক সিঙ্ক হয়েছে (-${qty} পিস) 🔄")
+    }
+    return order
+  }
+
+  fun reconcileInventoryNow() {
+    val count = repository.reconcileInventoryNow()
+    emitToast("🔄 দ্বিমুখী সিঙ্ক সম্পন্ন! ${if (count > 0) "$count টি পণ্যের স্টক সমন্বয় হয়েছে" else "সব স্টক ১০০% সিঙ্কড আছে"} ✅")
   }
 
   fun dispatchCourier(orderId: String, provider: String) {

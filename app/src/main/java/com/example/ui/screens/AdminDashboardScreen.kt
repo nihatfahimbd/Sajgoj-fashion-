@@ -77,13 +77,18 @@ import com.example.data.model.BannerItem
 import com.example.data.model.Category
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
+import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.PixelConfig
+import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
+import com.example.data.model.SyncHealthState
 import com.example.ui.AdminTab
+import com.example.ui.components.AdminDeliveryTrackingTab
 import com.example.ui.components.AppImage
+import com.example.ui.components.InventorySyncPanel
 import com.example.ui.components.ReturnExchangeDialog
 import com.example.ui.components.ReturnSlipDialog
 import com.example.ui.theme.AccentGreen
@@ -133,6 +138,11 @@ fun AdminDashboardScreen(
   onUpdatePixelConfig: (PixelConfig) -> Unit,
   onResetDefaults: () -> Unit,
   onShowToast: (String) -> Unit,
+  posInventory: Map<String, PosInventoryItem> = emptyMap(),
+  syncEvents: List<InventorySyncEvent> = emptyList(),
+  syncHealth: SyncHealthState = SyncHealthState(),
+  onRecordPosSale: (Product, Int, String, String) -> Unit = { _, _, _, _ -> },
+  onReconcileInventory: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -321,6 +331,11 @@ fun AdminDashboardScreen(
             categories = categories,
             orders = orders,
             returns = returns,
+            posInventory = posInventory,
+            syncEvents = syncEvents,
+            syncHealth = syncHealth,
+            onRecordPosSale = onRecordPosSale,
+            onReconcileInventory = onReconcileInventory,
             onAddClick = {
               editingProduct = null
               showProductDialog = true
@@ -719,6 +734,11 @@ fun AdminProductsHub(
   categories: List<Category>,
   orders: List<Order>,
   returns: List<ReturnRecord>,
+  posInventory: Map<String, PosInventoryItem> = emptyMap(),
+  syncEvents: List<InventorySyncEvent> = emptyList(),
+  syncHealth: SyncHealthState = SyncHealthState(),
+  onRecordPosSale: (Product, Int, String, String) -> Unit = { _, _, _, _ -> },
+  onReconcileInventory: () -> Unit = {},
   onAddClick: () -> Unit,
   onEditClick: (Product) -> Unit,
   onDeleteClick: (String) -> Unit,
@@ -778,6 +798,7 @@ fun AdminProductsHub(
     ) {
       val subTabs = listOf(
         Triple("LIST", "পণ্য তালিকা", "📋"),
+        Triple("POS_SYNC", "POS সিঙ্ক", "🔄"),
         Triple("STOCK", "স্টক ও ভ্যালুয়েশন", "💰"),
         Triple("SALES", "সেলস ও রিটার্ন", "📈"),
         Triple("CATEGORIES", "ক্যাটাগরি", "🏷️")
@@ -1184,6 +1205,17 @@ fun AdminProductsHub(
         }
       }
 
+      "POS_SYNC" -> {
+        InventorySyncPanel(
+          products = products,
+          posInventory = posInventory,
+          syncEvents = syncEvents,
+          syncHealth = syncHealth,
+          onRecordPosSale = onRecordPosSale,
+          onReconcileNow = onReconcileInventory
+        )
+      }
+
       "CATEGORIES" -> {
         AdminCategoriesTab(
           categories = categories,
@@ -1259,8 +1291,16 @@ fun AdminOrdersHub(
       horizontalArrangement = Arrangement.spacedBy(6.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
+      val trackedOrdersCount = remember(orders) {
+        orders.count {
+          it.status.equals("Pending", ignoreCase = true) ||
+            it.status.equals("Shipped", ignoreCase = true) ||
+            it.status.equals("Delivered", ignoreCase = true)
+        }
+      }
       val orderSubTabs = listOf(
         Triple("NEW_ORDERS", "নতুন অর্ডার অনুমোদন", "🔔"),
+        Triple("DELIVERY_TRACKING", "ডেলিভারি ট্র্যাকিং", "📊"),
         Triple("ALL_ORDERS", "সকল অর্ডার ও ফিল্টার", "📋"),
         Triple("COURIER", "কুরিয়ার ট্র্যাকিং", "🚚"),
         Triple("RETURNS", "রিটার্ন ও এক্সচেঞ্জ", "🔄")
@@ -1270,6 +1310,7 @@ fun AdminOrdersHub(
         val isSelected = selectedOrderSubTab == key
         val badgeText = when (key) {
           "NEW_ORDERS" -> if (pendingOrders.isNotEmpty()) "${pendingOrders.size}" else null
+          "DELIVERY_TRACKING" -> "$trackedOrdersCount"
           "ALL_ORDERS" -> "${orders.size}"
           "RETURNS" -> "${returns.size}"
           else -> null
@@ -1279,7 +1320,9 @@ fun AdminOrdersHub(
           shape = RoundedCornerShape(16.dp),
           color = if (isSelected) RoyalMaroon else CreamSurface,
           border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
-          modifier = Modifier.clickable { selectedOrderSubTab = key }
+          modifier = Modifier
+            .testTag("order_hub_tab_$key")
+            .clickable { selectedOrderSubTab = key }
         ) {
           Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -1504,6 +1547,14 @@ fun AdminOrdersHub(
             }
           }
         }
+      }
+
+      "DELIVERY_TRACKING" -> {
+        AdminDeliveryTrackingTab(
+          orders = orders,
+          onUpdateStatus = onUpdateStatus,
+          onViewInvoice = onViewInvoice
+        )
       }
 
       "ALL_ORDERS" -> {

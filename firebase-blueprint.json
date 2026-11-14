@@ -49,6 +49,41 @@
         "logo": { "type": "string" },
         "tagline": { "type": "string" }
       }
+    },
+    "PosInventoryItem": {
+      "title": "PosInventoryItem",
+      "description": "POS inventory mirror synchronized bidirectionally with storefront products",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "name": { "type": "string" },
+        "sku": { "type": "string" },
+        "stock": { "type": "number" },
+        "price": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "lastSource": { "type": "string" },
+        "lastReferenceId": { "type": "string" }
+      },
+      "required": ["productId", "stock", "updatedAt"]
+    },
+    "InventorySyncEvent": {
+      "title": "InventorySyncEvent",
+      "description": "Real-time bidirectional stock sync audit event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "sku": { "type": "string" },
+        "previousStock": { "type": "number" },
+        "newStock": { "type": "number" },
+        "delta": { "type": "number" },
+        "source": { "type": "string" },
+        "reason": { "type": "string" },
+        "referenceId": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "productId", "previousStock", "newStock", "source", "timestamp"]
     }
   },
   "firestore": {
@@ -67,6 +102,14 @@
     "/config/{configDoc}": {
       "schema": "StoreConfig",
       "description": "Configuration documents"
+    },
+    "/pos_inventory/{productId}": {
+      "schema": "PosInventoryItem",
+      "description": "Real-time POS inventory mirror"
+    },
+    "/inventory_sync_events/{eventId}": {
+      "schema": "InventorySyncEvent",
+      "description": "Inventory bidirectional sync audit log"
     }
   }
 }

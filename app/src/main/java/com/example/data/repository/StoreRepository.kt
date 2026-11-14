@@ -9,14 +9,18 @@ import com.example.data.model.Category
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
 import com.example.data.model.ExchangeItem
+import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.PixelConfig
+import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
 import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
+import com.example.data.model.SyncHealthState
+import com.example.data.sync.InventorySyncService
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -377,7 +381,21 @@ class StoreRepository(private val context: Context) {
     }
   }
 
+  val inventorySyncService: InventorySyncService by lazy {
+    InventorySyncService(firestore = firestore)
+  }
+
+  val posInventory: StateFlow<Map<String, PosInventoryItem>>
+    get() = inventorySyncService.posInventory
+
+  val syncEvents: StateFlow<List<InventorySyncEvent>>
+    get() = inventorySyncService.syncEvents
+
+  val syncHealth: StateFlow<SyncHealthState>
+    get() = inventorySyncService.syncHealth
+
   init {
+    inventorySyncService.mirrorCatalogToPos(_products.value, source = "INITIAL_SEED", pushToCloud = false)
     initFirestoreSync()
   }
 
@@ -407,7 +425,9 @@ class StoreRepository(private val context: Context) {
                 sourceUrl = doc.getString("sourceUrl") ?: "",
                 colors = colorsList,
                 sizes = sizesList,
-                ageGroups = ageGroupsList
+                ageGroups = ageGroupsList,
+                stockUpdatedAt = doc.getLong("stockUpdatedAt") ?: 0L,
+                lastSyncSource = doc.getString("lastSyncSource") ?: ""
               )
             } catch (e: Exception) {
               null
@@ -415,6 +435,7 @@ class StoreRepository(private val context: Context) {
           }
           if (list.isNotEmpty()) {
             _products.value = list
+            inventorySyncService.mirrorCatalogToPos(list, source = "STOREFRONT_CLOUD", pushToCloud = true)
           }
         }
       }
@@ -491,7 +512,8 @@ class StoreRepository(private val context: Context) {
                 paymentMethod = doc.getString("paymentMethod") ?: "Cash on Delivery",
                 status = doc.getString("status") ?: "Pending",
                 date = doc.getString("date") ?: "",
-                trackingId = doc.getString("trackingId") ?: ""
+                trackingId = doc.getString("trackingId") ?: "",
+                stockRestockedOnCancel = doc.getBoolean("stockRestockedOnCancel") ?: false
               )
             } catch (e: Exception) {
               null
@@ -502,6 +524,75 @@ class StoreRepository(private val context: Context) {
           }
         }
       }
+
+      db.collection("returns").addSnapshotListener { snapshot, error ->
+        if (error == null && snapshot != null && !snapshot.isEmpty) {
+          val list = snapshot.documents.mapNotNull { doc ->
+            try {
+              val retItems = (doc.get("returnedItems") as? List<*>)?.mapNotNull { itemMap ->
+                val m = itemMap as? Map<*, *> ?: return@mapNotNull null
+                ReturnItem(
+                  productId = m["productId"]?.toString() ?: "",
+                  name = m["name"]?.toString() ?: "",
+                  price = (m["price"] as? Number)?.toInt() ?: 0,
+                  quantity = (m["qty"] as? Number)?.toInt() ?: (m["quantity"] as? Number)?.toInt() ?: 1,
+                  condition = m["condition"]?.toString() ?: "ভালো (বিক্রিযোগ্য)",
+                  restock = (m["restock"] as? Boolean) ?: true,
+                  color = m["color"]?.toString() ?: "",
+                  size = m["size"]?.toString() ?: ""
+                )
+              } ?: emptyList()
+
+              val exItems = (doc.get("exchangeItems") as? List<*>)?.mapNotNull { itemMap ->
+                val m = itemMap as? Map<*, *> ?: return@mapNotNull null
+                ExchangeItem(
+                  productId = m["productId"]?.toString() ?: "",
+                  name = m["name"]?.toString() ?: "",
+                  price = (m["price"] as? Number)?.toInt() ?: 0,
+                  quantity = (m["qty"] as? Number)?.toInt() ?: (m["quantity"] as? Number)?.toInt() ?: 1,
+                  color = m["color"]?.toString() ?: "",
+                  size = m["size"]?.toString() ?: "",
+                  sku = m["sku"]?.toString() ?: ""
+                )
+              } ?: emptyList()
+
+              ReturnRecord(
+                id = doc.getString("id") ?: doc.id,
+                orderId = doc.getString("orderId") ?: "",
+                customerName = doc.getString("customerName") ?: doc.getString("customer") ?: "",
+                phone = doc.getString("phone") ?: "",
+                date = doc.getString("date") ?: "",
+                returnedItems = retItems,
+                totalReturnValue = (doc.getLong("totalReturnValue") ?: 0L).toInt(),
+                isExchange = doc.getBoolean("isExchange") ?: exItems.isNotEmpty(),
+                exchangeItems = exItems,
+                totalExchangeValue = (doc.getLong("totalExchangeValue") ?: 0L).toInt(),
+                deliveryFee = (doc.getLong("deliveryFee") ?: doc.getLong("exchangeDeliveryFee") ?: 0L).toInt(),
+                priceDifference = (doc.getLong("priceDifference") ?: 0L).toInt(),
+                differenceType = doc.getString("differenceType") ?: "even_exchange",
+                settlementMethod = doc.getString("settlementMethod") ?: "Cash",
+                settlementTrxId = doc.getString("settlementTrxId") ?: "",
+                settlementStatus = doc.getString("settlementStatus") ?: "paid",
+                reason = doc.getString("reason") ?: "পণ্য পরিবর্তন / অপছন্দ",
+                note = doc.getString("note") ?: ""
+              )
+            } catch (e: Exception) {
+              null
+            }
+          }
+          if (list.isNotEmpty()) {
+            _returns.value = list
+          }
+        }
+      }
+
+      // Real-time bidirectional listener on `pos_inventory` and `inventory_sync_events`
+      inventorySyncService.startListening(
+        getCurrentProducts = { _products.value },
+        onRemotePosUpdateProducts = { updatedProducts ->
+          _products.value = updatedProducts
+        }
+      )
     } catch (e: Exception) {
       // Fallback gracefully
     }
@@ -624,15 +715,12 @@ class StoreRepository(private val context: Context) {
       trackingId = ""
     )
 
-    // Deduct stock for ordered products
-    val updatedProducts = _products.value.map { p ->
-      val totalOrderedForThisProduct = cartItems.filter { it.product.id == p.id }.sumOf { it.quantity }
-      if (totalOrderedForThisProduct > 0) {
-        p.copy(stock = (p.stock - totalOrderedForThisProduct).coerceAtLeast(0))
-      } else {
-        p
-      }
-    }
+    // Deduct stock across Storefront + POS Inventory + Firestore in real time
+    val updatedProducts = inventorySyncService.applySaleStockDeduction(
+      products = _products.value,
+      items = newOrder.items,
+      orderId = newOrder.id
+    )
     _products.value = updatedProducts
 
     // Add to orders
@@ -669,7 +757,8 @@ class StoreRepository(private val context: Context) {
           "paymentMethod" to newOrder.paymentMethod,
           "status" to newOrder.status,
           "date" to newOrder.date,
-          "trackingId" to newOrder.trackingId
+          "trackingId" to newOrder.trackingId,
+          "stockRestockedOnCancel" to false
         )
       )
     } catch (e: Exception) {
@@ -682,13 +771,148 @@ class StoreRepository(private val context: Context) {
     return newOrder
   }
 
+  /**
+   * Completes an in-store POS sale and synchronizes stock deductions bidirectionally
+   * to the Storefront `products` collection, `pos_inventory`, and `inventory_sync_events`.
+   */
+  fun recordPosSale(
+    items: List<OrderItem>,
+    customerName: String = "কাউন্টার ক্রেতা (POS)",
+    phone: String = "N/A",
+    paymentMethod: String = "POS Cash",
+    discount: Int = 0
+  ): Order? {
+    if (items.isEmpty()) return null
+    val saleId = "POS-${Random.nextInt(100000, 999999)}"
+    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    val subtotal = items.sumOf { it.price * it.quantity }
+    val total = (subtotal - discount).coerceAtLeast(0)
+
+    val posOrder = Order(
+      id = saleId,
+      customerName = customerName.ifBlank { "কাউন্টার ক্রেতা (POS)" },
+      phone = phone.ifBlank { "N/A" },
+      district = "ঢাকা",
+      thana = "শোরুম",
+      address = "শোরুম POS কাউন্টার (ইন-স্টোর সেলস)",
+      items = items,
+      subtotal = subtotal,
+      deliveryCharge = 0,
+      discount = discount,
+      couponCode = "",
+      total = total,
+      paymentMethod = paymentMethod,
+      status = "Delivered",
+      date = currentDate,
+      trackingId = ""
+    )
+
+    val updatedProducts = inventorySyncService.applyPosSaleDeduction(
+      products = _products.value,
+      items = items,
+      saleId = saleId
+    )
+    _products.value = updatedProducts
+    _orders.value = listOf(posOrder) + _orders.value
+
+    try {
+      val itemsMaps = items.map {
+        mapOf(
+          "productId" to it.productId,
+          "name" to it.name,
+          "quantity" to it.quantity,
+          "price" to it.price,
+          "color" to it.color,
+          "size" to it.size,
+          "ageGroup" to it.ageGroup
+        )
+      }
+      firestore?.collection("orders")?.document(posOrder.id)?.set(
+        mapOf(
+          "id" to posOrder.id,
+          "customer" to posOrder.customerName,
+          "customerName" to posOrder.customerName,
+          "phone" to posOrder.phone,
+          "district" to posOrder.district,
+          "thana" to posOrder.thana,
+          "address" to posOrder.address,
+          "items" to itemsMaps,
+          "subtotal" to posOrder.subtotal,
+          "deliveryCharge" to 0,
+          "discount" to posOrder.discount,
+          "total" to posOrder.total,
+          "paymentMethod" to posOrder.paymentMethod,
+          "orderType" to "POS_SALE",
+          "status" to posOrder.status,
+          "date" to posOrder.date,
+          "trackingId" to ""
+        )
+      )
+    } catch (_: Exception) {}
+
+    return posOrder
+  }
+
+  /**
+   * Simulates or applies an external POS terminal stock change and syncs bidirectionally.
+   */
+  fun applyRemotePosStockUpdate(
+    productId: String,
+    newStock: Int,
+    source: String = "POS_TERMINAL",
+    referenceId: String = "POS-SYNC"
+  ) {
+    val target = _products.value.find { it.id == productId } ?: return
+    val delta = newStock.coerceAtLeast(0) - target.stock
+    if (delta == 0) return
+    _products.value = inventorySyncService.applyStockDeltaBatch(
+      products = _products.value,
+      deltas = listOf(
+        com.example.data.sync.StockDeltaRequest(
+          productId = productId,
+          productName = target.name,
+          sku = target.sku,
+          delta = delta,
+          reason = "POS সিঙ্ক আপডেট ($referenceId)"
+        )
+      ),
+      source = source,
+      reason = "POS টার্মিনাল স্টক আপডেট",
+      referenceId = referenceId
+    )
+  }
+
+  fun reconcileInventoryNow(): Int {
+    val (reconciledProducts, count) = inventorySyncService.reconcileStorefrontAndPos(_products.value)
+    _products.value = reconciledProducts
+    return count
+  }
+
   // Order Management
   fun updateOrderStatus(orderId: String, newStatus: String) {
+    val targetOrder = _orders.value.find { it.id == orderId }
+    var nextRestockedFlag = targetOrder?.stockRestockedOnCancel ?: false
+
+    if (targetOrder != null) {
+      if (newStatus == "Cancelled" && targetOrder.status != "Cancelled" && !targetOrder.stockRestockedOnCancel) {
+        _products.value = inventorySyncService.applyOrderCancellationRestock(_products.value, targetOrder, restoreStock = true)
+        nextRestockedFlag = true
+      } else if (targetOrder.status == "Cancelled" && newStatus != "Cancelled" && targetOrder.stockRestockedOnCancel) {
+        _products.value = inventorySyncService.applyOrderCancellationRestock(_products.value, targetOrder, restoreStock = false)
+        nextRestockedFlag = false
+      }
+    }
+
     _orders.value = _orders.value.map {
-      if (it.id == orderId) it.copy(status = newStatus) else it
+      if (it.id == orderId) it.copy(status = newStatus, stockRestockedOnCancel = nextRestockedFlag) else it
     }
     try {
-      firestore?.collection("orders")?.document(orderId)?.update("status", newStatus)
+      firestore?.collection("orders")?.document(orderId)?.update(
+        mapOf(
+          "status" to newStatus,
+          "stockRestockedOnCancel" to nextRestockedFlag
+        )
+      )
     } catch (e: Exception) {}
   }
 
@@ -713,34 +937,45 @@ class StoreRepository(private val context: Context) {
   fun addReturnRecord(record: ReturnRecord) {
     _returns.value = listOf(record) + _returns.value
 
-    // Restock returned items if restock is true
-    record.returnedItems.forEach { retItem ->
-      if (retItem.restock) {
-        val prod = _products.value.find { it.id == retItem.productId || it.name == retItem.name }
-        if (prod != null) {
-          updateProduct(prod.copy(stock = prod.stock + retItem.quantity))
-        }
-      }
-    }
-
-    // Deduct exchange items from inventory stock
-    if (record.isExchange) {
-      record.exchangeItems.forEach { exItem ->
-        val prod = _products.value.find { it.id == exItem.productId }
-        if (prod != null) {
-          updateProduct(prod.copy(stock = maxOf(0, prod.stock - exItem.quantity)))
-        }
-      }
-    }
+    // Synchronize return restocks & exchange deductions across Storefront + POS Inventory
+    _products.value = inventorySyncService.applyReturnAndExchange(_products.value, record)
 
     try {
+      val returnedMaps = record.returnedItems.map {
+        mapOf(
+          "productId" to it.productId,
+          "name" to it.name,
+          "price" to it.price,
+          "qty" to it.quantity,
+          "condition" to it.condition,
+          "restock" to it.restock,
+          "color" to it.color,
+          "size" to it.size
+        )
+      }
+      val exchangeMaps = record.exchangeItems.map {
+        mapOf(
+          "productId" to it.productId,
+          "name" to it.name,
+          "price" to it.price,
+          "qty" to it.quantity,
+          "color" to it.color,
+          "size" to it.size,
+          "sku" to it.sku
+        )
+      }
       firestore?.collection("returns")?.document(record.id)?.set(
         mapOf(
           "id" to record.id,
           "orderId" to record.orderId,
+          "customer" to record.customerName,
           "customerName" to record.customerName,
           "phone" to record.phone,
           "date" to record.date,
+          "timestamp" to System.currentTimeMillis(),
+          "returnedItems" to returnedMaps,
+          "isExchange" to record.isExchange,
+          "exchangeItems" to exchangeMaps,
           "totalReturnValue" to record.totalReturnValue,
           "totalExchangeValue" to record.totalExchangeValue,
           "deliveryFee" to record.deliveryFee,
@@ -758,42 +993,73 @@ class StoreRepository(private val context: Context) {
 
   // Product CRUD
   fun addProduct(product: Product) {
-    _products.value = listOf(product) + _products.value
+    val ts = System.currentTimeMillis()
+    val stamped = product.copy(stockUpdatedAt = ts, lastSyncSource = "ADMIN_ADD")
+    _products.value = listOf(stamped) + _products.value
+    inventorySyncService.mirrorCatalogToPos(_products.value, source = "ADMIN_ADD", pushToCloud = true)
     try {
-      firestore?.collection("products")?.document(product.id)?.set(
+      firestore?.collection("products")?.document(stamped.id)?.set(
         mapOf(
-          "id" to product.id,
-          "name" to product.name,
-          "price" to product.price,
-          "stock" to product.stock,
-          "category" to product.category,
-          "imageUrl" to product.imageUrl,
-          "sku" to product.sku,
-          "description" to product.description,
-          "colors" to product.colors,
-          "sizes" to product.sizes,
-          "ageGroups" to product.ageGroups
+          "id" to stamped.id,
+          "name" to stamped.name,
+          "price" to stamped.price,
+          "stock" to stamped.stock,
+          "category" to stamped.category,
+          "imageUrl" to stamped.imageUrl,
+          "sku" to stamped.sku,
+          "description" to stamped.description,
+          "colors" to stamped.colors,
+          "sizes" to stamped.sizes,
+          "ageGroups" to stamped.ageGroups,
+          "stockUpdatedAt" to stamped.stockUpdatedAt,
+          "lastSyncSource" to stamped.lastSyncSource
         )
       )
     } catch (e: Exception) {}
   }
 
   fun updateProduct(product: Product) {
-    _products.value = _products.value.map { if (it.id == product.id) product else it }
+    val existing = _products.value.find { it.id == product.id }
+    val ts = System.currentTimeMillis()
+    val stamped = product.copy(stockUpdatedAt = ts, lastSyncSource = "ADMIN_EDIT")
+    if (existing != null && existing.stock != stamped.stock) {
+      val delta = stamped.stock - existing.stock
+      val updatedWithoutStock = _products.value.map { if (it.id == stamped.id) stamped.copy(stock = existing.stock) else it }
+      _products.value = inventorySyncService.applyStockDeltaBatch(
+        products = updatedWithoutStock,
+        deltas = listOf(
+          com.example.data.sync.StockDeltaRequest(
+            productId = stamped.id,
+            productName = stamped.name,
+            sku = stamped.sku,
+            delta = delta,
+            reason = "অ্যাডমিন ইনভেন্টরি স্টক আপডেট"
+          )
+        ),
+        source = "ADMIN_EDIT",
+        reason = "অ্যাডমিন প্রোডাক্ট আপডেট",
+        referenceId = stamped.id
+      )
+    } else {
+      _products.value = _products.value.map { if (it.id == stamped.id) stamped else it }
+      inventorySyncService.mirrorCatalogToPos(_products.value, source = "ADMIN_EDIT", pushToCloud = true)
+    }
     try {
-      firestore?.collection("products")?.document(product.id)?.set(
+      firestore?.collection("products")?.document(stamped.id)?.set(
         mapOf(
-          "id" to product.id,
-          "name" to product.name,
-          "price" to product.price,
-          "stock" to product.stock,
-          "category" to product.category,
-          "imageUrl" to product.imageUrl,
-          "sku" to product.sku,
-          "description" to product.description,
-          "colors" to product.colors,
-          "sizes" to product.sizes,
-          "ageGroups" to product.ageGroups
+          "id" to stamped.id,
+          "name" to stamped.name,
+          "price" to stamped.price,
+          "stock" to stamped.stock,
+          "category" to stamped.category,
+          "imageUrl" to stamped.imageUrl,
+          "sku" to stamped.sku,
+          "description" to stamped.description,
+          "colors" to stamped.colors,
+          "sizes" to stamped.sizes,
+          "ageGroups" to stamped.ageGroups,
+          "stockUpdatedAt" to stamped.stockUpdatedAt,
+          "lastSyncSource" to stamped.lastSyncSource
         ),
         SetOptions.merge()
       )
@@ -802,6 +1068,7 @@ class StoreRepository(private val context: Context) {
 
   fun deleteProduct(productId: String) {
     _products.value = _products.value.filterNot { it.id == productId }
+    inventorySyncService.removeProductFromPos(productId)
     try {
       firestore?.collection("products")?.document(productId)?.delete()
     } catch (e: Exception) {}
