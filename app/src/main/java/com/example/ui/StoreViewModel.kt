@@ -8,6 +8,7 @@ import com.example.data.model.CartItem
 import com.example.data.model.Category
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
+import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
@@ -48,6 +49,7 @@ enum class AppScreen {
 
 enum class AdminTab(val title: String, val icon: String) {
   DASHBOARD("ড্যাশবোর্ড", "📊"),
+  HOME_PAGE_SETTING("Home Page Setting", "🏠"),
   PRODUCTS("প্রোডাক্ট", "👗"),
   ORDERS("অর্ডার", "📦"),
   MARKETING("মার্কেটিং", "🎁"),
@@ -65,6 +67,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val returns: StateFlow<List<ReturnRecord>> = repository.returns
   val coupons: StateFlow<List<Coupon>> = repository.coupons
   val banners: StateFlow<List<BannerItem>> = repository.banners
+  val homeSections: StateFlow<List<HomeSectionConfig>> = repository.homeSections
   val storeConfig: StateFlow<StoreConfig> = repository.storeConfig
   val courierConfig: StateFlow<CourierConfig> = repository.courierConfig
   val pixelConfig: StateFlow<PixelConfig> = repository.pixelConfig
@@ -475,6 +478,38 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun resetToDefaults() {
     repository.resetToDefaults()
     emitToast("স্টোরের সকল ডাটা ডিফল্ট অবস্থায় ফিরিয়ে আনা হয়েছে।")
+  }
+
+  fun toggleHomeSection(sectionId: String) {
+    repository.toggleHomeSection(sectionId)
+    emitToast("হোম পেজ ব্লক প্রদর্শনের অবস্থা আপডেট হয়েছে।")
+  }
+
+  fun moveHomeSection(sectionId: String, delta: Int) {
+    repository.moveHomeSection(sectionId, delta)
+  }
+
+  fun updateHomeSection(sectionId: String, transform: (HomeSectionConfig) -> HomeSectionConfig) {
+    repository.updateHomeSection(sectionId, transform)
+  }
+
+  fun toggleProductInHomeSection(sectionId: String, productId: String) {
+    repository.toggleProductInHomeSection(sectionId, productId)
+  }
+
+  fun addCustomHomeSection(section: HomeSectionConfig) {
+    repository.addCustomHomeSection(section)
+    emitToast("নতুন ব্লক \"${section.title}\" হোম পেজে যুক্ত হয়েছে! ✨")
+  }
+
+  fun deleteHomeSection(sectionId: String) {
+    repository.deleteHomeSection(sectionId)
+    emitToast("হোম পেজ ব্লকটি সরানো হয়েছে।")
+  }
+
+  fun resetHomeSectionsToDefault() {
+    repository.resetHomeSectionsToDefault()
+    emitToast("হোম পেজ লেআউট ডিফল্ট অবস্থায় ফিরিয়ে আনা হয়েছে। 🏠")
   }
 
   fun emitToast(msg: String) {

@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
         val returns by viewModel.returns.collectAsStateWithLifecycle()
         val coupons by viewModel.coupons.collectAsStateWithLifecycle()
         val storeConfig by viewModel.storeConfig.collectAsStateWithLifecycle()
+        val homeSections by viewModel.homeSections.collectAsStateWithLifecycle()
         val courierConfig by viewModel.courierConfig.collectAsStateWithLifecycle()
         val pixelConfig by viewModel.pixelConfig.collectAsStateWithLifecycle()
         val posInventory by viewModel.posInventory.collectAsStateWithLifecycle()
@@ -258,8 +259,11 @@ class MainActivity : ComponentActivity() {
                     banners = banners,
                     config = storeConfig,
                     categories = categories,
+                    homeSections = homeSections,
                     selectedCategory = selectedCategory,
+                    searchQuery = searchQuery,
                     onCategorySelected = { viewModel.setSelectedCategory(it) },
+                    onResetFilters = { viewModel.resetHomeFilters() },
                     imageSearchState = imageSearchState,
                     onClearImageSearch = { viewModel.clearImageSearch() },
                     scrollToTopTrigger = homeScrollTrigger,
@@ -310,7 +314,15 @@ class MainActivity : ComponentActivity() {
                     syncEvents = syncEvents,
                     syncHealth = syncHealth,
                     onRecordPosSale = { prod, qty, cust, pay -> viewModel.recordPosSale(prod, qty, cust, pay) },
-                    onReconcileInventory = { viewModel.reconcileInventoryNow() }
+                    onReconcileInventory = { viewModel.reconcileInventoryNow() },
+                    homeSections = homeSections,
+                    onToggleHomeSection = { viewModel.toggleHomeSection(it) },
+                    onMoveHomeSection = { id, delta -> viewModel.moveHomeSection(id, delta) },
+                    onUpdateHomeSection = { id, transform -> viewModel.updateHomeSection(id, transform) },
+                    onToggleProductInHomeSection = { secId, prodId -> viewModel.toggleProductInHomeSection(secId, prodId) },
+                    onAddCustomHomeSection = { viewModel.addCustomHomeSection(it) },
+                    onDeleteHomeSection = { viewModel.deleteHomeSection(it) },
+                    onResetHomeSectionsToDefault = { viewModel.resetHomeSectionsToDefault() }
                   )
                 }
               }

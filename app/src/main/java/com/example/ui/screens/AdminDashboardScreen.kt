@@ -80,6 +80,7 @@ import com.example.data.model.BannerItem
 import com.example.data.model.Category
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
+import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.PixelConfig
@@ -91,6 +92,7 @@ import com.example.data.model.SyncHealthState
 import com.example.ui.AdminTab
 import com.example.ui.components.AdminDeliveryTrackingTab
 import com.example.ui.components.AppImage
+import com.example.ui.components.HomePageSettingHub
 import com.example.ui.components.InventorySyncPanel
 import com.example.ui.components.ReturnExchangeDialog
 import com.example.ui.components.ReturnSlipDialog
@@ -149,6 +151,14 @@ fun AdminDashboardScreen(
   syncHealth: SyncHealthState = SyncHealthState(),
   onRecordPosSale: (Product, Int, String, String) -> Unit = { _, _, _, _ -> },
   onReconcileInventory: () -> Unit = {},
+  homeSections: List<HomeSectionConfig> = emptyList(),
+  onToggleHomeSection: (String) -> Unit = {},
+  onMoveHomeSection: (String, Int) -> Unit = { _, _ -> },
+  onUpdateHomeSection: (String, (HomeSectionConfig) -> HomeSectionConfig) -> Unit = { _, _ -> },
+  onToggleProductInHomeSection: (String, String) -> Unit = { _, _ -> },
+  onAddCustomHomeSection: (HomeSectionConfig) -> Unit = {},
+  onDeleteHomeSection: (String) -> Unit = {},
+  onResetHomeSectionsToDefault: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -328,6 +338,27 @@ fun AdminDashboardScreen(
               returnTargetOrder = null
               showReturnDialog = true
             }
+          )
+        }
+
+        AdminTab.HOME_PAGE_SETTING -> {
+          HomePageSettingHub(
+            homeSections = homeSections,
+            products = products,
+            categories = categories,
+            banners = banners,
+            storeConfig = storeConfig,
+            onToggleSection = onToggleHomeSection,
+            onMoveSection = onMoveHomeSection,
+            onUpdateSection = onUpdateHomeSection,
+            onToggleProductInSection = onToggleProductInHomeSection,
+            onAddCustomSection = onAddCustomHomeSection,
+            onDeleteSection = onDeleteHomeSection,
+            onResetSectionsToDefault = onResetHomeSectionsToDefault,
+            onAddBannerClick = { showBannerDialog = true },
+            onToggleBanner = onToggleBanner,
+            onDeleteBanner = onDeleteBanner,
+            onSaveStoreConfig = onUpdateStoreConfig
           )
         }
 
@@ -730,6 +761,57 @@ fun AdminOverviewTab(
           Text(text = "৪. সেটিংস হাব", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
           Text(text = "শপ ইনফো, পেমেন্ট, কুরিয়ার ও ব্যাকআপ", fontSize = 10.sp, color = Color(0xFF6B7280))
           Text(text = "কনফিগ করুন →", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4338CA))
+        }
+      }
+    }
+
+    // Master Hub 5: Home Page Setting Card
+    Card(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clickable { onGoToTab(AdminTab.HOME_PAGE_SETTING) }
+        .testTag("dashboard_home_page_setting_card"),
+      shape = RoundedCornerShape(18.dp),
+      colors = CardDefaults.cardColors(containerColor = Color.White),
+      border = BorderStroke(1.5.dp, RoyalMaroon)
+    ) {
+      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text = "🏠", fontSize = 22.sp)
+            Column {
+              Text(text = "৫. Home Page Setting (মাস্টার হাব)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+              Text(text = "নতুন প্রোডাক্ট, Hot Sale, সেরা ডিল, সব প্রোডাক্ট ও + Add New", fontSize = 11.sp, color = AntiqueGoldDark)
+            }
+          }
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = CreamSurface,
+            border = BorderStroke(1.dp, BorderGold)
+          ) {
+            Text(
+              text = "হোম কন্ট্রোল",
+              fontSize = 10.sp,
+              fontWeight = FontWeight.Bold,
+              color = RoyalMaroon,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+          }
+        }
+
+        Text(
+          text = "হোম পেজের প্রতিটি ব্লকের প্রোডাক্ট সার্চ করে যুক্ত/বাদ দিন, ON/OFF করুন, উপরে-নিচে মুভ করুন এবং নতুন ক্যাটাগরি বা বিজ্ঞাপন ব্যানার যুক্ত করুন।",
+          fontSize = 11.sp,
+          color = Color(0xFF6B7280),
+          lineHeight = 15.sp
+        )
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+          Text(text = "Home Page Setting খুলুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
         }
       }
     }
@@ -3292,6 +3374,9 @@ fun ProductFormDialog(
   var ageGroups by remember { mutableStateOf(product?.ageGroups ?: emptyList()) }
   var customAgeInput by remember { mutableStateOf("") }
 
+  var isHotSale by remember { mutableStateOf(product?.isHotSale ?: false) }
+  var isBestDeal by remember { mutableStateOf(product?.isBestDeal ?: false) }
+
   var formError by remember { mutableStateOf<String?>(null) }
 
   // Preset options for quick clicks
@@ -3914,6 +3999,67 @@ fun ProductFormDialog(
           modifier = Modifier.fillMaxWidth()
         )
 
+        // Home Page Block Display Placement Checkboxes / Switches
+        Card(
+          shape = RoundedCornerShape(14.dp),
+          colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+          border = BorderStroke(1.dp, BorderGold),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            Text(
+              text = "🏠 হোম পেজ ডিসপ্লে ব্লক সিলেকশন",
+              fontSize = 12.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = RoyalMaroon
+            )
+            Text(
+              text = "নতুন আপলোড করলে অটোমেটিক \"নতুন প্রোডাক্ট\" ব্লকে প্রথমে যুক্ত হবে।",
+              fontSize = 10.sp,
+              color = Color.Gray
+            )
+
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "🔥 Hot Sale ব্লকে যুক্ত করুন",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkEspresso
+              )
+              Switch(
+                checked = isHotSale,
+                onCheckedChange = { isHotSale = it },
+                modifier = Modifier.testTag("product_form_hot_sale_switch")
+              )
+            }
+
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "⭐ সেরা ডিল ব্লকে যুক্ত করুন",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkEspresso
+              )
+              Switch(
+                checked = isBestDeal,
+                onCheckedChange = { isBestDeal = it },
+                modifier = Modifier.testTag("product_form_best_deal_switch")
+              )
+            }
+          }
+        }
+
         if (formError != null) {
           Text(
             text = formError!!,
@@ -3948,7 +4094,10 @@ fun ProductFormDialog(
               description = description.trim().ifBlank { "সজগোজ ফ্যাশনের আকর্ষণীয় প্রিমিয়াম কোয়ালিটি পণ্য।" },
               colors = colors,
               sizes = sizes,
-              ageGroups = ageGroups
+              ageGroups = ageGroups,
+              isHotSale = isHotSale,
+              isBestDeal = isBestDeal,
+              createdAt = product?.createdAt ?: System.currentTimeMillis()
             )
             onSave(p)
           },

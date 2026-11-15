@@ -16,7 +16,28 @@ data class Product(
   val sizes: List<String> = emptyList(),
   val ageGroups: List<String> = emptyList(),
   val stockUpdatedAt: Long = 0L,
-  val lastSyncSource: String = ""
+  val lastSyncSource: String = "",
+  val isHotSale: Boolean = false,
+  val isBestDeal: Boolean = false,
+  val createdAt: Long = 0L
+)
+
+data class HomeSectionConfig(
+  val id: String,
+  val type: String, // top_banner, voucher_strip, category_slider, new_products, hot_sale, best_deals, all_products, category_products, promo_banner, custom_products
+  val title: String,
+  val subtitle: String = "",
+  val icon: String = "✨",
+  val badge: String = "",
+  val layout: String = "slider3", // slider3, grid3x2, grid3x3, banner, strip
+  val enabled: Boolean = true,
+  val isCustom: Boolean = false,
+  val categoryName: String = "",
+  val productIds: List<String> = emptyList(),
+  val imageUrl: String = "",
+  val bannerButtonText: String = "অফার দেখুন",
+  val bannerLinkCategory: String = "All",
+  val maxItems: Int = 12
 )
 
 data class Category(

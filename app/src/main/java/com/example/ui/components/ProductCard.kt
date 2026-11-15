@@ -260,3 +260,169 @@ fun ProductCard(
     }
   }
 }
+
+@Composable
+fun CompactProductCard(
+  product: Product,
+  onProductClick: (Product) -> Unit,
+  onAddToCart: (Product) -> Unit,
+  badgeText: String? = null,
+  modifier: Modifier = Modifier
+) {
+  val hasOptions = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
+  Card(
+    modifier = modifier
+      .clickable { onProductClick(product) }
+      .testTag("compact_product_card_${product.id}"),
+    shape = RoundedCornerShape(12.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.White),
+    border = BorderStroke(1.dp, BorderGold),
+    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
+  ) {
+    Column {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .aspectRatio(1f)
+      ) {
+        AppImage(
+          model = product.imageUrl,
+          contentDescription = product.name,
+          modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+        )
+
+        if (product.stock == 0) {
+          Box(
+            modifier = Modifier
+              .padding(4.dp)
+              .align(Alignment.TopStart)
+              .clip(RoundedCornerShape(6.dp))
+              .background(AccentRed)
+              .padding(horizontal = 4.dp, vertical = 1.dp)
+          ) {
+            Text(
+              text = "শেষ",
+              color = Color.White,
+              fontSize = 8.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+        } else if (product.stock <= 5) {
+          Box(
+            modifier = Modifier
+              .padding(4.dp)
+              .align(Alignment.TopStart)
+              .clip(RoundedCornerShape(6.dp))
+              .background(Color(0xFFD97706))
+              .padding(horizontal = 4.dp, vertical = 1.dp)
+          ) {
+            Text(
+              text = "বাকি ${product.stock}",
+              color = Color.White,
+              fontSize = 8.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+        } else if (!badgeText.isNullOrBlank()) {
+          Box(
+            modifier = Modifier
+              .padding(4.dp)
+              .align(Alignment.TopStart)
+              .clip(RoundedCornerShape(6.dp))
+              .background(RoyalMaroon)
+              .padding(horizontal = 4.dp, vertical = 1.dp)
+          ) {
+            Text(
+              text = badgeText,
+              color = Color.White,
+              fontSize = 8.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+        }
+
+        Box(
+          modifier = Modifier
+            .padding(4.dp)
+            .align(Alignment.TopEnd)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.6f))
+            .padding(horizontal = 4.dp, vertical = 1.dp)
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.Star,
+              contentDescription = null,
+              tint = AntiqueGold,
+              modifier = Modifier.size(9.dp)
+            )
+            Text(
+              text = product.rating.toString(),
+              color = Color.White,
+              fontSize = 8.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+        }
+      }
+
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 6.dp, vertical = 6.dp)
+      ) {
+        Text(
+          text = product.name,
+          color = DarkEspresso,
+          fontSize = 10.5.sp,
+          fontWeight = FontWeight.SemiBold,
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
+          lineHeight = 13.sp,
+          modifier = Modifier.height(27.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Text(
+            text = "৳${product.price}",
+            color = RoyalMaroon,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1
+          )
+
+          Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = if (product.stock > 0) RoyalMaroon else Color(0xFFE0E0E0),
+            modifier = Modifier
+              .clickable(enabled = product.stock > 0) {
+                if (hasOptions) onProductClick(product) else onAddToCart(product)
+              }
+              .testTag("compact_add_to_cart_${product.id}")
+          ) {
+            Text(
+              text = if (product.stock > 0) (if (hasOptions) "অপশন" else "অর্ডার") else "শেষ",
+              color = if (product.stock > 0) Color.White else Color.Gray,
+              fontSize = 9.sp,
+              fontWeight = FontWeight.Bold,
+              modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+            )
+          }
+        }
+      }
+    }
+  }
+}
+

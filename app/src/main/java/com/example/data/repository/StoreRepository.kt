@@ -9,6 +9,7 @@ import com.example.data.model.Category
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
 import com.example.data.model.ExchangeItem
+import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
@@ -51,7 +52,10 @@ class StoreRepository(private val context: Context) {
       sku = "SAJ-001",
       description = "খাঁটি বেনারসি ও কাতানের মেলবন্ধনে তৈরি সোনালী জরি পাড়যুক্ত জমকালো ডিজাইনার শাড়ি। উৎসব এবং বিয়ের অনুষ্ঠানের জন্য আদর্শ কালেকশন। সাথে রয়েছে আনস্টিচড ম্যাচিং ব্লাউজ পিস।",
       colors = listOf("রয়েল রেড", "মেরুন", "কালো", "গোল্ডেন"),
-      sizes = listOf("Free Size")
+      sizes = listOf("Free Size"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500001000L
     ),
     Product(
       id = "p2",
@@ -62,7 +66,10 @@ class StoreRepository(private val context: Context) {
       imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
       sku = "SAJ-002",
       description = "অ্যান্টিক গোল্ড প্লেটেড রয়্যাল কুন্দন চোকার, সাথে ম্যাচিং স্টেটমেন্ট ঝুমকা এবং টিকলি। রুচিশীল রত্নপাথর ও মুক্তোর কারুকার্যময় কাজ।",
-      colors = listOf("রয়্যাল গোল্ডেন", "অ্যান্টিক গোল্ড", "রুবী রেড")
+      colors = listOf("রয়্যাল গোল্ডেন", "অ্যান্টিক গোল্ড", "রুবী রেড"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500002000L
     ),
     Product(
       id = "p3",
@@ -73,7 +80,10 @@ class StoreRepository(private val context: Context) {
       imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
       sku = "SAJ-003",
       description = "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।",
-      sizes = listOf("2.4", "2.6", "2.8")
+      sizes = listOf("2.4", "2.6", "2.8"),
+      isHotSale = false,
+      isBestDeal = true,
+      createdAt = 1729500003000L
     ),
     Product(
       id = "p4",
@@ -84,7 +94,10 @@ class StoreRepository(private val context: Context) {
       imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
       sku = "SAJ-004",
       description = "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।",
-      colors = listOf("রুবী রেড", "পান্না সবুজ", "রয়েল ব্লু")
+      colors = listOf("রুবী রেড", "পান্না সবুজ", "রয়েল ব্লু"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500004000L
     ),
     Product(
       id = "p5",
@@ -96,7 +109,10 @@ class StoreRepository(private val context: Context) {
       sku = "SAJ-005",
       description = "হাতে বোনা ঐতিহ্যবাহী জামদানি মোটিফ এবং নরম আরামদায়ক সিল্ক-সুতি টেক্সচার। আভিজাত্যে ভরপুর বিশেষ সংগ্রহ।",
       colors = listOf("হলুদ ও লাল", "কালো ও সোনালী", "রানি গোলাপি"),
-      sizes = listOf("Free Size")
+      sizes = listOf("Free Size"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500005000L
     ),
     Product(
       id = "p6",
@@ -106,7 +122,10 @@ class StoreRepository(private val context: Context) {
       category = "নেকলেস",
       imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
       sku = "SAJ-006",
-      description = "রঙিন এনামেল কারুকাজ সমৃদ্ধ ঐতিহ্যবাহী মীনাকারি কানের দুল ও নোলক। উৎসবের সাজে দেবে এক রাজকীয় মাত্রা।"
+      description = "রঙিন এনামেল কারুকাজ সমৃদ্ধ ঐতিহ্যবাহী মীনাকারি কানের দুল ও নোলক। উৎসবের সাজে দেবে এক রাজকীয় মাত্রা।",
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500006000L
     ),
     Product(
       id = "p7",
@@ -119,7 +138,10 @@ class StoreRepository(private val context: Context) {
       description = "বাচ্চাদের জন্য আকর্ষণীয় সফট নেট ও সুতি কাপড়ে তৈরি আরামদায়ক ডিজাইনার পার্টি ফ্রক। জন্মদিন এবং উৎসব অনুষ্ঠানের জন্য সেরা পছন্দ।",
       colors = listOf("গোলাপী", "রয়েল রেড", "স্কাই ব্লু", "সাদা"),
       sizes = listOf("20", "22", "24", "26", "28"),
-      ageGroups = listOf("১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৪-৫ বছর", "৫-৬ বছর")
+      ageGroups = listOf("১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৪-৫ বছর", "৫-৬ বছর"),
+      isHotSale = true,
+      isBestDeal = false,
+      createdAt = 1729500007000L
     ),
     Product(
       id = "p8",
@@ -132,8 +154,21 @@ class StoreRepository(private val context: Context) {
       description = "১০০% প্রিমিয়াম সুতি কাপড়ে তৈরি আরামদায়ক বাচ্চাদের পাঞ্জাবি সেট। গলায় সূক্ষ্ম সুতার এমব্রয়ডারি কাজ করা।",
       colors = listOf("অফ হোয়াইট", "মেরুন", "রয়েল ব্লু", "সবুজ"),
       sizes = listOf("18", "20", "22", "24", "26", "28"),
-      ageGroups = listOf("০-৬ মাস", "৬-১২ মাস", "১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৫-৬ বছর")
+      ageGroups = listOf("০-৬ মাস", "৬-১২ মাস", "১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৫-৬ বছর"),
+      isHotSale = false,
+      isBestDeal = false,
+      createdAt = 1729500008000L
     )
+  )
+
+  private val initialHomeSections = listOf(
+    HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", subtitle = "হোম পেজের প্রধান ব্যানার স্লাইডার", icon = "🖼️", layout = "banner", enabled = true),
+    HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", subtitle = "Claim Vouchers to Save More!", icon = "🎟️", layout = "strip", enabled = true),
+    HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", subtitle = "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি", icon = "🏷️", layout = "strip", enabled = true),
+    HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", subtitle = "নতুন আপলোড হওয়া প্রোডাক্ট (৩টি করে স্লাইড)", icon = "✨", badge = "NEW", layout = "slider3", enabled = true, maxItems = 12),
+    HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", subtitle = "হট সেল প্রোডাক্ট ডিসপ্লে (৩টি করে স্লাইড)", icon = "🔥", badge = "HOT 🔥", layout = "slider3", enabled = true, productIds = listOf("p7", "p6", "p5", "p4", "p2", "p1"), maxItems = 12),
+    HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6"), maxItems = 6),
+    HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "৩ লাইনে ৯টি প্রোডাক্ট + আরো দেখুন", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", enabled = true, maxItems = 9)
   )
 
   private val initialCategories = listOf(
@@ -325,6 +360,9 @@ class StoreRepository(private val context: Context) {
   private val _pixelConfig = MutableStateFlow(PixelConfig())
   val pixelConfig: StateFlow<PixelConfig> = _pixelConfig.asStateFlow()
 
+  private val _homeSections = MutableStateFlow<List<HomeSectionConfig>>(loadHomeSections())
+  val homeSections: StateFlow<List<HomeSectionConfig>> = _homeSections.asStateFlow()
+
   private val initialReturns = listOf(
     ReturnRecord(
       id = "RET-884211",
@@ -449,7 +487,10 @@ class StoreRepository(private val context: Context) {
                 sizes = sizesList,
                 ageGroups = ageGroupsList,
                 stockUpdatedAt = doc.getLong("stockUpdatedAt") ?: 0L,
-                lastSyncSource = doc.getString("lastSyncSource") ?: ""
+                lastSyncSource = doc.getString("lastSyncSource") ?: "",
+                isHotSale = doc.getBoolean("isHotSale") ?: false,
+                isBestDeal = doc.getBoolean("isBestDeal") ?: false,
+                createdAt = doc.getLong("createdAt") ?: 0L
               )
             } catch (e: Exception) {
               null
@@ -1025,8 +1066,13 @@ class StoreRepository(private val context: Context) {
   // Product CRUD
   fun addProduct(product: Product) {
     val ts = System.currentTimeMillis()
-    val stamped = product.copy(stockUpdatedAt = ts, lastSyncSource = "ADMIN_ADD")
+    val stamped = product.copy(
+      stockUpdatedAt = ts,
+      lastSyncSource = "ADMIN_ADD",
+      createdAt = if (product.createdAt > 0L) product.createdAt else ts
+    )
     _products.value = listOf(stamped) + _products.value
+    syncProductFlagsToHomeSections(stamped)
     inventorySyncService.mirrorCatalogToPos(_products.value, source = "ADMIN_ADD", pushToCloud = true)
     persistLocalSyncSnapshot()
     try {
@@ -1044,7 +1090,10 @@ class StoreRepository(private val context: Context) {
           "sizes" to stamped.sizes,
           "ageGroups" to stamped.ageGroups,
           "stockUpdatedAt" to stamped.stockUpdatedAt,
-          "lastSyncSource" to stamped.lastSyncSource
+          "lastSyncSource" to stamped.lastSyncSource,
+          "isHotSale" to stamped.isHotSale,
+          "isBestDeal" to stamped.isBestDeal,
+          "createdAt" to stamped.createdAt
         )
       )
     } catch (e: Exception) {}
@@ -1053,7 +1102,11 @@ class StoreRepository(private val context: Context) {
   fun updateProduct(product: Product) {
     val existing = _products.value.find { it.id == product.id }
     val ts = System.currentTimeMillis()
-    val stamped = product.copy(stockUpdatedAt = ts, lastSyncSource = "ADMIN_EDIT")
+    val stamped = product.copy(
+      stockUpdatedAt = ts,
+      lastSyncSource = "ADMIN_EDIT",
+      createdAt = if (product.createdAt > 0L) product.createdAt else (existing?.createdAt ?: ts)
+    )
     if (existing != null && existing.stock != stamped.stock) {
       val delta = stamped.stock - existing.stock
       val updatedWithoutStock = _products.value.map { if (it.id == stamped.id) stamped.copy(stock = existing.stock) else it }
@@ -1078,6 +1131,7 @@ class StoreRepository(private val context: Context) {
       inventorySyncService.mirrorCatalogToPos(_products.value, source = "ADMIN_EDIT", pushToCloud = true)
       persistLocalSyncSnapshot()
     }
+    syncProductFlagsToHomeSections(stamped)
     try {
       firestore?.collection("products")?.document(stamped.id)?.set(
         mapOf(
@@ -1093,7 +1147,10 @@ class StoreRepository(private val context: Context) {
           "sizes" to stamped.sizes,
           "ageGroups" to stamped.ageGroups,
           "stockUpdatedAt" to stamped.stockUpdatedAt,
-          "lastSyncSource" to stamped.lastSyncSource
+          "lastSyncSource" to stamped.lastSyncSource,
+          "isHotSale" to stamped.isHotSale,
+          "isBestDeal" to stamped.isBestDeal,
+          "createdAt" to stamped.createdAt
         ),
         SetOptions.merge()
       )
@@ -1237,5 +1294,156 @@ class StoreRepository(private val context: Context) {
     _coupons.value = initialCoupons
     _banners.value = initialBanners
     _storeConfig.value = StoreConfig()
+    saveHomeSections(initialHomeSections)
+  }
+
+  // Home Page Sections Management
+  private fun syncProductFlagsToHomeSections(product: Product) {
+    val next = _homeSections.value.map { sec ->
+      when (sec.id) {
+        "hot_sale" -> {
+          val updatedIds = if (product.isHotSale) {
+            if (sec.productIds.contains(product.id)) sec.productIds else listOf(product.id) + sec.productIds
+          } else {
+            sec.productIds.filterNot { it == product.id }
+          }
+          sec.copy(productIds = updatedIds)
+        }
+        "best_deals" -> {
+          val updatedIds = if (product.isBestDeal) {
+            if (sec.productIds.contains(product.id)) sec.productIds else listOf(product.id) + sec.productIds
+          } else {
+            sec.productIds.filterNot { it == product.id }
+          }
+          sec.copy(productIds = updatedIds)
+        }
+        else -> sec
+      }
+    }
+    saveHomeSections(next)
+  }
+
+  private fun loadHomeSections(): List<HomeSectionConfig> {
+    val raw = prefs.getString("sajgoj_home_sections", null) ?: return initialHomeSections
+    return try {
+      val arr = JSONArray(raw)
+      val list = buildList {
+        for (i in 0 until arr.length()) {
+          val o = arr.optJSONObject(i) ?: continue
+          val pidArr = o.optJSONArray("productIds")
+          val pids = buildList {
+            if (pidArr != null) {
+              for (j in 0 until pidArr.length()) {
+                val idVal = pidArr.optString(j)
+                if (idVal.isNotBlank()) add(idVal)
+              }
+            }
+          }
+          add(
+            HomeSectionConfig(
+              id = o.optString("id"),
+              type = o.optString("type"),
+              title = o.optString("title"),
+              subtitle = o.optString("subtitle"),
+              icon = o.optString("icon", "✨"),
+              badge = o.optString("badge", ""),
+              layout = o.optString("layout", "slider3"),
+              enabled = o.optBoolean("enabled", true),
+              isCustom = o.optBoolean("isCustom", false),
+              categoryName = o.optString("categoryName", ""),
+              productIds = pids,
+              imageUrl = o.optString("imageUrl", ""),
+              bannerButtonText = o.optString("bannerButtonText", "অফার দেখুন"),
+              bannerLinkCategory = o.optString("bannerLinkCategory", "All"),
+              maxItems = o.optInt("maxItems", 12)
+            )
+          )
+        }
+      }
+      if (list.isNotEmpty()) list else initialHomeSections
+    } catch (_: Exception) {
+      initialHomeSections
+    }
+  }
+
+  fun saveHomeSections(sections: List<HomeSectionConfig>) {
+    _homeSections.value = sections
+    val arr = JSONArray()
+    sections.forEach { s ->
+      arr.put(
+        JSONObject().apply {
+          put("id", s.id)
+          put("type", s.type)
+          put("title", s.title)
+          put("subtitle", s.subtitle)
+          put("icon", s.icon)
+          put("badge", s.badge)
+          put("layout", s.layout)
+          put("enabled", s.enabled)
+          put("isCustom", s.isCustom)
+          put("categoryName", s.categoryName)
+          put("productIds", JSONArray(s.productIds))
+          put("imageUrl", s.imageUrl)
+          put("bannerButtonText", s.bannerButtonText)
+          put("bannerLinkCategory", s.bannerLinkCategory)
+          put("maxItems", s.maxItems)
+        }
+      )
+    }
+    prefs.edit().putString("sajgoj_home_sections", arr.toString()).apply()
+  }
+
+  fun toggleHomeSection(sectionId: String) {
+    val next = _homeSections.value.map { if (it.id == sectionId) it.copy(enabled = !it.enabled) else it }
+    saveHomeSections(next)
+  }
+
+  fun moveHomeSection(sectionId: String, delta: Int) {
+    val list = _homeSections.value.toMutableList()
+    val idx = list.indexOfFirst { it.id == sectionId }
+    if (idx < 0) return
+    val targetIdx = idx + delta
+    if (targetIdx !in list.indices) return
+    val item = list.removeAt(idx)
+    list.add(targetIdx, item)
+    saveHomeSections(list)
+  }
+
+  fun updateHomeSection(sectionId: String, transform: (HomeSectionConfig) -> HomeSectionConfig) {
+    val next = _homeSections.value.map { if (it.id == sectionId) transform(it) else it }
+    saveHomeSections(next)
+  }
+
+  fun toggleProductInHomeSection(sectionId: String, productId: String) {
+    val next = _homeSections.value.map { sec ->
+      if (sec.id != sectionId) sec
+      else {
+        val exists = sec.productIds.contains(productId)
+        val updatedIds = if (exists) sec.productIds.filterNot { it == productId } else listOf(productId) + sec.productIds
+        sec.copy(productIds = updatedIds)
+      }
+    }
+    saveHomeSections(next)
+
+    if (sectionId == "hot_sale" || sectionId == "best_deals") {
+      _products.value = _products.value.map { p ->
+        if (p.id != productId) p
+        else if (sectionId == "hot_sale") p.copy(isHotSale = !p.isHotSale)
+        else p.copy(isBestDeal = !p.isBestDeal)
+      }
+      persistLocalSyncSnapshot()
+    }
+  }
+
+  fun addCustomHomeSection(section: HomeSectionConfig) {
+    saveHomeSections(_homeSections.value + section)
+  }
+
+  fun deleteHomeSection(sectionId: String) {
+    saveHomeSections(_homeSections.value.filterNot { it.id == sectionId })
+  }
+
+  fun resetHomeSectionsToDefault() {
+    saveHomeSections(initialHomeSections)
   }
 }

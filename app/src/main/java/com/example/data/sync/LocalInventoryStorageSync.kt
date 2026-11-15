@@ -193,7 +193,10 @@ class LocalInventoryStorageSync(
               sizes = jsonArrayToStrings(o.optJSONArray("sizes")),
               ageGroups = jsonArrayToStrings(o.optJSONArray("ageGroups")),
               stockUpdatedAt = o.optLong("stockUpdatedAt", 0L),
-              lastSyncSource = o.optString("lastSyncSource", "")
+              lastSyncSource = o.optString("lastSyncSource", ""),
+              isHotSale = o.optBoolean("isHotSale", false),
+              isBestDeal = o.optBoolean("isBestDeal", false),
+              createdAt = o.optLong("createdAt", 0L)
             )
           )
         }
@@ -251,6 +254,9 @@ class LocalInventoryStorageSync(
         put("ageGroups", JSONArray(p.ageGroups))
         put("stockUpdatedAt", p.stockUpdatedAt)
         put("lastSyncSource", p.lastSyncSource)
+        put("isHotSale", p.isHotSale)
+        put("isBestDeal", p.isBestDeal)
+        put("createdAt", p.createdAt)
       }
       arr.put(o)
     }
