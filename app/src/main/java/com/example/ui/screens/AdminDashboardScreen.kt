@@ -10,11 +10,13 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
@@ -91,6 +94,8 @@ import com.example.ui.components.AppImage
 import com.example.ui.components.InventorySyncPanel
 import com.example.ui.components.ReturnExchangeDialog
 import com.example.ui.components.ReturnSlipDialog
+import com.example.ui.components.ShippingLabelPrintFormat
+import com.example.ui.components.printShippingLabels
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
 import com.example.ui.theme.AntiqueGold
@@ -124,6 +129,7 @@ fun AdminDashboardScreen(
   onUpdateOrderStatus: (String, String) -> Unit,
   onDispatchCourier: (String, String) -> Unit,
   onViewInvoice: (Order) -> Unit,
+  onOpenShippingLabel: (Order) -> Unit = {},
   onAddReturnRecord: (ReturnRecord) -> Unit = {},
   onAddCategory: (Category) -> Unit,
   onDeleteCategory: (String) -> Unit,
@@ -355,10 +361,12 @@ fun AdminDashboardScreen(
             orders = orders,
             products = products,
             returns = returns,
+            storeConfig = storeConfig,
             courierConfig = courierConfig,
             onUpdateStatus = onUpdateOrderStatus,
             onDispatchCourier = onDispatchCourier,
             onViewInvoice = onViewInvoice,
+            onOpenShippingLabel = onOpenShippingLabel,
             onOpenReturn = { order ->
               returnTargetOrder = order
               showReturnDialog = true
@@ -1233,10 +1241,12 @@ fun AdminOrdersHub(
   orders: List<Order>,
   products: List<Product>,
   returns: List<ReturnRecord>,
+  storeConfig: StoreConfig,
   courierConfig: CourierConfig,
   onUpdateStatus: (String, String) -> Unit,
   onDispatchCourier: (String, String) -> Unit,
   onViewInvoice: (Order) -> Unit,
+  onOpenShippingLabel: (Order) -> Unit,
   onOpenReturn: (Order?) -> Unit,
   onViewReturnSlip: (ReturnRecord) -> Unit,
   onUpdateCourierConfig: (CourierConfig) -> Unit,
@@ -1244,6 +1254,7 @@ fun AdminOrdersHub(
 ) {
   var selectedOrderSubTab by remember { mutableStateOf("NEW_ORDERS") }
   val pendingOrders = remember(orders) { orders.filter { it.status.equals("Pending", ignoreCase = true) } }
+  val shippedOrders = remember(orders) { orders.filter { it.status.equals("Shipped", ignoreCase = true) } }
 
   Column(modifier = Modifier.fillMaxSize()) {
     Row(
@@ -1302,6 +1313,7 @@ fun AdminOrdersHub(
         Triple("NEW_ORDERS", "নতুন অর্ডার অনুমোদন", "🔔"),
         Triple("DELIVERY_TRACKING", "ডেলিভারি ট্র্যাকিং", "📊"),
         Triple("ALL_ORDERS", "সকল অর্ডার ও ফিল্টার", "📋"),
+        Triple("SHIPPING_LABELS", "শিপিং লেবেল", "🏷️"),
         Triple("COURIER", "কুরিয়ার ট্র্যাকিং", "🚚"),
         Triple("RETURNS", "রিটার্ন ও এক্সচেঞ্জ", "🔄")
       )
@@ -1312,6 +1324,7 @@ fun AdminOrdersHub(
           "NEW_ORDERS" -> if (pendingOrders.isNotEmpty()) "${pendingOrders.size}" else null
           "DELIVERY_TRACKING" -> "$trackedOrdersCount"
           "ALL_ORDERS" -> "${orders.size}"
+          "SHIPPING_LABELS" -> "${shippedOrders.size}"
           "RETURNS" -> "${returns.size}"
           else -> null
         }
@@ -1553,7 +1566,8 @@ fun AdminOrdersHub(
         AdminDeliveryTrackingTab(
           orders = orders,
           onUpdateStatus = onUpdateStatus,
-          onViewInvoice = onViewInvoice
+          onViewInvoice = onViewInvoice,
+          onOpenShippingLabel = onOpenShippingLabel
         )
       }
 
@@ -1563,7 +1577,18 @@ fun AdminOrdersHub(
           onUpdateStatus = onUpdateStatus,
           onDispatchCourier = onDispatchCourier,
           onViewInvoice = onViewInvoice,
+          onOpenShippingLabel = onOpenShippingLabel,
           onOpenReturn = { onOpenReturn(it) }
+        )
+      }
+
+      "SHIPPING_LABELS" -> {
+        AdminShippingLabelsTab(
+          shippedOrders = shippedOrders,
+          storeConfig = storeConfig,
+          onOpenShippingLabel = onOpenShippingLabel,
+          onGoToAllOrders = { selectedOrderSubTab = "ALL_ORDERS" },
+          onShowToast = onShowToast
         )
       }
 
@@ -1583,6 +1608,214 @@ fun AdminOrdersHub(
           onOpenNewReturn = { onOpenReturn(null) },
           onViewReturnSlip = onViewReturnSlip
         )
+      }
+    }
+  }
+}
+
+@Composable
+fun AdminShippingLabelsTab(
+  shippedOrders: List<Order>,
+  storeConfig: StoreConfig,
+  onOpenShippingLabel: (Order) -> Unit,
+  onGoToAllOrders: () -> Unit,
+  onShowToast: (String) -> Unit
+) {
+  val context = LocalContext.current
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    Card(
+      modifier = Modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(16.dp),
+      colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+      border = BorderStroke(1.dp, Color(0xFF93C5FD))
+    ) {
+      Column(
+        modifier = Modifier.padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = "🏷️ পার্সেল শিপিং লেবেল ডেস্ক (${shippedOrders.size})",
+              fontSize = 14.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color(0xFF1E3A8A)
+            )
+            Text(
+              text = "Shipped স্ট্যাটাসের অর্ডারগুলোর QR কোডসহ পার্সেল স্টিকার প্রিন্ট করুন",
+              fontSize = 11.sp,
+              color = Color(0xFF1E40AF)
+            )
+          }
+        }
+
+        if (shippedOrders.isNotEmpty()) {
+          Button(
+            onClick = {
+              printShippingLabels(
+                context = context,
+                orders = shippedOrders,
+                config = storeConfig,
+                format = ShippingLabelPrintFormat.THERMAL_4X6,
+                onShowToast = onShowToast
+              )
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+              .fillMaxWidth()
+              .heightIn(min = 48.dp)
+              .testTag("batch_print_shipping_labels_btn")
+          ) {
+            Icon(imageVector = Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = "সব Shipped লেবেল একসাথে প্রিন্ট (${shippedOrders.size} টি)",
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Bold
+            )
+          }
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    if (shippedOrders.isEmpty()) {
+      Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, BorderGold)
+      ) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Text(text = "🏷️", fontSize = 36.sp)
+          Text(
+            text = "কোনো Shipped অর্ডার পাওয়া যায়নি",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkEspresso
+          )
+          Text(
+            text = "যেকোনো অর্ডারের স্ট্যাটাস 'Shipped' করলে এখানে পার্সেল শিপিং লেবেল তৈরি ও প্রিন্ট করা যাবে।",
+            fontSize = 11.sp,
+            color = Color.Gray
+          )
+          Button(
+            onClick = onGoToAllOrders,
+            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.heightIn(min = 48.dp)
+          ) {
+            Text(text = "সকল অর্ডারে যান", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+          }
+        }
+      }
+    } else {
+      LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxSize()
+      ) {
+        items(shippedOrders, key = { it.id }) { order ->
+          Card(
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("shipping_label_card_${order.id}"),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, BorderGold)
+          ) {
+            Column(
+              modifier = Modifier.padding(14.dp),
+              verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Column {
+                  Text(
+                    text = "অর্ডার #${order.id}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = RoyalMaroon
+                  )
+                  Text(
+                    text = if (order.trackingId.isNotBlank()) "Tracking: ${order.trackingId}" else "তারিখ: ${order.date}",
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                  )
+                }
+                Surface(
+                  shape = RoundedCornerShape(8.dp),
+                  color = Color(0xFFDBEAFE)
+                ) {
+                  Text(
+                    text = "🚚 Shipped",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E40AF),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                  )
+                }
+              }
+
+              Text(
+                text = "${order.customerName} • 📞 ${order.phone}",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = DarkEspresso
+              )
+              Text(
+                text = "📍 ${order.address}, ${order.thana}, ${order.district}",
+                fontSize = 11.sp,
+                color = Color.Gray,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+              )
+
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(top = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(
+                  text = "COD/মোট: ৳${order.total} (${order.items.sumOf { it.quantity }} পিস)",
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon
+                )
+                Button(
+                  onClick = { onOpenShippingLabel(order) },
+                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF)),
+                  shape = RoundedCornerShape(12.dp),
+                  modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .testTag("shipping_label_tab_print_${order.id}"),
+                  contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                  Icon(imageVector = Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                  Spacer(modifier = Modifier.width(6.dp))
+                  Text(text = "লেবেল তৈরি ও প্রিন্ট", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -1903,6 +2136,7 @@ fun AdminOrdersTab(
   onUpdateStatus: (String, String) -> Unit,
   onDispatchCourier: (String, String) -> Unit,
   onViewInvoice: (Order) -> Unit,
+  onOpenShippingLabel: (Order) -> Unit = {},
   onOpenReturn: (Order) -> Unit
 ) {
   val statuses = listOf("Pending", "Confirmed", "Shipped", "Delivered", "Cancelled")
@@ -2204,6 +2438,22 @@ fun AdminOrdersTab(
                   .height(34.dp)
               ) {
                 Text(text = "🔄 রিটার্ন", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+
+            if (order.status.equals("Shipped", ignoreCase = true)) {
+              Button(
+                onClick = { onOpenShippingLabel(order) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF), contentColor = Color.White),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .heightIn(min = 48.dp)
+                  .testTag("shipping_label_btn_${order.id}")
+              ) {
+                Icon(imageVector = Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "🏷️ শিপিং লেবেল তৈরি ও প্রিন্ট (QR সহ)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
               }
             }
           }

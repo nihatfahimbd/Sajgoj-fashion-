@@ -5759,6 +5759,8 @@
       const [stockInOutSource, setStockInOutSource] = useState("কারখানা / শোরুম");
       const [barcodeStickerCount, setBarcodeStickerCount] = useState(12);
       const [customerQrModal, setCustomerQrModal] = useState(null); // Customer/order object for QR display
+      const [shippingLabelOrder, setShippingLabelOrder] = useState(null); // Single order or array for parcel shipping label modal
+      const [shippingLabelFormat, setShippingLabelFormat] = useState("thermal"); // "thermal" (4x6 in) | "a4" (A4 cut-sheet)
       const [stockLogs, setStockLogs] = useState(() => getStored("stock_logs", [
         { id: "STK-101", date: "2026-10-22", type: "in", productName: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি", qty: 10, source: "কেনাকাটা (Purchase)", user: "Admin" },
         { id: "STK-102", date: "2026-10-21", type: "out", productName: "কুন্দন ব্রাইডাল চোকার ও ঝুমকা সেট", qty: 2, source: "বিক্রয় (POS Sale)", user: "Counter 1" }
@@ -6093,6 +6095,359 @@
         w.document.close();
       };
 
+      // Build structured QR payload for parcel shipping labels
+      const buildShippingLabelQrPayload = (order) => {
+        if (!order) return "";
+        const tracking = order.trackingId || order.consignmentId || order.id;
+        return JSON.stringify({
+          type: "SAJGOJ_SHIPPING_LABEL",
+          orderId: order.id,
+          tracking,
+          customer: (order.customerName || order.customer || "").slice(0, 40),
+          phone: order.phone || "",
+          district: (order.district || "").slice(0, 28),
+          total: Number(order.total || 0),
+          payment: (order.paymentMethod || "COD").slice(0, 20),
+          status: order.status || "Shipped"
+        });
+      };
+
+      const isCodOrderLabel = (order) => {
+        const pm = String(order?.paymentMethod || "").toLowerCase();
+        return !pm || pm.includes("cash") || pm.includes("cod") || pm.includes("ক্যাশ");
+      };
+
+      // Print Parcel Shipping Label(s) (4x6 Thermal Sticker or A4 Parcel Cut-Sheet)
+      const printShippingLabelWindow = (ordersInput, format = shippingLabelFormat) => {
+        const list = (Array.isArray(ordersInput) ? ordersInput : [ordersInput]).filter(Boolean);
+        if (list.length === 0) {
+          notify("প্রিন্ট করার জন্য কোনো Shipped অর্ডার পাওয়া যায়নি!");
+          return;
+        }
+        const w = window.open("", "_blank");
+        if (!w) {
+          notify("পপআপ ব্লক থাকায় প্রিন্ট উইন্ডো খোলা যায়নি। ব্রাউজার পপআপ অনুমতি দিন।");
+          return;
+        }
+
+        const isA4 = format === "a4";
+        const storeName = config?.storeName || "SAJGOJ FASHION";
+        const storePhone = config?.phone || "018051198888";
+        const storeAddr = config?.address || "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205";
+
+        const escHtml = (str) => String(str ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+
+        const cardsHtml = list.map((o, idx) => {
+          const tracking = o.trackingId || o.consignmentId || o.id;
+          const customerName = o.customerName || o.customer || "সম্মানিত গ্রাহক";
+          const fullAddress = [o.address, o.thana, o.district].filter(Boolean).join(", ");
+          const districtTag = (o.district || o.thana || "BANGLADESH").toUpperCase();
+          const courierLabel = (o.courier && o.courier !== "None") ? o.courier : "STANDARD PARCEL";
+          const isCod = isCodOrderLabel(o);
+          const totalPieces = (o.items || []).reduce((acc, it) => acc + Number(it.qty || it.quantity || 1), 0);
+          const itemsHtml = (o.items || []).slice(0, 5).map(it => {
+            const v = [
+              (it.color || it.selectedColor) ? cleanVariation(it.color || it.selectedColor) : "",
+              (it.size || it.selectedSize) ? cleanVariation(it.size || it.selectedSize) : ""
+            ].filter(Boolean).join(" • ");
+            const qty = it.qty || it.quantity || 1;
+            return `<div class="item-row"><span>• ${escHtml(it.name)}${v ? ` <small>[${escHtml(v)}]</small>` : ""}</span><b>× ${qty}</b></div>`;
+          }).join("") + ((o.items || []).length > 5 ? `<div class="item-more">+ আরও ${o.items.length - 5} টি পণ্য</div>` : "");
+          const qrPayload = buildShippingLabelQrPayload(o);
+          const qrFallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrPayload)}`;
+
+          return `
+            <div class="label-sticker ${isA4 ? "a4-card" : "thermal-card"}">
+              <div class="sticker-top">
+                <div>
+                  <div class="store-brand">${escHtml(storeName)}</div>
+                  <div class="store-sub">PARCEL SHIPPING LABEL • হটলাইন: ${escHtml(storePhone)}</div>
+                </div>
+                <div class="courier-pill">${escHtml(courierLabel)}</div>
+              </div>
+
+              <div class="routing-row">
+                <div>
+                  <div class="order-id">ORDER #${escHtml(o.id)}</div>
+                  <div class="tracking-line">TRK: ${escHtml(tracking)} • ${escHtml(o.date || "")}</div>
+                </div>
+                <div class="district-stamp">${escHtml(districtTag)}</div>
+              </div>
+
+              <div class="recipient-qr-grid">
+                <div class="recipient-box">
+                  <div class="box-kicker">TO / প্রাপক (CUSTOMER):</div>
+                  <div class="cust-name">${escHtml(customerName)}</div>
+                  <div class="cust-phone">📞 ${escHtml(o.phone || "N/A")}</div>
+                  <div class="cust-addr">📍 ${escHtml(fullAddress || "ঠিকানা উল্লেখ নেই")}</div>
+                  ${(o.orderNote || o.note) ? `<div class="note-tag">📝 নোট: ${escHtml(o.orderNote || o.note)}</div>` : ""}
+                  ${o.giftWrap ? `<div class="gift-tag">🎁 গিফট র্যাপ পার্সেল</div>` : ""}
+                </div>
+                <div class="qr-box">
+                  <div id="qr-target-${idx}" class="qr-canvas-host" data-qr="${escHtml(qrPayload)}" data-fallback="${qrFallbackUrl}"></div>
+                  <div class="qr-caption">SCAN PARCEL QR</div>
+                </div>
+              </div>
+
+              <div class="cod-banner ${isCod ? "cod-due" : "cod-paid"}">
+                ${isCod ? `COD আদায়যোগ্য (Cash): ৳${Number(o.total || 0).toLocaleString()}` : `PREPAID (${escHtml(o.paymentMethod)}) • COD: ৳0`}
+              </div>
+
+              <div class="barcode-strip">
+                <svg class="parcel-barcode" jsbarcode-format="CODE128" jsbarcode-value="${escHtml(String(tracking))}" jsbarcode-width="1.5" jsbarcode-height="32" jsbarcode-fontsize="10"></svg>
+              </div>
+
+              <div class="items-box">
+                <div class="box-kicker">পার্সেলের পণ্যসমূহ (${totalPieces} পিস):</div>
+                ${itemsHtml || '<div class="item-row">অর্ডার আইটেম</div>'}
+              </div>
+
+              <div class="sender-footer">
+                <b>প্রেরক (FROM):</b> ${escHtml(storeName)} • ${escHtml(storeAddr)} • 📞 ${escHtml(storePhone)}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        w.document.write(`
+          <!DOCTYPE html>
+          <html lang="bn">
+          <head>
+            <meta charset="utf-8" />
+            <title>Shipping Label${list.length === 1 ? " - #" + escHtml(list[0].id) : `s (${list.length})`}</title>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+            <style>
+              @page {
+                size: ${isA4 ? "A4 portrait" : "4in 6in"};
+                margin: ${isA4 ? "8mm" : "3mm"};
+              }
+              * { box-sizing: border-box; }
+              body {
+                font-family: 'Hind Siliguri', 'Segoe UI', Arial, sans-serif;
+                margin: 0;
+                padding: ${isA4 ? "12px" : "8px"};
+                background: #f3f4f6;
+                color: #000000;
+              }
+              .no-print {
+                max-width: ${isA4 ? "790px" : "400px"};
+                margin: 0 auto 14px auto;
+                background: #111827;
+                color: #ffffff;
+                padding: 10px 14px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+              }
+              .no-print button {
+                border: none;
+                border-radius: 999px;
+                padding: 7px 14px;
+                font-weight: 700;
+                font-size: 12px;
+                cursor: pointer;
+              }
+              .labels-wrap {
+                ${isA4
+                  ? "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 790px; margin: 0 auto;"
+                  : "display: flex; flex-direction: column; align-items: center; gap: 12px;"}
+              }
+              .label-sticker {
+                background: #ffffff;
+                border: 2px dashed #111827;
+                border-radius: 10px;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
+              .thermal-card {
+                width: 3.85in;
+                max-width: 100%;
+                page-break-after: always;
+              }
+              .thermal-card:last-child { page-break-after: auto; }
+              .a4-card { width: 100%; }
+              .sticker-top {
+                background: #000000;
+                color: #ffffff;
+                padding: 7px 9px;
+                border-radius: 6px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 6px;
+              }
+              .store-brand { font-size: 13px; font-weight: 900; letter-spacing: 0.4px; }
+              .store-sub { font-size: 9px; opacity: 0.9; }
+              .courier-pill {
+                background: #ffffff;
+                color: #000000;
+                font-size: 9px;
+                font-weight: 900;
+                padding: 3px 7px;
+                border-radius: 4px;
+                text-transform: uppercase;
+                white-space: nowrap;
+              }
+              .routing-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #f3f4f6;
+                border: 1.5px solid #111827;
+                border-radius: 6px;
+                padding: 6px 8px;
+                gap: 6px;
+              }
+              .order-id { font-family: monospace; font-size: 12px; font-weight: 900; }
+              .tracking-line { font-family: monospace; font-size: 9.5px; color: #1f2937; }
+              .district-stamp {
+                background: #000000;
+                color: #ffffff;
+                font-size: 10px;
+                font-weight: 900;
+                padding: 4px 8px;
+                border-radius: 4px;
+                white-space: nowrap;
+              }
+              .recipient-qr-grid {
+                display: grid;
+                grid-template-columns: 1.45fr 1fr;
+                gap: 7px;
+                align-items: stretch;
+              }
+              .recipient-box, .qr-box {
+                border: 1.5px solid #111827;
+                border-radius: 6px;
+                padding: 7px 8px;
+              }
+              .qr-box {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+              }
+              .qr-canvas-host {
+                width: 96px;
+                height: 96px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .qr-canvas-host img, .qr-canvas-host canvas {
+                width: 96px !important;
+                height: 96px !important;
+              }
+              .qr-caption { font-size: 8px; font-weight: 900; letter-spacing: 0.6px; margin-top: 3px; }
+              .box-kicker { font-size: 9px; font-weight: 800; color: #374151; text-transform: uppercase; margin-bottom: 2px; }
+              .cust-name { font-size: 13px; font-weight: 900; line-height: 1.2; margin-bottom: 2px; }
+              .cust-phone { font-family: monospace; font-size: 11.5px; font-weight: 800; margin-bottom: 3px; }
+              .cust-addr { font-size: 10.5px; line-height: 1.3; color: #111827; }
+              .note-tag, .gift-tag {
+                margin-top: 4px;
+                font-size: 9.5px;
+                font-weight: 700;
+                background: #fef3c7;
+                border: 1px solid #f59e0b;
+                padding: 2px 5px;
+                border-radius: 4px;
+              }
+              .cod-banner {
+                border: 1.5px solid #111827;
+                border-radius: 6px;
+                text-align: center;
+                padding: 6px 8px;
+                font-size: 12px;
+                font-weight: 900;
+              }
+              .cod-due { background: #fee2e2; }
+              .cod-paid { background: #dcfce7; }
+              .barcode-strip {
+                text-align: center;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                padding: 3px 6px;
+              }
+              .parcel-barcode { max-width: 100%; height: auto; }
+              .items-box {
+                border: 1px solid #9ca3af;
+                border-radius: 6px;
+                padding: 6px 8px;
+                font-size: 10px;
+              }
+              .item-row { display: flex; justify-content: space-between; gap: 6px; margin-top: 2px; }
+              .item-more { font-size: 9px; font-weight: 700; color: #4b5563; margin-top: 2px; }
+              .sender-footer {
+                border-top: 1px solid #d1d5db;
+                padding-top: 5px;
+                font-size: 9px;
+                color: #374151;
+                line-height: 1.3;
+              }
+              @media print {
+                body { background: #ffffff; padding: 0; }
+                .no-print { display: none !important; }
+                .label-sticker { border: 1.5px dashed #000000; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="no-print">
+              <div>
+                <div style="font-weight:800;font-size:13px;">🏷️ পার্সেল শিপিং লেবেল (${list.length} টি)</div>
+                <div style="font-size:11px;opacity:0.8;">${isA4 ? "A4 পার্সেল শিট (কাটিং লাইনসহ)" : "4×6 ইঞ্চি থার্মাল / কুরিয়ার স্টিকার"}</div>
+              </div>
+              <div>
+                <button onclick="window.print()" style="background:#dc2626;color:#fff;">🖨️ প্রিন্ট করুন</button>
+                <button onclick="window.close()" style="background:#374151;color:#fff;margin-left:6px;">বন্ধ</button>
+              </div>
+            </div>
+            <div class="labels-wrap">
+              ${cardsHtml}
+            </div>
+            <script>
+              window.onload = function() {
+                document.querySelectorAll(".qr-canvas-host").forEach(function(el) {
+                  var data = el.getAttribute("data-qr") || "";
+                  var fb = el.getAttribute("data-fallback") || "";
+                  try {
+                    if (window.QRCode) {
+                      new QRCode(el, {
+                        text: data,
+                        width: 96,
+                        height: 96,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                      });
+                    } else if (fb) {
+                      el.innerHTML = '<img src="' + fb + '" width="96" height="96" alt="QR" />';
+                    }
+                  } catch(e) {
+                    if (fb) el.innerHTML = '<img src="' + fb + '" width="96" height="96" alt="QR" />';
+                  }
+                });
+                try { if (window.JsBarcode) JsBarcode(".parcel-barcode").init(); } catch(e) {}
+                setTimeout(function() { try { window.print(); } catch(e){} }, 450);
+              };
+            <\/script>
+          </body>
+          </html>
+        `);
+        w.document.close();
+      };
+
       // Effect to initialize live camera scanner
       useEffect(() => {
         let scannerInstance = null;
@@ -6150,6 +6505,54 @@
           return () => clearTimeout(t);
         }
       }, [productBarcodeModal]);
+
+      // Effect to render Shipping Label preview QR & Barcode inside modal
+      useEffect(() => {
+        if (!shippingLabelOrder || shippingLabelOrder.__batch) return;
+        const t = setTimeout(() => {
+          const qrHost = document.getElementById("shipping-label-modal-qr");
+          if (qrHost) {
+            qrHost.innerHTML = "";
+            const payload = buildShippingLabelQrPayload(shippingLabelOrder);
+            try {
+              if (window.QRCode) {
+                new window.QRCode(qrHost, {
+                  text: payload,
+                  width: 112,
+                  height: 112,
+                  colorDark: "#000000",
+                  colorLight: "#ffffff",
+                  correctLevel: window.QRCode.CorrectLevel.M
+                });
+              } else {
+                const img = document.createElement("img");
+                img.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(payload)}`;
+                img.alt = "Parcel QR";
+                img.className = "w-28 h-28";
+                qrHost.appendChild(img);
+              }
+            } catch (e) {
+              console.warn("Shipping label QR render error:", e);
+            }
+          }
+          if (window.JsBarcode) {
+            try {
+              const tracking = String(shippingLabelOrder.trackingId || shippingLabelOrder.consignmentId || shippingLabelOrder.id);
+              window.JsBarcode("#shipping-label-modal-barcode", tracking, {
+                format: "CODE128",
+                width: 1.6,
+                height: 36,
+                displayValue: true,
+                fontSize: 11,
+                lineColor: "#000000"
+              });
+            } catch (e) {
+              console.warn("Shipping label barcode render error:", e);
+            }
+          }
+        }, 120);
+        return () => clearTimeout(t);
+      }, [shippingLabelOrder, shippingLabelFormat]);
 
       // Toggle item selection in return order
       const toggleReturnItemSelection = (idx) => {
@@ -13543,6 +13946,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     { id: "new_orders", label: "🔔 নতুন অর্ডার অনুমোদন", count: orders.filter(o => o.status === "Pending").length, highlight: orders.filter(o => o.status === "Pending").length > 0 },
                     { id: "delivery_tracking", label: "📊 ডেলিভারি ট্র্যাকিং", count: orders.filter(o => o.status === "Pending" || o.status === "Shipped" || o.status === "Delivered").length, highlight: false },
                     { id: "all_orders", label: "📋 সকল অর্ডার ও ফিল্টার", count: orders.length, highlight: false },
+                    { id: "shipping_labels", label: "🏷️ শিপিং লেবেল", count: orders.filter(o => o.status === "Shipped").length, highlight: false },
                     { id: "courier", label: "🚚 কুরিয়ার ট্র্যাকিং ও বুকিং", count: orders.filter(o => o.courier && o.courier !== "None").length, highlight: false },
                     { id: "returns", label: "🔄 রিটার্ন ও এক্সচেঞ্জ হিস্ট্রি", count: returns.length, highlight: false }
                   ].map(st => (
@@ -14180,6 +14584,17 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <span>🧾</span>
                               <span>চালান প্রিন্ট</span>
                             </button>
+                            {o.status === "Shipped" && (
+                              <button
+                                type="button"
+                                onClick={() => setShippingLabelOrder(o)}
+                                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-full text-xs font-bold hover:brightness-110 transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+                                title="পার্সেলের গায়ে লাগানোর জন্য QR কোডসহ শিপিং লেবেল প্রিন্ট করুন"
+                              >
+                                <span>🏷️</span>
+                                <span>শিপিং লেবেল প্রিন্ট</span>
+                              </button>
+                            )}
                             <button 
                               onClick={() => dispatchCourier(o.id, "Steadfast")}
                               className="px-4 py-2 bg-black/75 border border-red-800/40 text-white rounded-full text-xs font-semibold hover:bg-black transition shadow-sm flex items-center gap-1.5"
@@ -14279,6 +14694,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               >
                                 🧾 চালান
                               </button>
+                              {o.status === "Shipped" && (
+                                <button
+                                  type="button"
+                                  onClick={() => setShippingLabelOrder(o)}
+                                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold transition shadow-xs cursor-pointer"
+                                >
+                                  🏷️ শিপিং লেবেল
+                                </button>
+                              )}
                               {o.status !== "Delivered" && (
                                 <button
                                   type="button"
@@ -14580,6 +15004,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     ✓ Delivered সম্পন্ন
                                   </button>
                                 )}
+                                {o.status === "Shipped" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShippingLabelOrder(o)}
+                                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold transition shadow-xs cursor-pointer"
+                                  >
+                                    🏷️ শিপিং লেবেল
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => printInvoiceWindow(o)}
@@ -14590,6 +15023,133 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               </div>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* ========================================================= */}
+                {/* SUBTAB: SHIPPING LABELS (পার্সেল শিপিং লেবেল ডেস্ক) */}
+                {/* ========================================================= */}
+                {adminOrderSubTab === "shipping_labels" && (() => {
+                  const shippedLabelOrders = orders.filter(o => o.status === "Shipped");
+                  return (
+                    <div className="space-y-4 animate-fadeIn">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gradient-to-r from-blue-950/80 via-[#1b0b12] to-[#14070a]/90 p-5 rounded-3xl border border-blue-500/40 shadow-lg">
+                        <div>
+                          <h4 className="font-extrabold text-base text-white flex items-center gap-2">
+                            <span>🏷️</span>
+                            <span>পার্সেল শিপিং লেবেল ডেস্ক ({shippedLabelOrders.length} টি Shipped)</span>
+                          </h4>
+                          <p className="text-xs text-blue-200/85 mt-0.5">
+                            "Shipped" স্ট্যাটাসযুক্ত প্রতিটি অর্ডারের জন্য QR কোড ও কাস্টমার ঠিকানাসহ স্টিকার প্রিন্ট করে পার্সেলের গায়ে লাগান
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center bg-black/50 border border-red-900/40 rounded-full p-1 text-[11px] font-bold">
+                            <button
+                              type="button"
+                              onClick={() => setShippingLabelFormat("thermal")}
+                              className={`px-3 py-1 rounded-full transition cursor-pointer ${
+                                shippingLabelFormat === "thermal" ? "bg-blue-600 text-white" : "text-slate-300 hover:text-white"
+                              }`}
+                            >
+                              4×6 থার্মাল
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShippingLabelFormat("a4")}
+                              className={`px-3 py-1 rounded-full transition cursor-pointer ${
+                                shippingLabelFormat === "a4" ? "bg-blue-600 text-white" : "text-slate-300 hover:text-white"
+                              }`}
+                            >
+                              A4 শিট
+                            </button>
+                          </div>
+
+                          {shippedLabelOrders.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => printShippingLabelWindow(shippedLabelOrders, shippingLabelFormat)}
+                              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:brightness-110 text-white rounded-full text-xs font-bold shadow flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <span>🖨️</span>
+                              <span>সব Shipped লেবেল প্রিন্ট ({shippedLabelOrders.length})</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {shippedLabelOrders.length === 0 ? (
+                        <div className="text-white text-center py-14 bg-black/55 backdrop-blur-xl rounded-3xl border border-red-900/35 p-8 space-y-3">
+                          <p className="text-4xl">🏷️</p>
+                          <h4 className="font-bold text-base text-white">এখনো কোনো Shipped অর্ডার নেই</h4>
+                          <p className="text-xs text-slate-300 max-w-md mx-auto">
+                            "সকল অর্ডার ও ফিল্টার" বা "ডেলিভারি ট্র্যাকিং" ট্যাবে গিয়ে যেকোনো অর্ডারকে <b>Shipped</b> হিসেবে চিহ্নিত করলেই এখানে পার্সেল শিপিং লেবেল চলে আসবে।
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setAdminOrderSubTab("all_orders")}
+                            className="px-5 py-2 rounded-full bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white text-xs font-bold hover:brightness-110 transition cursor-pointer"
+                          >
+                            সকল অর্ডারে যান →
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                          {shippedLabelOrders.map(o => {
+                            const tracking = o.trackingId || o.consignmentId || o.id;
+                            const isCod = isCodOrderLabel(o);
+                            return (
+                              <div key={o.id} className="text-white bg-black/60 backdrop-blur-xl rounded-3xl border border-blue-500/40 p-4 shadow-lg flex flex-col justify-between gap-3">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-mono font-black text-sm text-rose-200 bg-red-950/70 px-2.5 py-0.5 rounded-full border border-red-800/50">
+                                      #{o.id}
+                                    </span>
+                                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-950/70 text-blue-300 border border-blue-500/40">
+                                      🚚 Shipped
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-extrabold text-white">👤 {o.customerName || o.customer}</p>
+                                  <p className="text-xs font-mono text-emerald-300">📞 {o.phone}</p>
+                                  <p className="text-xs text-slate-300 line-clamp-2">
+                                    📍 {[o.address, o.thana, o.district].filter(Boolean).join(", ")}
+                                  </p>
+                                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                                    <span className="bg-black/50 border border-red-900/40 px-2 py-0.5 rounded font-mono text-slate-200">
+                                      TRK: {tracking}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded font-bold ${isCod ? "bg-rose-950/70 text-rose-200 border border-rose-500/40" : "bg-emerald-950/70 text-emerald-300 border border-emerald-500/40"}`}>
+                                      {isCod ? `COD: ৳${o.total}` : `PREPAID (৳0 COD)`}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 pt-2 border-t border-red-900/35">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShippingLabelOrder(o)}
+                                    className="flex-1 py-2 px-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:brightness-110 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                  >
+                                    <span>👁️</span>
+                                    <span>লেবেল প্রিভিউ ও প্রিন্ট</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => printShippingLabelWindow(o, shippingLabelFormat)}
+                                    className="py-2 px-3.5 bg-black/60 border border-blue-500/50 hover:bg-blue-950/60 text-blue-200 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                                    title="সরাসরি প্রিন্ট উইন্ডো খুলুন"
+                                  >
+                                    <span>🖨️</span>
+                                    <span>প্রিন্ট</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -19608,6 +20168,22 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <span>মেমো প্রিন্ট করুন</span>
                     </button>
 
+                    {viewInvoiceOrder.status === "Shipped" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const ord = viewInvoiceOrder;
+                          setViewInvoiceOrder(null);
+                          setShippingLabelOrder(ord);
+                        }}
+                        className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-full text-xs font-bold hover:brightness-110 transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                        title="পার্সেলের গায়ে লাগানোর জন্য শিপিং লেবেল প্রিন্ট করুন"
+                      >
+                        <span>🏷️</span>
+                        <span>শিপিং লেবেল</span>
+                      </button>
+                    )}
+
                     <button
                       onClick={() => setCustomerQrModal(viewInvoiceOrder)}
                       className="px-4 py-2.5 bg-gradient-to-r from-sky-600 to-indigo-700 text-white rounded-full text-xs font-bold hover:brightness-110 transition flex items-center gap-1.5 shadow-sm"
@@ -21435,6 +22011,163 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </div>
             </div>
           )}
+
+          {/* ========================================================= */}
+          {/* 4B. PARCEL SHIPPING LABEL PREVIEW & PRINT MODAL */}
+          {/* ========================================================= */}
+          {shippingLabelOrder && (() => {
+            const ord = shippingLabelOrder;
+            const tracking = ord.trackingId || ord.consignmentId || ord.id;
+            const customerName = ord.customerName || ord.customer || "সম্মানিত গ্রাহক";
+            const fullAddr = [ord.address, ord.thana, ord.district].filter(Boolean).join(", ");
+            const isCod = isCodOrderLabel(ord);
+            const totalPieces = (ord.items || []).reduce((acc, it) => acc + Number(it.qty || it.quantity || 1), 0);
+
+            return (
+              <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+                <div className="bg-[#120609]/95 backdrop-blur-2xl text-white rounded-3xl w-full max-w-md max-h-[94vh] overflow-y-auto p-4 sm:p-5 border border-red-900/50 shadow-2xl space-y-3.5">
+                  <div className="flex justify-between items-center pb-2 border-b border-red-900/35">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🏷️</span>
+                      <div>
+                        <h3 className="font-extrabold text-sm sm:text-base text-white">
+                          পার্সেল শিপিং লেবেল প্রিভিউ
+                        </h3>
+                        <p className="text-[11px] text-slate-300">
+                          প্রিন্ট করে পার্সেলের গায়ে লাগানোর জন্য প্রস্তুত
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShippingLabelOrder(null)}
+                      className="w-8 h-8 rounded-full bg-black/60 border border-red-900/50 hover:bg-red-900/40 text-rose-200 hover:text-white font-bold flex items-center justify-center text-xs transition cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Format Switcher */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShippingLabelFormat("thermal")}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                        shippingLabelFormat === "thermal"
+                          ? "bg-blue-600 text-white border-blue-400 shadow"
+                          : "bg-black/50 text-slate-300 border-red-900/40 hover:bg-red-950/50"
+                      }`}
+                    >
+                      🧾 4"×6" থার্মাল স্টিকার
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShippingLabelFormat("a4")}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                        shippingLabelFormat === "a4"
+                          ? "bg-blue-600 text-white border-blue-400 shadow"
+                          : "bg-black/50 text-slate-300 border-red-900/40 hover:bg-red-950/50"
+                      }`}
+                    >
+                      📄 A4 পার্সেল শিট
+                    </button>
+                  </div>
+
+                  {/* Crisp Black-on-White Parcel Sticker Card */}
+                  <div className="bg-white text-black rounded-2xl border-2 border-dashed border-slate-900 p-3 space-y-2.5 shadow-inner">
+                    {/* Top Black Header */}
+                    <div className="bg-black text-white rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-black tracking-wide uppercase">{config?.storeName || "SAJGOJ FASHION"}</p>
+                        <p className="text-[10px] text-slate-200">PARCEL SHIPPING LABEL • {config?.phone || "018051198888"}</p>
+                      </div>
+                      <span className="bg-white text-black text-[9px] font-black px-2 py-0.5 rounded uppercase">
+                        {ord.courier && ord.courier !== "None" ? ord.courier : "SHIPPED"}
+                      </span>
+                    </div>
+
+                    {/* Order & District Routing Bar */}
+                    <div className="bg-slate-100 border border-slate-900 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs font-black text-black">ORDER #{ord.id}</p>
+                        <p className="font-mono text-[10px] text-slate-700 truncate">TRK: {tracking} • {ord.date}</p>
+                      </div>
+                      <span className="bg-black text-white text-[10px] font-black px-2 py-1 rounded uppercase shrink-0">
+                        {(ord.district || ord.thana || "BD").toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* Recipient & Scannable QR Side-by-Side */}
+                    <div className="grid grid-cols-12 gap-2 items-stretch">
+                      <div className="col-span-7 border border-slate-900 rounded-lg p-2 space-y-0.5">
+                        <span className="text-[9px] font-extrabold text-slate-600 uppercase block">TO / প্রাপক (CUSTOMER):</span>
+                        <p className="text-xs font-black text-black leading-tight">{customerName}</p>
+                        <p className="font-mono text-[11px] font-bold text-black">📞 {ord.phone || "N/A"}</p>
+                        <p className="text-[10px] text-slate-800 leading-snug">📍 {fullAddr || "ঠিকানা উল্লেখ নেই"}</p>
+                        {(ord.orderNote || ord.note) && (
+                          <p className="text-[9px] font-bold bg-amber-100 border border-amber-400 rounded px-1.5 py-0.5 mt-1">
+                            📝 {ord.orderNote || ord.note}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-span-5 border border-slate-900 rounded-lg p-1.5 flex flex-col items-center justify-center">
+                        <div id="shipping-label-modal-qr" className="w-[112px] h-[112px] flex items-center justify-center bg-white"></div>
+                        <span className="text-[8px] font-black tracking-wider text-black mt-1">SCAN PARCEL QR</span>
+                      </div>
+                    </div>
+
+                    {/* COD / Prepaid Banner */}
+                    <div className={`border border-slate-900 rounded-lg py-1.5 px-2 text-center text-xs font-black text-black ${isCod ? "bg-red-100" : "bg-emerald-100"}`}>
+                      {isCod ? `COD আদায়যোগ্য: ৳${Number(ord.total || 0).toLocaleString()}` : `PREPAID (${ord.paymentMethod}) • COD: ৳0`}
+                    </div>
+
+                    {/* CODE128 Barcode */}
+                    <div className="border border-slate-300 rounded-lg py-1 px-2 flex justify-center bg-white">
+                      <svg id="shipping-label-modal-barcode" className="max-w-full"></svg>
+                    </div>
+
+                    {/* Items Summary */}
+                    <div className="border border-slate-400 rounded-lg p-2 text-[10px] space-y-0.5">
+                      <span className="font-black text-black block">পণ্যসমূহ ({totalPieces} পিস):</span>
+                      {(ord.items || []).slice(0, 4).map((it, i) => (
+                        <div key={i} className="flex justify-between gap-2 text-slate-800">
+                          <span className="truncate">• {it.name}</span>
+                          <span className="font-bold shrink-0">× {it.qty || it.quantity || 1}</span>
+                        </div>
+                      ))}
+                      {(ord.items || []).length > 4 && (
+                        <span className="text-[9px] text-slate-600 font-bold">+ আরও {ord.items.length - 4} টি পণ্য</span>
+                      )}
+                    </div>
+
+                    <p className="text-[9px] text-slate-600 border-t border-slate-300 pt-1.5 leading-tight">
+                      <b>প্রেরক (FROM):</b> {config?.storeName || "SAJGOJ FASHION"} • {config?.address || "Dhaka"} • 📞 {config?.phone || "018051198888"}
+                    </p>
+                  </div>
+
+                  {/* Print & Close Buttons */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => printShippingLabelWindow(ord, shippingLabelFormat)}
+                      className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:brightness-110 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow cursor-pointer"
+                    >
+                      <span>🖨️</span>
+                      <span>লেবেল প্রিন্ট করুন</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShippingLabelOrder(null)}
+                      className="px-4 py-2.5 bg-black/60 border border-red-900/50 hover:bg-red-950/60 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      বন্ধ করুন
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           {viewPosReceipt && (
             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
               <div className="bg-[#120609]/95 backdrop-blur-2xl text-white rounded-3xl w-full max-w-md max-h-[94vh] overflow-y-auto p-5 sm:p-6 border border-red-900/50 shadow-2xl animate-fadeIn space-y-4">

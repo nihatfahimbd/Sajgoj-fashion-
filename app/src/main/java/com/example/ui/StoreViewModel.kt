@@ -83,6 +83,9 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   private val _selectedOrderInvoice = MutableStateFlow<Order?>(null)
   val selectedOrderInvoice: StateFlow<Order?> = _selectedOrderInvoice.asStateFlow()
 
+  private val _selectedShippingLabelOrder = MutableStateFlow<Order?>(null)
+  val selectedShippingLabelOrder: StateFlow<Order?> = _selectedShippingLabelOrder.asStateFlow()
+
   private val _isCartOpen = MutableStateFlow(false)
   val isCartOpen: StateFlow<Boolean> = _isCartOpen.asStateFlow()
 
@@ -138,6 +141,14 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   fun closeInvoice() {
     _selectedOrderInvoice.value = null
+  }
+
+  fun openShippingLabel(order: Order) {
+    _selectedShippingLabelOrder.value = order
+  }
+
+  fun closeShippingLabel() {
+    _selectedShippingLabelOrder.value = null
   }
 
   fun setCartOpen(open: Boolean) {

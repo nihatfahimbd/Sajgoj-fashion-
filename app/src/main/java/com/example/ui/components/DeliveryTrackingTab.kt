@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -87,7 +88,8 @@ private val DeliveredEmeraldBg = Color(0xFFDCFCE7)
 fun AdminDeliveryTrackingTab(
   orders: List<Order>,
   onUpdateStatus: (String, String) -> Unit,
-  onViewInvoice: (Order) -> Unit
+  onViewInvoice: (Order) -> Unit,
+  onOpenShippingLabel: (Order) -> Unit = {}
 ) {
   var selectedFilter by remember { mutableStateOf("ALL") }
   var animateChart by remember { mutableStateOf(false) }
@@ -579,6 +581,26 @@ fun AdminDeliveryTrackingTab(
                   )
                   Spacer(modifier = Modifier.width(4.dp))
                   Text("Shipped", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+              }
+
+              if (order.status.equals("Shipped", ignoreCase = true)) {
+                Button(
+                  onClick = { onOpenShippingLabel(order) },
+                  colors = ButtonDefaults.buttonColors(containerColor = ShippedBlueDark),
+                  shape = RoundedCornerShape(10.dp),
+                  modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .testTag("delivery_shipping_label_${order.id}"),
+                  contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.Print,
+                    contentDescription = "শিপিং লেবেল প্রিন্ট",
+                    modifier = Modifier.size(16.dp)
+                  )
+                  Spacer(modifier = Modifier.width(4.dp))
+                  Text("লেবেল", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
               }
 

@@ -56,7 +56,8 @@ import com.example.ui.theme.RoyalMaroon
 fun InvoiceDialog(
   order: Order,
   config: StoreConfig,
-  onDismiss: () -> Unit
+  onDismiss: () -> Unit,
+  onOpenShippingLabel: ((Order) -> Unit)? = null
 ) {
   val context = LocalContext.current
 
@@ -322,6 +323,25 @@ fun InvoiceDialog(
               Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
               Spacer(modifier = Modifier.width(6.dp))
               Text("ইনভয়েস শেয়ার / প্রিন্ট", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+
+            if (order.status.equals("Shipped", ignoreCase = true) && onOpenShippingLabel != null) {
+              Button(
+                onClick = {
+                  onDismiss()
+                  onOpenShippingLabel(order)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF)),
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .height(44.dp)
+                  .testTag("invoice_shipping_label_button")
+              ) {
+                Icon(imageVector = Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("শিপিং লেবেল", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+              }
             }
           }
         }

@@ -25,6 +25,7 @@ import com.example.ui.StoreViewModel
 import com.example.ui.components.CartAndCheckoutDialog
 import com.example.ui.components.InvoiceDialog
 import com.example.ui.components.ProductDetailDialog
+import com.example.ui.components.ShippingLabelDialog
 import com.example.ui.components.StoreHeader
 import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.StorefrontScreen
@@ -67,6 +68,7 @@ class MainActivity : ComponentActivity() {
         val selectedProduct by viewModel.selectedProduct.collectAsStateWithLifecycle()
         val reviews by viewModel.reviews.collectAsStateWithLifecycle()
         val selectedOrderInvoice by viewModel.selectedOrderInvoice.collectAsStateWithLifecycle()
+        val selectedShippingLabelOrder by viewModel.selectedShippingLabelOrder.collectAsStateWithLifecycle()
         val isCartOpen by viewModel.isCartOpen.collectAsStateWithLifecycle()
 
         // Toast listener
@@ -77,8 +79,15 @@ class MainActivity : ComponentActivity() {
         }
 
         // BackHandler
-        BackHandler(enabled = currentScreen == AppScreen.ADMIN_PANEL || isCartOpen || selectedProduct != null || selectedOrderInvoice != null) {
+        BackHandler(
+          enabled = currentScreen == AppScreen.ADMIN_PANEL ||
+            isCartOpen ||
+            selectedProduct != null ||
+            selectedOrderInvoice != null ||
+            selectedShippingLabelOrder != null
+        ) {
           when {
+            selectedShippingLabelOrder != null -> viewModel.closeShippingLabel()
             selectedOrderInvoice != null -> viewModel.closeInvoice()
             selectedProduct != null -> viewModel.closeProductDetail()
             isCartOpen -> viewModel.setCartOpen(false)
@@ -156,6 +165,7 @@ class MainActivity : ComponentActivity() {
                     onUpdateOrderStatus = { id, status -> viewModel.updateOrderStatus(id, status) },
                     onDispatchCourier = { id, provider -> viewModel.dispatchCourier(id, provider) },
                     onViewInvoice = { viewModel.openInvoice(it) },
+                    onOpenShippingLabel = { viewModel.openShippingLabel(it) },
                     onAddReturnRecord = { viewModel.addReturnRecord(it) },
                     onAddCategory = { viewModel.addCategory(it) },
                     onDeleteCategory = { viewModel.deleteCategory(it) },
@@ -213,7 +223,17 @@ class MainActivity : ComponentActivity() {
                 InvoiceDialog(
                   order = selectedOrderInvoice!!,
                   config = storeConfig,
-                  onDismiss = { viewModel.closeInvoice() }
+                  onDismiss = { viewModel.closeInvoice() },
+                  onOpenShippingLabel = { viewModel.openShippingLabel(it) }
+                )
+              }
+
+              if (selectedShippingLabelOrder != null) {
+                ShippingLabelDialog(
+                  order = selectedShippingLabelOrder!!,
+                  config = storeConfig,
+                  onDismiss = { viewModel.closeShippingLabel() },
+                  onShowToast = { viewModel.emitToast(it) }
                 )
               }
             }
