@@ -24,11 +24,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
@@ -38,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,16 +50,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.data.model.BannerItem
 import com.example.data.model.Category
 import com.example.data.model.Product
 import com.example.data.model.StoreConfig
+import com.example.ui.ImageSearchState
 import com.example.ui.components.AppImage
 import com.example.ui.components.BannerCarousel
 import com.example.ui.components.ProductCard
@@ -78,15 +85,31 @@ fun StorefrontScreen(
   categories: List<Category> = emptyList(),
   selectedCategory: String = "All",
   onCategorySelected: (String) -> Unit = {},
+  imageSearchState: ImageSearchState? = null,
+  onClearImageSearch: () -> Unit = {},
+  scrollToTopTrigger: Int = 0,
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
   onBannerClick: (BannerItem) -> Unit,
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
+  val gridState = rememberLazyGridState()
   var showVoucherCenter by remember { mutableStateOf(false) }
   var voucherCenterTab by remember { mutableStateOf("all") }
   var collectedVoucherIds by remember { mutableStateOf(setOf<String>()) }
+
+  LaunchedEffect(scrollToTopTrigger) {
+    if (scrollToTopTrigger > 0) {
+      gridState.animateScrollToItem(0)
+    }
+  }
+
+  LaunchedEffect(imageSearchState) {
+    if (imageSearchState != null) {
+      gridState.animateScrollToItem(1)
+    }
+  }
 
   fun openWhatsApp() {
     try {
@@ -103,6 +126,7 @@ fun StorefrontScreen(
 
   Box(modifier = modifier.fillMaxSize()) {
     LazyVerticalGrid(
+      state = gridState,
       columns = GridCells.Fixed(2),
       contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 80.dp),
       horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -388,6 +412,115 @@ fun StorefrontScreen(
                       maxLines = 1
                     )
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 1.75 Visual Image Search Active Banner
+      if (imageSearchState != null) {
+        item(span = { GridItemSpan(2) }) {
+          Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color(0xFFFFEBEE),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEF4444)),
+            shadowElevation = 2.dp,
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("visual_image_search_banner")
+          ) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f)
+              ) {
+                AsyncImage(
+                  model = Uri.parse(imageSearchState.imageUri),
+                  contentDescription = "নির্বাচিত ছবির প্রিভিউ",
+                  contentScale = ContentScale.Crop,
+                  modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.5.dp, Color.White, RoundedCornerShape(10.dp))
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                  ) {
+                    Text(
+                      text = "🖼️ ইমেজ সার্চ সক্রিয়",
+                      fontSize = 12.sp,
+                      fontWeight = FontWeight.Black,
+                      color = Color.Black
+                    )
+                    Surface(
+                      shape = RoundedCornerShape(10.dp),
+                      color = Color.White
+                    ) {
+                      Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                      ) {
+                        Box(
+                          modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(imageSearchState.colorHex))
+                        )
+                        Text(
+                          text = imageSearchState.colorLabelBn,
+                          fontSize = 9.5.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = Color.Black
+                        )
+                      }
+                    }
+                  }
+                  Text(
+                    text = "${imageSearchState.fileName} • ${products.size} টি মিল পাওয়া গেছে",
+                    fontSize = 10.5.sp,
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
+              }
+
+              Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Black,
+                modifier = Modifier
+                  .clickable { onClearImageSearch() }
+                  .testTag("clear_image_search_button")
+              ) {
+                Row(
+                  modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "ইমেজ সার্চ মুছুন",
+                    tint = Color.White,
+                    modifier = Modifier.size(13.dp)
+                  )
+                  Text(
+                    text = "মুছুন",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                  )
                 }
               }
             }

@@ -21,6 +21,7 @@ import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.example.data.model.SyncHealthState
 import com.example.data.sync.InventorySyncService
+import com.example.data.sync.LocalInventoryStorageSync
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -36,6 +37,7 @@ import kotlin.random.Random
 
 class StoreRepository(private val context: Context) {
   private val prefs: SharedPreferences = context.getSharedPreferences("sajgoj_store_prefs", Context.MODE_PRIVATE)
+  private val localStorageSync = LocalInventoryStorageSync(prefs)
 
   // Initial Seed Data
   private val initialProducts = listOf(
@@ -396,7 +398,27 @@ class StoreRepository(private val context: Context) {
 
   init {
     inventorySyncService.mirrorCatalogToPos(_products.value, source = "INITIAL_SEED", pushToCloud = false)
+    persistLocalSyncSnapshot()
+    localStorageSync.startListening(
+      getCurrentProducts = { _products.value },
+      onSynchronizedProducts = { updatedProducts, changedKey ->
+        _products.value = updatedProducts
+        val source = if (changedKey == LocalInventoryStorageSync.KEY_POS_PRODUCTS) {
+          "POS_LOCAL_STORAGE"
+        } else {
+          "WEBSITE_LOCAL_STORAGE"
+        }
+        inventorySyncService.mirrorCatalogToPos(updatedProducts, source = source, pushToCloud = true)
+      }
+    )
     initFirestoreSync()
+  }
+
+  private fun persistLocalSyncSnapshot() {
+    localStorageSync.persistBoth(
+      products = _products.value,
+      posMap = inventorySyncService.posInventory.value
+    )
   }
 
   private fun initFirestoreSync() {
@@ -436,6 +458,7 @@ class StoreRepository(private val context: Context) {
           if (list.isNotEmpty()) {
             _products.value = list
             inventorySyncService.mirrorCatalogToPos(list, source = "STOREFRONT_CLOUD", pushToCloud = true)
+            persistLocalSyncSnapshot()
           }
         }
       }
@@ -591,6 +614,7 @@ class StoreRepository(private val context: Context) {
         getCurrentProducts = { _products.value },
         onRemotePosUpdateProducts = { updatedProducts ->
           _products.value = updatedProducts
+          persistLocalSyncSnapshot()
         }
       )
     } catch (e: Exception) {
@@ -599,7 +623,7 @@ class StoreRepository(private val context: Context) {
   }
 
   private fun loadProducts(): List<Product> {
-    return initialProducts
+    return localStorageSync.loadAndReconcile(initialProducts)
   }
 
   // Cart Operations
@@ -722,6 +746,7 @@ class StoreRepository(private val context: Context) {
       orderId = newOrder.id
     )
     _products.value = updatedProducts
+    persistLocalSyncSnapshot()
 
     // Add to orders
     _orders.value = listOf(newOrder) + _orders.value
@@ -813,6 +838,7 @@ class StoreRepository(private val context: Context) {
       saleId = saleId
     )
     _products.value = updatedProducts
+    persistLocalSyncSnapshot()
     _orders.value = listOf(posOrder) + _orders.value
 
     try {
@@ -880,11 +906,13 @@ class StoreRepository(private val context: Context) {
       reason = "POS টার্মিনাল স্টক আপডেট",
       referenceId = referenceId
     )
+    persistLocalSyncSnapshot()
   }
 
   fun reconcileInventoryNow(): Int {
     val (reconciledProducts, count) = inventorySyncService.reconcileStorefrontAndPos(_products.value)
     _products.value = reconciledProducts
+    persistLocalSyncSnapshot()
     return count
   }
 
@@ -897,9 +925,11 @@ class StoreRepository(private val context: Context) {
       if (newStatus == "Cancelled" && targetOrder.status != "Cancelled" && !targetOrder.stockRestockedOnCancel) {
         _products.value = inventorySyncService.applyOrderCancellationRestock(_products.value, targetOrder, restoreStock = true)
         nextRestockedFlag = true
+        persistLocalSyncSnapshot()
       } else if (targetOrder.status == "Cancelled" && newStatus != "Cancelled" && targetOrder.stockRestockedOnCancel) {
         _products.value = inventorySyncService.applyOrderCancellationRestock(_products.value, targetOrder, restoreStock = false)
         nextRestockedFlag = false
+        persistLocalSyncSnapshot()
       }
     }
 
@@ -939,6 +969,7 @@ class StoreRepository(private val context: Context) {
 
     // Synchronize return restocks & exchange deductions across Storefront + POS Inventory
     _products.value = inventorySyncService.applyReturnAndExchange(_products.value, record)
+    persistLocalSyncSnapshot()
 
     try {
       val returnedMaps = record.returnedItems.map {
@@ -997,6 +1028,7 @@ class StoreRepository(private val context: Context) {
     val stamped = product.copy(stockUpdatedAt = ts, lastSyncSource = "ADMIN_ADD")
     _products.value = listOf(stamped) + _products.value
     inventorySyncService.mirrorCatalogToPos(_products.value, source = "ADMIN_ADD", pushToCloud = true)
+    persistLocalSyncSnapshot()
     try {
       firestore?.collection("products")?.document(stamped.id)?.set(
         mapOf(
@@ -1040,9 +1072,11 @@ class StoreRepository(private val context: Context) {
         reason = "অ্যাডমিন প্রোডাক্ট আপডেট",
         referenceId = stamped.id
       )
+      persistLocalSyncSnapshot()
     } else {
       _products.value = _products.value.map { if (it.id == stamped.id) stamped else it }
       inventorySyncService.mirrorCatalogToPos(_products.value, source = "ADMIN_EDIT", pushToCloud = true)
+      persistLocalSyncSnapshot()
     }
     try {
       firestore?.collection("products")?.document(stamped.id)?.set(
@@ -1069,6 +1103,7 @@ class StoreRepository(private val context: Context) {
   fun deleteProduct(productId: String) {
     _products.value = _products.value.filterNot { it.id == productId }
     inventorySyncService.removeProductFromPos(productId)
+    persistLocalSyncSnapshot()
     try {
       firestore?.collection("products")?.document(productId)?.delete()
     } catch (e: Exception) {}
@@ -1194,6 +1229,8 @@ class StoreRepository(private val context: Context) {
 
   fun resetToDefaults() {
     _products.value = initialProducts
+    inventorySyncService.mirrorCatalogToPos(initialProducts, source = "RESET_DEFAULTS", pushToCloud = true)
+    persistLocalSyncSnapshot()
     _reviews.value = initialReviews
     _categories.value = initialCategories
     _orders.value = initialOrders

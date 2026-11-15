@@ -135,6 +135,8 @@
     <script>
       (function () {
         var SYNC_CHANNEL_NAME = "sajgoj_inventory_sync";
+        var STORE_PRODUCTS_KEY = "sajgoj_store_products";
+        var POS_PRODUCTS_KEY = "sajgoj_products";
         var isApplyingRemoteSync = false;
         var syncChannel = null;
         try {
@@ -143,49 +145,109 @@
           }
         } catch (err) {}
 
-        // Hook localStorage.setItem to emit instant real-time updates when POS sells, returns, or adjusts stock
-        try {
-          var originalSetItem = Storage.prototype.setItem;
-          Storage.prototype.setItem = function (key, value) {
-            originalSetItem.apply(this, arguments);
-            if (!isApplyingRemoteSync && this === window.localStorage && (key === "sajgoj_products" || key === "sajgoj_sales")) {
-              try {
-                var parsed = JSON.parse(value);
-                var payload = {
-                  type: key === "sajgoj_products" ? "SAJGOJ_POS_PRODUCTS_UPDATED" : "SAJGOJ_POS_SALES_UPDATED",
-                  key: key,
-                  data: parsed,
-                  source: "POS_IFRAME",
-                  timestamp: Date.now()
-                };
-                if (window.parent && window.parent !== window) {
-                  window.parent.postMessage(payload, "*");
-                }
-                if (syncChannel) {
-                  syncChannel.postMessage(payload);
-                }
-              } catch (e) {}
-            }
-          };
-        } catch (err) {}
+        var rawSetItem = Storage.prototype.setItem;
 
-        function applyProductsToPosStorage(nextProducts) {
+        function matchProduct(a, b) {
+          if (!a || !b) return false;
+          if (a.id !== undefined && b.id !== undefined && String(a.id) === String(b.id)) return true;
+          if (a.sku && b.sku && String(a.sku).toLowerCase() === String(b.sku).toLowerCase()) return true;
+          var aName = a.name || a.nameBn || a.nameEn;
+          var bName = b.name || b.nameBn || b.nameEn;
+          return Boolean(aName && bName && aName === bName);
+        }
+
+        function emitStorageUpdate(key, oldVal, newVal) {
+          try {
+            window.dispatchEvent(new StorageEvent("storage", {
+              key: key,
+              oldValue: oldVal,
+              newValue: newVal,
+              storageArea: window.localStorage
+            }));
+          } catch (se) {
+            window.dispatchEvent(new Event("storage"));
+          }
+        }
+
+        // Mirror POS stock changes into Website's sajgoj_store_products in localStorage
+        function syncPosCatalogToWebsiteStorage(posProducts) {
+          if (!Array.isArray(posProducts) || posProducts.length === 0) return;
+          try {
+            var rawStore = window.localStorage.getItem(STORE_PRODUCTS_KEY);
+            if (!rawStore) return;
+            var storeProducts = JSON.parse(rawStore);
+            if (!Array.isArray(storeProducts)) return;
+            var now = Date.now();
+            var changed = false;
+
+            var nextStoreProducts = storeProducts.map(function (wp) {
+              var posMatch = posProducts.find(function (pp) { return matchProduct(pp, wp); });
+              if (!posMatch || posMatch.stock === undefined) return wp;
+              var posStock = Math.max(0, Number(posMatch.stock) || 0);
+              var curStock = Math.max(0, Number(wp.stock) || 0);
+              var posTime = Number(posMatch.stockUpdatedAt) || 0;
+              var curTime = Number(wp.stockUpdatedAt) || 0;
+              if (posStock !== curStock && posTime >= curTime) {
+                changed = true;
+                return Object.assign({}, wp, {
+                  stock: posStock,
+                  stockUpdatedAt: posTime || now,
+                  lastSyncSource: "POS_LOCAL_SYNC"
+                });
+              }
+              return wp;
+            });
+
+            if (changed) {
+              var nextSerialized = JSON.stringify(nextStoreProducts);
+              isApplyingRemoteSync = true;
+              rawSetItem.call(window.localStorage, STORE_PRODUCTS_KEY, nextSerialized);
+              emitStorageUpdate(STORE_PRODUCTS_KEY, rawStore, nextSerialized);
+              isApplyingRemoteSync = false;
+            }
+          } catch (err) {
+            isApplyingRemoteSync = false;
+          }
+        }
+
+        // Merge Website catalog updates into POS sajgoj_products and refresh mounted POS state
+        function applyProductsToPosStorage(nextProducts, mergeMode) {
           if (!Array.isArray(nextProducts)) return;
           try {
-            var serialized = JSON.stringify(nextProducts);
-            var prev = window.localStorage.getItem("sajgoj_products");
-            if (prev === serialized) return;
+            var prevRaw = window.localStorage.getItem(POS_PRODUCTS_KEY);
+            var existingPos = prevRaw ? JSON.parse(prevRaw) : [];
+            if (!Array.isArray(existingPos)) existingPos = [];
+            var finalPos = nextProducts;
+
+            if (mergeMode && existingPos.length > 0) {
+              var changed = false;
+              finalPos = existingPos.map(function (pp) {
+                var incoming = nextProducts.find(function (np) { return matchProduct(np, pp); });
+                if (!incoming || incoming.stock === undefined) return pp;
+                var incStock = Math.max(0, Number(incoming.stock) || 0);
+                var curStock = Math.max(0, Number(pp.stock) || 0);
+                var incTime = Number(incoming.stockUpdatedAt) || 0;
+                var curTime = Number(pp.stockUpdatedAt) || 0;
+                if (incStock !== curStock && (incTime > curTime || curTime === 0)) {
+                  changed = true;
+                  return Object.assign({}, pp, {
+                    stock: incStock,
+                    stockUpdatedAt: incTime || Date.now(),
+                    lastSyncSource: incoming.lastSyncSource || "STOREFRONT_SYNC"
+                  });
+                }
+                return pp;
+              });
+              if (!changed) return;
+            }
+
+            var serialized = JSON.stringify(finalPos);
+            if (prevRaw === serialized) return;
             isApplyingRemoteSync = true;
-            window.localStorage.setItem("sajgoj_products", serialized);
-            try {
-              window.dispatchEvent(new StorageEvent("storage", {
-                key: "sajgoj_products",
-                oldValue: prev,
-                newValue: serialized,
-                storageArea: window.localStorage
-              }));
-            } catch (se) {
-              window.dispatchEvent(new Event("storage"));
+            rawSetItem.call(window.localStorage, POS_PRODUCTS_KEY, serialized);
+            emitStorageUpdate(POS_PRODUCTS_KEY, prevRaw, serialized);
+            if (typeof window.__SAJGOJ_SET_POS_PRODUCTS__ === "function") {
+              window.__SAJGOJ_SET_POS_PRODUCTS__(finalPos);
             }
           } catch (err) {
             console.warn("POS storage sync apply error:", err);
@@ -194,10 +256,112 @@
           }
         }
 
+        // Reconcile on POS startup so transactions made while POS was closed are immediately applied
+        try {
+          var bootStoreRaw = window.localStorage.getItem(STORE_PRODUCTS_KEY);
+          var bootPosRaw = window.localStorage.getItem(POS_PRODUCTS_KEY);
+          if (bootStoreRaw && bootPosRaw) {
+            var bootStore = JSON.parse(bootStoreRaw);
+            var bootPos = JSON.parse(bootPosRaw);
+            if (Array.isArray(bootStore) && Array.isArray(bootPos)) {
+              var posChanged = false;
+              var storeChanged = false;
+              var reconciledPos = bootPos.map(function (pp) {
+                var wp = bootStore.find(function (sp) { return matchProduct(pp, sp); });
+                if (!wp) return pp;
+                var pStock = Math.max(0, Number(pp.stock) || 0);
+                var sStock = Math.max(0, Number(wp.stock) || 0);
+                var pTime = Number(pp.stockUpdatedAt) || 0;
+                var sTime = Number(wp.stockUpdatedAt) || 0;
+                if (pStock !== sStock && sTime > pTime) {
+                  posChanged = true;
+                  return Object.assign({}, pp, { stock: sStock, stockUpdatedAt: sTime });
+                }
+                return pp;
+              });
+              if (posChanged) {
+                rawSetItem.call(window.localStorage, POS_PRODUCTS_KEY, JSON.stringify(reconciledPos));
+              }
+              bootStore.forEach(function (wp) {
+                var pp = reconciledPos.find(function (item) { return matchProduct(item, wp); });
+                if (pp && Number(pp.stock) !== Number(wp.stock) && (Number(pp.stockUpdatedAt) || 0) > (Number(wp.stockUpdatedAt) || 0)) {
+                  storeChanged = true;
+                }
+              });
+              if (storeChanged) {
+                syncPosCatalogToWebsiteStorage(reconciledPos);
+              }
+            }
+          }
+        } catch (bootErr) {}
+
+        // Hook localStorage.setItem to stamp stockUpdatedAt & emit instant updates when POS sells, returns, or adjusts stock
+        try {
+          Storage.prototype.setItem = function (key, value) {
+            if (!isApplyingRemoteSync && this === window.localStorage && key === POS_PRODUCTS_KEY) {
+              try {
+                var prevRaw = window.localStorage.getItem(POS_PRODUCTS_KEY);
+                var prevArr = prevRaw ? JSON.parse(prevRaw) : [];
+                var nextArr = JSON.parse(value);
+                if (Array.isArray(nextArr)) {
+                  var now = Date.now();
+                  var stamped = false;
+                  nextArr = nextArr.map(function (np) {
+                    var oldItem = Array.isArray(prevArr) ? prevArr.find(function (op) { return matchProduct(op, np); }) : null;
+                    if (oldItem && Number(oldItem.stock) !== Number(np.stock)) {
+                      stamped = true;
+                      return Object.assign({}, np, { stockUpdatedAt: now, lastSyncSource: "POS_TRANSACTION" });
+                    }
+                    return np;
+                  });
+                  var finalValue = stamped ? JSON.stringify(nextArr) : value;
+                  rawSetItem.call(this, key, finalValue);
+                  syncPosCatalogToWebsiteStorage(nextArr);
+                  var payload = {
+                    type: "SAJGOJ_POS_PRODUCTS_UPDATED",
+                    key: key,
+                    data: nextArr,
+                    source: "POS_IFRAME",
+                    timestamp: now
+                  };
+                  if (window.parent && window.parent !== window) {
+                    window.parent.postMessage(payload, "*");
+                  }
+                  if (syncChannel) {
+                    syncChannel.postMessage(payload);
+                  }
+                  return;
+                }
+              } catch (hookErr) {}
+            }
+
+            rawSetItem.apply(this, arguments);
+
+            if (!isApplyingRemoteSync && this === window.localStorage && (key === "sajgoj_sales" || key === "sajgoj_sales_returns" || key === "sajgoj_adjustments")) {
+              try {
+                var parsed = JSON.parse(value);
+                var txPayload = {
+                  type: "SAJGOJ_POS_SALES_UPDATED",
+                  key: key,
+                  data: parsed,
+                  source: "POS_IFRAME",
+                  timestamp: Date.now()
+                };
+                if (window.parent && window.parent !== window) {
+                  window.parent.postMessage(txPayload, "*");
+                }
+                if (syncChannel) {
+                  syncChannel.postMessage(txPayload);
+                }
+              } catch (e) {}
+            }
+          };
+        } catch (err) {}
+
         function applyStockDeltaToPosStorage(items) {
           if (!Array.isArray(items) || items.length === 0) return;
           try {
-            var raw = window.localStorage.getItem("sajgoj_products");
+            var raw = window.localStorage.getItem(POS_PRODUCTS_KEY);
             if (!raw) return;
             var posProducts = JSON.parse(raw);
             if (!Array.isArray(posProducts)) return;
@@ -221,17 +385,35 @@
               }
             });
             if (changed) {
-              applyProductsToPosStorage(posProducts);
+              applyProductsToPosStorage(posProducts, false);
             }
           } catch (err) {}
         }
+
+        // Cross-tab localStorage listener inside POS
+        window.addEventListener("storage", function (ev) {
+          if (!ev || isApplyingRemoteSync || !ev.newValue) return;
+          try {
+            if (ev.key === POS_PRODUCTS_KEY) {
+              var posList = JSON.parse(ev.newValue);
+              if (Array.isArray(posList) && typeof window.__SAJGOJ_SET_POS_PRODUCTS__ === "function") {
+                window.__SAJGOJ_SET_POS_PRODUCTS__(posList);
+              }
+            } else if (ev.key === STORE_PRODUCTS_KEY) {
+              var storeList = JSON.parse(ev.newValue);
+              if (Array.isArray(storeList)) {
+                applyProductsToPosStorage(storeList, true);
+              }
+            }
+          } catch (err) {}
+        });
 
         if (syncChannel) {
           syncChannel.onmessage = function (ev) {
             var msg = ev && ev.data;
             if (!msg || msg.source === "POS_IFRAME") return;
             if (msg.type === "SAJGOJ_PRODUCTS_SYNC" && Array.isArray(msg.products)) {
-              applyProductsToPosStorage(msg.products);
+              applyProductsToPosStorage(msg.products, false);
             } else if (msg.type === "SAJGOJ_STOCK_DELTA" && Array.isArray(msg.items)) {
               applyStockDeltaToPosStorage(msg.items);
             }
@@ -243,7 +425,7 @@
           if (!data) return;
 
           if (data.type === "SAJGOJ_PRODUCTS_SYNC" && Array.isArray(data.products)) {
-            applyProductsToPosStorage(data.products);
+            applyProductsToPosStorage(data.products, false);
             return;
           }
 
@@ -283,6 +465,12 @@
             }
           }
         });
+
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "SAJGOJ_POS_READY", timestamp: Date.now() }, "*");
+          }
+        } catch (err) {}
       })();
     </script>
   </body>

@@ -1,24 +1,57 @@
 package com.example
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.AppScreen
 import com.example.ui.StoreViewModel
@@ -29,9 +62,16 @@ import com.example.ui.components.ShippingLabelDialog
 import com.example.ui.components.StoreHeader
 import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.StorefrontScreen
+import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamBackground
+import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.SajgojFashionTheme
+import com.example.util.VisualImageSearchHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
   private val viewModel: StoreViewModel by viewModels()
@@ -43,6 +83,7 @@ class MainActivity : ComponentActivity() {
     setContent {
       SajgojFashionTheme {
         val context = LocalContext.current
+        val coroutineScope = rememberCoroutineScope()
 
         // State collection
         val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
@@ -64,12 +105,74 @@ class MainActivity : ComponentActivity() {
         val syncHealth by viewModel.syncHealth.collectAsStateWithLifecycle()
         val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
         val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+        val imageSearchState by viewModel.imageSearchState.collectAsStateWithLifecycle()
+        val homeScrollTrigger by viewModel.homeScrollTrigger.collectAsStateWithLifecycle()
 
         val selectedProduct by viewModel.selectedProduct.collectAsStateWithLifecycle()
         val reviews by viewModel.reviews.collectAsStateWithLifecycle()
         val selectedOrderInvoice by viewModel.selectedOrderInvoice.collectAsStateWithLifecycle()
         val selectedShippingLabelOrder by viewModel.selectedShippingLabelOrder.collectAsStateWithLifecycle()
         val isCartOpen by viewModel.isCartOpen.collectAsStateWithLifecycle()
+
+        var showVoiceFallbackDialog by remember { mutableStateOf(false) }
+        var voiceFallbackInput by remember { mutableStateOf("") }
+        var showScannerDialog by remember { mutableStateOf(false) }
+        var manualScanInput by remember { mutableStateOf("") }
+
+        // Zero-permission Photo Picker for Visual Image Search
+        val photoPickerLauncher = rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.PickVisualMedia()
+        ) { uri ->
+          if (uri != null) {
+            coroutineScope.launch {
+              val result = withContext(Dispatchers.IO) {
+                VisualImageSearchHelper.analyzeImageUriForProducts(context, uri, allProducts)
+              }
+              if (result != null) {
+                viewModel.applyImageSearch(uri.toString(), result.first, result.second)
+              } else {
+                viewModel.emitToast("⚠️ ছবিটি বিশ্লেষণ করা যায়নি, অনুগ্রহ করে অন্য ছবি দিন।")
+              }
+            }
+          }
+        }
+
+        // SpeechRecognizer Launcher for Voice Product Search
+        val voiceSearchLauncher = rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.StartActivityForResult()
+        ) { activityResult ->
+          if (activityResult.resultCode == Activity.RESULT_OK) {
+            val spokenList = activityResult.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spoken = spokenList?.firstOrNull()?.trim().orEmpty()
+            if (spoken.isNotEmpty()) {
+              viewModel.clearImageSearch()
+              viewModel.setSelectedCategory("All")
+              viewModel.setSearchQuery(spoken)
+              viewModel.emitToast("🎙️ ভয়েস সার্চ: \"$spoken\"")
+            }
+          }
+        }
+
+        fun launchVoiceSearch() {
+          val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "bn-BD")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, Locale.getDefault().toLanguageTag())
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "পণ্যের নাম বলুন (যেমন: জামদানি শাড়ি, ঝুমকা)")
+          }
+          val canHandle = intent.resolveActivity(context.packageManager) != null
+          if (canHandle) {
+            try {
+              voiceSearchLauncher.launch(intent)
+            } catch (_: Exception) {
+              voiceFallbackInput = ""
+              showVoiceFallbackDialog = true
+            }
+          } else {
+            voiceFallbackInput = ""
+            showVoiceFallbackDialog = true
+          }
+        }
 
         // Toast listener
         LaunchedEffect(Unit) {
@@ -84,9 +187,13 @@ class MainActivity : ComponentActivity() {
             isCartOpen ||
             selectedProduct != null ||
             selectedOrderInvoice != null ||
-            selectedShippingLabelOrder != null
+            selectedShippingLabelOrder != null ||
+            showVoiceFallbackDialog ||
+            showScannerDialog
         ) {
           when {
+            showScannerDialog -> showScannerDialog = false
+            showVoiceFallbackDialog -> showVoiceFallbackDialog = false
             selectedShippingLabelOrder != null -> viewModel.closeShippingLabel()
             selectedOrderInvoice != null -> viewModel.closeInvoice()
             selectedProduct != null -> viewModel.closeProductDetail()
@@ -123,7 +230,23 @@ class MainActivity : ComponentActivity() {
               onOpenCart = { viewModel.setCartOpen(true) },
               categories = categories,
               selectedCategory = selectedCategory,
-              onCategorySelected = { viewModel.setSelectedCategory(it) }
+              onCategorySelected = { viewModel.setSelectedCategory(it) },
+              onHomeReset = { viewModel.resetHomeFilters() },
+              onVoiceSearchClick = { launchVoiceSearch() },
+              onImageSearchClick = {
+                photoPickerLauncher.launch(
+                  PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+              },
+              onScanClick = {
+                manualScanInput = ""
+                showScannerDialog = true
+              },
+              isImageSearchActive = imageSearchState != null,
+              onClearAllSearch = {
+                viewModel.setSearchQuery("")
+                viewModel.clearImageSearch()
+              }
             )
 
             // Screen Switcher
@@ -137,6 +260,9 @@ class MainActivity : ComponentActivity() {
                     categories = categories,
                     selectedCategory = selectedCategory,
                     onCategorySelected = { viewModel.setSelectedCategory(it) },
+                    imageSearchState = imageSearchState,
+                    onClearImageSearch = { viewModel.clearImageSearch() },
+                    scrollToTopTrigger = homeScrollTrigger,
                     onProductClick = { viewModel.openProductDetail(it) },
                     onAddToCart = { viewModel.addToCart(it, 1) },
                     onBannerClick = { /* scroll or search */ }
@@ -234,6 +360,159 @@ class MainActivity : ComponentActivity() {
                   config = storeConfig,
                   onDismiss = { viewModel.closeShippingLabel() },
                   onShowToast = { viewModel.emitToast(it) }
+                )
+              }
+
+              if (showVoiceFallbackDialog) {
+                @OptIn(ExperimentalLayoutApi::class)
+                AlertDialog(
+                  onDismissRequest = { showVoiceFallbackDialog = false },
+                  title = {
+                    Text(
+                      text = "🎙️ ভয়েস প্রোডাক্ট সার্চ",
+                      fontWeight = FontWeight.Black,
+                      fontSize = 17.sp
+                    )
+                  },
+                  text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                      Text(
+                        text = "ভয়েস বা কি-ওয়ার্ড দিয়ে দ্রুত পণ্য খুঁজুন:",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray
+                      )
+                      OutlinedTextField(
+                        value = voiceFallbackInput,
+                        onValueChange = { voiceFallbackInput = it },
+                        label = { Text("পণ্যের নাম লিখুন বা বলুন") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                      )
+                      FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                      ) {
+                        listOf("শাড়ি", "জুয়েলারি", "ব্রাইডাল", "জামা", "টি-শার্ট", "পাঞ্জাবি", "লাল").forEach { tag ->
+                          Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFEF4444),
+                            border = BorderStroke(1.dp, Color.White),
+                            modifier = Modifier.clickable {
+                              viewModel.clearImageSearch()
+                              viewModel.setSelectedCategory("All")
+                              viewModel.setSearchQuery(tag)
+                              showVoiceFallbackDialog = false
+                            }
+                          ) {
+                            Text(
+                              text = "🎙️ $tag",
+                              color = Color.Black,
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                          }
+                        }
+                      }
+                    }
+                  },
+                  confirmButton = {
+                    Button(
+                      onClick = {
+                        if (voiceFallbackInput.isNotBlank()) {
+                          viewModel.clearImageSearch()
+                          viewModel.setSelectedCategory("All")
+                          viewModel.setSearchQuery(voiceFallbackInput.trim())
+                          showVoiceFallbackDialog = false
+                        }
+                      },
+                      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon)
+                    ) {
+                      Text("খুঁজুন")
+                    }
+                  },
+                  dismissButton = {
+                    TextButton(onClick = { showVoiceFallbackDialog = false }) {
+                      Text("বন্ধ করুন")
+                    }
+                  }
+                )
+              }
+
+              if (showScannerDialog) {
+                @OptIn(ExperimentalLayoutApi::class)
+                AlertDialog(
+                  onDismissRequest = { showScannerDialog = false },
+                  title = {
+                    Text(
+                      text = "📷 QR / SKU স্ক্যানার লুকআপ",
+                      fontWeight = FontWeight.Black,
+                      fontSize = 17.sp
+                    )
+                  },
+                  text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                      Text(
+                        text = "পণ্যের SKU বা QR কোড লিংক দিন অথবা নিচের জনপ্রিয় SKU ট্যাপ করুন:",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray
+                      )
+                      OutlinedTextField(
+                        value = manualScanInput,
+                        onValueChange = { manualScanInput = it },
+                        label = { Text("যেমন: SJG-101 বা #product-p1") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                      )
+                      FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                      ) {
+                        allProducts.take(5).forEach { prod ->
+                          Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = Color(0xFFFFEBEE),
+                            border = BorderStroke(1.dp, BorderGold),
+                            modifier = Modifier.clickable {
+                              showScannerDialog = false
+                              viewModel.handleScannedPayload(prod.sku.ifBlank { prod.id })
+                            }
+                          ) {
+                            Text(
+                              text = "${prod.sku.ifBlank { prod.id }} • ${prod.name.take(14)}",
+                              color = Color.Black,
+                              fontSize = 10.5.sp,
+                              fontWeight = FontWeight.Bold,
+                              modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                            )
+                          }
+                        }
+                      }
+                    }
+                  },
+                  confirmButton = {
+                    Button(
+                      onClick = {
+                        if (manualScanInput.isNotBlank()) {
+                          showScannerDialog = false
+                          viewModel.handleScannedPayload(manualScanInput)
+                        }
+                      },
+                      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon)
+                    ) {
+                      Text("খুঁজুন")
+                    }
+                  },
+                  dismissButton = {
+                    OutlinedButton(onClick = {
+                      showScannerDialog = false
+                      photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                      )
+                    }) {
+                      Text("🖼️ ছবি দিয়ে খুঁজুন")
+                    }
+                  }
                 )
               }
             }

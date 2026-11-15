@@ -19,6 +19,8 @@ import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.example.data.model.SyncHealthState
 import com.example.data.repository.StoreRepository
+import com.example.util.VisualImageSearchHelper
+import com.example.util.VisualSearchAnalysis
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,6 +31,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+data class ImageSearchState(
+  val imageUri: String,
+  val fileName: String,
+  val colorLabelBn: String,
+  val colorHex: Long,
+  val matchedIds: List<String>,
+  val scores: Map<String, Int>
+)
 
 enum class AppScreen {
   STOREFRONT,
@@ -77,6 +88,12 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   private val _selectedCategory = MutableStateFlow("All")
   val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
+  private val _imageSearchState = MutableStateFlow<ImageSearchState?>(null)
+  val imageSearchState: StateFlow<ImageSearchState?> = _imageSearchState.asStateFlow()
+
+  private val _homeScrollTrigger = MutableStateFlow(0)
+  val homeScrollTrigger: StateFlow<Int> = _homeScrollTrigger.asStateFlow()
+
   private val _selectedProduct = MutableStateFlow<Product?>(null)
   val selectedProduct: StateFlow<Product?> = _selectedProduct.asStateFlow()
 
@@ -95,19 +112,32 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   private val _toastEvent = MutableSharedFlow<String>()
   val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
 
-  // Filtered Products
+  // Filtered Products (supports bilingual voice/text search, category filter, and visual image search)
   val filteredProducts: StateFlow<List<Product>> = combine(
     repository.products,
     _searchQuery,
-    _selectedCategory
-  ) { productList, query, cat ->
-    productList.filter { product ->
-      val matchesSearch = query.isBlank() ||
-          product.name.contains(query, ignoreCase = true) ||
-          product.sku.contains(query, ignoreCase = true) ||
-          product.category.contains(query, ignoreCase = true)
+    _selectedCategory,
+    _imageSearchState
+  ) { productList, query, cat, imgState ->
+    val trimmed = query.trim().lowercase()
+    val expandedTerms = if (trimmed.isNotEmpty()) VisualImageSearchHelper.expandSearchAliases(trimmed) else emptyList()
+
+    val filtered = productList.filter { product ->
+      val matchesSearch = if (trimmed.isEmpty()) {
+        true
+      } else {
+        val haystack = "${product.name} ${product.sku} ${product.category} ${product.description} ${product.colors.joinToString(" ")}".lowercase()
+        haystack.contains(trimmed) || expandedTerms.any { it.isNotEmpty() && haystack.contains(it) }
+      }
       val matchesCategory = cat == "All" || product.category == cat
-      matchesSearch && matchesCategory
+      val matchesImage = imgState == null || imgState.matchedIds.contains(product.id)
+      matchesSearch && matchesCategory && matchesImage
+    }
+
+    if (imgState != null) {
+      filtered.sortedByDescending { imgState.scores[it.id] ?: 0 }
+    } else {
+      filtered
     }
   }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
@@ -125,6 +155,53 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   fun setSelectedCategory(category: String) {
     _selectedCategory.value = category
+  }
+
+  fun applyImageSearch(uriString: String, fileName: String, analysis: VisualSearchAnalysis) {
+    _imageSearchState.value = ImageSearchState(
+      imageUri = uriString,
+      fileName = fileName,
+      colorLabelBn = analysis.colorProfile.labelBn,
+      colorHex = analysis.colorProfile.colorHex,
+      matchedIds = analysis.matchedProductIds,
+      scores = analysis.scores
+    )
+    _searchQuery.value = ""
+    _selectedCategory.value = "All"
+    _currentScreen.value = AppScreen.STOREFRONT
+    emitToast("🖼️ ছবির রঙ (${analysis.colorProfile.labelBn}) অনুযায়ী ${analysis.matchedProductIds.size}টি পণ্য পাওয়া গেছে!")
+  }
+
+  fun clearImageSearch() {
+    _imageSearchState.value = null
+  }
+
+  fun resetHomeFilters() {
+    _searchQuery.value = ""
+    _selectedCategory.value = "All"
+    _imageSearchState.value = null
+    _currentScreen.value = AppScreen.STOREFRONT
+    _homeScrollTrigger.value = _homeScrollTrigger.value + 1
+    emitToast("🏠 হোম পেজ ও সকল পণ্য প্রদর্শিত হচ্ছে")
+  }
+
+  fun handleScannedPayload(rawText: String): Boolean {
+    val clean = rawText.trim()
+    if (clean.isEmpty()) return false
+    val matched = VisualImageSearchHelper.findProductByScanPayload(clean, products.value)
+    return if (matched != null) {
+      _currentScreen.value = AppScreen.STOREFRONT
+      _selectedProduct.value = matched
+      emitToast("🎉 পণ্য পাওয়া গেছে: ${matched.name}")
+      true
+    } else {
+      _searchQuery.value = clean
+      _selectedCategory.value = "All"
+      _imageSearchState.value = null
+      _currentScreen.value = AppScreen.STOREFRONT
+      emitToast("📷 কোড '$clean' দিয়ে প্রোডাক্ট খোঁজা হচ্ছে...")
+      false
+    }
   }
 
   fun openProductDetail(product: Product) {

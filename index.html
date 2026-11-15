@@ -1204,14 +1204,51 @@
         idbStore.set(key, val);
       };
 
+      // Reconcile Website products with POS localStorage ("sajgoj_products") using newest stockUpdatedAt
+      const mergeWithPosLocalStorage = (baseList) => {
+        if (!Array.isArray(baseList)) return baseList;
+        try {
+          const rawPos = localStorage.getItem("sajgoj_products");
+          if (!rawPos) return baseList;
+          const posList = JSON.parse(rawPos);
+          if (!Array.isArray(posList) || posList.length === 0) return baseList;
+          return baseList.map(p => {
+            const match = posList.find(pp =>
+              String(pp.id) === String(p.id) ||
+              (pp.sku && p.sku && String(pp.sku).toLowerCase() === String(p.sku).toLowerCase()) ||
+              pp.nameBn === p.name ||
+              pp.nameEn === p.name ||
+              pp.name === p.name
+            );
+            if (match && match.stock !== undefined) {
+              const posStock = Math.max(0, Number(match.stock) || 0);
+              const posTs = Number(match.stockUpdatedAt) || 0;
+              const storeTs = Number(p.stockUpdatedAt) || 0;
+              if (posStock !== Number(p.stock) && (posTs > storeTs || (storeTs === 0 && posTs > 0))) {
+                return {
+                  ...p,
+                  stock: posStock,
+                  stockUpdatedAt: posTs,
+                  lastSyncSource: match.lastSyncSource || "POS_LOCAL_SYNC"
+                };
+              }
+            }
+            return p;
+          });
+        } catch (e) {
+          return baseList;
+        }
+      };
+
       // Main Reactive States
       const [products, setProducts] = useState(() => {
         const stored = getStored("products", initialProducts);
-        return (stored || []).map(p => ({
+        const normalized = (stored || []).map(p => ({
           ...p,
           colors: (p.colors || []).map(cleanVariation).filter(Boolean),
           sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
         }));
+        return mergeWithPosLocalStorage(normalized);
       });
       const [combos, setCombos] = useState(() => getStored("combos", initialCombos));
       const [reviews, setReviews] = useState(() => getStored("reviews", initialReviews));
@@ -1504,7 +1541,7 @@
               if (val && isMounted) {
                 if (k === "config") setConfig(prev => ({ ...prev, ...val }));
                 else if (k === "banners") setBanners(val);
-                else if (k === "products") setProducts(val);
+                else if (k === "products") setProducts(mergeWithPosLocalStorage(val));
                 else if (k === "combos") setCombos(val);
                 else if (k === "categories") setCategories(val);
                 else if (k === "orders") setOrders(val);
@@ -2067,6 +2104,32 @@
       const [viewInvoiceOrder, setViewInvoiceOrder] = useState(null);
 
       // =========================================================
+      // COMPACT SEARCH BAR: ALL CATEGORIES MENU, VOICE & IMAGE SEARCH
+      // =========================================================
+      const [isCatMenuOpen, setIsCatMenuOpen] = useState(false);
+      const [isVoiceListening, setIsVoiceListening] = useState(false);
+      const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+      const [voiceTranscript, setVoiceTranscript] = useState("");
+      const [imageSearchResult, setImageSearchResult] = useState(null);
+      const [isImageAnalyzing, setIsImageAnalyzing] = useState(false);
+      const imageSearchInputRef = useRef(null);
+      const voiceRecognitionRef = useRef(null);
+      const desktopCatMenuRef = useRef(null);
+      const mobileCatMenuRef = useRef(null);
+
+      useEffect(() => {
+        const handleOutsideCatClick = (ev) => {
+          const inDesktop = desktopCatMenuRef.current && desktopCatMenuRef.current.contains(ev.target);
+          const inMobile = mobileCatMenuRef.current && mobileCatMenuRef.current.contains(ev.target);
+          if (!inDesktop && !inMobile) {
+            setIsCatMenuOpen(false);
+          }
+        };
+        document.addEventListener("mousedown", handleOutsideCatClick);
+        return () => document.removeEventListener("mousedown", handleOutsideCatClick);
+      }, []);
+
+      // =========================================================
       // QR CODE GENERATION & CAMERA SCANNER STATES & REFS
       // =========================================================
       const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -2203,6 +2266,282 @@
           setActiveTab("Storefront");
           notify(`স্ক্যান কোড: "${text}" দিয়ে প্রোডাক্ট খোঁজা হচ্ছে...`);
         }
+      };
+
+      // Reset filters & smoothly return to Storefront Home top
+      const handleHomeResetClick = () => {
+        setSelectedCat("All");
+        setSelectedSubCat("All");
+        setStoreSearch("");
+        setImageSearchResult(null);
+        setIsCatMenuOpen(false);
+        setActiveTab("Storefront");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        notify("🏠 হোম পেজ ও সকল পণ্য প্রদর্শিত হচ্ছে");
+      };
+
+      // Classify dominant RGB into fashion color family + search keywords
+      const classifyVisualColorFamily = (r, g, b) => {
+        const rf = r / 255, gf = g / 255, bf = b / 255;
+        const max = Math.max(rf, gf, bf), min = Math.min(rf, gf, bf);
+        const d = max - min;
+        const v = max;
+        const s = max === 0 ? 0 : d / max;
+        let h = 0;
+        if (d !== 0) {
+          if (max === rf) h = ((gf - bf) / d + (gf < bf ? 6 : 0)) * 60;
+          else if (max === gf) h = ((bf - rf) / d + 2) * 60;
+          else h = ((rf - gf) / d + 4) * 60;
+        }
+        const hex = `#${[r, g, b].map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0")).join("")}`;
+        if (v < 0.22) {
+          return { family: "black_dark", labelBn: "কালো / ডার্ক", hex, keywords: ["কালো", "black", "dark", "প্যান্ট", "টি-শার্ট", "বোরকা", "আবায়া"] };
+        }
+        if (s < 0.16 && v > 0.78) {
+          return { family: "white_cream", labelBn: "সাদা / ক্রিম", hex, keywords: ["সাদা", "ক্রিম", "অফ হোয়াইট", "white", "cream", "ivory", "pearl", "মুক্তা", "পাঞ্জাবি", "জামদানি"] };
+        }
+        if (s < 0.22) {
+          return { family: "neutral_silver", labelBn: "সিলভার / অ্যাশ", hex, keywords: ["সিলভার", "অ্যাশ", "silver", "grey", "gray", "প্যান্ট", "জুয়েলারি"] };
+        }
+        if (h >= 342 || h < 18) {
+          return { family: "red_maroon", labelBn: "লাল / মেরুন", hex, keywords: ["লাল", "মেরুন", "সিঁদুর", "red", "maroon", "crimson", "bridal", "ব্রাইডাল", "বধূ", "বেনারসি", "জামদানি", "কাতান", "শাড়ি"] };
+        }
+        if (h >= 18 && h < 42) {
+          return { family: "orange_peach", labelBn: "কমলা / পিচ", hex, keywords: ["কমলা", "পিচ", "কপার", "orange", "peach", "coral", "শাড়ি", "কামিজ"] };
+        }
+        if (h >= 42 && h < 72) {
+          return { family: "gold_yellow", labelBn: "সোনালি / হলুদ", hex, keywords: ["সোনালি", "গোল্ডেন", "হলুদ", "gold", "golden", "yellow", "কুন্দন", "জুয়েলারি", "ঝুমকা", "নেকলেস", "হার", "চুড়ি", "ব্রাইডাল"] };
+        }
+        if (h >= 72 && h < 165) {
+          return { family: "green_emerald", labelBn: "সবুজ / পান্না", hex, keywords: ["সবুজ", "মেহেদি", "টিয়া", "পান্না", "green", "emerald", "olive", "শাড়ি", "পাঞ্জাবি", "জামা"] };
+        }
+        if (h >= 165 && h < 255) {
+          return { family: "blue_navy", labelBn: "নীল / নেভি", hex, keywords: ["নীল", "আকাশি", "নেভি", "blue", "navy", "sky", "royal", "ডেনিম", "প্যান্ট", "টি-শার্ট", "জামা"] };
+        }
+        if (h >= 255 && h < 312) {
+          return { family: "purple_violet", labelBn: "বেগুনি / পার্পল", hex, keywords: ["বেগুনি", "পার্পল", "জাম", "purple", "violet", "lavender", "জর্জেট", "শাড়ি"] };
+        }
+        return { family: "pink_rose", labelBn: "গোলাপি / রানি", hex, keywords: ["গোলাপি", "রানি", "পিংক", "pink", "rose", "magenta", "মিষ্টি", "কামিজ", "ফ্রক", "লেহেঙ্গা", "শাড়ি"] };
+      };
+
+      // Voice search bilingual keyword expansion
+      const expandSearchAliases = (raw) => {
+        const q = (raw || "").trim().toLowerCase();
+        const tokens = [q];
+        const aliasMap = [
+          ["শাড়ি", "saree", "shari", "sharee", "jamdani", "জামদানি", "katan", "কাতান"],
+          ["জুয়েলারি", "গহনা", "jewelry", "jewellery", "ornament", "necklace", "jhumka", "ঝুমকা", "হার", "চুড়ি", "bangle"],
+          ["জামা", "কামিজ", "থ্রিপিস", "dress", "kurti", "kameez", "salwar", "frock", "ফ্রক", "গাউন"],
+          ["টি-শার্ট", "টি শার্ট", "t-shirt", "tshirt", "shirt", "শার্ট", "polo"],
+          ["প্যান্ট", "pant", "pants", "jeans", "trouser", "denim"],
+          ["ব্রাইডাল", "বধূ", "বিয়ে", "bridal", "wedding", "lehenga", "লেহেঙ্গা"],
+          ["পাঞ্জাবি", "panjabi", "punjabi", "kurta"],
+          ["লাল", "red", "maroon", "মেরুন"],
+          ["সোনালি", "gold", "golden", "হলুদ", "yellow"],
+          ["গোলাপি", "pink", "rose"],
+          ["সবুজ", "green", "emerald"],
+          ["নীল", "blue", "navy"],
+          ["কালো", "black"],
+          ["সাদা", "white", "cream"]
+        ];
+        aliasMap.forEach(group => {
+          if (group.some(term => q.includes(term) || term.includes(q))) {
+            group.forEach(t => { if (!tokens.includes(t)) tokens.push(t); });
+          }
+        });
+        return tokens;
+      };
+
+      const applyVoiceQuery = (spokenText) => {
+        const clean = String(spokenText || "").trim();
+        if (!clean) return;
+        setImageSearchResult(null);
+        setStoreSearch(clean);
+        setSelectedCat("All");
+        setSelectedSubCat("All");
+        setActiveTab("Storefront");
+        setIsVoiceModalOpen(false);
+        setTimeout(() => {
+          const el = document.getElementById("products-section");
+          if (el) el.scrollIntoView({ behavior: "smooth" });
+        }, 120);
+        notify(`🎙️ ভয়েস সার্চ: "${clean}"`);
+      };
+
+      const startVoiceProductSearch = () => {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          setVoiceTranscript("");
+          setIsVoiceModalOpen(true);
+          return;
+        }
+        if (isVoiceListening && voiceRecognitionRef.current) {
+          try { voiceRecognitionRef.current.stop(); } catch (e) {}
+          setIsVoiceListening(false);
+          return;
+        }
+        try {
+          const recognition = new SpeechRec();
+          voiceRecognitionRef.current = recognition;
+          recognition.lang = "bn-BD";
+          recognition.interimResults = true;
+          recognition.maxAlternatives = 2;
+          setVoiceTranscript("");
+          setIsVoiceListening(true);
+          setIsVoiceModalOpen(true);
+
+          recognition.onresult = (event) => {
+            let finalText = "";
+            let interimText = "";
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const t = event.results[i][0].transcript;
+              if (event.results[i].isFinal) finalText += t;
+              else interimText += t;
+            }
+            const combined = (finalText || interimText).trim();
+            setVoiceTranscript(combined);
+            if (finalText.trim()) {
+              setIsVoiceListening(false);
+              applyVoiceQuery(finalText.trim());
+            }
+          };
+          recognition.onerror = () => {
+            setIsVoiceListening(false);
+          };
+          recognition.onend = () => {
+            setIsVoiceListening(false);
+          };
+          recognition.start();
+        } catch (err) {
+          setIsVoiceListening(false);
+          setIsVoiceModalOpen(true);
+        }
+      };
+
+      // Visual Image Search: Browse image from device -> analyze color & keywords -> rank matching products
+      const handleVisualImageFileChange = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (e.target) e.target.value = "";
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          notify("⚠️ অনুগ্রহ করে একটি সঠিক ছবি (JPG/PNG/WebP) নির্বাচন করুন!");
+          return;
+        }
+
+        setIsImageAnalyzing(true);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              const sampleSize = 48;
+              canvas.width = sampleSize;
+              canvas.height = sampleSize;
+              const ctx = canvas.getContext("2d", { willReadFrequently: true });
+              ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
+              const { data } = ctx.getImageData(0, 0, sampleSize, sampleSize);
+
+              let weightedR = 0, weightedG = 0, weightedB = 0, totalWeight = 0;
+              let rawR = 0, rawG = 0, rawB = 0, rawCount = 0;
+              for (let i = 0; i < data.length; i += 4) {
+                const a = data[i + 3];
+                if (a < 100) continue;
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+                rawR += r; rawG += g; rawB += b; rawCount++;
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                const sat = max === 0 ? 0 : (max - min) / max;
+                const isLightNeutralBg = max > 235 && sat < 0.1;
+                const weight = isLightNeutralBg ? 0.15 : (1 + sat * 3.5);
+                weightedR += r * weight;
+                weightedG += g * weight;
+                weightedB += b * weight;
+                totalWeight += weight;
+              }
+              const avgR = totalWeight > 0 ? weightedR / totalWeight : (rawCount > 0 ? rawR / rawCount : 180);
+              const avgG = totalWeight > 0 ? weightedG / totalWeight : (rawCount > 0 ? rawG / rawCount : 60);
+              const avgB = totalWeight > 0 ? weightedB / totalWeight : (rawCount > 0 ? rawB / rawCount : 60);
+
+              const colorProfile = classifyVisualColorFamily(avgR, avgG, avgB);
+              const fileTokens = (file.name || "")
+                .replace(/\.[^.]+$/, "")
+                .toLowerCase()
+                .split(/[^a-z0-9\u0980-\u09ff]+/)
+                .filter(t => t.length >= 2);
+              const expandedFileTokens = fileTokens.flatMap(t => expandSearchAliases(t));
+
+              const scores = {};
+              const activeWebProducts = products.filter(p => p.enabledForWeb !== false);
+              activeWebProducts.forEach(p => {
+                let score = 0;
+                const haystack = `${p.name || ""} ${p.category || ""} ${p.description || ""} ${p.sku || ""} ${(p.colors || []).join(" ")}`.toLowerCase();
+
+                // 1. Filename keyword match (strong signal if photo filename describes item)
+                expandedFileTokens.forEach(tok => {
+                  if (tok && haystack.includes(tok)) score += 18;
+                });
+
+                // 2. Color family keyword match against product colors, title, category, description
+                colorProfile.keywords.forEach((kw, idx) => {
+                  if (haystack.includes(kw.toLowerCase())) {
+                    score += idx < 5 ? 16 : 9;
+                  }
+                });
+
+                // 3. Explicit product color array match
+                if (Array.isArray(p.colors)) {
+                  const colorText = p.colors.join(" ").toLowerCase();
+                  if (colorProfile.keywords.some(kw => colorText.includes(kw.toLowerCase()))) {
+                    score += 20;
+                  }
+                }
+
+                // 4. Category baseline affinity
+                if (p.category && colorProfile.keywords.some(kw => p.category.toLowerCase().includes(kw.toLowerCase()))) {
+                  score += 12;
+                }
+
+                if (score > 0) scores[p.id] = score;
+              });
+
+              let matchedIds = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
+              if (matchedIds.length === 0 && activeWebProducts.length > 0) {
+                matchedIds = activeWebProducts.slice(0, 6).map(p => p.id);
+                matchedIds.forEach((id, i) => { scores[id] = 6 - i; });
+              }
+
+              setImageSearchResult({
+                previewUrl: dataUrl,
+                fileName: file.name,
+                colorFamily: colorProfile.family,
+                colorLabelBn: colorProfile.labelBn,
+                colorHex: colorProfile.hex,
+                matchedIds,
+                scores
+              });
+              setStoreSearch("");
+              setSelectedCat("All");
+              setSelectedSubCat("All");
+              setActiveTab("Storefront");
+              setIsImageAnalyzing(false);
+              setTimeout(() => {
+                const el = document.getElementById("products-section");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }, 140);
+              notify(`🖼️ ছবির রঙ (${colorProfile.labelBn}) অনুযায়ী ${matchedIds.length}টি সামঞ্জস্যপূর্ণ পণ্য পাওয়া গেছে!`);
+            } catch (err) {
+              setIsImageAnalyzing(false);
+              notify("⚠️ ছবি বিশ্লেষণ করা যায়নি, অনুগ্রহ করে আবার চেষ্টা করুন।");
+            }
+          };
+          img.onerror = () => {
+            setIsImageAnalyzing(false);
+            notify("⚠️ ছবিটি লোড করা সম্ভব হয়নি।");
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
       };
 
       // Stop camera video stream & animation frame
@@ -7559,6 +7898,13 @@
               pp.nameEn === p.name
             );
 
+            const existingPos = existingIdx !== -1 ? posProducts[existingIdx] : null;
+            const existingPosTs = Number(existingPos?.stockUpdatedAt) || 0;
+            const incomingTs = Number(p.stockUpdatedAt) || 0;
+            const keepExistingPosStock = existingPos && existingPos.stock !== undefined && existingPosTs > incomingTs && Number(existingPos.stock) !== cleanStock;
+            const resolvedStock = keepExistingPosStock ? Math.max(0, Number(existingPos.stock) || 0) : cleanStock;
+            const resolvedTs = keepExistingPosStock ? existingPosTs : incomingTs;
+
             const posItem = {
               id: String(p.id),
               nameEn: p.name,
@@ -7570,8 +7916,8 @@
               costPrice: cleanCost,
               sellingPrice: cleanPrice,
               price: cleanPrice,
-              stock: cleanStock,
-              stockUpdatedAt: p.stockUpdatedAt || now,
+              stock: resolvedStock,
+              stockUpdatedAt: resolvedTs,
               minStockAlert: 5,
               image: (p.images && p.images[0]) || p.image || "",
               sizes: p.sizes || [],
@@ -7590,9 +7936,9 @@
                 productId: String(p.id),
                 name: p.name,
                 sku: sku,
-                stock: cleanStock,
+                stock: resolvedStock,
                 price: cleanPrice,
-                updatedAt: p.stockUpdatedAt || now,
+                updatedAt: resolvedTs || now,
                 lastSource: source,
                 lastOrigin: syncOriginIdRef.current,
                 lastReferenceId: referenceId || ""
@@ -7603,7 +7949,16 @@
           const serialized = JSON.stringify(posProducts);
           if (raw !== serialized) {
             localStorage.setItem("sajgoj_products", serialized);
-            window.dispatchEvent(new Event("storage"));
+            try {
+              window.dispatchEvent(new StorageEvent("storage", {
+                key: "sajgoj_products",
+                oldValue: raw,
+                newValue: serialized,
+                storageArea: window.localStorage
+              }));
+            } catch (se) {
+              window.dispatchEvent(new Event("storage"));
+            }
           }
 
           const payload = {
@@ -8031,7 +8386,7 @@
 
       // 6. Automated Synchronization Hooks (Products, Orders, Customers)
       useEffect(() => {
-        if (products && products.length > 0 && !suppressPosPushRef.current) {
+        if (hasHydratedRef.current && products && products.length > 0 && !suppressPosPushRef.current) {
           syncProductsToPos(products, { syncCloud: true, source: "STOREFRONT_CATALOG" });
         }
       }, [products]);
@@ -8042,7 +8397,7 @@
         }
       }, [orders]);
 
-      // 7. Real-Time Bidirectional Stock Listener: BroadcastChannel + postMessage + storage + fallback check
+      // 7. Real-Time Bidirectional Stock Listener: BroadcastChannel + postMessage + storage (both POS & Website keys) + fallback check
       useEffect(() => {
         let channel = null;
         try {
@@ -8054,6 +8409,11 @@
               if (!msg || suppressPosPushRef.current) return;
               if (msg.type === "SAJGOJ_POS_PRODUCTS_UPDATED" && Array.isArray(msg.data)) {
                 applyPosCatalogSnapshotToStorefront(msg.data, "POS_BROADCAST");
+              } else if (msg.type === "SAJGOJ_POS_SALES_UPDATED") {
+                try {
+                  const raw = localStorage.getItem("sajgoj_products");
+                  if (raw) applyPosCatalogSnapshotToStorefront(JSON.parse(raw), "POS_SALE_BROADCAST");
+                } catch (e) {}
               }
             };
           }
@@ -8064,14 +8424,54 @@
           if (!msg || suppressPosPushRef.current) return;
           if (msg.type === "SAJGOJ_POS_PRODUCTS_UPDATED" && Array.isArray(msg.data)) {
             applyPosCatalogSnapshotToStorefront(msg.data, "POS_IFRAME");
+          } else if (msg.type === "SAJGOJ_POS_SALES_UPDATED") {
+            try {
+              const raw = localStorage.getItem("sajgoj_products");
+              if (raw) applyPosCatalogSnapshotToStorefront(JSON.parse(raw), "POS_SALE_IFRAME");
+            } catch (err) {}
+          } else if (msg.type === "SAJGOJ_POS_READY") {
+            const latest = productsRef.current || [];
+            if (latest.length > 0) {
+              syncProductsToPos(latest, { syncCloud: false, source: "POS_BOOT_SYNC" });
+            }
           }
         };
 
         const handleStorageChange = (e) => {
-          if (e.key === "sajgoj_products" && e.newValue && !suppressPosPushRef.current) {
+          if (!e || suppressPosPushRef.current) return;
+          if (e.key === "sajgoj_products" && e.newValue) {
             try {
               const posProds = JSON.parse(e.newValue);
               applyPosCatalogSnapshotToStorefront(posProds, "POS_TAB_STORAGE");
+            } catch (err) {}
+          } else if (e.key === "sajgoj_store_products" && e.newValue) {
+            try {
+              const storeProds = JSON.parse(e.newValue);
+              if (Array.isArray(storeProds) && storeProds.length > 0) {
+                const currentList = productsRef.current || [];
+                let changed = false;
+                const nextList = currentList.map(p => {
+                  const inc = storeProds.find(sp => String(sp.id) === String(p.id) || (sp.sku && p.sku && sp.sku === p.sku));
+                  if (inc && inc.stock !== undefined) {
+                    const incStock = Math.max(0, Number(inc.stock) || 0);
+                    const incTs = Number(inc.stockUpdatedAt) || 0;
+                    const curTs = Number(p.stockUpdatedAt) || 0;
+                    if (incStock !== Number(p.stock) && incTs > curTs) {
+                      changed = true;
+                      return { ...p, stock: incStock, stockUpdatedAt: incTs, lastSyncSource: inc.lastSyncSource || "STORAGE_SYNC" };
+                    }
+                  }
+                  return p;
+                });
+                if (changed) {
+                  suppressPosPushRef.current = true;
+                  productsRef.current = nextList;
+                  setProducts(nextList);
+                  syncProductsToPos(nextList, { syncCloud: false, source: "STORAGE_CROSS_TAB" });
+                  setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+                  setTimeout(() => { suppressPosPushRef.current = false; }, 60);
+                }
+              }
             } catch (err) {}
           }
         };
@@ -8088,7 +8488,7 @@
               applyPosCatalogSnapshotToStorefront(posProds, "POS_POLL_CHECK");
             }
           } catch (e) {}
-        }, 4000);
+        }, 3000);
 
         return () => {
           if (channel) {
@@ -10196,39 +10596,57 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
       }, [seo, config?.storeName, config?.logo, banners, viewProduct]);
 
-      // Filtered Products (with BOGO, 3-Tier Category Hierarchy & Sub-Category filter support)
-      const filteredProducts = products.filter(p => {
-        if (p.enabledForWeb === false) return false;
-        const matchesSearch = p.name.toLowerCase().includes(storeSearch.toLowerCase()) || p.sku.toLowerCase().includes(storeSearch.toLowerCase());
+      // Filtered Products (with Voice/Bilingual Search, Visual Image Search, BOGO & 3-Tier Category Hierarchy)
+      const filteredProducts = useMemo(() => {
+        const q = storeSearch.trim().toLowerCase();
+        const expandedTerms = q ? expandSearchAliases(q) : [];
 
-        let matchesCat = true;
-        if (selectedCat === "All") {
-          matchesCat = true;
-        } else if (selectedCat === "BOGO") {
-          matchesCat = Boolean(p.bogo);
-        } else {
-          // Check if selectedCat is a Parent Category
-          const parentCat = categories.find(c => c.name === selectedCat && c.type === "parent");
-          if (parentCat) {
-            // Find all child main categories under this parent
-            const childMainCatNames = categories.filter(c => c.parentId === parentCat.id).map(c => c.name);
-            matchesCat = childMainCatNames.includes(p.category) || p.category === selectedCat;
-          } else {
-            matchesCat = p.category === selectedCat;
+        const list = products.filter(p => {
+          if (p.enabledForWeb === false) return false;
+
+          let matchesSearch = true;
+          if (q) {
+            const haystack = `${p.name || ""} ${p.sku || ""} ${p.category || ""} ${p.description || ""} ${(p.colors || []).join(" ")}`.toLowerCase();
+            matchesSearch = haystack.includes(q) || expandedTerms.some(term => term && haystack.includes(term));
           }
-        }
 
-        let matchesSubCat = true;
-        if (selectedSubCat && selectedSubCat !== "All") {
-          const subTerm = selectedSubCat.toLowerCase().replace(/ক্যাটাগরি|বয়স|বছর/g, "").trim();
-          matchesSubCat = (p.subCategory && p.subCategory === selectedSubCat) ||
-                          p.name.toLowerCase().includes(subTerm) ||
-                          (p.description && p.description.toLowerCase().includes(subTerm)) ||
-                          (p.sizes && p.sizes.some(s => s.toLowerCase().includes(subTerm)));
-        }
+          let matchesCat = true;
+          if (selectedCat === "All") {
+            matchesCat = true;
+          } else if (selectedCat === "BOGO") {
+            matchesCat = Boolean(p.bogo);
+          } else {
+            const parentCat = categories.find(c => c.name === selectedCat && c.type === "parent");
+            if (parentCat) {
+              const childMainCatNames = categories.filter(c => c.parentId === parentCat.id).map(c => c.name);
+              matchesCat = childMainCatNames.includes(p.category) || p.category === selectedCat;
+            } else {
+              matchesCat = p.category === selectedCat;
+            }
+          }
 
-        return matchesSearch && matchesCat && matchesSubCat;
-      });
+          let matchesSubCat = true;
+          if (selectedSubCat && selectedSubCat !== "All") {
+            const subTerm = selectedSubCat.toLowerCase().replace(/ক্যাটাগরি|বয়স|বছর/g, "").trim();
+            matchesSubCat = (p.subCategory && p.subCategory === selectedSubCat) ||
+                            p.name.toLowerCase().includes(subTerm) ||
+                            (p.description && p.description.toLowerCase().includes(subTerm)) ||
+                            (p.sizes && p.sizes.some(s => s.toLowerCase().includes(subTerm)));
+          }
+
+          let matchesImage = true;
+          if (imageSearchResult && Array.isArray(imageSearchResult.matchedIds)) {
+            matchesImage = imageSearchResult.matchedIds.includes(p.id);
+          }
+
+          return matchesSearch && matchesCat && matchesSubCat && matchesImage;
+        });
+
+        if (imageSearchResult && imageSearchResult.scores) {
+          return [...list].sort((a, b) => (imageSearchResult.scores[b.id] || 0) - (imageSearchResult.scores[a.id] || 0));
+        }
+        return list;
+      }, [products, storeSearch, selectedCat, selectedSubCat, categories, imageSearchResult]);
       const bogoProductsCount = products.filter(p => p.bogo).length;
 
       const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
@@ -10284,22 +10702,71 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 </div>
               </div>
 
-              {/* Storefront Search Bar (Tablet/Desktop) */}
+              {/* Storefront Compact Search Bar (Tablet/Desktop) */}
               {config?.header?.showSearch && activeTab === "Storefront" && (
-                <div className="flex-1 max-w-md hidden md:block">
-                  <div className="relative flex items-center">
-                    <input 
+                <div className="flex-1 max-w-xl hidden md:flex items-center gap-1.5 relative" ref={desktopCatMenuRef}>
+                  {/* All Categories Dropdown Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCatMenuOpen(prev => !prev)}
+                    className="red-black-tab h-9 px-3 rounded-full text-xs flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 transition"
+                    title="সকল ক্যাটাগরি মেনু"
+                  >
+                    <span>☰</span>
+                    <span className="max-w-[95px] truncate font-black">{selectedCat === "All" ? "সকল ক্যাটাগরী" : selectedCat}</span>
+                    <span className="text-[10px]">{isCatMenuOpen ? "▴" : "▾"}</span>
+                  </button>
+
+                  {/* Home Icon Button */}
+                  <button
+                    type="button"
+                    onClick={handleHomeResetClick}
+                    className="red-black-tab w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 cursor-pointer active:scale-95 transition"
+                    title="হোম (সব ফিল্টার রিসেট করুন)"
+                    aria-label="হোম"
+                  >
+                    🏠
+                  </button>
+
+                  {/* Compact Shorter Search Input + Voice + Image + Scan */}
+                  <div className="flex-1 min-w-0 relative flex items-center bg-white/90 backdrop-blur-md border border-white rounded-full h-9 pl-3 pr-1 shadow-xs focus-within:border-black transition">
+                    <span className="text-slate-700 text-xs shrink-0 mr-1.5">🔍</span>
+                    <input
                       type="text"
                       value={storeSearch}
                       onChange={(e) => setStoreSearch(e.target.value)}
-                      placeholder="শাড়ি, জামা বা জুয়েলারির নাম দিয়ে সার্চ..."
-                      className="w-full bg-white/85 backdrop-blur-md border border-white rounded-full px-5 py-2 text-sm text-[#000000] placeholder:text-slate-600 outline-none focus:border-black pl-10 pr-24 shadow-xs font-medium"
+                      placeholder="পণ্য খুঁজুন..."
+                      className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-[#000000] placeholder:text-slate-600 outline-none font-medium"
                     />
-                    <span className="absolute left-3.5 top-2.5 text-slate-700">🔍</span>
-                    <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
-                      {storeSearch && (
-                        <button onClick={() => setStoreSearch("")} className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-slate-700 hover:text-black hover:bg-white" title="মুছুন">✕</button>
+                    <div className="flex items-center gap-1 shrink-0 ml-1">
+                      {(storeSearch || imageSearchResult) && (
+                        <button
+                          type="button"
+                          onClick={() => { setStoreSearch(""); setImageSearchResult(null); }}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] text-slate-700 hover:text-black hover:bg-slate-100 cursor-pointer"
+                          title="মুছুন"
+                        >
+                          ✕
+                        </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={startVoiceProductSearch}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition cursor-pointer active:scale-95 ${isVoiceListening ? "bg-[#ef4444] text-black animate-pulse ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
+                        title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
+                        aria-label="ভয়েস সার্চ"
+                      >
+                        🎙️
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition cursor-pointer active:scale-95 ${imageSearchResult ? "bg-[#ef4444] text-black ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
+                        title="ছবি দিয়ে সার্চ (ডিভাইস থেকে ছবি ব্রাউজ করুন)"
+                        aria-label="ইমেজ সার্চ"
+                      >
+                        {isImageAnalyzing ? "⏳" : "🖼️"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
@@ -10314,6 +10781,66 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </button>
                     </div>
                   </div>
+
+                  {/* Desktop Dropdown Menu for All Categories */}
+                  {isCatMenuOpen && (
+                    <div className="absolute left-0 top-full mt-2 w-64 max-h-80 overflow-y-auto bg-white rounded-2xl shadow-2xl border-2 border-[#ef4444] p-2 z-50 animate-fadeIn space-y-1">
+                      <div className="px-2.5 py-1.5 text-[11px] font-black text-[#000000] border-b border-red-100 flex items-center justify-between">
+                        <span>📂 সকল ক্যাটাগরী মেনু</span>
+                        <button type="button" onClick={() => setIsCatMenuOpen(false)} className="text-slate-600 hover:text-black cursor-pointer">✕</button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCat("All");
+                          setSelectedSubCat("All");
+                          setIsCatMenuOpen(false);
+                          const el = document.getElementById("products-section");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "All" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                      >
+                        <span className="flex items-center gap-2"><span>🌟</span><span>সকল পণ্য (All)</span></span>
+                        <span className="text-[10px] opacity-80">{products.filter(p => p.enabledForWeb !== false).length}</span>
+                      </button>
+                      {bogoProductsCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCat("BOGO");
+                            setSelectedSubCat("All");
+                            setIsCatMenuOpen(false);
+                            const el = document.getElementById("products-section");
+                            if (el) el.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "BOGO" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                        >
+                          <span className="flex items-center gap-2"><span>🎁</span><span>BOGO অফার</span></span>
+                          <span className="text-[10px] opacity-80">{bogoProductsCount}</span>
+                        </button>
+                      )}
+                      {displayCategories.map(cat => (
+                        <button
+                          key={cat.id || cat.name}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCat(cat.name);
+                            setSelectedSubCat("All");
+                            setIsCatMenuOpen(false);
+                            const el = document.getElementById("products-section");
+                            if (el) el.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === cat.name ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <span>{cat.icon || "✨"}</span>
+                            <span className="truncate">{cat.name}</span>
+                          </span>
+                          <span className="text-[10px] opacity-75 shrink-0">{products.filter(p => p.category === cat.name && p.enabledForWeb !== false).length}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -10433,36 +10960,154 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               {/* Storefront Main View */}
               <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6">
                 <div className="space-y-8 animate-fadeIn">
-                {/* Mobile Search */}
+                {/* Mobile Compact Search Strip: [সকল ক্যাটাগরী ▾] [🏠] [🔍 Short Search + 🎙️ + 🖼️ + 📷 স্ক্যান] */}
+                <input
+                  ref={imageSearchInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleVisualImageFileChange}
+                  className="hidden"
+                />
                 {config?.header?.showSearch && (
-                  <div className="md:hidden">
-                    <div className="relative flex items-center">
-                      <input 
-                        type="text"
-                        value={storeSearch}
-                        onChange={(e) => setStoreSearch(e.target.value)}
-                        placeholder="পণ্য, শাড়ি, জামা বা গহনা খুঁজুন..."
-                        className="w-full bg-white/90 backdrop-blur-md border border-white rounded-full px-5 py-2.5 text-sm text-[#000000] placeholder:text-slate-600 outline-none focus:border-black pl-10 pr-24 shadow-sm font-medium"
-                      />
-                      <span className="absolute left-3.5 top-3 text-slate-700">🔍</span>
-                      <div className="absolute right-2 top-1.5 flex items-center gap-1">
-                        {storeSearch && (
-                          <button onClick={() => setStoreSearch("")} className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-slate-700 hover:text-black hover:bg-gray-100" title="মুছুন">✕</button>
-                        )}
+                  <div className="md:hidden relative z-20" ref={mobileCatMenuRef}>
+                    <div className="flex items-center gap-1.5 w-full">
+                      {/* 1. All Categories Menu Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsCatMenuOpen(prev => !prev)}
+                        className="red-black-tab h-9 px-2.5 rounded-full text-[11px] flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 shadow-xs"
+                        title="সকল ক্যাটাগরী মেনু"
+                      >
+                        <span className="text-xs leading-none">☰</span>
+                        <span className="max-w-[74px] truncate font-black">{selectedCat === "All" ? "সকল ক্যাটাগরী" : selectedCat}</span>
+                        <span className="text-[9px] leading-none">{isCatMenuOpen ? "▴" : "▾"}</span>
+                      </button>
+
+                      {/* 2. Home Icon Button */}
+                      <button
+                        type="button"
+                        onClick={handleHomeResetClick}
+                        className="red-black-tab w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 cursor-pointer active:scale-95 shadow-xs"
+                        title="হোম (সব ফিল্টার রিসেট)"
+                        aria-label="হোম"
+                      >
+                        🏠
+                      </button>
+
+                      {/* 3. Shorter Compact Search Box + Voice + Image + Scan */}
+                      <div className="flex-1 min-w-0 flex items-center bg-white/95 backdrop-blur-md border border-white rounded-full h-9 pl-2.5 pr-1 shadow-sm focus-within:border-black transition">
+                        <span className="text-slate-700 text-xs shrink-0 mr-1">🔍</span>
+                        <input
+                          type="text"
+                          value={storeSearch}
+                          onChange={(e) => setStoreSearch(e.target.value)}
+                          placeholder="খুঁজুন..."
+                          className="flex-1 min-w-0 bg-transparent text-xs text-[#000000] placeholder:text-slate-600 outline-none font-semibold"
+                        />
+                        <div className="flex items-center gap-1 shrink-0 ml-0.5">
+                          {(storeSearch || imageSearchResult) && (
+                            <button
+                              type="button"
+                              onClick={() => { setStoreSearch(""); setImageSearchResult(null); }}
+                              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-slate-700 hover:text-black hover:bg-gray-100 cursor-pointer"
+                              title="মুছুন"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={startVoiceProductSearch}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition cursor-pointer active:scale-95 ${isVoiceListening ? "bg-[#ef4444] text-black animate-pulse ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
+                            title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
+                            aria-label="ভয়েস সার্চ"
+                          >
+                            🎙️
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition cursor-pointer active:scale-95 ${imageSearchResult ? "bg-[#ef4444] text-black ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
+                            title="ছবি দিয়ে খুঁজুন (ডিভাইস থেকে ব্রাউজ করুন)"
+                            aria-label="ইমেজ সার্চ"
+                          >
+                            {isImageAnalyzing ? "⏳" : "🖼️"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsScannerOpen(true);
+                              startScanner();
+                            }}
+                            className="red-black-tab active:scale-95 px-2 py-1 rounded-full text-[10px] flex items-center gap-0.5 cursor-pointer"
+                            title="ক্যামেরা দিয়ে QR স্ক্যান করুন"
+                          >
+                            <span>📷</span>
+                            <span className="font-black">স্ক্যান</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mobile Dropdown Menu for All Categories */}
+                    {isCatMenuOpen && (
+                      <div className="absolute left-0 top-full mt-2 w-64 max-h-72 overflow-y-auto bg-white rounded-2xl shadow-2xl border-2 border-[#ef4444] p-2 z-50 animate-fadeIn space-y-1">
+                        <div className="px-2.5 py-1.5 text-[11px] font-black text-[#000000] border-b border-red-100 flex items-center justify-between">
+                          <span>📂 সকল ক্যাটাগরী মেনু</span>
+                          <button type="button" onClick={() => setIsCatMenuOpen(false)} className="text-slate-600 hover:text-black cursor-pointer">✕</button>
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
-                            setIsScannerOpen(true);
-                            startScanner();
+                            setSelectedCat("All");
+                            setSelectedSubCat("All");
+                            setIsCatMenuOpen(false);
+                            const el = document.getElementById("products-section");
+                            if (el) el.scrollIntoView({ behavior: "smooth" });
                           }}
-                          className="red-black-tab active:scale-95 px-2.5 py-1 rounded-full text-xs flex items-center gap-1 cursor-pointer"
-                          title="ক্যামেরা দিয়ে QR স্ক্যান করুন"
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "All" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
                         >
-                          <span>📷</span>
-                          <span className="text-[11px]">স্ক্যান</span>
+                          <span className="flex items-center gap-2"><span>🌟</span><span>সকল পণ্য (All)</span></span>
+                          <span className="text-[10px] opacity-80">{products.filter(p => p.enabledForWeb !== false).length}</span>
                         </button>
+                        {bogoProductsCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCat("BOGO");
+                              setSelectedSubCat("All");
+                              setIsCatMenuOpen(false);
+                              const el = document.getElementById("products-section");
+                              if (el) el.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "BOGO" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                          >
+                            <span className="flex items-center gap-2"><span>🎁</span><span>BOGO অফার</span></span>
+                            <span className="text-[10px] opacity-80">{bogoProductsCount}</span>
+                          </button>
+                        )}
+                        {displayCategories.map(cat => (
+                          <button
+                            key={cat.id || cat.name}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCat(cat.name);
+                              setSelectedSubCat("All");
+                              setIsCatMenuOpen(false);
+                              const el = document.getElementById("products-section");
+                              if (el) el.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === cat.name ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                          >
+                            <span className="flex items-center gap-2 truncate">
+                              <span>{cat.icon || "✨"}</span>
+                              <span className="truncate">{cat.name}</span>
+                            </span>
+                            <span className="text-[10px] opacity-75 shrink-0">{products.filter(p => p.category === cat.name && p.enabledForWeb !== false).length}</span>
+                          </button>
+                        ))}
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 
@@ -11006,6 +11651,38 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                 {/* Product Grid */}
                 <div id="products-section" className="space-y-4">
+                  {/* Visual Image Search Active Banner */}
+                  {imageSearchResult && (
+                    <div className="red-black-bottom-card rounded-2xl p-3 flex items-center justify-between gap-3 animate-fadeIn">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={imageSearchResult.previewUrl}
+                          alt="Visual search preview"
+                          className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-black text-[#000000]">🖼️ ভিজ্যুয়াল ইমেজ সার্চ সক্রিয়</span>
+                            <span className="inline-flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded-full text-[10px] font-black text-[#000000] border border-white">
+                              <span className="w-2.5 h-2.5 rounded-full inline-block border border-black/30" style={{ backgroundColor: imageSearchResult.colorHex }}></span>
+                              {imageSearchResult.colorLabelBn}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-bold text-[#000000] truncate mt-0.5">
+                            ফাইল: {imageSearchResult.fileName} • {filteredProducts.length} টি মিল পাওয়া গেছে
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setImageSearchResult(null)}
+                        className="cta-dark-pill px-3 py-1.5 rounded-full text-[11px] font-black shrink-0 cursor-pointer"
+                      >
+                        ✕ মুছুন
+                      </button>
+                    </div>
+                  )}
+
                   <div className="liquid-glass-surface rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -11032,11 +11709,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </p>
                     </div>
 
-                    {selectedCat !== "All" && (
+                    {(selectedCat !== "All" || storeSearch || imageSearchResult) && (
                       <button
                         onClick={() => {
                           setSelectedCat("All");
                           setSelectedSubCat("All");
+                          setStoreSearch("");
+                          setImageSearchResult(null);
                         }}
                         className="red-black-tab px-3 py-1 rounded-full text-xs self-start sm:self-auto cursor-pointer"
                       >
@@ -19071,6 +19750,90 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   >
                     বুঝেছি, ধন্যবাদ
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* VOICE PRODUCT SEARCH MODAL (ভয়েস সার্চ ও কুইক ভয়েস ট্যাগ) */}
+          {/* ========================================================= */}
+          {isVoiceModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden border-2 border-[#ef4444] shadow-2xl">
+                <div className="bg-gradient-to-r from-[#ff5252] to-[#ef4444] px-5 py-4 flex items-center justify-between text-[#000000]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{isVoiceListening ? "🎙️" : "🔊"}</span>
+                    <div>
+                      <h3 className="font-black text-base text-[#000000]">ভয়েস প্রোডাক্ট সার্চ</h3>
+                      <p className="text-[11px] font-bold text-[#000000]">
+                        {isVoiceListening ? "আপনার কথা শোনা হচ্ছে... বলুন!" : "কথা বলে বা নিচের কি-ওয়ার্ডে সার্চ করুন"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (voiceRecognitionRef.current) {
+                        try { voiceRecognitionRef.current.stop(); } catch (e) {}
+                      }
+                      setIsVoiceListening(false);
+                      setIsVoiceModalOpen(false);
+                    }}
+                    className="w-8 h-8 rounded-full bg-white/70 hover:bg-white text-[#000000] font-black flex items-center justify-center cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  <div className="flex flex-col items-center justify-center py-3">
+                    <button
+                      type="button"
+                      onClick={startVoiceProductSearch}
+                      className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-lg border-2 border-white transition cursor-pointer ${isVoiceListening ? "bg-[#ef4444] animate-pulse ring-4 ring-red-200" : "bg-[#ff5252] hover:scale-105"}`}
+                      title="মাইক্রোফোন চালু করুন"
+                    >
+                      🎙️
+                    </button>
+                    <p className="text-xs font-extrabold text-[#000000] mt-2 text-center">
+                      {voiceTranscript ? `"${voiceTranscript}"` : (isVoiceListening ? "শুনছি: 'জামদানি শাড়ি', 'ঝুমকা', 'ব্রাইডাল'..." : "মাইকে ট্যাপ করে পণ্যের নাম বলুন")}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={voiceTranscript}
+                      onChange={(e) => setVoiceTranscript(e.target.value)}
+                      placeholder="অথবা এখানে পণ্যের নাম লিখুন..."
+                      className="flex-1 border border-red-200 rounded-xl px-3 py-2 text-xs font-bold text-[#000000] outline-none focus:border-black"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => applyVoiceQuery(voiceTranscript)}
+                      disabled={!voiceTranscript.trim()}
+                      className="cta-dark-pill px-4 py-2 rounded-xl text-xs font-black disabled:opacity-40 cursor-pointer"
+                    >
+                      খুঁজুন
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-black text-slate-700">জনপ্রিয় ভয়েস সার্চ সাজেশন:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["শাড়ি", "জুয়েলারি", "ব্রাইডাল সেট", "জামা", "টি-শার্ট", "প্যান্ট", "লাল"].map(tag => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => applyVoiceQuery(tag)}
+                          className="red-black-tab px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer active:scale-95"
+                        >
+                          🎙️ {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
