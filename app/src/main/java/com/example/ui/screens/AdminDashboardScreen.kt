@@ -92,6 +92,7 @@ import com.example.data.model.SyncHealthState
 import com.example.ui.AdminTab
 import com.example.ui.components.AdminDeliveryTrackingTab
 import com.example.ui.components.AppImage
+import com.example.ui.components.DailyRevenueTrendChartCard
 import com.example.ui.components.HomePageSettingHub
 import com.example.ui.components.InventorySyncPanel
 import com.example.ui.components.ReturnExchangeDialog
@@ -626,6 +627,9 @@ fun AdminOverviewTab(
         }
       }
     }
+
+    // 7-Day Daily Revenue Trend Line Chart
+    DailyRevenueTrendChartCard(orders = orders)
 
     // Quick Shortcuts Header
     Text(text = "মূল প্রশাসনিক হাবসমূহ (Master Function Hubs):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)

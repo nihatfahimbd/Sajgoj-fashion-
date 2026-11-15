@@ -63,6 +63,9 @@
   <!-- React & ReactDOM (cdnjs for fast edge delivery) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- PropTypes & Recharts for Interactive Dashboard Charts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
   <!-- Babel standalone for JSX compiling -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
 
@@ -3885,6 +3888,51 @@
         }
         const areaPath = `${linePath} L ${pts[pts.length - 1].x} ${svgH - padY} L ${pts[0].x} ${svgH - padY} Z`;
 
+        // Build real Last 7 Days Daily Revenue Trend Series for Recharts LineChart
+        const formatLocalDateKey = (dateObj) => {
+          const y = dateObj.getFullYear();
+          const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+          const d = String(dateObj.getDate()).padStart(2, "0");
+          return `${y}-${m}-${d}`;
+        };
+        const bnMonths = ["জানু", "ফেব্রু", "মার্চ", "এপ্রি", "মে", "জুন", "জুলা", "আগ", "সেপ্টে", "অক্টো", "নভে", "ডিসে"];
+        const bnDays = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র", "শনি"];
+        const last7DaysRevenueData = Array.from({ length: 7 }, (_, idx) => {
+          const d = new Date();
+          d.setDate(d.getDate() - (6 - idx));
+          const dateKey = formatLocalDateKey(d);
+          const dayOrders = (orders || []).filter(o => {
+            if (!o || o.status === "Cancelled") return false;
+            let oDateKey = "";
+            if (o.date) {
+              oDateKey = String(o.date).slice(0, 10);
+            } else if (o.createdAt) {
+              const parsed = new Date(o.createdAt);
+              if (!isNaN(parsed.getTime())) oDateKey = formatLocalDateKey(parsed);
+            }
+            return oDateKey === dateKey;
+          });
+          const rev = dayOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+          const posRev = dayOrders.filter(o => o.channel === "POS").reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+          const onlineRev = Math.max(0, rev - posRev);
+          const shortDate = `${d.getDate()} ${bnMonths[d.getMonth()] || ""}`;
+          const label = idx === 6 ? "আজ" : idx === 5 ? "গতকাল" : shortDate;
+          return {
+            dateKey,
+            label,
+            fullLabel: `${shortDate} (${bnDays[d.getDay()] || ""})`,
+            revenue: rev,
+            onlineRevenue: onlineRev,
+            posRevenue: posRev,
+            ordersCount: dayOrders.length
+          };
+        });
+        const last7TotalRevenue = last7DaysRevenueData.reduce((s, d) => s + d.revenue, 0);
+        const last7AvgDaily = Math.round(last7TotalRevenue / 7);
+        const last7TotalOrders = last7DaysRevenueData.reduce((s, d) => s + d.ordersCount, 0);
+        const last7PeakDay = last7DaysRevenueData.reduce((best, cur) => (cur.revenue > best.revenue ? cur : best), last7DaysRevenueData[0] || { label: "-", revenue: 0 });
+        const RechartsLib = typeof window !== "undefined" ? window.Recharts : null;
+
         // Semi-circular Gauge calculation
         const gaugePct = Math.min(100, Math.max(12, Math.round(Number(deliveryRate) || 76)));
         const radius = 78;
@@ -4390,6 +4438,114 @@
                     <p className="text-xs sm:text-sm font-black mt-0.5">৳{avgOrderVal.toLocaleString()}</p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* RECHARTS LINE CHART: DAILY REVENUE TRENDS (LAST 7 DAYS) */}
+            <div className="liquid-glass-surface rounded-[24px] p-5 sm:p-6 v2-card-hover">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm sm:text-base font-black text-[#000000] flex items-center gap-1.5">
+                      <span>📈</span>
+                      <span>গত ৭ দিনের দৈনিক রেভিনিউ ট্রেন্ড (Last 7 Days Revenue)</span>
+                    </h3>
+                    <span className="red-black-tab text-[10px] font-black px-2.5 py-0.5 rounded-full">
+                      Recharts Live Line
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#000000] font-semibold mt-0.5">
+                    প্রতিদিনের অনলাইন ও POS অর্ডারের মোট বিক্রয় প্রবণতা ({last7DaysRevenueData[0]?.dateKey} → {last7DaysRevenueData[6]?.dateKey})
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                  <div className="red-black-bottom-card rounded-xl px-3 py-1.5">
+                    <p className="text-[9px] font-black text-[#000000]">৭ দিনের মোট</p>
+                    <p className="text-xs sm:text-sm font-black text-[#000000] tabular-nums">৳{last7TotalRevenue.toLocaleString()}</p>
+                  </div>
+                  <div className="red-black-bottom-card rounded-xl px-3 py-1.5">
+                    <p className="text-[9px] font-black text-[#000000]">দৈনিক গড়</p>
+                    <p className="text-xs sm:text-sm font-black text-[#000000] tabular-nums">৳{last7AvgDaily.toLocaleString()}</p>
+                  </div>
+                  <div className="red-black-bottom-card rounded-xl px-3 py-1.5">
+                    <p className="text-[9px] font-black text-[#000000]">সর্বোচ্চ দিন</p>
+                    <p className="text-xs sm:text-sm font-black text-[#000000] truncate">{last7PeakDay?.label || "-"}</p>
+                  </div>
+                  <div className="red-black-bottom-card rounded-xl px-3 py-1.5">
+                    <p className="text-[9px] font-black text-[#000000]">৭ দিনের অর্ডার</p>
+                    <p className="text-xs sm:text-sm font-black text-[#000000] tabular-nums">{last7TotalOrders}টি</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full h-64 bg-white/80 rounded-2xl border border-white p-2 sm:p-3">
+                {RechartsLib && RechartsLib.ResponsiveContainer && RechartsLib.LineChart ? (
+                  <RechartsLib.ResponsiveContainer width="100%" height="100%">
+                    <RechartsLib.LineChart data={last7DaysRevenueData} margin={{ top: 12, right: 18, left: 4, bottom: 6 }}>
+                      <RechartsLib.CartesianGrid strokeDasharray="4 4" stroke="rgba(148,163,184,0.35)" />
+                      <RechartsLib.XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 11, fontWeight: 700, fill: "#000000" }}
+                        axisLine={{ stroke: "rgba(0,0,0,0.2)" }}
+                        tickLine={false}
+                      />
+                      <RechartsLib.YAxis
+                        tickFormatter={(v) => `৳${v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : v}`}
+                        tick={{ fontSize: 11, fontWeight: 700, fill: "#000000" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={54}
+                      />
+                      <RechartsLib.Tooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload || !payload.length) return null;
+                          const item = payload[0].payload;
+                          return (
+                            <div className="cta-dark-pill px-3.5 py-2.5 rounded-2xl shadow-xl text-xs space-y-1 border border-white/25">
+                              <p className="font-black text-white">{item.fullLabel} ({item.dateKey})</p>
+                              <p className="font-black text-red-300 font-mono text-sm">মোট রেভিনিউ: ৳{Number(item.revenue || 0).toLocaleString()}</p>
+                              <div className="flex items-center gap-3 text-[10px] text-white/90 font-semibold">
+                                <span>🌐 অনলাইন: ৳{Number(item.onlineRevenue || 0).toLocaleString()}</span>
+                                <span>🛒 POS: ৳{Number(item.posRevenue || 0).toLocaleString()}</span>
+                              </div>
+                              <p className="text-[10px] text-emerald-300 font-bold">অর্ডার সংখ্যা: {item.ordersCount}টি</p>
+                            </div>
+                          );
+                        }}
+                      />
+                      <RechartsLib.Line
+                        type="monotone"
+                        dataKey="revenue"
+                        name="দৈনিক রেভিনিউ"
+                        stroke="#dc2626"
+                        strokeWidth={3.5}
+                        dot={{ r: 4.5, fill: "#ffffff", stroke: "#dc2626", strokeWidth: 2.5 }}
+                        activeDot={{ r: 7, fill: "#dc2626", stroke: "#ffffff", strokeWidth: 2.5 }}
+                      />
+                    </RechartsLib.LineChart>
+                  </RechartsLib.ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full flex flex-col justify-between p-2">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-[#000000] px-1">
+                      <span>দৈনিক রেভিনিউ তালিকা (অফলাইন গ্রাফ)</span>
+                      <span>সর্বমোট: ৳{last7TotalRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="grid grid-cols-7 gap-2 items-end h-40 pt-2">
+                      {last7DaysRevenueData.map((d) => {
+                        const maxRev = Math.max(...last7DaysRevenueData.map(x => x.revenue), 1);
+                        const barH = Math.max(8, Math.round((d.revenue / maxRev) * 100));
+                        return (
+                          <div key={d.dateKey} className="flex flex-col items-center justify-end h-full gap-1">
+                            <span className="text-[9px] font-black text-[#000000]">৳{d.revenue}</span>
+                            <div className="w-full max-w-[26px] rounded-t-lg bg-[#dc2626]" style={{ height: `${barH}%` }}></div>
+                            <span className="text-[9px] font-bold text-[#000000] truncate max-w-full">{d.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

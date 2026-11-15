@@ -118,4 +118,39 @@ class HomePageSettingTest {
     reloadedRepo.deleteHomeSection("custom_eid_banner")
     assertTrue(reloadedRepo.homeSections.value.none { it.id == "custom_eid_banner" })
   }
+
+  @Test
+  fun computeLast7DaysRevenuePoints_sumsValidOrdersAndExcludesCancelled() {
+    val cal = java.util.Calendar.getInstance()
+    val fmt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+    val todayStr = fmt.format(cal.time)
+    cal.add(java.util.Calendar.DAY_OF_YEAR, -2)
+    val twoDaysAgoStr = fmt.format(cal.time)
+
+    val testOrders = listOf(
+      com.example.data.model.Order(
+        id = "O1", customerName = "A", phone = "017", district = "ঢাকা", thana = "ধানমন্ডি",
+        address = "", items = emptyList(), subtotal = 1500, deliveryCharge = 0, discount = 0,
+        total = 1500, paymentMethod = "bKash", status = "Delivered", date = todayStr
+      ),
+      com.example.data.model.Order(
+        id = "O2", customerName = "B", phone = "018", district = "ঢাকা", thana = "গুলশান",
+        address = "", items = emptyList(), subtotal = 2500, deliveryCharge = 0, discount = 0,
+        total = 2500, paymentMethod = "COD", status = "Cancelled", date = todayStr
+      ),
+      com.example.data.model.Order(
+        id = "O3", customerName = "C", phone = "019", district = "ঢাকা", thana = "বনানী",
+        address = "", items = emptyList(), subtotal = 3200, deliveryCharge = 0, discount = 0,
+        total = 3200, paymentMethod = "POS Cash", status = "Confirmed", date = twoDaysAgoStr
+      )
+    )
+
+    val points = com.example.ui.components.computeLast7DaysRevenuePoints(testOrders)
+    assertEquals(7, points.size)
+    assertEquals("আজ", points.last().label)
+    assertEquals(1500, points.last().revenue)
+    assertEquals(1, points.last().orderCount)
+    assertEquals(3200, points[4].revenue)
+    assertEquals(1, points[4].orderCount)
+  }
 }
