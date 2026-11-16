@@ -118,7 +118,14 @@ class LocalInventoryStorageSync(
       // Merge seed metadata (like drawable resource imageUrls) if missing, preserve saved stock
       seedProducts.map { seed ->
         val saved = storedWebsite.find { it.id == seed.id || (it.sku.isNotBlank() && it.sku == seed.sku) }
-        saved ?: seed
+        if (saved != null && saved.regularPrice <= 0 && saved.offerPrice <= 0 && seed.regularPrice > saved.price) {
+          saved.copy(
+            regularPrice = seed.regularPrice,
+            offerPrice = if (saved.price < seed.regularPrice) saved.price else seed.offerPrice
+          )
+        } else {
+          saved ?: seed
+        }
       } + storedWebsite.filter { saved -> seedProducts.none { it.id == saved.id } }
     } else {
       seedProducts
@@ -197,7 +204,9 @@ class LocalInventoryStorageSync(
               isHotSale = o.optBoolean("isHotSale", false),
               isBestDeal = o.optBoolean("isBestDeal", false),
               isB2G1 = o.optBoolean("isB2G1", false),
-              createdAt = o.optLong("createdAt", 0L)
+              createdAt = o.optLong("createdAt", 0L),
+              regularPrice = o.optInt("regularPrice", 0),
+              offerPrice = o.optInt("offerPrice", 0)
             )
           )
         }
@@ -259,6 +268,8 @@ class LocalInventoryStorageSync(
         put("isBestDeal", p.isBestDeal)
         put("isB2G1", p.isB2G1)
         put("createdAt", p.createdAt)
+        put("regularPrice", p.regularPrice)
+        put("offerPrice", p.offerPrice)
       }
       arr.put(o)
     }

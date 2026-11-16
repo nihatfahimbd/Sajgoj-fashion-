@@ -450,7 +450,25 @@ fun StorefrontScreen(
                       expandedSectionIds + section.id
                     }
                   },
-                  onAddComboToCart = onAddComboToCart
+                  onAddComboToCart = onAddComboToCart,
+                  onComboClick = { combo ->
+                    onProductClick(
+                      Product(
+                        id = "combo_${combo.id}",
+                        name = "🎁 ${combo.title}",
+                        price = combo.comboPrice,
+                        regularPrice = combo.regularPrice,
+                        offerPrice = combo.comboPrice,
+                        stock = combo.stock,
+                        category = "কম্বো প্যাক",
+                        imageUrl = combo.imageUrl,
+                        sku = combo.id.uppercase(),
+                        description = combo.description,
+                        rating = 4.9f,
+                        reviewsCount = 24
+                      )
+                    )
+                  }
                 )
               }
             } else {
@@ -628,12 +646,12 @@ private fun StorefrontProductBlockCard(
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp)
           ) {
-            Text(text = section.icon.ifBlank { "✨" }, fontSize = 13.sp, color = Color.White)
+            Text(text = section.icon.ifBlank { "✨" }, fontSize = 14.sp, color = Color.White)
             Text(
               text = section.title,
-              fontSize = 12.5.sp,
+              fontSize = 14.sp,
               fontWeight = FontWeight.Black,
               color = Color.White,
               maxLines = 1,
@@ -679,10 +697,10 @@ private fun StorefrontProductBlockCard(
             ) {
               Text(
                 text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
-                fontSize = 11.sp,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.Black,
                 color = Color.White,
-                modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
               )
             }
           }

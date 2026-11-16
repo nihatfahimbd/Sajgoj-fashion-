@@ -177,12 +177,26 @@ fun ProductDetailDialog(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text(
-              text = "${product.price} ৳",
-              fontSize = 22.sp,
-              fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
-            )
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              Text(
+                text = "${product.price} ৳",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = RoyalMaroon
+              )
+              if (product.regularPrice > product.price) {
+                Text(
+                  text = "${product.regularPrice} ৳",
+                  fontSize = 14.sp,
+                  fontWeight = FontWeight.SemiBold,
+                  color = Color.Gray,
+                  textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                )
+              }
+            }
 
             Row(
               verticalAlignment = Alignment.CenterVertically,

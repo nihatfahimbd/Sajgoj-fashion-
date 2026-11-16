@@ -3362,7 +3362,29 @@ fun ProductFormDialog(
   onSave: (Product) -> Unit
 ) {
   var name by remember { mutableStateOf(product?.name ?: "") }
-  var priceStr by remember { mutableStateOf(product?.price?.toString() ?: "1000") }
+  var priceStr by remember {
+    mutableStateOf(
+      if (product != null) {
+        (if (product.regularPrice > product.price) product.regularPrice else product.price).toString()
+      } else {
+        "1000"
+      }
+    )
+  }
+  var offerPriceStr by remember {
+    mutableStateOf(
+      if (product != null) {
+        val basePrice = if (product.regularPrice > 0) product.regularPrice else product.price
+        when {
+          product.offerPrice > 0 && product.offerPrice < basePrice -> product.offerPrice.toString()
+          product.regularPrice > product.price -> product.price.toString()
+          else -> ""
+        }
+      } else {
+        ""
+      }
+    )
+  }
   var stockStr by remember { mutableStateOf(product?.stock?.toString() ?: "10") }
   var category by remember { mutableStateOf(product?.category ?: categories.firstOrNull()?.name ?: "শাড়ি") }
   var isCategoryDropdownExpanded by remember { mutableStateOf(false) }
@@ -3464,7 +3486,7 @@ fun ProductFormDialog(
           OutlinedTextField(
             value = priceStr,
             onValueChange = { priceStr = it },
-            label = { Text("মূল্য (৳) *") },
+            label = { Text("বিক্রয় মূল্য (৳) *") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
@@ -3472,15 +3494,28 @@ fun ProductFormDialog(
           )
 
           OutlinedTextField(
-            value = stockStr,
-            onValueChange = { stockStr = it },
-            label = { Text("স্টক সংখ্যা *") },
+            value = offerPriceStr,
+            onValueChange = { offerPriceStr = it },
+            label = { Text("অফার প্রাইস (৳)") },
+            placeholder = { Text("ঐচ্ছিক") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+              .weight(1f)
+              .testTag("product_form_offer_price_input")
           )
         }
+
+        OutlinedTextField(
+          value = stockStr,
+          onValueChange = { stockStr = it },
+          label = { Text("স্টক সংখ্যা *") },
+          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+          singleLine = true,
+          shape = RoundedCornerShape(12.dp),
+          modifier = Modifier.fillMaxWidth()
+        )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           // Category selector with dropdown
@@ -4101,17 +4136,22 @@ fun ProductFormDialog(
               formError = "অনুগ্রহ করে পণ্যের নাম লিখুন!"
               return@Button
             }
-            val price = priceStr.toIntOrNull()
-            if (price == null || price <= 0) {
-              formError = "সঠিক মূল্য (৳) প্রদান করুন!"
+            val regularInput = priceStr.toIntOrNull()
+            if (regularInput == null || regularInput <= 0) {
+              formError = "সঠিক বিক্রয় মূল্য (৳) প্রদান করুন!"
               return@Button
             }
+            val offerInput = offerPriceStr.toIntOrNull() ?: 0
+            val hasValidOffer = offerInput in 1 until regularInput
+            val effectivePrice = if (hasValidOffer) offerInput else regularInput
             val stock = stockStr.toIntOrNull() ?: 1
 
             val p = Product(
               id = product?.id ?: "p_${System.currentTimeMillis()}",
               name = name.trim(),
-              price = price,
+              price = effectivePrice,
+              regularPrice = regularInput,
+              offerPrice = if (hasValidOffer) offerInput else 0,
               stock = stock,
               category = category.trim().ifBlank { "অন্যান্য" },
               imageUrl = imageUrl.trim().ifBlank { "res://${R.drawable.banner_eid_special_1792530116809}" },

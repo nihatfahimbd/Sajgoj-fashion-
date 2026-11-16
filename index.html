@@ -366,18 +366,28 @@
     .navy-pill-badge {
       background: linear-gradient(135deg, #0f294a 0%, #1e3a8a 100%) !important;
       color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.3) !important;
-      box-shadow: 0 6px 14px -5px rgba(15, 41, 74, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.42) !important;
+      box-shadow: 0 7px 16px -5px rgba(15, 41, 74, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     }
     .navy-pill-badge,
     .navy-pill-badge * {
       color: #ffffff !important;
     }
+    .red-pill-badge {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #991b1b !important;
+      box-shadow: 0 5px 12px -4px rgba(220, 38, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    }
+    .red-pill-badge,
+    .red-pill-badge * {
+      color: #ffffff !important;
+    }
     .navy-pill-action {
       background: linear-gradient(135deg, #0f294a 0%, #1e3a8a 100%) !important;
       color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.3) !important;
-      box-shadow: 0 5px 12px -4px rgba(15, 41, 74, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+      box-shadow: 0 5px 12px -4px rgba(15, 41, 74, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
       transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease !important;
     }
     .navy-pill-action:hover {
@@ -388,6 +398,194 @@
     .navy-pill-action,
     .navy-pill-action * {
       color: #ffffff !important;
+    }
+
+    /* ========================================================= */
+    /* HOME PRODUCT DISPLAY CARD: NAVY BODY + COLLECTION RED BOX */
+    /* Mobile-First Responsive Padding, Typography & Wrapping    */
+    /* ========================================================= */
+    .storefront-navy-card {
+      background: linear-gradient(175deg, #0f294a 0%, #172554 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.72) !important;
+      border-radius: 16px;
+      box-shadow: 0 12px 26px -8px rgba(15, 41, 74, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    }
+    .storefront-navy-card-body {
+      background: linear-gradient(165deg, #0f294a 0%, #1e3a8a 100%) !important;
+      color: #ffffff !important;
+      padding: 10px;
+      gap: 6px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .storefront-navy-card-body,
+    .storefront-navy-card-body * {
+      color: #ffffff !important;
+    }
+    .storefront-card-meta-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+      width: 100%;
+    }
+    /* Same vivid red gradient + border style as "সকল কালেকশন" active pill */
+    .storefront-title-box {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #991b1b !important;
+      border-radius: 10px;
+      padding: 5px 7px;
+      font-size: 12px;
+      line-height: 1.3;
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+    }
+    .storefront-title-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.6em;
+      line-height: inherit;
+    }
+    .storefront-price-box {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #991b1b !important;
+      border-radius: 10px;
+      padding: 4px 7px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 2px 5px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    }
+    .storefront-price-old {
+      color: rgba(255, 255, 255, 0.88) !important;
+      text-decoration: line-through !important;
+      font-size: 11px;
+      line-height: 1.15;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .storefront-price-current {
+      color: #ffffff !important;
+      font-size: 14px;
+      line-height: 1.15;
+      font-weight: 900;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    /* Matching pill style next to "সকল কালেকশন" (high-contrast rose-red with crisp white text) */
+    .storefront-view-btn {
+      background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.72) !important;
+      font-size: 12px;
+      line-height: 1.2;
+      padding: 6px 10px;
+      min-height: 30px;
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 6px 14px -5px rgba(225, 29, 72, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+      transition: transform 0.16s ease, filter 0.16s ease !important;
+    }
+    .storefront-view-btn:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 639px) {
+      .storefront-navy-card {
+        border-radius: 12px !important;
+        border-width: 1px !important;
+      }
+      .storefront-navy-card-body {
+        padding: 5px;
+        gap: 4px;
+      }
+      .storefront-card-meta-group {
+        gap: 3.5px;
+      }
+      .storefront-title-box {
+        padding: 4px 5px;
+        border-radius: 8px;
+        border-width: 1px !important;
+        font-size: 10.5px;
+        line-height: 1.28;
+      }
+      .storefront-title-text {
+        min-height: 2.56em;
+      }
+      .storefront-price-box {
+        padding: 3px 5px;
+        border-radius: 8px;
+        border-width: 1px !important;
+        gap: 1px 4px;
+      }
+      .storefront-price-old {
+        font-size: 9px;
+      }
+      .storefront-price-current {
+        font-size: 11.5px;
+      }
+      .storefront-view-btn {
+        font-size: 10px;
+        line-height: 1.15;
+        padding: 4px 5px;
+        min-height: 26px;
+        border-width: 1px !important;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .storefront-navy-card {
+        border-radius: 10px !important;
+      }
+      .storefront-navy-card-body {
+        padding: 4px;
+        gap: 3px;
+      }
+      .storefront-card-meta-group {
+        gap: 3px;
+      }
+      .storefront-title-box {
+        padding: 3px 4px;
+        border-radius: 7px;
+        font-size: 9.75px;
+        line-height: 1.24;
+      }
+      .storefront-title-text {
+        min-height: 2.48em;
+      }
+      .storefront-price-box {
+        padding: 2.5px 4px;
+        border-radius: 7px;
+        gap: 1px 3px;
+      }
+      .storefront-price-old {
+        font-size: 8.25px;
+      }
+      .storefront-price-current {
+        font-size: 10.5px;
+      }
+      .storefront-view-btn {
+        font-size: 9.5px;
+        padding: 3.5px 4px;
+        min-height: 24px;
+      }
     }
 
     /* ========================================================= */
@@ -595,18 +793,18 @@
 
     // Seed Data
     const initialProducts = [
-      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "", colors: ["রয়েল রেড", "মেরুন", "গোল্ডেন", "কালো", "রোজ পিংক"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500001000 },
-      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["অ্যান্টিক গোল্ড", "রয়েল রুবি", "পান্না সবুজ"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500002000 },
-      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "", colors: ["২২ ক্যারেট গোল্ড", "রোজ গোল্ড"], sizes: ["২.২", "২.৪", "২.৬", "২.৮"], isHotSale: false, isBestDeal: true, createdAt: 1729500003000 },
-      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রুবি রেড", "পান্না গ্রিন", "স্যাফায়ার ব্লু"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500004000 },
-      { id: "p5", name: "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট (Premium T-Shirt)", price: 550, stock: 35, category: "টি-শার্ট", images: [imgTshirt], sku: "SAJ-TS01", description: "১০০% প্রিমিয়াম সুতি কম্বড কটন ফেব্রিক দিয়ে তৈরি অত্যন্ত আরামদায়ক ও ট্রেন্ডি টি-শার্ট। ডেইলি ওয়্যার ও ক্যাজুয়াল আউটিংয়ের জন্য সেরা।", rating: 4.9, reviewsCount: 38, sourceUrl: "", colors: ["কালো", "সাদা", "নেভি ব্লু", "মেরুন", "অলিভ"], sizes: ["S", "M", "L", "XL", "XXL"], isHotSale: true, isBestDeal: true, createdAt: 1729500005000 },
-      { id: "p6", name: "ডিজাইনার এম্ব্রয়ডারি কটন কুর্তি ও জামা (Kameez)", price: 1750, stock: 16, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM02", description: "সফট পিওর কটনের ওপর রাজকীয় সুতার নিখুঁত এম্ব্রয়ডারি কাজ করা ডিজাইনার রেডিমেড কুর্তি ও কামিজ। আরামদায়ক ফিটিং ও নজরকাড়া ডিজাইন।", rating: 4.8, reviewsCount: 29, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রোজ পিংক", "ফিরোজা ব্লু", "লেমন ইয়োলো", "মেরুন"], sizes: ["৩৬", "৩৮", "৪০", "৪২", "৪৪"], isHotSale: true, isBestDeal: true, createdAt: 1729500006000 },
-      { id: "p7", name: "স্লিম-ফিট স্ট্রেচেবল ক্যাজুয়াল চিনো প্যান্ট", price: 1250, stock: 22, category: "প্যান্ট", images: [imgPants], sku: "SAJ-PT03", description: "উচ্চমানের স্ট্রেচেবল কটন টুইল ফেব্রিক নির্মিত প্রিমিয়াম চিনো প্যান্ট। অফিস ও ক্যাজুয়াল আউটিংয়ের জন্য অত্যন্ত আরামদায়ক।", rating: 4.7, reviewsCount: 19, sourceUrl: "", colors: ["কালো", "নেভি ব্লু", "খাকি", "অ্যাশ"], sizes: ["২৮", "৩০", "৩২", "৩৪", "৩৬", "৩৮"], isHotSale: false, isBestDeal: true, createdAt: 1729500007000 },
-      { id: "p8", name: "সফট সিমলেস বডি ফিট ইনার ওয়্যার / ব্রা (Innerwear)", price: 690, stock: 40, category: "ইনার ওয়্যার", images: [imgInnerwear], sku: "SAJ-IN04", description: "নরম ব্রেথেবল মাইক্রোফাইবার ফেব্রিকের তৈরি ওয়্যার-ফ্রি আরামদায়ক সিমলেস ইনার ওয়্যার। নিখুঁত সাপোর্ট ও শেপিং নিশ্চিত করে।", rating: 4.8, reviewsCount: 34, sourceUrl: "", colors: ["স্কিন", "কালো", "সাদা", "মেরুন"], sizes: ["32B", "34B", "36B", "38B", "40B"], isHotSale: false, isBestDeal: false, createdAt: 1729500008000 },
-      { id: "p9", name: "কিউট পার্টি ফ্রক ও বেবি ড্রেস (বাচ্চাদের ড্রেস)", price: 990, stock: 20, category: "বাচ্চাদের পোশাক", images: [imgKids], sku: "SAJ-KD05", description: "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।", rating: 4.9, reviewsCount: 22, sourceUrl: "", colors: ["বেবি পিংক", "লাল", "আকাশি", "হলুদ"], sizes: ["১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮"], isHotSale: true, isBestDeal: true, createdAt: 1729500009000 },
-      { id: "p10", name: "ঐতিহ্যবাহী ঢাকাই জামদানি শাড়ি (Golden Zari)", price: 4500, stock: 10, category: "শাড়ি", images: [imgSharee], sku: "SAJ-SR10", description: "হাতে বোনা আসল দেশি ঢাকাই জামদানি শাড়ি, সোনালী জরির সূক্ষ্ম নকশা সমৃদ্ধ। বিয়ে ও উৎসবের সাজে অনন্য।", rating: 4.9, reviewsCount: 31, sourceUrl: "", bogo: false, colors: ["রয়েল রেড", "গোল্ডেন", "অফ হোয়াইট"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500010000 },
-      { id: "p11", name: "রয়েল ব্রাইডাল পার্ল ও কুন্দন সেট (Full Set)", price: 3850, stock: 7, category: "ব্রাইডাল সেট", images: [imgChoker], sku: "SAJ-BR11", description: "সীতাহার, চোকার, ঝুমকা ও টিকলিসহ সম্পূর্ণ রয়্যাল ব্রাইডাল জুয়েলারি সেট।", rating: 5.0, reviewsCount: 27, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["গোল্ডেন ও মুক্তা", "রুবি গোল্ড"], sizes: ["Free Size"], isHotSale: false, isBestDeal: true, createdAt: 1729500011000 },
-      { id: "p12", name: "ডিজাইনার লং কটন থ্রি-পিস কালেকশন", price: 1890, stock: 18, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM12", description: "পিওর কটন কাপড়ের ওপর নিখুঁত কাজের প্রিমিয়াম থ্রি-পিস ও ওড়না সেট।", rating: 4.8, reviewsCount: 16, sourceUrl: "", colors: ["মেরুন", "নীল", "জলপাই"], sizes: ["৩৮", "৪০", "৪২", "৪৪"], isHotSale: true, isBestDeal: true, createdAt: 1729500012000 }
+      { id: "p1", name: "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", price: 3500, regularPrice: 4200, offerPrice: 3500, stock: 8, category: "শাড়ি", images: [imgSharee], sku: "SAJ-001", description: "প্রিমিয়াম জামদানি ও কাতান সমৃদ্ধ ডিজাইনার শাড়ি। উৎসব এবং জমকালো সাজের জন্য সম্পূর্ণ উপযুক্ত। সাথে ম্যাচিং আনস্টিচড ব্লাউজ পিস রয়েছে।", rating: 4.8, reviewsCount: 24, sourceUrl: "", colors: ["রয়েল রেড", "মেরুন", "গোল্ডেন", "কালো", "রোজ পিংক"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500001000 },
+      { id: "p2", name: "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", price: 2999, regularPrice: 3650, offerPrice: 2999, stock: 15, category: "নেকলেস", images: [imgChoker], sku: "SAJ-002", description: "অ্যান্টিক মাইক্রো গোল্ড প্লেটেড রাজওয়াড়ি চোকার সেট। কুন্দন, রত্নপাথর ও মুক্তোর নিখুঁত হাতের কাজ। সাথে স্টেটমেন্ট ঝুমকা।", rating: 4.9, reviewsCount: 41, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["অ্যান্টিক গোল্ড", "রয়েল রুবি", "পান্না সবুজ"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500002000 },
+      { id: "p3", name: "সিটি গোল্ড রাজকীয় বালা ও চুড়ি সেট (৪ পিস)", price: 1250, regularPrice: 1550, offerPrice: 1250, stock: 4, category: "চুড়ি", images: [imgBangles], sku: "SAJ-003", description: "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।", rating: 4.5, reviewsCount: 12, sourceUrl: "", colors: ["২২ ক্যারেট গোল্ড", "রোজ গোল্ড"], sizes: ["২.২", "২.৪", "২.৬", "২.৮"], isHotSale: false, isBestDeal: true, createdAt: 1729500003000 },
+      { id: "p4", name: "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", price: 890, regularPrice: 1150, offerPrice: 890, stock: 20, category: "ব্রেসলেট", images: [imgBracelet], sku: "SAJ-004", description: "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।", rating: 4.6, reviewsCount: 8, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রুবি রেড", "পান্না গ্রিন", "স্যাফায়ার ব্লু"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500004000 },
+      { id: "p5", name: "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট (Premium T-Shirt)", price: 550, regularPrice: 750, offerPrice: 550, stock: 35, category: "টি-শার্ট", images: [imgTshirt], sku: "SAJ-TS01", description: "১০০% প্রিমিয়াম সুতি কম্বড কটন ফেব্রিক দিয়ে তৈরি অত্যন্ত আরামদায়ক ও ট্রেন্ডি টি-শার্ট। ডেইলি ওয়্যার ও ক্যাজুয়াল আউটিংয়ের জন্য সেরা।", rating: 4.9, reviewsCount: 38, sourceUrl: "", colors: ["কালো", "সাদা", "নেভি ব্লু", "মেরুন", "অলিভ"], sizes: ["S", "M", "L", "XL", "XXL"], isHotSale: true, isBestDeal: true, createdAt: 1729500005000 },
+      { id: "p6", name: "ডিজাইনার এম্ব্রয়ডারি কটন কুর্তি ও জামা (Kameez)", price: 1750, regularPrice: 2150, offerPrice: 1750, stock: 16, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM02", description: "সফট পিওর কটনের ওপর রাজকীয় সুতার নিখুঁত এম্ব্রয়ডারি কাজ করা ডিজাইনার রেডিমেড কুর্তি ও কামিজ। আরামদায়ক ফিটিং ও নজরকাড়া ডিজাইন।", rating: 4.8, reviewsCount: 29, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["রোজ পিংক", "ফিরোজা ব্লু", "লেমন ইয়োলো", "মেরুন"], sizes: ["৩৬", "৩৮", "৪০", "৪২", "৪৪"], isHotSale: true, isBestDeal: true, createdAt: 1729500006000 },
+      { id: "p7", name: "স্লিম-ফিট স্ট্রেচেবল ক্যাজুয়াল চিনো প্যান্ট", price: 1250, regularPrice: 1590, offerPrice: 1250, stock: 22, category: "প্যান্ট", images: [imgPants], sku: "SAJ-PT03", description: "উচ্চমানের স্ট্রেচেবল কটন টুইল ফেব্রিক নির্মিত প্রিমিয়াম চিনো প্যান্ট। অফিস ও ক্যাজুয়াল আউটিংয়ের জন্য অত্যন্ত আরামদায়ক।", rating: 4.7, reviewsCount: 19, sourceUrl: "", colors: ["কালো", "নেভি ব্লু", "খাকি", "অ্যাশ"], sizes: ["২৮", "৩০", "৩২", "৩৪", "৩৬", "৩৮"], isHotSale: false, isBestDeal: true, createdAt: 1729500007000 },
+      { id: "p8", name: "সফট সিমলেস বডি ফিট ইনার ওয়্যার / ব্রা (Innerwear)", price: 690, regularPrice: 890, offerPrice: 690, stock: 40, category: "ইনার ওয়্যার", images: [imgInnerwear], sku: "SAJ-IN04", description: "নরম ব্রেথেবল মাইক্রোফাইবার ফেব্রিকের তৈরি ওয়্যার-ফ্রি আরামদায়ক সিমলেস ইনার ওয়্যার। নিখুঁত সাপোর্ট ও শেপিং নিশ্চিত করে।", rating: 4.8, reviewsCount: 34, sourceUrl: "", colors: ["স্কিন", "কালো", "সাদা", "মেরুন"], sizes: ["32B", "34B", "36B", "38B", "40B"], isHotSale: false, isBestDeal: false, createdAt: 1729500008000 },
+      { id: "p9", name: "কিউট পার্টি ফ্রক ও বেবি ড্রেস (বাচ্চাদের ড্রেস)", price: 990, regularPrice: 1290, offerPrice: 990, stock: 20, category: "বাচ্চাদের পোশাক", images: [imgKids], sku: "SAJ-KD05", description: "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।", rating: 4.9, reviewsCount: 22, sourceUrl: "", colors: ["বেবি পিংক", "লাল", "আকাশি", "হলুদ"], sizes: ["১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮"], isHotSale: true, isBestDeal: true, createdAt: 1729500009000 },
+      { id: "p10", name: "ঐতিহ্যবাহী ঢাকাই জামদানি শাড়ি (Golden Zari)", price: 4500, regularPrice: 5400, offerPrice: 4500, stock: 10, category: "শাড়ি", images: [imgSharee], sku: "SAJ-SR10", description: "হাতে বোনা আসল দেশি ঢাকাই জামদানি শাড়ি, সোনালী জরির সূক্ষ্ম নকশা সমৃদ্ধ। বিয়ে ও উৎসবের সাজে অনন্য।", rating: 4.9, reviewsCount: 31, sourceUrl: "", bogo: false, colors: ["রয়েল রেড", "গোল্ডেন", "অফ হোয়াইট"], sizes: ["Free Size"], isHotSale: true, isBestDeal: true, createdAt: 1729500010000 },
+      { id: "p11", name: "রয়েল ব্রাইডাল পার্ল ও কুন্দন সেট (Full Set)", price: 3850, regularPrice: 4600, offerPrice: 3850, stock: 7, category: "ব্রাইডাল সেট", images: [imgChoker], sku: "SAJ-BR11", description: "সীতাহার, চোকার, ঝুমকা ও টিকলিসহ সম্পূর্ণ রয়্যাল ব্রাইডাল জুয়েলারি সেট।", rating: 5.0, reviewsCount: 27, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["গোল্ডেন ও মুক্তা", "রুবি গোল্ড"], sizes: ["Free Size"], isHotSale: false, isBestDeal: true, createdAt: 1729500011000 },
+      { id: "p12", name: "ডিজাইনার লং কটন থ্রি-পিস কালেকশন", price: 1890, regularPrice: 2350, offerPrice: 1890, stock: 18, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM12", description: "পিওর কটন কাপড়ের ওপর নিখুঁত কাজের প্রিমিয়াম থ্রি-পিস ও ওড়না সেট।", rating: 4.8, reviewsCount: 16, sourceUrl: "", colors: ["মেরুন", "নীল", "জলপাই"], sizes: ["৩৮", "৪০", "৪২", "৪৪"], isHotSale: true, isBestDeal: true, createdAt: 1729500012000 }
     ];
 
     const initialCategories = [
@@ -1518,11 +1716,19 @@
       // Main Reactive States
       const [products, setProducts] = useState(() => {
         const stored = getStored("products", initialProducts);
-        const normalized = (stored || []).map(p => ({
-          ...p,
-          colors: (p.colors || []).map(cleanVariation).filter(Boolean),
-          sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
-        }));
+        const seedById = Object.fromEntries(initialProducts.map(sp => [sp.id, sp]));
+        const normalized = (stored || []).map(p => {
+          const seed = seedById[p.id];
+          const fallbackRegular = (!p.regularPrice && seed && Number(p.price) === Number(seed.price)) ? seed.regularPrice : (Number(p.regularPrice) || 0);
+          const fallbackOffer = (!p.offerPrice && seed && Number(p.price) === Number(seed.price)) ? seed.offerPrice : (Number(p.offerPrice) || 0);
+          return {
+            ...p,
+            regularPrice: fallbackRegular,
+            offerPrice: fallbackOffer,
+            colors: (p.colors || []).map(cleanVariation).filter(Boolean),
+            sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
+          };
+        });
         return mergeWithPosLocalStorage(normalized);
       });
       const [combos, setCombos] = useState(() => getStored("combos", initialCombos));
@@ -4431,6 +4637,7 @@
                     setProductForm({
                       name: "",
                       price: "",
+                      offerPrice: "",
                       stock: 5,
                       category: categories[0]?.name || "শাড়ি",
                       images: [],
@@ -6339,6 +6546,7 @@
                         setProductForm({ 
                           name: "", 
                           price: "", 
+                          offerPrice: "",
                           stock: 5, 
                           category: categories[0]?.name || "শাড়ি", 
                           images: [], 
@@ -11753,15 +11961,22 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                   const renderCompactProductCard = (p, extraClass = "") => {
                     const isWishlisted = wishlist.some(item => item.id === p.id);
-                    const hasVariantChoices = (p.colors && p.colors.length > 1) || (p.sizes && p.sizes.length > 1);
+                    const sellingPrice = Number(p.price || 0);
+                    const regPrice = Number(p.regularPrice || 0);
+                    const hasDiscount = regPrice > sellingPrice && sellingPrice > 0;
+                    const openProductDetail = () => {
+                      setViewProduct(p);
+                      setSelectedDetailImg(0);
+                      setProductQty(1);
+                    };
                     return (
                       <div
                         key={p.id}
-                        className={`red-black-photo-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col group ${extraClass}`}
+                        className={`storefront-navy-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col group ${extraClass}`}
                       >
                         <div
-                          className="aspect-square bg-white/35 overflow-hidden relative cursor-pointer"
-                          onClick={() => { setViewProduct(p); setSelectedDetailImg(0); setProductQty(1); }}
+                          className="aspect-square bg-white/90 overflow-hidden relative cursor-pointer"
+                          onClick={openProductDetail}
                         >
                           <img
                             src={p.images?.[0] || imgSharee}
@@ -11806,49 +12021,34 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ) : null}
                         </div>
 
-                        <div className="p-1.5 sm:p-3 flex-1 flex flex-col justify-between gap-1.5 min-w-0 w-full overflow-hidden">
-                          <div className="min-w-0 w-full">
+                        <div className="storefront-navy-card-body flex-1 flex flex-col justify-between overflow-hidden">
+                          <div className="storefront-card-meta-group">
                             <h4
-                              onClick={() => { setViewProduct(p); setSelectedDetailImg(0); setProductQty(1); }}
-                              className="product-title font-black text-[10px] sm:text-xs leading-tight text-[#000000] hover:underline cursor-pointer"
+                              onClick={openProductDetail}
+                              className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
                             >
-                              <span className="line-clamp-2 leading-tight">{p.name}</span>
+                              <span className="storefront-title-text text-white">{p.name}</span>
                             </h4>
-                            <div className="flex items-center justify-between gap-1 mt-1 min-w-0 w-full">
-                              <span className="text-[8px] sm:text-[10px] text-[#000000] font-extrabold bg-white/95 px-1.5 py-0.5 rounded-full truncate min-w-0 max-w-[66%] shadow-2xs">
-                                {p.category}
-                              </span>
-                              <span className="product-rating-yellow text-[8.5px] sm:text-[10px] shrink-0">
-                                ★{p.rating || 5.0}
+
+                            <div className="storefront-price-box">
+                              {hasDiscount && (
+                                <span className="storefront-price-old">
+                                  ৳{regPrice.toLocaleString()}
+                                </span>
+                              )}
+                              <span className="storefront-price-current">
+                                ৳{sellingPrice.toLocaleString()}
                               </span>
                             </div>
                           </div>
 
-                          <div className="pt-1 border-t border-red-900/20 flex items-center justify-between gap-1 min-w-0 w-full overflow-hidden">
-                            <span className="product-price text-[11px] sm:text-sm font-black text-[#000000]">
-                              ৳{Number(p.price || 0).toLocaleString()}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (hasVariantChoices) {
-                                  setViewProduct(p);
-                                  setSelectedDetailImg(0);
-                                  setProductQty(1);
-                                } else {
-                                  addToCart(p, 1);
-                                }
-                              }}
-                              disabled={p.stock <= 0}
-                              className={`text-[9px] sm:text-[11px] px-1.5 sm:px-3 py-1 rounded-full font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
-                                p.stock > 0
-                                  ? "cta-dark-pill active:scale-95"
-                                  : "bg-white/50 text-[#000000] border border-black/30 cursor-not-allowed"
-                              }`}
-                            >
-                              {p.stock > 0 ? (hasVariantChoices ? "বাছুন" : "অর্ডার") : "শেষ"}
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={openProductDetail}
+                            className="storefront-view-btn rounded-full font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95"
+                          >
+                            {p.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
+                          </button>
                         </div>
                       </div>
                     );
@@ -12205,9 +12405,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       >
                         {/* Unified Navy Blue Circle-Pill Header + Matching "আরো দেখুন ›" */}
                         <div className="flex items-center justify-between gap-2 min-w-0">
-                          <div className="navy-pill-badge inline-flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full min-w-0 max-w-[66%]">
-                            <span className="text-xs sm:text-sm shrink-0">{sec.icon || "✨"}</span>
-                            <h3 className="text-[11.5px] sm:text-sm font-black tracking-tight truncate">
+                          <div className="navy-pill-badge inline-flex items-center gap-1.5 px-3.5 sm:px-4.5 py-1.5 rounded-full min-w-0 max-w-[66%]">
+                            <span className="text-sm sm:text-base shrink-0">{sec.icon || "✨"}</span>
+                            <h3 className="text-[13.5px] sm:text-base font-black tracking-tight truncate">
                               {sec.title}
                             </h3>
                           </div>
@@ -12215,7 +12415,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <button
                             type="button"
                             onClick={handleSeeMoreClick}
-                            className="navy-pill-action text-[11px] sm:text-xs font-black flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer active:scale-95 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full"
+                            className="navy-pill-action text-[11.5px] sm:text-xs font-black flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer active:scale-95 px-3 sm:px-4 py-1.5 rounded-full"
                           >
                             <span>{isExpanded ? "সংক্ষিপ্ত করুন" : "আরো দেখুন"}</span>
                             <span className="text-sm font-black leading-none">{isExpanded ? "‹" : "›"}</span>
@@ -12339,61 +12539,85 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                     const renderComboCompactCard = (combo, wrapperStyle = null) => {
                       const bundledItems = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
+                      const comboSellingPrice = Number(combo.comboPrice || 0);
+                      const comboOriginalPrice = Number(combo.originalPrice || 0);
+                      const hasComboDiscount = comboOriginalPrice > comboSellingPrice && comboSellingPrice > 0;
+                      const openComboDetail = () => {
+                        setViewProduct({
+                          id: combo.id,
+                          name: combo.title,
+                          price: comboSellingPrice,
+                          regularPrice: comboOriginalPrice,
+                          offerPrice: comboSellingPrice,
+                          stock: combo.stock,
+                          category: "কম্বো প্যাক",
+                          images: [combo.image || bundledItems[0]?.images?.[0] || banner1, ...bundledItems.map(bi => bi.images?.[0]).filter(Boolean)],
+                          sku: (combo.id || "COMBO").toUpperCase(),
+                          description: `${combo.description || combo.subtitle || "বিশেষ কম্বো প্যাক"} (${bundledItems.map(bi => bi.name).join(" + ")})`,
+                          rating: 4.9,
+                          reviewsCount: 32,
+                          colors: [],
+                          sizes: [],
+                          isCombo: true,
+                          comboObj: combo
+                        });
+                        setSelectedDetailImg(0);
+                        setProductQty(1);
+                      };
                       return (
                         <div key={combo.id} style={wrapperStyle || undefined} className="snap-start">
-                          <div className="red-black-photo-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between h-full group">
-                            <div>
-                              <div className="aspect-square bg-black/20 overflow-hidden relative">
-                                <img
-                                  src={combo.image || (bundledItems[0]?.images?.[0]) || banner1}
-                                  alt={combo.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                                  onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25 pointer-events-none"></div>
-                                <span className="absolute top-1.5 left-1.5 cta-dark-pill text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow">
-                                  🎁 COMBO
+                          <div className="storefront-navy-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between h-full group">
+                            <div
+                              onClick={openComboDetail}
+                              className="aspect-square bg-black/20 overflow-hidden relative cursor-pointer"
+                            >
+                              <img
+                                src={combo.image || (bundledItems[0]?.images?.[0]) || banner1}
+                                alt={combo.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25 pointer-events-none"></div>
+                              <span className="absolute top-1.5 left-1.5 cta-dark-pill text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow">
+                                🎁 COMBO
+                              </span>
+                              {combo.savings > 0 && (
+                                <span className="absolute top-1.5 right-1.5 bg-emerald-600 keep-white-text text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow border border-white/40">
+                                  সেভ ৳{combo.savings}
                                 </span>
-                                {combo.savings > 0 && (
-                                  <span className="absolute top-1.5 right-1.5 bg-emerald-600 keep-white-text text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow border border-white/40">
-                                    সেভ ৳{combo.savings}
-                                  </span>
-                                )}
-                                <span className="absolute bottom-1.5 left-1.5 bg-black/75 keep-white-text text-[8px] font-bold px-1.5 py-0.5 rounded-full">
-                                  {bundledItems.length || 2} পিস সেট
-                                </span>
-                              </div>
-
-                              <div className="p-1.5 sm:p-2.5 space-y-1 min-w-0 w-full overflow-hidden">
-                                <h4 className="product-title font-black text-[10px] sm:text-xs leading-tight text-[#000000]">
-                                  <span className="line-clamp-2 leading-tight">{combo.title}</span>
-                                </h4>
-                                <div className="flex items-center justify-between gap-1 mt-0.5">
-                                  <span className="text-[8px] sm:text-[9.5px] text-[#000000] font-extrabold bg-white/95 px-1.5 py-0.5 rounded-full truncate max-w-[68%]">
-                                    {combo.subtitle || "কম্বো বান্ডেল"}
-                                  </span>
-                                  <span className="product-rating-yellow text-[8.5px] sm:text-[10px] shrink-0">★4.9</span>
-                                </div>
-                              </div>
+                              )}
+                              <span className="absolute bottom-1.5 left-1.5 bg-black/75 keep-white-text text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+                                {bundledItems.length || 2} পিস সেট
+                              </span>
                             </div>
 
-                            <div className="px-1.5 pb-1.5 sm:px-2.5 sm:pb-2.5 pt-1 border-t border-red-900/20 flex items-center justify-between gap-1 min-w-0 w-full overflow-hidden">
-                              <div className="min-w-0">
-                                <span className="product-price text-[10.5px] sm:text-sm font-black text-[#000000]">
-                                  ৳{Number(combo.comboPrice || 0).toLocaleString()}
-                                </span>
+                            <div className="storefront-navy-card-body flex-1 flex flex-col justify-between overflow-hidden">
+                              <div className="storefront-card-meta-group">
+                                <h4
+                                  onClick={openComboDetail}
+                                  className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
+                                >
+                                  <span className="storefront-title-text text-white">{combo.title}</span>
+                                </h4>
+
+                                <div className="storefront-price-box">
+                                  {hasComboDiscount && (
+                                    <span className="storefront-price-old">
+                                      ৳{comboOriginalPrice.toLocaleString()}
+                                    </span>
+                                  )}
+                                  <span className="storefront-price-current">
+                                    ৳{comboSellingPrice.toLocaleString()}
+                                  </span>
+                                </div>
                               </div>
+
                               <button
                                 type="button"
-                                onClick={() => addComboToCart(combo)}
-                                disabled={combo.stock <= 0}
-                                className={`text-[9px] sm:text-[11px] px-1.5 sm:px-2.5 py-1 rounded-full font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
-                                  combo.stock > 0
-                                    ? "cta-dark-pill active:scale-95"
-                                    : "bg-white/50 text-[#000000] border border-black/30 cursor-not-allowed"
-                                }`}
+                                onClick={openComboDetail}
+                                className="storefront-view-btn rounded-full font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95"
                               >
-                                {combo.stock > 0 ? "🛒 কার্ট" : "শেষ"}
+                                {combo.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
                               </button>
                             </div>
                           </div>
@@ -12407,16 +12631,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         className="liquid-glass-surface rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0"
                       >
                         <div className="flex items-center justify-between gap-2 min-w-0">
-                          <div className="navy-pill-badge inline-flex items-center gap-1.5 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full min-w-0 max-w-[66%]">
-                            <span className="text-xs sm:text-sm shrink-0">{sec?.icon || "🎁"}</span>
-                            <h3 className="text-[11.5px] sm:text-sm font-black tracking-tight truncate">
+                          <div className="navy-pill-badge inline-flex items-center gap-1.5 px-3.5 sm:px-4.5 py-1.5 rounded-full min-w-0 max-w-[66%]">
+                            <span className="text-sm sm:text-base shrink-0">{sec?.icon || "🎁"}</span>
+                            <h3 className="text-[13.5px] sm:text-base font-black tracking-tight truncate">
                               {sec?.title || "কম্বো প্যাক"}
                             </h3>
                           </div>
                           <button
                             type="button"
                             onClick={() => setExpandedHomeSections(prev => ({ ...prev, [secId]: !isExpanded }))}
-                            className="navy-pill-action text-[11px] sm:text-xs font-black flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer active:scale-95 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full"
+                            className="navy-pill-action text-[11.5px] sm:text-xs font-black flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer active:scale-95 px-3 sm:px-4 py-1.5 rounded-full"
                           >
                             <span>{isExpanded ? "সংক্ষিপ্ত করুন" : "আরো দেখুন"}</span>
                             <span className="text-sm font-black leading-none">{isExpanded ? "‹" : "›"}</span>
@@ -12452,6 +12676,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         id: reel.id,
                         name: reel.title,
                         price: Number(reel.price || 1490),
+                        regularPrice: Number(reel.regularPrice || Math.round((Number(reel.price || 1490)) * 1.2)),
                         stock: 10,
                         category: "রিলস স্পেশাল",
                         images: [reel.poster || banner1],
@@ -12459,6 +12684,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         colors: [],
                         sizes: []
                       };
+
+                      const sellingPrice = Number(effectiveProduct.price || 0);
+                      const regPrice = Number(effectiveProduct.regularPrice || 0);
+                      const hasDiscount = regPrice > sellingPrice && sellingPrice > 0;
 
                       const openOriginalReelModal = () => {
                         setActiveReelIndex(realIndex >= 0 ? realIndex : 0);
@@ -12470,7 +12699,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <div key={reel.id} style={wrapperStyle || undefined} className="snap-start">
                           <div
                             onClick={openOriginalReelModal}
-                            className="red-black-photo-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col h-full group cursor-pointer"
+                            className="storefront-navy-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col h-full group cursor-pointer"
                           >
                             {/* Square Video Stage matching Product Card dimensions */}
                             <div className="aspect-square bg-black overflow-hidden relative">
@@ -12511,41 +12740,34 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               </div>
                             </div>
 
-                            <div className="p-1.5 sm:p-3 flex-1 flex flex-col justify-between gap-1.5 min-w-0 w-full overflow-hidden">
-                              <div className="min-w-0 w-full">
-                                <h4 className="product-title font-black text-[10px] sm:text-xs leading-tight text-[#000000]">
-                                  <span className="line-clamp-2 leading-tight">{effectiveProduct.name}</span>
+                            <div className="storefront-navy-card-body flex-1 flex flex-col justify-between overflow-hidden">
+                              <div className="storefront-card-meta-group">
+                                <h4 className="storefront-title-box font-black">
+                                  <span className="storefront-title-text text-white">{effectiveProduct.name}</span>
                                 </h4>
-                                <div className="flex items-center justify-between gap-1 mt-1 min-w-0 w-full">
-                                  <span className="text-[8px] sm:text-[10px] text-[#000000] font-extrabold bg-white/95 px-1.5 py-0.5 rounded-full truncate min-w-0 max-w-[66%] shadow-2xs">
-                                    🎬 {effectiveProduct.category || "ভিডিও রিল"}
-                                  </span>
-                                  <span className="product-rating-yellow text-[8.5px] sm:text-[10px] shrink-0">
-                                    ★{effectiveProduct.rating || 4.9}
+
+                                <div className="storefront-price-box">
+                                  {hasDiscount && (
+                                    <span className="storefront-price-old">
+                                      ৳{regPrice.toLocaleString()}
+                                    </span>
+                                  )}
+                                  <span className="storefront-price-current">
+                                    ৳{sellingPrice.toLocaleString()}
                                   </span>
                                 </div>
                               </div>
 
-                              <div className="pt-1 border-t border-red-900/20 flex items-center justify-between gap-1 min-w-0 w-full overflow-hidden">
-                                <span className="product-price text-[11px] sm:text-sm font-black text-[#000000]">
-                                  ৳{Number(effectiveProduct.price || 0).toLocaleString()}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    addToCart(effectiveProduct, 1);
-                                  }}
-                                  disabled={effectiveProduct.stock <= 0}
-                                  className={`text-[9px] sm:text-[11px] px-1.5 sm:px-2.5 py-1 rounded-full font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
-                                    effectiveProduct.stock > 0
-                                      ? "cta-dark-pill active:scale-95"
-                                      : "bg-white/50 text-[#000000] border border-black/30 cursor-not-allowed"
-                                  }`}
-                                >
-                                  {effectiveProduct.stock > 0 ? "🛒 কার্ট" : "শেষ"}
-                                </button>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openOriginalReelModal();
+                                }}
+                                className="storefront-view-btn rounded-full font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95"
+                              >
+                                {effectiveProduct.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -12557,22 +12779,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         id="reels-showcase-section"
                         className="liquid-glass-surface rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0"
                       >
-                        <div className="flex items-center justify-between gap-1.5 sm:gap-2 min-w-0">
-                          <div className="navy-pill-badge inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full shrink-0">
-                            <span className="text-xs sm:text-sm shrink-0">{sec?.icon || "🎬"}</span>
-                            <h3 className="text-[11px] sm:text-sm font-black tracking-tight whitespace-nowrap">
+                        <div className="flex items-center justify-between gap-1 sm:gap-2 min-w-0">
+                          <div className="navy-pill-badge inline-flex items-center gap-1 px-2.5 sm:px-4 py-1.5 rounded-full shrink-0">
+                            <span className="text-xs sm:text-base shrink-0">{sec?.icon || "🎬"}</span>
+                            <h3 className="text-[12.5px] sm:text-base font-black tracking-tight whitespace-nowrap">
                               {(!sec?.title || sec.title === "রিলস ভিডিও শপ" || sec.title.includes("সাজগোজ রিলস")) ? "Product Reels" : sec.title}
                             </h3>
                           </div>
 
-                          <p className="flex-1 min-w-0 text-center text-[9.5px] sm:text-xs font-extrabold text-[#0f294a] leading-tight px-1">
-                            পন্যের ভিডিও দেখে অর্ডার করুন
-                          </p>
+                          <div className="red-pill-badge flex-1 min-w-0 rounded-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-center">
+                            <p className="text-center text-[8.5px] sm:text-xs font-black text-white leading-tight truncate">
+                              পন্যের ভিডিও দেখে অর্ডার করুন
+                            </p>
+                          </div>
 
                           <button
                             type="button"
                             onClick={() => setExpandedHomeSections(prev => ({ ...prev, [secId]: !isExpanded }))}
-                            className="navy-pill-action text-[11px] sm:text-xs font-black flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer active:scale-95 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full"
+                            className="navy-pill-action text-[11px] sm:text-xs font-black flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer active:scale-95 px-2.5 sm:px-3.5 py-1.5 rounded-full"
                           >
                             <span>{isExpanded ? "সংক্ষিপ্ত করুন" : "আরো দেখুন"}</span>
                             <span className="text-sm font-black leading-none">{isExpanded ? "‹" : "›"}</span>
@@ -14707,6 +14931,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         setProductForm({ 
                           name: "", 
                           price: "", 
+                          offerPrice: "",
                           stock: 5, 
                           category: categories[0]?.name || "শাড়ি", 
                           images: [], 
@@ -15436,6 +15661,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   setEditingProduct(p);
                                   setProductForm({
                                     ...p,
+                                    price: (p.regularPrice && Number(p.regularPrice) > Number(p.price)) ? p.regularPrice : p.price,
+                                    offerPrice: (p.offerPrice && Number(p.offerPrice) > 0 && Number(p.offerPrice) < (Number(p.regularPrice) || Number(p.price)))
+                                      ? p.offerPrice
+                                      : ((p.regularPrice && Number(p.regularPrice) > Number(p.price)) ? p.price : ""),
                                     images: p.images || [],
                                     colors: (p.colors || []).map(cleanVariation).filter(Boolean),
                                     sizes: (p.sizes || []).map(cleanVariation).filter(Boolean),
@@ -26112,8 +26341,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                   <div className="flex flex-col justify-between h-full space-y-4">
                     <div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-2xl sm:text-3xl font-extrabold text-[#7a1c2b]">{viewProduct.price.toLocaleString()} ৳</p>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-baseline gap-2.5 flex-wrap">
+                          <p className="text-2xl sm:text-3xl font-extrabold text-[#7a1c2b]">{Number(viewProduct.price || 0).toLocaleString()} ৳</p>
+                          {Number(viewProduct.regularPrice || 0) > Number(viewProduct.price || 0) && (
+                            <p className="text-sm sm:text-base font-bold text-slate-400 line-through">
+                              {Number(viewProduct.regularPrice).toLocaleString()} ৳
+                            </p>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 bg-slate-900 border border-yellow-400/50 px-3 py-1 rounded-full text-xs shadow-xs">
                           <span className="text-yellow-400 font-black">★</span>
                           <span className="font-black text-yellow-300">{viewProduct.rating || 5.0}</span>
@@ -26296,10 +26532,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                       <button 
                         onClick={() => {
-                          const activeColor = selectedProductColor || (viewProduct.colors && viewProduct.colors[0]) || "";
-                          const activeSize = selectedProductSize || (viewProduct.sizes && viewProduct.sizes[0]) || "";
-                          addToCart(viewProduct, productQty, activeColor, activeSize);
-                          setViewProduct(null);
+                          if (viewProduct.isCombo && viewProduct.comboObj) {
+                            addComboToCart(viewProduct.comboObj);
+                            setViewProduct(null);
+                          } else {
+                            const activeColor = selectedProductColor || (viewProduct.colors && viewProduct.colors[0]) || "";
+                            const activeSize = selectedProductSize || (viewProduct.sizes && viewProduct.sizes[0]) || "";
+                            addToCart(viewProduct, productQty, activeColor, activeSize);
+                            setViewProduct(null);
+                          }
                         }}
                         disabled={viewProduct.stock <= 0}
                         className={`w-full py-3.5 rounded-full font-bold text-sm shadow transition flex items-center justify-center gap-2 ${
@@ -26674,7 +26915,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="text-xs font-semibold text-rose-200">বিক্রয় মূল্য (টাকা) *</label>
                       <input 
@@ -26684,8 +26925,28 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           const val = e.target.value.replace(/^0+(?=\d)/, '');
                           setProductForm({ ...productForm, price: val === '' ? '' : Number(val) });
                         }}
-                        placeholder="3500"
+                        placeholder="4200"
                         className="w-full bg-black/50 border border-red-900/45 rounded-full px-5 py-2.5 text-sm text-white placeholder-slate-400 outline-none mt-1 focus:border-red-500" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-emerald-300 flex items-center justify-between">
+                        <span>অফার প্রাইস (টাকা)</span>
+                        {Number(productForm.offerPrice) > 0 && Number(productForm.price) > Number(productForm.offerPrice) && (
+                          <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full font-black">
+                            -{Math.round(((Number(productForm.price) - Number(productForm.offerPrice)) / Number(productForm.price)) * 100)}%
+                          </span>
+                        )}
+                      </label>
+                      <input 
+                        type="number" 
+                        value={productForm.offerPrice !== undefined && productForm.offerPrice !== null ? productForm.offerPrice : ''} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '');
+                          setProductForm({ ...productForm, offerPrice: val === '' ? '' : Number(val) });
+                        }}
+                        placeholder="3500 (ঐচ্ছিক)"
+                        className="w-full bg-black/50 border border-emerald-500/45 rounded-full px-5 py-2.5 text-sm text-white placeholder-slate-400 outline-none mt-1 focus:border-emerald-400" 
                       />
                     </div>
                     <div>
@@ -27289,7 +27550,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       }
                       const finalImages = allImages.length > 0 ? allImages : [imgSharee];
 
-                      const cleanPrice = Number(productForm.price) || 0;
+                      const cleanRegular = Number(productForm.price) || 0;
+                      const cleanOffer = Number(productForm.offerPrice) || 0;
+                      const hasValidOffer = cleanOffer > 0 && cleanOffer < cleanRegular;
+                      const cleanPrice = hasValidOffer ? cleanOffer : cleanRegular;
                       const cleanStock = productForm.stock === "" ? 0 : (Number(productForm.stock) || 0);
                       const finalColors = (productForm.colors || []).map(cleanVariation).filter(Boolean);
                       const finalSizes = (productForm.sizes || []).map(cleanVariation).filter(Boolean);
@@ -27299,6 +27563,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ...editingProduct, 
                           ...productForm, 
                           price: cleanPrice,
+                          regularPrice: cleanRegular,
+                          offerPrice: hasValidOffer ? cleanOffer : 0,
                           stock: cleanStock,
                           colors: finalColors,
                           sizes: finalSizes,
@@ -27337,6 +27603,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           id: "p" + Date.now(),
                           ...productForm,
                           price: cleanPrice,
+                          regularPrice: cleanRegular,
+                          offerPrice: hasValidOffer ? cleanOffer : 0,
                           stock: cleanStock,
                           colors: finalColors,
                           sizes: finalSizes,
@@ -28140,56 +28408,55 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <div className="p-3 sm:p-5 overflow-y-auto flex-1 bg-gradient-to-br from-rose-50 via-white to-amber-50">
                       <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4">
                         {sortedItems.map(p => {
-                          const hasVariants = (p.colors && p.colors.length > 1) || (p.sizes && p.sizes.length > 1);
+                          const sellingPrice = Number(p.price || 0);
+                          const regPrice = Number(p.regularPrice || 0);
+                          const hasDiscount = regPrice > sellingPrice && sellingPrice > 0;
+                          const openModalProduct = () => {
+                            setCollectionModalSection(null);
+                            setViewProduct(p);
+                            setSelectedDetailImg(0);
+                            setProductQty(1);
+                          };
                           return (
                             <div
                               key={p.id}
-                              className="red-black-photo-card rounded-2xl overflow-hidden shadow-sm flex flex-col group"
+                              className="storefront-navy-card rounded-2xl overflow-hidden shadow-sm flex flex-col group"
                             >
                               <div
-                                className="aspect-square bg-white/40 overflow-hidden relative cursor-pointer"
-                                onClick={() => { setCollectionModalSection(null); setViewProduct(p); setSelectedDetailImg(0); setProductQty(1); }}
+                                className="aspect-square bg-white/90 overflow-hidden relative cursor-pointer"
+                                onClick={openModalProduct}
                               >
                                 <img src={p.images?.[0] || imgSharee} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                                 {p.bogo && (
                                   <span className="absolute top-1.5 right-1.5 cta-dark-pill text-[8px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full">🎁 BOGO</span>
                                 )}
                               </div>
-                              <div className="p-1.5 sm:p-2.5 flex-1 flex flex-col justify-between gap-1.5 min-w-0 w-full overflow-hidden">
-                                <div className="min-w-0 w-full">
+                              <div className="storefront-navy-card-body flex-1 flex flex-col justify-between overflow-hidden">
+                                <div className="storefront-card-meta-group">
                                   <h4
-                                    onClick={() => { setCollectionModalSection(null); setViewProduct(p); setSelectedDetailImg(0); setProductQty(1); }}
-                                    className="product-title font-black text-[10px] sm:text-xs leading-tight text-[#000000] cursor-pointer"
+                                    onClick={openModalProduct}
+                                    className="storefront-title-box font-black cursor-pointer"
                                   >
-                                    <span className="line-clamp-2 leading-tight">{p.name}</span>
+                                    <span className="storefront-title-text text-white">{p.name}</span>
                                   </h4>
-                                  <div className="flex items-center justify-between gap-1 mt-1">
-                                    <span className="text-[8px] sm:text-[10px] text-[#000000] font-extrabold bg-white/95 px-1.5 py-0.5 rounded-full truncate max-w-[65%]">{p.category}</span>
-                                    <span className="product-rating-yellow text-[8.5px] sm:text-[10px]">★{p.rating || 4.8}</span>
+                                  <div className="storefront-price-box">
+                                    {hasDiscount && (
+                                      <span className="storefront-price-old">
+                                        ৳{regPrice.toLocaleString()}
+                                      </span>
+                                    )}
+                                    <span className="storefront-price-current">
+                                      ৳{sellingPrice.toLocaleString()}
+                                    </span>
                                   </div>
                                 </div>
-                                <div className="pt-1 border-t border-red-900/20 flex items-center justify-between gap-1 min-w-0">
-                                  <span className="product-price text-[11px] sm:text-sm font-black text-[#000000]">৳{Number(p.price || 0).toLocaleString()}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (hasVariants) {
-                                        setCollectionModalSection(null);
-                                        setViewProduct(p);
-                                        setSelectedDetailImg(0);
-                                        setProductQty(1);
-                                      } else {
-                                        addToCart(p, 1);
-                                      }
-                                    }}
-                                    disabled={p.stock <= 0}
-                                    className={`text-[9px] sm:text-[11px] px-2 py-1 rounded-full font-bold whitespace-nowrap cursor-pointer ${
-                                      p.stock > 0 ? "cta-dark-pill active:scale-95" : "bg-white/50 text-[#000000] border border-black/30"
-                                    }`}
-                                  >
-                                    {p.stock > 0 ? (hasVariants ? "বাছুন" : "অর্ডার") : "শেষ"}
-                                  </button>
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={openModalProduct}
+                                  className="storefront-view-btn rounded-full font-black whitespace-nowrap cursor-pointer text-center active:scale-95"
+                                >
+                                  {p.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
+                                </button>
                               </div>
                             </div>
                           );

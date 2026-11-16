@@ -2,6 +2,7 @@ package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
@@ -29,20 +30,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Product
 import com.example.ui.theme.AccentRed
-import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
+import com.example.ui.theme.CollectionRedBorder
+import com.example.ui.theme.CollectionRedEnd
+import com.example.ui.theme.CollectionRedStart
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
+import com.example.ui.theme.NavyBlue
+import com.example.ui.theme.NavyBlueCardEnd
 import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.SideRosePillEnd
+import com.example.ui.theme.SideRosePillStart
 
 @Composable
 fun ProductCard(
@@ -209,12 +218,25 @@ fun ProductCard(
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
           Column {
-            Text(
-              text = "${product.price} ৳",
-              color = RoyalMaroon,
-              fontSize = 15.sp,
-              fontWeight = FontWeight.Bold
-            )
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+              Text(
+                text = "${product.price} ৳",
+                color = RoyalMaroon,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+              )
+              if (product.regularPrice > product.price) {
+                Text(
+                  text = "${product.regularPrice} ৳",
+                  color = Color.Gray,
+                  fontSize = 10.sp,
+                  textDecoration = TextDecoration.LineThrough
+                )
+              }
+            }
             Text(
               text = product.sku,
               color = Color.Gray,
@@ -262,6 +284,102 @@ fun ProductCard(
 }
 
 @Composable
+fun StorefrontCardLowerNavyBody(
+  title: String,
+  sellingPrice: Int,
+  regularPrice: Int,
+  inStock: Boolean,
+  buttonTestTag: String,
+  onActionClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val hasDiscount = regularPrice > sellingPrice && sellingPrice > 0
+  Column(
+    modifier = modifier
+      .fillMaxWidth()
+      .background(Brush.verticalGradient(listOf(NavyBlue, NavyBlueCardEnd)))
+      .padding(horizontal = 6.dp, vertical = 6.dp),
+    verticalArrangement = Arrangement.spacedBy(4.dp)
+  ) {
+    // 1. Vivid Red "সকল কালেকশন" Style Title Box with White Text
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(8.dp))
+        .background(Brush.horizontalGradient(listOf(CollectionRedStart, CollectionRedEnd)))
+        .border(1.dp, CollectionRedBorder, RoundedCornerShape(8.dp))
+        .padding(horizontal = 6.dp, vertical = 4.dp)
+    ) {
+      Text(
+        text = title,
+        color = Color.White,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        lineHeight = 12.5.sp,
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(25.dp)
+      )
+    }
+
+    // 2. Tight Brand-Style Dual Price Box right under Title ("সকল কালেকশন" Red Style + White Text)
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(8.dp))
+        .background(Brush.horizontalGradient(listOf(CollectionRedStart, CollectionRedEnd)))
+        .border(1.dp, CollectionRedBorder, RoundedCornerShape(8.dp))
+        .padding(horizontal = 6.dp, vertical = 3.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+      if (hasDiscount) {
+        Text(
+          text = "৳$regularPrice",
+          color = Color.White.copy(alpha = 0.86f),
+          fontSize = 8.5.sp,
+          fontWeight = FontWeight.Bold,
+          textDecoration = TextDecoration.LineThrough,
+          maxLines = 1
+        )
+      } else {
+        Spacer(modifier = Modifier.width(1.dp))
+      }
+      Text(
+        text = "৳$sellingPrice",
+        color = Color.White,
+        fontSize = 11.5.sp,
+        fontWeight = FontWeight.Black,
+        maxLines = 1
+      )
+    }
+
+    // 3. Rose-Red "পন্যটি দেখুন" Pill Button with White Text
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(50))
+        .background(Brush.horizontalGradient(listOf(SideRosePillStart, SideRosePillEnd)))
+        .border(1.dp, Color.White.copy(alpha = 0.72f), RoundedCornerShape(50))
+        .clickable { onActionClick() }
+        .padding(vertical = 5.dp)
+        .testTag(buttonTestTag),
+      contentAlignment = Alignment.Center
+    ) {
+      Text(
+        text = if (inStock) "পন্যটি দেখুন" else "স্টক আউট",
+        color = Color.White,
+        fontSize = 9.5.sp,
+        fontWeight = FontWeight.Black,
+        maxLines = 1
+      )
+    }
+  }
+}
+
+@Composable
 fun CompactProductCard(
   product: Product,
   onProductClick: (Product) -> Unit,
@@ -269,21 +387,21 @@ fun CompactProductCard(
   badgeText: String? = null,
   modifier: Modifier = Modifier
 ) {
-  val hasOptions = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
   Card(
     modifier = modifier
       .clickable { onProductClick(product) }
       .testTag("compact_product_card_${product.id}"),
     shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.dp, BorderGold),
-    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
+    colors = CardDefaults.cardColors(containerColor = NavyBlue),
+    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column {
       Box(
         modifier = Modifier
           .fillMaxWidth()
           .aspectRatio(1f)
+          .background(Color.White)
       ) {
         AppImage(
           model = product.imageUrl,
@@ -343,86 +461,16 @@ fun CompactProductCard(
             )
           }
         }
-
-        Box(
-          modifier = Modifier
-            .padding(4.dp)
-            .align(Alignment.TopEnd)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.6f))
-            .padding(horizontal = 4.dp, vertical = 1.dp)
-        ) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-          ) {
-            Icon(
-              imageVector = Icons.Default.Star,
-              contentDescription = null,
-              tint = Color(0xFFFACC15),
-              modifier = Modifier.size(9.dp)
-            )
-            Text(
-              text = product.rating.toString(),
-              color = Color(0xFFFACC15),
-              fontSize = 8.sp,
-              fontWeight = FontWeight.Bold
-            )
-          }
-        }
       }
 
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 6.dp, vertical = 6.dp)
-      ) {
-        Text(
-          text = product.name,
-          color = DarkEspresso,
-          fontSize = 10.5.sp,
-          fontWeight = FontWeight.SemiBold,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-          lineHeight = 13.sp,
-          modifier = Modifier.height(27.dp)
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Text(
-            text = "৳${product.price}",
-            color = RoyalMaroon,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1
-          )
-
-          Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = if (product.stock > 0) RoyalMaroon else Color(0xFFE0E0E0),
-            modifier = Modifier
-              .clickable(enabled = product.stock > 0) {
-                if (hasOptions) onProductClick(product) else onAddToCart(product)
-              }
-              .testTag("compact_add_to_cart_${product.id}")
-          ) {
-            Text(
-              text = if (product.stock > 0) (if (hasOptions) "অপশন" else "অর্ডার") else "শেষ",
-              color = if (product.stock > 0) Color.White else Color.Gray,
-              fontSize = 9.sp,
-              fontWeight = FontWeight.Bold,
-              modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-            )
-          }
-        }
-      }
+      StorefrontCardLowerNavyBody(
+        title = product.name,
+        sellingPrice = product.price,
+        regularPrice = product.regularPrice,
+        inStock = product.stock > 0,
+        buttonTestTag = "compact_add_to_cart_${product.id}",
+        onActionClick = { onProductClick(product) }
+      )
     }
   }
 }
-

@@ -84,9 +84,11 @@ import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
+import com.example.ui.theme.CollectionRedBorder
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.NavyBlue
+import com.example.ui.theme.ReelsRedBadge
 import com.example.ui.theme.RoyalMaroon
 
 data class BlockGridConfig(
@@ -170,7 +172,7 @@ fun StorefrontReelsBlockCard(
 
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
         Surface(
@@ -181,12 +183,12 @@ fun StorefrontReelsBlockCard(
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
           ) {
-            Text(text = section.icon.ifBlank { "🎬" }, fontSize = 12.sp, color = Color.White)
+            Text(text = section.icon.ifBlank { "🎬" }, fontSize = 13.sp, color = Color.White)
             Text(
               text = reelsHeaderTitle,
-              fontSize = 11.5.sp,
+              fontSize = 13.sp,
               fontWeight = FontWeight.Black,
               color = Color.White,
               maxLines = 1
@@ -194,17 +196,25 @@ fun StorefrontReelsBlockCard(
           }
         }
 
-        Text(
-          text = "পন্যের ভিডিও দেখে অর্ডার করুন",
-          fontSize = 9.5.sp,
-          fontWeight = FontWeight.Bold,
-          color = NavyBlue,
-          textAlign = TextAlign.Center,
-          lineHeight = 12.sp,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
+        Surface(
+          shape = RoundedCornerShape(50),
+          color = ReelsRedBadge,
+          border = BorderStroke(1.dp, CollectionRedBorder),
+          shadowElevation = 2.dp,
           modifier = Modifier.weight(1f)
-        )
+        ) {
+          Text(
+            text = "পন্যের ভিডিও দেখে অর্ডার করুন",
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Black,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            lineHeight = 11.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp)
+          )
+        }
 
         if (activeReels.isNotEmpty()) {
           Surface(
@@ -221,7 +231,7 @@ fun StorefrontReelsBlockCard(
               fontSize = 11.sp,
               fontWeight = FontWeight.Black,
               color = Color.White,
-              modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
             )
           }
         }
@@ -293,6 +303,7 @@ fun StorefrontComboBlockCard(
   isExpanded: Boolean,
   onSeeMoreClick: () -> Unit,
   onAddComboToCart: (ComboPack) -> Unit,
+  onComboClick: (ComboPack) -> Unit = onAddComboToCart,
   modifier: Modifier = Modifier
 ) {
   val activeCombos = remember(combos) { combos.filter { it.isActive } }
@@ -332,12 +343,12 @@ fun StorefrontComboBlockCard(
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp)
           ) {
-            Text(text = section.icon.ifBlank { "🎁" }, fontSize = 13.sp, color = Color.White)
+            Text(text = section.icon.ifBlank { "🎁" }, fontSize = 14.sp, color = Color.White)
             Text(
               text = section.title.ifBlank { "কম্বো প্যাক" },
-              fontSize = 12.5.sp,
+              fontSize = 14.sp,
               fontWeight = FontWeight.Black,
               color = Color.White,
               maxLines = 1,
@@ -360,10 +371,10 @@ fun StorefrontComboBlockCard(
           ) {
             Text(
               text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
-              fontSize = 11.sp,
+              fontSize = 11.5.sp,
               fontWeight = FontWeight.Black,
               color = Color.White,
-              modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
+              modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
             )
           }
         }
@@ -386,7 +397,7 @@ fun StorefrontComboBlockCard(
             items(displayCombos, key = { "${section.id}_${it.id}" }) { combo ->
               CompactComboPackCard(
                 combo = combo,
-                onAddComboToCart = { onAddComboToCart(combo) },
+                onViewCombo = { onComboClick(combo) },
                 modifier = Modifier.width(cardWidth)
               )
             }
@@ -405,7 +416,7 @@ fun StorefrontComboBlockCard(
               rowCombos.forEach { combo ->
                 CompactComboPackCard(
                   combo = combo,
-                  onAddComboToCart = { onAddComboToCart(combo) },
+                  onViewCombo = { onComboClick(combo) },
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -423,17 +434,17 @@ fun StorefrontComboBlockCard(
 @Composable
 private fun CompactComboPackCard(
   combo: ComboPack,
-  onAddComboToCart: () -> Unit,
+  onViewCombo: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   Card(
     modifier = modifier
-      .clickable(enabled = combo.stock > 0) { onAddComboToCart() }
+      .clickable { onViewCombo() }
       .testTag("compact_combo_card_${combo.id}"),
     shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.dp, BorderGold),
-    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
+    colors = CardDefaults.cardColors(containerColor = NavyBlue),
+    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column {
       Box(
@@ -484,76 +495,14 @@ private fun CompactComboPackCard(
         }
       }
 
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 6.dp, vertical = 6.dp)
-      ) {
-        Text(
-          text = combo.title,
-          color = DarkEspresso,
-          fontSize = 10.5.sp,
-          fontWeight = FontWeight.SemiBold,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-          lineHeight = 13.sp,
-          modifier = Modifier.height(27.dp)
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Column {
-            Text(
-              text = "৳${combo.comboPrice}",
-              color = RoyalMaroon,
-              fontSize = 11.5.sp,
-              fontWeight = FontWeight.Black,
-              maxLines = 1
-            )
-            if (combo.regularPrice > combo.comboPrice) {
-              Text(
-                text = "৳${combo.regularPrice}",
-                color = Color.Gray,
-                fontSize = 8.5.sp,
-                textDecoration = TextDecoration.LineThrough,
-                maxLines = 1
-              )
-            }
-          }
-
-          Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = if (combo.stock > 0) RoyalMaroon else Color(0xFFE0E0E0),
-            modifier = Modifier
-              .clickable(enabled = combo.stock > 0) { onAddComboToCart() }
-              .testTag("combo_add_to_cart_${combo.id}")
-          ) {
-            Row(
-              modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-              Icon(
-                imageVector = Icons.Default.AddShoppingCart,
-                contentDescription = "কার্টে যোগ করুন",
-                tint = if (combo.stock > 0) Color.White else Color.Gray,
-                modifier = Modifier.size(10.dp)
-              )
-              Text(
-                text = if (combo.stock > 0) "কার্ট" else "শেষ",
-                color = if (combo.stock > 0) Color.White else Color.Gray,
-                fontSize = 8.5.sp,
-                fontWeight = FontWeight.Bold
-              )
-            }
-          }
-        }
-      }
+      StorefrontCardLowerNavyBody(
+        title = combo.title,
+        sellingPrice = combo.comboPrice,
+        regularPrice = combo.regularPrice,
+        inStock = combo.stock > 0,
+        buttonTestTag = "combo_add_to_cart_${combo.id}",
+        onActionClick = onViewCombo
+      )
     }
   }
 }
@@ -571,9 +520,9 @@ private fun CompactReelVideoCard(
       .clickable { onVideoClick() }
       .testTag("compact_reel_card_${reel.id}"),
     shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.dp, BorderGold),
-    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
+    colors = CardDefaults.cardColors(containerColor = NavyBlue),
+    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column {
       // Top 1:1 Media Thumbnail + Play Overlay (Same aspectRatio as CompactProductCard)
@@ -620,7 +569,7 @@ private fun CompactReelVideoCard(
           )
         }
 
-        // Top-right Views + Yellow Rating Pill
+        // Top-right Views badge
         Box(
           modifier = Modifier
             .padding(4.dp)
@@ -654,93 +603,16 @@ private fun CompactReelVideoCard(
             modifier = Modifier.size(20.dp)
           )
         }
-
-        // Bottom-left Yellow Star Rating Pill
-        Row(
-          modifier = Modifier
-            .align(Alignment.BottomStart)
-            .padding(4.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color.Black.copy(alpha = 0.65f))
-            .padding(horizontal = 4.dp, vertical = 1.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-          Icon(
-            imageVector = Icons.Default.Star,
-            contentDescription = null,
-            tint = Color(0xFFFACC15),
-            modifier = Modifier.size(8.5.dp)
-          )
-          Text(
-            text = "${linkedProduct.rating}",
-            color = Color(0xFFFACC15),
-            fontSize = 8.sp,
-            fontWeight = FontWeight.Black
-          )
-        }
       }
 
-      // Bottom Info Box: Title + Price + Add to Cart Button
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 6.dp, vertical = 6.dp)
-      ) {
-        Text(
-          text = linkedProduct.name.ifBlank { reel.title },
-          color = DarkEspresso,
-          fontSize = 10.5.sp,
-          fontWeight = FontWeight.SemiBold,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-          lineHeight = 13.sp,
-          modifier = Modifier.height(27.dp)
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Text(
-            text = "৳${linkedProduct.price}",
-            color = RoyalMaroon,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1
-          )
-
-          Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = if (linkedProduct.stock > 0) RoyalMaroon else Color(0xFFE0E0E0),
-            modifier = Modifier
-              .clickable(enabled = linkedProduct.stock > 0) { onAddToCart() }
-              .testTag("reel_add_to_cart_${reel.id}")
-          ) {
-            Row(
-              modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-              Icon(
-                imageVector = Icons.Default.AddShoppingCart,
-                contentDescription = "কার্টে যোগ করুন",
-                tint = if (linkedProduct.stock > 0) Color.White else Color.Gray,
-                modifier = Modifier.size(10.dp)
-              )
-              Text(
-                text = if (linkedProduct.stock > 0) "কার্ট" else "শেষ",
-                color = if (linkedProduct.stock > 0) Color.White else Color.Gray,
-                fontSize = 8.5.sp,
-                fontWeight = FontWeight.Bold
-              )
-            }
-          }
-        }
-      }
+      StorefrontCardLowerNavyBody(
+        title = linkedProduct.name.ifBlank { reel.title },
+        sellingPrice = linkedProduct.price,
+        regularPrice = linkedProduct.regularPrice,
+        inStock = linkedProduct.stock > 0,
+        buttonTestTag = "reel_add_to_cart_${reel.id}",
+        onActionClick = onVideoClick
+      )
     }
   }
 }

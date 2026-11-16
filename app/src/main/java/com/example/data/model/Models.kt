@@ -20,7 +20,9 @@ data class Product(
   val isHotSale: Boolean = false,
   val isBestDeal: Boolean = false,
   val isB2G1: Boolean = false,
-  val createdAt: Long = 0L
+  val createdAt: Long = 0L,
+  val regularPrice: Int = 0,
+  val offerPrice: Int = 0
 )
 
 data class HomeSectionConfig(
