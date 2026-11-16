@@ -107,7 +107,9 @@ import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
+import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.SlateTextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -570,13 +572,13 @@ fun AdminOverviewTab(
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold)
+        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
       ) {
         Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "মোট বিক্রয়", fontSize = 11.sp, color = AntiqueGoldDark, fontWeight = FontWeight.Medium)
+          Text(text = "মোট বিক্রয়", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
           Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "$totalRevenue ৳", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-          Text(text = "↑ লাইভ হিসাব", fontSize = 10.sp, color = AccentGreen)
+          Text(text = "$totalRevenue ৳", fontSize = 18.sp, fontWeight = FontWeight.Black, color = NavyBlue)
+          Text(text = "↑ লাইভ হিসাব", fontSize = 10.sp, color = AccentGreen, fontWeight = FontWeight.Bold)
         }
       }
 
@@ -584,13 +586,13 @@ fun AdminOverviewTab(
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold)
+        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
       ) {
         Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "মোট অর্ডার", fontSize = 11.sp, color = AntiqueGoldDark, fontWeight = FontWeight.Medium)
+          Text(text = "মোট অর্ডার", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
           Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "${orders.size}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-          Text(text = "${pendingOrders.size} টি পেন্ডিং", fontSize = 10.sp, color = Color(0xFFD97706))
+          Text(text = "${orders.size}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = NavyBlue)
+          Text(text = "${pendingOrders.size} টি পেন্ডিং", fontSize = 10.sp, color = Color(0xFFB45309), fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -603,12 +605,12 @@ fun AdminOverviewTab(
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold)
+        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
       ) {
         Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "ইনভেন্টরি স্টক ও মূল্য", fontSize = 11.sp, color = AntiqueGoldDark, fontWeight = FontWeight.Medium)
+          Text(text = "ইনভেন্টরি স্টক ও মূল্য", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
           Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "$totalStockUnits পিস", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "$totalStockUnits পিস", fontSize = 18.sp, fontWeight = FontWeight.Black, color = NavyBlue)
           Text(text = "মোট মূল্য: ৳$totalStockValuation", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Bold)
         }
       }
@@ -617,13 +619,13 @@ fun AdminOverviewTab(
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = if (lowStockProducts.isNotEmpty()) Color(0xFFFEF2F2) else Color.White),
-        border = BorderStroke(1.dp, if (lowStockProducts.isNotEmpty()) Color(0xFFFECACA) else BorderGold)
+        border = BorderStroke(1.dp, if (lowStockProducts.isNotEmpty()) Color(0xFFFCA5A5) else Color(0xFFCBD5E1))
       ) {
         Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "কম স্টক সতর্কতা", fontSize = 11.sp, color = AccentRed, fontWeight = FontWeight.Medium)
+          Text(text = "কম স্টক সতর্কতা", fontSize = 11.sp, color = AccentRed, fontWeight = FontWeight.Bold)
           Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "${lowStockProducts.size}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AccentRed)
-          Text(text = "রিস্টক প্রয়োজন", fontSize = 10.sp, color = AccentRed)
+          Text(text = "${lowStockProducts.size}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = AccentRed)
+          Text(text = "রিস্টক প্রয়োজন", fontSize = 10.sp, color = AccentRed, fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -653,8 +655,8 @@ fun AdminOverviewTab(
           Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = "👗", fontSize = 22.sp)
             Column {
-              Text(text = "১. প্রোডাক্ট ও ইনভেন্টরি হাব", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-              Text(text = "${products.size} টি পণ্য • ${categories.size} টি ক্যাটাগরি", fontSize = 11.sp, color = AntiqueGoldDark)
+              Text(text = "১. প্রোডাক্ট ও ইনভেন্টরি হাব", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+              Text(text = "${products.size} টি পণ্য • ${categories.size} টি ক্যাটাগরি", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.SemiBold)
             }
           }
           Surface(
@@ -674,7 +676,7 @@ fun AdminOverviewTab(
         Text(
           text = "নতুন পণ্য যোগ, স্টক ও টাকার ভ্যালুয়েশন, ক্যাটাগরিভিত্তিক স্টক ব্রেকডাউন (কোন ক্যাটাগরির কত পিস কত টাকা), সেলস ও রিটার্ন রিপোর্ট এবং ক্যাটাগরি ফিল্টার সহ প্রোডাক্ট তালিকা।",
           fontSize = 11.sp,
-          color = Color(0xFF6B7280),
+          color = SlateTextSecondary,
           lineHeight = 15.sp
         )
 
@@ -788,20 +790,20 @@ fun AdminOverviewTab(
           Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = "🏠", fontSize = 22.sp)
             Column {
-              Text(text = "৫. Home Page Setting (মাস্টার হাব)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
-              Text(text = "নতুন প্রোডাক্ট, Hot Sale, সেরা ডিল, সব প্রোডাক্ট ও + Add New", fontSize = 11.sp, color = AntiqueGoldDark)
+              Text(text = "৫. Home Page Setting (মাস্টার হাব)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = NavyBlue)
+              Text(text = "নতুন প্রোডাক্ট, Hot Sale, সেরা ডিল, সব প্রোডাক্ট ও + Add New", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.SemiBold)
             }
           }
           Surface(
             shape = RoundedCornerShape(12.dp),
-            color = CreamSurface,
-            border = BorderStroke(1.dp, BorderGold)
+            color = Color(0xFFEFF6FF),
+            border = BorderStroke(1.dp, NavyBlue.copy(alpha = 0.35f))
           ) {
             Text(
               text = "হোম কন্ট্রোল",
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold,
-              color = RoyalMaroon,
+              color = NavyBlue,
               modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
             )
           }
@@ -810,12 +812,12 @@ fun AdminOverviewTab(
         Text(
           text = "হোম পেজের প্রতিটি ব্লকের প্রোডাক্ট সার্চ করে যুক্ত/বাদ দিন, ON/OFF করুন, উপরে-নিচে মুভ করুন এবং নতুন ক্যাটাগরি বা বিজ্ঞাপন ব্যানার যুক্ত করুন।",
           fontSize = 11.sp,
-          color = Color(0xFF6B7280),
+          color = SlateTextSecondary,
           lineHeight = 15.sp
         )
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-          Text(text = "Home Page Setting খুলুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "Home Page Setting খুলুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
         }
       }
     }

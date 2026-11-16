@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -85,6 +86,7 @@ import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
+import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
 
 data class BlockGridConfig(
@@ -161,55 +163,65 @@ fun StorefrontReelsBlockCard(
         .padding(horizontal = 8.dp, vertical = 8.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      // Section Header matching all Home Page product blocks
+      // Reels Header: Left Navy Pill ("🎬 Product Reels"), Center caption, Right Navy Pill ("আরো দেখুন ›")
+      val reelsHeaderTitle = section.title
+        .takeIf { it.isNotBlank() && it != "রিলস ভিডিও শপ" && !it.contains("সাজগোজ রিলস") }
+        ?: "Product Reels"
+
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(6.dp),
-          modifier = Modifier.weight(1f)
+        Surface(
+          shape = RoundedCornerShape(50),
+          color = NavyBlue,
+          shadowElevation = 2.dp
         ) {
-          Text(text = section.icon.ifBlank { "🎬" }, fontSize = 15.sp)
-          Text(
-            text = section.title.ifBlank { "রিলস ভিডিও শপ" },
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Black,
-            color = RoyalMaroon,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-          )
-          Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = Color(0xFFFFEBEE),
-            border = BorderStroke(1.dp, Color(0xFFEF4444))
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
           ) {
+            Text(text = section.icon.ifBlank { "🎬" }, fontSize = 12.sp, color = Color.White)
             Text(
-              text = section.badge.ifBlank { "REELS 🎥" },
-              fontSize = 8.5.sp,
+              text = reelsHeaderTitle,
+              fontSize = 11.5.sp,
               fontWeight = FontWeight.Black,
-              color = Color(0xFFC62828),
-              modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+              color = Color.White,
+              maxLines = 1
             )
           }
         }
 
+        Text(
+          text = "পন্যের ভিডিও দেখে অর্ডার করুন",
+          fontSize = 9.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = NavyBlue,
+          textAlign = TextAlign.Center,
+          lineHeight = 12.sp,
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
+          modifier = Modifier.weight(1f)
+        )
+
         if (activeReels.isNotEmpty()) {
-          Row(
+          Surface(
+            shape = RoundedCornerShape(50),
+            color = NavyBlue,
+            shadowElevation = 2.dp,
             modifier = Modifier
-              .clip(RoundedCornerShape(10.dp))
+              .clip(RoundedCornerShape(50))
               .clickable { onSeeMoreClick() }
-              .padding(horizontal = 6.dp, vertical = 3.dp)
-              .testTag("see_more_${section.id}"),
-            verticalAlignment = Alignment.CenterVertically
+              .testTag("see_more_${section.id}")
           ) {
             Text(
               text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
               fontSize = 11.sp,
-              fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
+              fontWeight = FontWeight.Black,
+              color = Color.White,
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
             )
           }
         }
@@ -311,49 +323,47 @@ fun StorefrontComboBlockCard(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(6.dp),
-          modifier = Modifier.weight(1f)
+        Surface(
+          shape = RoundedCornerShape(50),
+          color = NavyBlue,
+          shadowElevation = 2.dp,
+          modifier = Modifier.weight(1f, fill = false)
         ) {
-          Text(text = section.icon.ifBlank { "🎁" }, fontSize = 15.sp)
-          Text(
-            text = section.title.ifBlank { "কম্বো প্যাক" },
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Black,
-            color = RoyalMaroon,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-          )
-          Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = Color(0xFFECFDF5),
-            border = BorderStroke(1.dp, AccentGreen)
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
           ) {
+            Text(text = section.icon.ifBlank { "🎁" }, fontSize = 13.sp, color = Color.White)
             Text(
-              text = section.badge.ifBlank { "COMBO" },
-              fontSize = 8.5.sp,
+              text = section.title.ifBlank { "কম্বো প্যাক" },
+              fontSize = 12.5.sp,
               fontWeight = FontWeight.Black,
-              color = Color(0xFF047857),
-              modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+              color = Color.White,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
             )
           }
         }
 
+        Spacer(modifier = Modifier.width(8.dp))
+
         if (activeCombos.isNotEmpty()) {
-          Row(
+          Surface(
+            shape = RoundedCornerShape(50),
+            color = NavyBlue,
+            shadowElevation = 2.dp,
             modifier = Modifier
-              .clip(RoundedCornerShape(10.dp))
+              .clip(RoundedCornerShape(50))
               .clickable { onSeeMoreClick() }
-              .padding(horizontal = 6.dp, vertical = 3.dp)
-              .testTag("see_more_${section.id}"),
-            verticalAlignment = Alignment.CenterVertically
+              .testTag("see_more_${section.id}")
           ) {
             Text(
               text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
               fontSize = 11.sp,
-              fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
+              fontWeight = FontWeight.Black,
+              color = Color.White,
+              modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
             )
           }
         }

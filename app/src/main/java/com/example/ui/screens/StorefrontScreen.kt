@@ -82,6 +82,7 @@ import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
+import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
 
 private val fallbackDefaultSections = listOf(
@@ -93,7 +94,7 @@ private val fallbackDefaultSections = listOf(
   HomeSectionConfig(id = "combo_packs", type = "combo_packs", title = "কম্বো প্যাক", icon = "🎁", badge = "COMBO", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
   HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
   HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", columnsPerRow = 3, rowCount = 2, displayStyle = "grid", enabled = true, maxItems = 6),
-  HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", icon = "🎬", badge = "REELS 🎥", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
+  HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "Product Reels", subtitle = "পন্যের ভিডিও দেখে অর্ডার করুন", icon = "🎬", badge = "", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
   HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9)
 )
 
@@ -612,46 +613,36 @@ private fun StorefrontProductBlockCard(
         .padding(horizontal = 8.dp, vertical = 8.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      // Section Title Header + Small "আরো দেখুন ›" Action at the end
+      // Unified Navy Blue Pill Title Header + Matching "আরো দেখুন ›" Action (No extra badge pills)
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(6.dp),
-          modifier = Modifier.weight(1f)
+        Surface(
+          shape = RoundedCornerShape(50),
+          color = NavyBlue,
+          shadowElevation = 2.dp,
+          modifier = Modifier.weight(1f, fill = false)
         ) {
-          Text(text = section.icon.ifBlank { "✨" }, fontSize = 15.sp)
-          Text(
-            text = section.title,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Black,
-            color = RoyalMaroon,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-          )
-          if (section.badge.isNotBlank()) {
-            val isRedBadge = section.type == "hot_sale" || section.type == "b2g1_offers"
-            Surface(
-              shape = RoundedCornerShape(8.dp),
-              color = if (isRedBadge) Color(0xFFFFEBEE) else CreamSurface,
-              border = BorderStroke(
-                1.dp,
-                if (isRedBadge) Color(0xFFEF4444) else BorderGold
-              )
-            ) {
-              Text(
-                text = section.badge,
-                fontSize = 8.5.sp,
-                fontWeight = FontWeight.Black,
-                color = if (isRedBadge) Color(0xFFC62828) else DarkEspresso,
-                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
-              )
-            }
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+          ) {
+            Text(text = section.icon.ifBlank { "✨" }, fontSize = 13.sp, color = Color.White)
+            Text(
+              text = section.title,
+              fontSize = 12.5.sp,
+              fontWeight = FontWeight.Black,
+              color = Color.White,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
           }
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         if (products.isNotEmpty() || selectedInlineCategory != "All") {
           Row(
@@ -659,35 +650,39 @@ private fun StorefrontProductBlockCard(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
             if (isExpanded) {
-              Row(
+              Surface(
+                shape = RoundedCornerShape(50),
+                color = CreamSurface,
+                border = BorderStroke(1.dp, NavyBlue.copy(alpha = 0.35f)),
                 modifier = Modifier
-                  .clip(RoundedCornerShape(10.dp))
+                  .clip(RoundedCornerShape(50))
                   .clickable { onOpenFullCollection() }
-                  .padding(horizontal = 5.dp, vertical = 3.dp)
-                  .testTag("collection_modal_btn_${section.id}"),
-                verticalAlignment = Alignment.CenterVertically
+                  .testTag("collection_modal_btn_${section.id}")
               ) {
                 Text(
                   text = "সকল ফিল্টার ›",
                   fontSize = 10.sp,
                   fontWeight = FontWeight.Bold,
-                  color = AntiqueGoldDark
+                  color = NavyBlue,
+                  modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                 )
               }
             }
-            Row(
+            Surface(
+              shape = RoundedCornerShape(50),
+              color = NavyBlue,
+              shadowElevation = 2.dp,
               modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(50))
                 .clickable { onToggleExpand(defaultLimit) }
-                .padding(horizontal = 6.dp, vertical = 3.dp)
-                .testTag("see_more_${section.id}"),
-              verticalAlignment = Alignment.CenterVertically
+                .testTag("see_more_${section.id}")
             ) {
               Text(
                 text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = RoyalMaroon
+                fontWeight = FontWeight.Black,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
               )
             }
           }

@@ -358,7 +358,7 @@ class StoreRepository(private val context: Context) {
     HomeSectionConfig(id = "combo_packs", type = "combo_packs", title = "কম্বো প্যাক", subtitle = "বান্ডেল কিনে বিশাল সেভ করুন", icon = "🎁", badge = "COMBO", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
     HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", subtitle = "যেকোনো ২টি নিলেই ১টি ফ্রি", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, productIds = listOf("p1", "p2", "p4", "p6", "p9", "p11", "p15"), maxItems = 12),
     HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", columnsPerRow = 3, rowCount = 2, displayStyle = "grid", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6", "p9", "p10", "p11", "p12"), maxItems = 6),
-    HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", subtitle = "৩টি করে শপেবল ভিডিও ডিসপ্লে", icon = "🎬", badge = "REELS 🎥", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
+    HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "Product Reels", subtitle = "পন্যের ভিডিও দেখে অর্ডার করুন", icon = "🎬", badge = "", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
     HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "সব ক্যাটাগরির প্রোডাক্ট ডিসপ্লে", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9)
   )
 
@@ -1639,7 +1639,19 @@ class StoreRepository(private val context: Context) {
     } else {
       s.maxItems
     }
+    val migratedTitle = if (s.type == "reels_showcase" && (s.title.isBlank() || s.title == "রিলস ভিডিও শপ" || s.title.contains("সাজগোজ রিলস"))) {
+      "Product Reels"
+    } else {
+      s.title
+    }
+    val migratedSubtitle = if (s.type == "reels_showcase") {
+      "পন্যের ভিডিও দেখে অর্ডার করুন"
+    } else {
+      s.subtitle
+    }
     return s.copy(
+      title = migratedTitle,
+      subtitle = migratedSubtitle,
       columnsPerRow = inferredCols,
       rowCount = inferredRows,
       displayStyle = inferredStyle,
