@@ -99,6 +99,7 @@ class MainActivity : ComponentActivity() {
         val coupons by viewModel.coupons.collectAsStateWithLifecycle()
         val storeConfig by viewModel.storeConfig.collectAsStateWithLifecycle()
         val homeSections by viewModel.homeSections.collectAsStateWithLifecycle()
+        val reels by viewModel.reels.collectAsStateWithLifecycle()
         val courierConfig by viewModel.courierConfig.collectAsStateWithLifecycle()
         val pixelConfig by viewModel.pixelConfig.collectAsStateWithLifecycle()
         val posInventory by viewModel.posInventory.collectAsStateWithLifecycle()
@@ -260,6 +261,7 @@ class MainActivity : ComponentActivity() {
                     config = storeConfig,
                     categories = categories,
                     homeSections = homeSections,
+                    reels = reels,
                     selectedCategory = selectedCategory,
                     searchQuery = searchQuery,
                     onCategorySelected = { viewModel.setSelectedCategory(it) },
@@ -269,6 +271,7 @@ class MainActivity : ComponentActivity() {
                     scrollToTopTrigger = homeScrollTrigger,
                     onProductClick = { viewModel.openProductDetail(it) },
                     onAddToCart = { viewModel.addToCart(it, 1) },
+                    onLikeReel = { viewModel.likeReel(it) },
                     onBannerClick = { /* scroll or search */ }
                   )
                 }

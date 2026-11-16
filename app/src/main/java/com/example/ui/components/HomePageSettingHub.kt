@@ -451,6 +451,7 @@ fun HomePageSettingHub(
                           "new_products" -> "নতুন আপলোড অটো + পিন (${section.productIds.size} পিন্ড)"
                           "hot_sale" -> "Hot Sale • ${products.count { it.isHotSale || section.productIds.contains(it.id) }} টি পণ্য"
                           "best_deals" -> "সেরা ডিল (২x৩ = ৬টি) • ${section.productIds.size} টি সিলেক্টেড"
+                          "reels_showcase" -> "রিলস ভিডিও শপ (${section.layout})"
                           "all_products" -> "সব প্রোডাক্ট (৩x৩ = ৯টি + আরো দেখুন)"
                           "category_products" -> "ক্যাটাগরি: ${section.categoryName} (${section.layout})"
                           "promo_banner" -> "প্রমোশন ব্যানার (${section.bannerLinkCategory})"
@@ -517,7 +518,7 @@ fun HomePageSettingHub(
                   horizontalArrangement = Arrangement.SpaceBetween,
                   verticalAlignment = Alignment.CenterVertically
                 ) {
-                  if (isProductBlock || section.type == "promo_banner") {
+                  if (isProductBlock || section.type == "promo_banner" || section.type == "reels_showcase") {
                     Surface(
                       shape = RoundedCornerShape(10.dp),
                       color = if (isExpanded) RoyalMaroon else CreamSurface,
@@ -533,6 +534,8 @@ fun HomePageSettingHub(
                           "▾ এডিটর বন্ধ করুন"
                         } else if (isProductBlock) {
                           "🔍 প্রোডাক্ট সার্চ ও সিলেক্ট করুন"
+                        } else if (section.type == "reels_showcase") {
+                          "🎬 রিলস লেআউট এডিট"
                         } else {
                           "✏️ ব্যানার এডিট করুন"
                         },
@@ -623,6 +626,34 @@ fun HomePageSettingHub(
                             color = if (chosen) Color.White else DarkEspresso,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                          )
+                        }
+                      }
+                    }
+                  }
+
+                  if (section.type == "reels_showcase") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                      listOf(
+                        "slider3" to "৩টি স্লাইডার",
+                        "grid3x2" to "২ লাইনে ৬টি",
+                        "grid3x3" to "৩ লাইনে ৯টি"
+                      ).forEach { (layoutKey, layoutLabel) ->
+                        val chosen = section.layout == layoutKey
+                        Surface(
+                          shape = RoundedCornerShape(10.dp),
+                          color = if (chosen) RoyalMaroon else CreamSurface,
+                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
+                          modifier = Modifier.clickable {
+                            onUpdateSection(section.id) { it.copy(layout = layoutKey) }
+                          }
+                        ) {
+                          Text(
+                            text = layoutLabel,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (chosen) Color.White else DarkEspresso,
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                           )
                         }
                       }

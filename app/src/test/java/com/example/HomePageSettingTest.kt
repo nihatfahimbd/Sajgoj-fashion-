@@ -153,4 +153,23 @@ class HomePageSettingTest {
     assertEquals(3200, points[4].revenue)
     assertEquals(1, points[4].orderCount)
   }
+
+  @Test
+  fun reelsShowcaseAndExpansionSeeds_areConfiguredProperly() {
+    val repo = StoreRepository(context)
+    assertTrue("Seed catalog should have >= 12 items so grid3x2 (6) and grid3x3 (9) expand", repo.products.value.size >= 12)
+
+    val reelsBlock = repo.homeSections.value.find { it.type == "reels_showcase" }!!
+    assertEquals("slider3", reelsBlock.layout)
+    assertTrue(reelsBlock.enabled)
+
+    val initialReels = repo.reels.value
+    assertTrue(initialReels.size >= 4)
+    val firstReel = initialReels.first()
+    val beforeLikes = firstReel.likes
+    repo.likeReel(firstReel.id)
+    val afterLikes = repo.reels.value.first { it.id == firstReel.id }
+    assertTrue(afterLikes.userLiked)
+    assertEquals(beforeLikes + 1, afterLikes.likes)
+  }
 }

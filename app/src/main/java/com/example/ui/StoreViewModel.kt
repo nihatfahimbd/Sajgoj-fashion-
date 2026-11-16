@@ -16,6 +16,7 @@ import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
+import com.example.data.model.ReelItem
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.example.data.model.SyncHealthState
@@ -68,6 +69,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val coupons: StateFlow<List<Coupon>> = repository.coupons
   val banners: StateFlow<List<BannerItem>> = repository.banners
   val homeSections: StateFlow<List<HomeSectionConfig>> = repository.homeSections
+  val reels: StateFlow<List<ReelItem>> = repository.reels
   val storeConfig: StateFlow<StoreConfig> = repository.storeConfig
   val courierConfig: StateFlow<CourierConfig> = repository.courierConfig
   val pixelConfig: StateFlow<PixelConfig> = repository.pixelConfig
@@ -510,6 +512,10 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun resetHomeSectionsToDefault() {
     repository.resetHomeSectionsToDefault()
     emitToast("হোম পেজ লেআউট ডিফল্ট অবস্থায় ফিরিয়ে আনা হয়েছে। 🏠")
+  }
+
+  fun likeReel(reelId: String) {
+    repository.likeReel(reelId)
   }
 
   fun emitToast(msg: String) {

@@ -17,6 +17,7 @@ import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
+import com.example.data.model.ReelItem
 import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
@@ -158,6 +159,75 @@ class StoreRepository(private val context: Context) {
       isHotSale = false,
       isBestDeal = false,
       createdAt = 1729500008000L
+    ),
+    Product(
+      id = "p9",
+      name = "কিউট পার্টি ফ্রক ও বেবি ড্রেস (বাচ্চাদের ড্রেস)",
+      price = 990,
+      stock = 20,
+      category = "বাচ্চাদের পোশাক",
+      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      sku = "SAJ-KD05",
+      description = "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।",
+      rating = 4.9f,
+      reviewsCount = 22,
+      colors = listOf("বেবি পিংক", "লাল", "আকাশি", "হলুদ"),
+      sizes = listOf("১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮"),
+      ageGroups = listOf("১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৫-৬ বছর"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500009000L
+    ),
+    Product(
+      id = "p10",
+      name = "ঐতিহ্যবাহী ঢাকাই জামদানি শাড়ি (Golden Zari)",
+      price = 4500,
+      stock = 10,
+      category = "শাড়ি",
+      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      sku = "SAJ-SR10",
+      description = "হাতে বোনা আসল দেশি ঢাকাই জামদানি শাড়ি, সোনালী জরির সূক্ষ্ম নকশা সমৃদ্ধ। বিয়ে ও উৎসবের সাজে অনন্য।",
+      rating = 4.9f,
+      reviewsCount = 31,
+      colors = listOf("রয়েল রেড", "গোল্ডেন", "অফ হোয়াইট"),
+      sizes = listOf("Free Size"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500010000L
+    ),
+    Product(
+      id = "p11",
+      name = "রয়েল ব্রাইডাল পার্ল ও কুন্দন সেট (Full Set)",
+      price = 3850,
+      stock = 7,
+      category = "ব্রাইডাল সেট",
+      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      sku = "SAJ-BR11",
+      description = "সীতাহার, চোকার, ঝুমকা ও টিকলিসহ সম্পূর্ণ রয়্যাল ব্রাইডাল জুয়েলারি সেট।",
+      rating = 5.0f,
+      reviewsCount = 27,
+      colors = listOf("গোল্ডেন ও মুক্তা", "রুবি গোল্ড"),
+      sizes = listOf("Free Size"),
+      isHotSale = false,
+      isBestDeal = true,
+      createdAt = 1729500011000L
+    ),
+    Product(
+      id = "p12",
+      name = "ডিজাইনার লং কটন থ্রি-পিস কালেকশন",
+      price = 1890,
+      stock = 18,
+      category = "জামা / কামিজ",
+      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      sku = "SAJ-KM12",
+      description = "পিওর কটন কাপড়ের ওপর নিখুঁত কাজের প্রিমিয়াম থ্রি-পিস ও ওড়না সেট।",
+      rating = 4.8f,
+      reviewsCount = 16,
+      colors = listOf("মেরুন", "নীল", "জলপাই"),
+      sizes = listOf("৩৮", "৪০", "৪২", "৪৪"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500012000L
     )
   )
 
@@ -166,9 +236,61 @@ class StoreRepository(private val context: Context) {
     HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", subtitle = "Claim Vouchers to Save More!", icon = "🎟️", layout = "strip", enabled = true),
     HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", subtitle = "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি", icon = "🏷️", layout = "strip", enabled = true),
     HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", subtitle = "নতুন আপলোড হওয়া প্রোডাক্ট (৩টি করে স্লাইড)", icon = "✨", badge = "NEW", layout = "slider3", enabled = true, maxItems = 12),
-    HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", subtitle = "হট সেল প্রোডাক্ট ডিসপ্লে (৩টি করে স্লাইড)", icon = "🔥", badge = "HOT 🔥", layout = "slider3", enabled = true, productIds = listOf("p7", "p6", "p5", "p4", "p2", "p1"), maxItems = 12),
-    HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6"), maxItems = 6),
+    HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", subtitle = "হট সেল প্রোডাক্ট ডিসপ্লে (৩টি করে স্লাইড)", icon = "🔥", badge = "HOT 🔥", layout = "slider3", enabled = true, productIds = listOf("p9", "p6", "p5", "p4", "p2", "p1"), maxItems = 12),
+    HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6", "p9", "p10", "p11", "p12"), maxItems = 6),
+    HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", subtitle = "৩টি করে শপেবল ভিডিও ডিসপ্লে", icon = "🎬", badge = "REELS 🎥", layout = "slider3", enabled = true, maxItems = 12),
     HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "৩ লাইনে ৯টি প্রোডাক্ট + আরো দেখুন", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", enabled = true, maxItems = 9)
+  )
+
+  private val initialReels = listOf(
+    ReelItem(
+      id = "reel-1",
+      title = "রাজকীয় কুন্দন চোকার ও ঝুমকা সেট আনবক্সিং ✨",
+      caption = "প্রিমিয়াম ফিনিশিং ও নিখুঁত কারুকার্যের বিয়ের স্পেশাল কালেকশন।",
+      videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-gold-necklace-41380-large.mp4",
+      posterUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      productId = "p2",
+      views = "2.8k",
+      likes = 142,
+      badge = "হট ট্রেন্ডিং 🔥",
+      price = 2999
+    ),
+    ReelItem(
+      id = "reel-2",
+      title = "এক্সক্লুসিভ পিওর জামদানি শাড়ি ড্র্যাপ ও লুক 🥻",
+      caption = "আসল দেশি তাঁতের বোনা কাতান ও জামদানি শাড়ি কালেকশন।",
+      videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-traditional-oriental-fabric-moving-slowly-41656-large.mp4",
+      posterUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      productId = "p1",
+      views = "5.1k",
+      likes = 236,
+      badge = "বেস্টসেলার ⭐",
+      price = 3500
+    ),
+    ReelItem(
+      id = "reel-3",
+      title = "এন্টিক গোল্ড প্লেটেড বালা ও চুড়ি সেট 👑",
+      caption = "রয়েল ব্রাইডাল সাজের আসল আভিজাত্য। নিখুঁত গোল্ডেন ফিনিশিং।",
+      videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-delicate-gold-jewelry-pieces-on-display-42044-large.mp4",
+      posterUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      productId = "p3",
+      views = "3.4k",
+      likes = 189,
+      badge = "ব্রাইডাল 💍",
+      price = 1250
+    ),
+    ReelItem(
+      id = "reel-4",
+      title = "ডিজাইনার রেশম কাতান ও জমকালো শাড়ি কালেকশন ✨",
+      caption = "হাতে বোনা গর্জিয়াস শাড়ির রিয়েল ভিডিও প্রিভিউ।",
+      videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-hands-touching-silk-textile-42004-large.mp4",
+      posterUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      productId = "p10",
+      views = "2.1k",
+      likes = 112,
+      badge = "নতুন 🌸",
+      price = 4500
+    )
   )
 
   private val initialCategories = listOf(
@@ -362,6 +484,9 @@ class StoreRepository(private val context: Context) {
 
   private val _homeSections = MutableStateFlow<List<HomeSectionConfig>>(loadHomeSections())
   val homeSections: StateFlow<List<HomeSectionConfig>> = _homeSections.asStateFlow()
+
+  private val _reels = MutableStateFlow<List<ReelItem>>(initialReels)
+  val reels: StateFlow<List<ReelItem>> = _reels.asStateFlow()
 
   private val initialReturns = listOf(
     ReturnRecord(
@@ -1360,7 +1485,22 @@ class StoreRepository(private val context: Context) {
           )
         }
       }
-      if (list.isNotEmpty()) list else initialHomeSections
+      if (list.isNotEmpty()) {
+        val hasReels = list.any { it.type == "reels_showcase" }
+        if (!hasReels) {
+          val copy = list.toMutableList()
+          val reelsSec = initialHomeSections.find { it.type == "reels_showcase" }
+          if (reelsSec != null) {
+            val dealsIdx = copy.indexOfFirst { it.id == "best_deals" }
+            if (dealsIdx >= 0) copy.add(dealsIdx + 1, reelsSec) else copy.add(reelsSec)
+          }
+          copy
+        } else {
+          list
+        }
+      } else {
+        initialHomeSections
+      }
     } catch (_: Exception) {
       initialHomeSections
     }
@@ -1445,5 +1585,18 @@ class StoreRepository(private val context: Context) {
 
   fun resetHomeSectionsToDefault() {
     saveHomeSections(initialHomeSections)
+  }
+
+  fun likeReel(reelId: String) {
+    _reels.value = _reels.value.map { reel ->
+      if (reel.id != reelId) reel
+      else {
+        val nextLiked = !reel.userLiked
+        reel.copy(
+          userLiked = nextLiked,
+          likes = if (nextLiked) reel.likes + 1 else (reel.likes - 1).coerceAtLeast(0)
+        )
+      }
+    }
   }
 }

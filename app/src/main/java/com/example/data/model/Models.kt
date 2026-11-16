@@ -24,7 +24,7 @@ data class Product(
 
 data class HomeSectionConfig(
   val id: String,
-  val type: String, // top_banner, voucher_strip, category_slider, new_products, hot_sale, best_deals, all_products, category_products, promo_banner, custom_products
+  val type: String, // top_banner, voucher_strip, category_slider, new_products, hot_sale, best_deals, reels_showcase, all_products, category_products, promo_banner, custom_products
   val title: String,
   val subtitle: String = "",
   val icon: String = "✨",
@@ -38,6 +38,21 @@ data class HomeSectionConfig(
   val bannerButtonText: String = "অফার দেখুন",
   val bannerLinkCategory: String = "All",
   val maxItems: Int = 12
+)
+
+data class ReelItem(
+  val id: String,
+  val title: String,
+  val caption: String = "",
+  val videoUrl: String = "",
+  val posterUrl: String = "",
+  val productId: String = "",
+  val views: String = "1.5k",
+  val likes: Int = 0,
+  val badge: String = "হট ট্রেন্ডিং 🔥",
+  val price: Int = 1490,
+  val active: Boolean = true,
+  val userLiked: Boolean = false
 )
 
 data class Category(

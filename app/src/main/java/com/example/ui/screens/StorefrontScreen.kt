@@ -60,12 +60,16 @@ import com.example.data.model.BannerItem
 import com.example.data.model.Category
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
+import com.example.data.model.ReelItem
 import com.example.data.model.StoreConfig
 import com.example.ui.ImageSearchState
 import com.example.ui.components.AppImage
 import com.example.ui.components.BannerCarousel
 import com.example.ui.components.CompactProductCard
+import com.example.ui.components.FullSectionCollectionDialog
 import com.example.ui.components.ProductCard
+import com.example.ui.components.ReelVideoPlayerDialog
+import com.example.ui.components.StorefrontReelsBlockCard
 import com.example.ui.components.VoucherCenterDialog
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
@@ -81,6 +85,7 @@ private val fallbackDefaultSections = listOf(
   HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", icon = "✨", badge = "NEW", layout = "slider3", enabled = true, maxItems = 12),
   HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", icon = "🔥", badge = "HOT 🔥", layout = "slider3", enabled = true, maxItems = 12),
   HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", enabled = true, maxItems = 6),
+  HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", icon = "🎬", badge = "REELS 🎥", layout = "slider3", enabled = true, maxItems = 12),
   HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", enabled = true, maxItems = 9)
 )
 
@@ -91,6 +96,7 @@ fun StorefrontScreen(
   config: StoreConfig,
   categories: List<Category> = emptyList(),
   homeSections: List<HomeSectionConfig> = emptyList(),
+  reels: List<ReelItem> = emptyList(),
   selectedCategory: String = "All",
   searchQuery: String = "",
   onCategorySelected: (String) -> Unit = {},
@@ -100,6 +106,7 @@ fun StorefrontScreen(
   scrollToTopTrigger: Int = 0,
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
+  onLikeReel: (String) -> Unit = {},
   onBannerClick: (BannerItem) -> Unit,
   modifier: Modifier = Modifier
 ) {
@@ -109,6 +116,8 @@ fun StorefrontScreen(
   var voucherCenterTab by remember { mutableStateOf("all") }
   var collectedVoucherIds by remember { mutableStateOf(setOf<String>()) }
   var expandedSectionIds by remember { mutableStateOf(setOf<String>()) }
+  var collectionDialogSection by remember { mutableStateOf<HomeSectionConfig?>(null) }
+  var activeReelForPlayback by remember { mutableStateOf<ReelItem?>(null) }
 
   val isFilteredMode = selectedCategory != "All" || searchQuery.isNotBlank() || imageSearchState != null
   val activeSections = remember(homeSections) {
@@ -176,8 +185,12 @@ fun StorefrontScreen(
       }
       "best_deals" -> {
         val idSet = section.productIds.toSet()
-        val picked = products.filter { idSet.contains(it.id) || it.isBestDeal }
-        if (picked.isNotEmpty()) picked else products.take(6)
+        val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
+        val dealMarked = products.filter { it.isBestDeal && !idSet.contains(it.id) }
+        val chosenIds = (pinned + dealMarked).map { it.id }.toSet()
+        val extras = products.filterNot { chosenIds.contains(it.id) }.sortedByDescending { it.rating }
+        val combined = pinned + dealMarked + extras
+        if (combined.isNotEmpty()) combined else products
       }
       "all_products" -> {
         if (section.productIds.isNotEmpty()) {
@@ -368,6 +381,25 @@ fun StorefrontScreen(
                   }
                 )
               }
+            } else if (section.type == "reels_showcase") {
+              item(key = "sec_${section.id}") {
+                val isExpanded = expandedSectionIds.contains(section.id)
+                StorefrontReelsBlockCard(
+                  section = section,
+                  reels = reels,
+                  products = products,
+                  isExpanded = isExpanded,
+                  onSeeMoreClick = {
+                    expandedSectionIds = if (isExpanded) {
+                      expandedSectionIds - section.id
+                    } else {
+                      expandedSectionIds + section.id
+                    }
+                  },
+                  onReelClick = { reel -> activeReelForPlayback = reel },
+                  onAddToCart = onAddToCart
+                )
+              }
             } else {
               item(key = "sec_${section.id}") {
                 val sectionProducts = remember(products, section) { resolveSectionProducts(section) }
@@ -376,13 +408,18 @@ fun StorefrontScreen(
                   section = section,
                   products = sectionProducts,
                   isExpanded = isExpanded,
-                  onToggleExpand = {
-                    expandedSectionIds = if (isExpanded) {
-                      expandedSectionIds - section.id
+                  onToggleExpand = { defaultLimit ->
+                    if (!isExpanded && sectionProducts.size <= defaultLimit) {
+                      collectionDialogSection = section
                     } else {
-                      expandedSectionIds + section.id
+                      expandedSectionIds = if (isExpanded) {
+                        expandedSectionIds - section.id
+                      } else {
+                        expandedSectionIds + section.id
+                      }
                     }
                   },
+                  onOpenFullCollection = { collectionDialogSection = section },
                   onProductClick = onProductClick,
                   onAddToCart = onAddToCart
                 )
@@ -445,6 +482,29 @@ fun StorefrontScreen(
         onDismiss = { showVoucherCenter = false }
       )
     }
+    if (collectionDialogSection != null) {
+      val modalSec = collectionDialogSection!!
+      val modalProducts = remember(products, modalSec) { resolveSectionProducts(modalSec) }
+      FullSectionCollectionDialog(
+        section = modalSec,
+        sectionProducts = modalProducts,
+        onDismiss = { collectionDialogSection = null },
+        onProductClick = onProductClick,
+        onAddToCart = onAddToCart
+      )
+    }
+
+    if (activeReelForPlayback != null) {
+      ReelVideoPlayerDialog(
+        initialReel = activeReelForPlayback!!,
+        allReels = reels,
+        products = products,
+        onDismiss = { activeReelForPlayback = null },
+        onLikeReel = onLikeReel,
+        onAddToCart = onAddToCart,
+        onProductClick = onProductClick
+      )
+    }
   }
 }
 
@@ -453,7 +513,8 @@ private fun StorefrontProductBlockCard(
   section: HomeSectionConfig,
   products: List<Product>,
   isExpanded: Boolean,
-  onToggleExpand: () -> Unit,
+  onToggleExpand: (Int) -> Unit,
+  onOpenFullCollection: () -> Unit,
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit
 ) {
@@ -532,19 +593,41 @@ private fun StorefrontProductBlockCard(
 
         if (products.isNotEmpty()) {
           Row(
-            modifier = Modifier
-              .clip(RoundedCornerShape(10.dp))
-              .clickable { onToggleExpand() }
-              .padding(horizontal = 6.dp, vertical = 3.dp)
-              .testTag("see_more_${section.id}"),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
-            Text(
-              text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
-              fontSize = 11.sp,
-              fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
-            )
+            if (isExpanded) {
+              Row(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(10.dp))
+                  .clickable { onOpenFullCollection() }
+                  .padding(horizontal = 5.dp, vertical = 3.dp)
+                  .testTag("collection_modal_btn_${section.id}"),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(
+                  text = "সকল ফিল্টার ›",
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = AntiqueGoldDark
+                )
+              }
+            }
+            Row(
+              modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .clickable { onToggleExpand(defaultLimit) }
+                .padding(horizontal = 6.dp, vertical = 3.dp)
+                .testTag("see_more_${section.id}"),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = RoyalMaroon
+              )
+            }
           }
         }
       }
