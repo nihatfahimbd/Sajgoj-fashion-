@@ -100,6 +100,7 @@ class MainActivity : ComponentActivity() {
         val storeConfig by viewModel.storeConfig.collectAsStateWithLifecycle()
         val homeSections by viewModel.homeSections.collectAsStateWithLifecycle()
         val reels by viewModel.reels.collectAsStateWithLifecycle()
+        val combos by viewModel.combos.collectAsStateWithLifecycle()
         val courierConfig by viewModel.courierConfig.collectAsStateWithLifecycle()
         val pixelConfig by viewModel.pixelConfig.collectAsStateWithLifecycle()
         val posInventory by viewModel.posInventory.collectAsStateWithLifecycle()
@@ -262,6 +263,8 @@ class MainActivity : ComponentActivity() {
                     categories = categories,
                     homeSections = homeSections,
                     reels = reels,
+                    combos = combos,
+                    cartItemCount = cartItems.sumOf { it.quantity },
                     selectedCategory = selectedCategory,
                     searchQuery = searchQuery,
                     onCategorySelected = { viewModel.setSelectedCategory(it) },
@@ -271,6 +274,7 @@ class MainActivity : ComponentActivity() {
                     scrollToTopTrigger = homeScrollTrigger,
                     onProductClick = { viewModel.openProductDetail(it) },
                     onAddToCart = { viewModel.addToCart(it, 1) },
+                    onAddComboToCart = { viewModel.addComboToCart(it) },
                     onLikeReel = { viewModel.likeReel(it) },
                     onBannerClick = { /* scroll or search */ }
                   )

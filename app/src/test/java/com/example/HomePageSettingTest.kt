@@ -161,6 +161,10 @@ class HomePageSettingTest {
 
     val reelsBlock = repo.homeSections.value.find { it.type == "reels_showcase" }!!
     assertEquals("slider3", reelsBlock.layout)
+    assertEquals(3, reelsBlock.columnsPerRow)
+    assertEquals(1, reelsBlock.rowCount)
+    assertEquals(3, reelsBlock.maxItems)
+    assertEquals(3, com.example.ui.components.resolveBlockGridConfig(reelsBlock).defaultLimit)
     assertTrue(reelsBlock.enabled)
 
     val initialReels = repo.reels.value
@@ -171,5 +175,61 @@ class HomePageSettingTest {
     val afterLikes = repo.reels.value.first { it.id == firstReel.id }
     assertTrue(afterLikes.userLiked)
     assertEquals(beforeLikes + 1, afterLikes.likes)
+  }
+
+  @Test
+  fun comboPacksAndB2G1BlocksAndAllCategoryCatalog_workProperly() {
+    val repo = StoreRepository(context)
+    val sections = repo.homeSections.value
+
+    val comboBlock = sections.find { it.type == "combo_packs" }!!
+    assertEquals("কম্বো প্যাক", comboBlock.title)
+    assertEquals(3, comboBlock.columnsPerRow)
+    assertTrue(comboBlock.enabled)
+
+    val b2g1Block = sections.find { it.type == "b2g1_offers" }!!
+    assertEquals("Buy 2 Get 1", b2g1Block.title)
+    assertTrue(b2g1Block.productIds.isNotEmpty())
+    assertTrue(b2g1Block.enabled)
+
+    // Verify combos seed + addComboToCart
+    assertTrue(repo.combos.value.size >= 3)
+    val firstCombo = repo.combos.value.first()
+    assertTrue(repo.addComboToCart(firstCombo))
+    assertEquals(1, repo.cart.value.size)
+    assertEquals(firstCombo.comboPrice, repo.cart.value.first().product.price)
+
+    // Verify catalog includes All storefront categories including টি-শার্ট and প্যান্ট
+    val categoriesPresent = repo.products.value.map { it.category }.toSet()
+    assertTrue(categoriesPresent.contains("শাড়ি"))
+    assertTrue(categoriesPresent.contains("জামা / কামিজ"))
+    assertTrue(categoriesPresent.contains("ব্রাইডাল সেট"))
+    assertTrue(categoriesPresent.contains("নেকলেস"))
+    assertTrue(categoriesPresent.contains("বাচ্চাদের পোশাক"))
+    assertTrue(categoriesPresent.contains("টি-শার্ট"))
+    assertTrue(categoriesPresent.contains("প্যান্ট"))
+  }
+
+  @Test
+  fun perBlockColumnsAndRowCount_persistAcrossReload() {
+    val repo = StoreRepository(context)
+    repo.updateHomeSection("hot_sale") {
+      it.copy(columnsPerRow = 4, rowCount = 2, displayStyle = "grid", layout = "grid3x2", maxItems = 8)
+    }
+    repo.updateHomeSection("reels_showcase") {
+      it.copy(columnsPerRow = 2, rowCount = 2, displayStyle = "grid", maxItems = 4)
+    }
+
+    val reloaded = StoreRepository(context)
+    val hotSale = reloaded.homeSections.value.first { it.id == "hot_sale" }
+    assertEquals(4, hotSale.columnsPerRow)
+    assertEquals(2, hotSale.rowCount)
+    assertEquals("grid", hotSale.displayStyle)
+    assertEquals(8, com.example.ui.components.resolveBlockGridConfig(hotSale).defaultLimit)
+
+    val reels = reloaded.homeSections.value.first { it.id == "reels_showcase" }
+    assertEquals(2, reels.columnsPerRow)
+    assertEquals(2, reels.rowCount)
+    assertEquals(4, com.example.ui.components.resolveBlockGridConfig(reels).defaultLimit)
   }
 }

@@ -50,6 +50,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.model.BannerItem
 import com.example.data.model.Category
+import com.example.data.model.ComboPack
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
 import com.example.data.model.ReelItem
@@ -69,8 +72,11 @@ import com.example.ui.components.CompactProductCard
 import com.example.ui.components.FullSectionCollectionDialog
 import com.example.ui.components.ProductCard
 import com.example.ui.components.ReelVideoPlayerDialog
+import com.example.ui.components.StorefrontComboBlockCard
 import com.example.ui.components.StorefrontReelsBlockCard
 import com.example.ui.components.VoucherCenterDialog
+import com.example.ui.components.resolveBlockGridConfig
+import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
@@ -79,14 +85,16 @@ import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.RoyalMaroon
 
 private val fallbackDefaultSections = listOf(
-  HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", layout = "banner", enabled = true),
-  HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", layout = "strip", enabled = true),
-  HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", layout = "strip", enabled = true),
-  HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", icon = "✨", badge = "NEW", layout = "slider3", enabled = true, maxItems = 12),
-  HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", icon = "🔥", badge = "HOT 🔥", layout = "slider3", enabled = true, maxItems = 12),
-  HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", enabled = true, maxItems = 6),
-  HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", icon = "🎬", badge = "REELS 🎥", layout = "slider3", enabled = true, maxItems = 12),
-  HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", enabled = true, maxItems = 9)
+  HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", layout = "banner", displayStyle = "banner", columnsPerRow = 1, rowCount = 1, enabled = true),
+  HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
+  HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
+  HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", icon = "✨", badge = "NEW", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
+  HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", icon = "🔥", badge = "HOT 🔥", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
+  HomeSectionConfig(id = "combo_packs", type = "combo_packs", title = "কম্বো প্যাক", icon = "🎁", badge = "COMBO", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
+  HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
+  HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", columnsPerRow = 3, rowCount = 2, displayStyle = "grid", enabled = true, maxItems = 6),
+  HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", icon = "🎬", badge = "REELS 🎥", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
+  HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9)
 )
 
 @Composable
@@ -97,6 +105,8 @@ fun StorefrontScreen(
   categories: List<Category> = emptyList(),
   homeSections: List<HomeSectionConfig> = emptyList(),
   reels: List<ReelItem> = emptyList(),
+  combos: List<ComboPack> = emptyList(),
+  cartItemCount: Int = 0,
   selectedCategory: String = "All",
   searchQuery: String = "",
   onCategorySelected: (String) -> Unit = {},
@@ -106,6 +116,7 @@ fun StorefrontScreen(
   scrollToTopTrigger: Int = 0,
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
+  onAddComboToCart: (ComboPack) -> Unit = {},
   onLikeReel: (String) -> Unit = {},
   onBannerClick: (BannerItem) -> Unit,
   modifier: Modifier = Modifier
@@ -118,6 +129,7 @@ fun StorefrontScreen(
   var expandedSectionIds by remember { mutableStateOf(setOf<String>()) }
   var collectionDialogSection by remember { mutableStateOf<HomeSectionConfig?>(null) }
   var activeReelForPlayback by remember { mutableStateOf<ReelItem?>(null) }
+  var allProductsInlineCat by remember { mutableStateOf("All") }
 
   val isFilteredMode = selectedCategory != "All" || searchQuery.isNotBlank() || imageSearchState != null
   val activeSections = remember(homeSections) {
@@ -183,6 +195,13 @@ fun StorefrontScreen(
         val picked = products.filter { it.isHotSale || idSet.contains(it.id) }
         if (picked.isNotEmpty()) picked else products.take(6)
       }
+      "b2g1_offers" -> {
+        val idSet = section.productIds.toSet()
+        val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
+        val flagged = products.filter { it.isB2G1 && !idSet.contains(it.id) }
+        val combined = pinned + flagged
+        if (combined.isNotEmpty()) combined else products.take(6)
+      }
       "best_deals" -> {
         val idSet = section.productIds.toSet()
         val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
@@ -193,13 +212,29 @@ fun StorefrontScreen(
         if (combined.isNotEmpty()) combined else products
       }
       "all_products" -> {
-        if (section.productIds.isNotEmpty()) {
+        // Round-robin interleave across ALL categories so every category appears on first view
+        val baseList = if (section.productIds.isNotEmpty()) {
           val idSet = section.productIds.toSet()
           val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
           pinned + products.filterNot { idSet.contains(it.id) }
         } else {
-          products
+          val byCategory = products.groupBy { it.category.trim().ifBlank { "অন্যান্য" } }
+          val buckets = byCategory.values.map { it.toMutableList() }
+          buildList {
+            var remaining = true
+            while (remaining) {
+              remaining = false
+              buckets.forEach { bucket ->
+                if (bucket.isNotEmpty()) {
+                  add(bucket.removeAt(0))
+                  remaining = true
+                }
+              }
+            }
+          }
         }
+        if (allProductsInlineCat == "All") baseList
+        else baseList.filter { it.category.equals(allProductsInlineCat, ignoreCase = true) }
       }
       "category_products" -> {
         val cat = section.categoryName.trim()
@@ -400,14 +435,38 @@ fun StorefrontScreen(
                   onAddToCart = onAddToCart
                 )
               }
+            } else if (section.type == "combo_packs") {
+              item(key = "sec_${section.id}") {
+                val isExpanded = expandedSectionIds.contains(section.id)
+                StorefrontComboBlockCard(
+                  section = section,
+                  combos = combos,
+                  isExpanded = isExpanded,
+                  onSeeMoreClick = {
+                    expandedSectionIds = if (isExpanded) {
+                      expandedSectionIds - section.id
+                    } else {
+                      expandedSectionIds + section.id
+                    }
+                  },
+                  onAddComboToCart = onAddComboToCart
+                )
+              }
             } else {
               item(key = "sec_${section.id}") {
-                val sectionProducts = remember(products, section) { resolveSectionProducts(section) }
+                val sectionProducts = remember(products, section, allProductsInlineCat) { resolveSectionProducts(section) }
                 val isExpanded = expandedSectionIds.contains(section.id)
+                val allProductCategories = remember(products) {
+                  products.map { it.category.trim() }.filter { it.isNotBlank() }.distinct()
+                }
                 StorefrontProductBlockCard(
                   section = section,
                   products = sectionProducts,
                   isExpanded = isExpanded,
+                  cartItemCount = cartItemCount,
+                  allCategoriesList = if (section.type == "all_products") allProductCategories else emptyList(),
+                  selectedInlineCategory = allProductsInlineCat,
+                  onSelectInlineCategory = { allProductsInlineCat = it },
                   onToggleExpand = { defaultLimit ->
                     if (!isExpanded && sectionProducts.size <= defaultLimit) {
                       collectionDialogSection = section
@@ -513,25 +572,27 @@ private fun StorefrontProductBlockCard(
   section: HomeSectionConfig,
   products: List<Product>,
   isExpanded: Boolean,
+  cartItemCount: Int = 0,
+  allCategoriesList: List<String> = emptyList(),
+  selectedInlineCategory: String = "All",
+  onSelectInlineCategory: (String) -> Unit = {},
   onToggleExpand: (Int) -> Unit,
   onOpenFullCollection: () -> Unit,
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit
 ) {
-  val defaultLimit = when (section.layout) {
-    "grid3x2" -> 6
-    "grid3x3" -> 9
-    else -> section.maxItems.coerceAtLeast(3)
-  }
-  val displayProducts = remember(products, isExpanded, section.layout, defaultLimit) {
+  val cfg = remember(section) { resolveBlockGridConfig(section) }
+  val defaultLimit = cfg.defaultLimit
+  val displayProducts = remember(products, isExpanded, cfg) {
     if (isExpanded) products
-    else if (section.layout == "slider3") products.take(section.maxItems.coerceAtLeast(6))
-    else products.take(defaultLimit)
+    else if (cfg.isSlider) products.take(cfg.defaultLimit)
+    else products.take(cfg.cols * cfg.rows)
   }
 
   val cardBadge = when (section.type) {
     "new_products" -> "NEW"
     "hot_sale" -> "HOT"
+    "b2g1_offers" -> "B2G1"
     "best_deals" -> "DEAL"
     else -> null
   }
@@ -572,26 +633,27 @@ private fun StorefrontProductBlockCard(
             overflow = TextOverflow.Ellipsis
           )
           if (section.badge.isNotBlank()) {
+            val isRedBadge = section.type == "hot_sale" || section.type == "b2g1_offers"
             Surface(
               shape = RoundedCornerShape(8.dp),
-              color = if (section.type == "hot_sale") Color(0xFFFFEBEE) else CreamSurface,
+              color = if (isRedBadge) Color(0xFFFFEBEE) else CreamSurface,
               border = BorderStroke(
                 1.dp,
-                if (section.type == "hot_sale") Color(0xFFEF4444) else BorderGold
+                if (isRedBadge) Color(0xFFEF4444) else BorderGold
               )
             ) {
               Text(
                 text = section.badge,
                 fontSize = 8.5.sp,
                 fontWeight = FontWeight.Black,
-                color = if (section.type == "hot_sale") Color(0xFFC62828) else DarkEspresso,
+                color = if (isRedBadge) Color(0xFFC62828) else DarkEspresso,
                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
               )
             }
           }
         }
 
-        if (products.isNotEmpty()) {
+        if (products.isNotEmpty() || selectedInlineCategory != "All") {
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -632,6 +694,81 @@ private fun StorefrontProductBlockCard(
         }
       }
 
+      // Live B2G1 cart progress pill
+      if (section.type == "b2g1_offers") {
+        val unlocked = cartItemCount >= 2
+        Surface(
+          shape = RoundedCornerShape(10.dp),
+          color = if (unlocked) Color(0xFFECFDF5) else Color(0xFFFFF8E1),
+          border = BorderStroke(1.dp, if (unlocked) AccentGreen else BorderGold),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text(
+              text = if (unlocked) {
+                "🎉 অভিনন্দন! Buy 2 Get 1 অফার আনলক হয়েছে!"
+              } else {
+                "🎁 যেকোনো ২টি নিলেই ১টি ফ্রি!"
+              },
+              fontSize = 10.sp,
+              fontWeight = FontWeight.Bold,
+              color = if (unlocked) Color(0xFF047857) else DarkEspresso
+            )
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = if (unlocked) AccentGreen else RoyalMaroon
+            ) {
+              Text(
+                text = if (unlocked) "✓ ফ্রি আনলকড" else "${cartItemCount.coerceAtMost(2)}/২টি কার্টে",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+              )
+            }
+          }
+        }
+      }
+
+      // Inline Category Filter Chips for "সব প্রোডাক্ট" showcasing ALL categories
+      if (section.type == "all_products" && allCategoriesList.isNotEmpty()) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .testTag("all_products_category_chips"),
+          horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+          val chipList = listOf("All" to "🌟 সব ক্যাটাগরি (${products.size})") +
+            allCategoriesList.map { it to it }
+          chipList.forEach { (catKey, catLabel) ->
+            val selected = selectedInlineCategory == catKey
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = if (selected) RoyalMaroon else CreamSurface,
+              border = BorderStroke(1.dp, if (selected) RoyalMaroon else BorderGold),
+              modifier = Modifier
+                .clickable { onSelectInlineCategory(catKey) }
+                .testTag("all_prod_chip_$catKey")
+            ) {
+              Text(
+                text = if (catKey == "All") "🌟 সব ক্যাটাগরি" else catLabel,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (selected) Color.White else DarkEspresso,
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+              )
+            }
+          }
+        }
+      }
+
       if (displayProducts.isEmpty()) {
         Text(
           text = "এই ব্লকে এখনো কোনো প্রোডাক্ট যুক্ত করা হয়নি। অ্যাডমিন Home Page Setting থেকে প্রোডাক্ট সিলেক্ট করুন।",
@@ -639,10 +776,10 @@ private fun StorefrontProductBlockCard(
           color = Color.Gray,
           modifier = Modifier.padding(vertical = 8.dp)
         )
-      } else if (!isExpanded && section.layout == "slider3") {
-        // Horizontal 3-card per viewport touch slider (Dynamic width via BoxWithConstraints)
+      } else if (!isExpanded && cfg.isSlider) {
+        // Horizontal slider matching exact configured columnsPerRow (2, 3, or 4 cards visible)
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-          val cardWidth = (maxWidth - 16.dp) / 3f
+          val cardWidth = (maxWidth - (8.dp * (cfg.cols - 1))) / cfg.cols.toFloat()
           LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -659,12 +796,12 @@ private fun StorefrontProductBlockCard(
           }
         }
       } else {
-        // 3-Column Multi-Row Grid (2 lines = 6 items for best_deals, 3 lines = 9 items for all_products, or all when expanded)
+        // Dynamic 2 / 3 / 4-Column Multi-Row Grid
         Column(
           modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-          displayProducts.chunked(3).forEach { rowProducts ->
+          displayProducts.chunked(cfg.cols).forEach { rowProducts ->
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -678,7 +815,7 @@ private fun StorefrontProductBlockCard(
                   modifier = Modifier.weight(1f)
                 )
               }
-              repeat(3 - rowProducts.size) {
+              repeat(cfg.cols - rowProducts.size) {
                 Spacer(modifier = Modifier.weight(1f))
               }
             }

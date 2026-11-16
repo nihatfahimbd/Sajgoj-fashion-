@@ -3380,6 +3380,7 @@ fun ProductFormDialog(
 
   var isHotSale by remember { mutableStateOf(product?.isHotSale ?: false) }
   var isBestDeal by remember { mutableStateOf(product?.isBestDeal ?: false) }
+  var isB2G1 by remember { mutableStateOf(product?.isB2G1 ?: false) }
 
   var formError by remember { mutableStateOf<String?>(null) }
 
@@ -4061,6 +4062,24 @@ fun ProductFormDialog(
                 modifier = Modifier.testTag("product_form_best_deal_switch")
               )
             }
+
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "🎁 Buy 2 Get 1 অফারে যুক্ত করুন",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkEspresso
+              )
+              Switch(
+                checked = isB2G1,
+                onCheckedChange = { isB2G1 = it },
+                modifier = Modifier.testTag("product_form_b2g1_switch")
+              )
+            }
           }
         }
 
@@ -4101,6 +4120,7 @@ fun ProductFormDialog(
               ageGroups = ageGroups,
               isHotSale = isHotSale,
               isBestDeal = isBestDeal,
+              isB2G1 = isB2G1,
               createdAt = product?.createdAt ?: System.currentTimeMillis()
             )
             onSave(p)

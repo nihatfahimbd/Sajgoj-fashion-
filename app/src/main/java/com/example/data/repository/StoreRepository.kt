@@ -6,6 +6,7 @@ import com.example.R
 import com.example.data.model.BannerItem
 import com.example.data.model.CartItem
 import com.example.data.model.Category
+import com.example.data.model.ComboPack
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
 import com.example.data.model.ExchangeItem
@@ -56,6 +57,7 @@ class StoreRepository(private val context: Context) {
       sizes = listOf("Free Size"),
       isHotSale = true,
       isBestDeal = true,
+      isB2G1 = true,
       createdAt = 1729500001000L
     ),
     Product(
@@ -70,6 +72,7 @@ class StoreRepository(private val context: Context) {
       colors = listOf("রয়্যাল গোল্ডেন", "অ্যান্টিক গোল্ড", "রুবী রেড"),
       isHotSale = true,
       isBestDeal = true,
+      isB2G1 = true,
       createdAt = 1729500002000L
     ),
     Product(
@@ -98,6 +101,7 @@ class StoreRepository(private val context: Context) {
       colors = listOf("রুবী রেড", "পান্না সবুজ", "রয়েল ব্লু"),
       isHotSale = true,
       isBestDeal = true,
+      isB2G1 = true,
       createdAt = 1729500004000L
     ),
     Product(
@@ -126,6 +130,7 @@ class StoreRepository(private val context: Context) {
       description = "রঙিন এনামেল কারুকাজ সমৃদ্ধ ঐতিহ্যবাহী মীনাকারি কানের দুল ও নোলক। উৎসবের সাজে দেবে এক রাজকীয় মাত্রা।",
       isHotSale = true,
       isBestDeal = true,
+      isB2G1 = true,
       createdAt = 1729500006000L
     ),
     Product(
@@ -176,6 +181,7 @@ class StoreRepository(private val context: Context) {
       ageGroups = listOf("১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৫-৬ বছর"),
       isHotSale = true,
       isBestDeal = true,
+      isB2G1 = true,
       createdAt = 1729500009000L
     ),
     Product(
@@ -210,6 +216,7 @@ class StoreRepository(private val context: Context) {
       sizes = listOf("Free Size"),
       isHotSale = false,
       isBestDeal = true,
+      isB2G1 = true,
       createdAt = 1729500011000L
     ),
     Product(
@@ -228,18 +235,131 @@ class StoreRepository(private val context: Context) {
       isHotSale = true,
       isBestDeal = true,
       createdAt = 1729500012000L
+    ),
+    Product(
+      id = "p13",
+      name = "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট (Premium Tee)",
+      price = 550,
+      stock = 24,
+      category = "টি-শার্ট",
+      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      sku = "SAJ-TS13",
+      description = "২২০ জিএসএম ১০০% কম্বড কটন ড্রপ-শোল্ডার টি-শার্ট। প্রতিদিনের আরামদায়ক ও স্টাইলিশ ব্যবহারের জন্য সেরা।",
+      rating = 4.9f,
+      reviewsCount = 24,
+      colors = listOf("কালো", "মেরুন", "অফ হোয়াইট", "নেভি ব্লু"),
+      sizes = listOf("M", "L", "XL", "XXL"),
+      isHotSale = true,
+      isBestDeal = true,
+      createdAt = 1729500013000L
+    ),
+    Product(
+      id = "p14",
+      name = "কম্ফোর্ট স্ট্রেচ চিনো ও গ্যাবার্ডিন প্যান্ট",
+      price = 1190,
+      stock = 16,
+      category = "প্যান্ট",
+      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      sku = "SAJ-PN14",
+      description = "স্লিম-কম্ফোর্ট ফিট স্ট্রেচ কটন টুইল প্যান্ট। অফিস ও ক্যাজুয়াল দুই ক্ষেত্রেই দারুণ মানানসই।",
+      rating = 4.8f,
+      reviewsCount = 19,
+      colors = listOf("কালো", "নেভি ব্লু", "খাকি"),
+      sizes = listOf("30", "32", "34", "36"),
+      isHotSale = false,
+      isBestDeal = true,
+      createdAt = 1729500014000L
+    ),
+    Product(
+      id = "p15",
+      name = "মুক্তা ও স্টোন খচিত রাজকীয় চুড়ি-বালা কালেকশন",
+      price = 1390,
+      stock = 14,
+      category = "চুড়ি ও বালা",
+      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      sku = "SAJ-BG15",
+      description = "আধুনিক ও ঐতিহ্যবাহী ডিজাইনের মুক্তা বসানো বালা ও চুড়ি সেট। যেকোনো উৎসবে হাতে দেবে রাজকীয় আভা।",
+      rating = 4.9f,
+      reviewsCount = 21,
+      colors = listOf("গোল্ডেন", "রোজ গোল্ড"),
+      sizes = listOf("2.4", "2.6", "2.8"),
+      isHotSale = true,
+      isBestDeal = true,
+      isB2G1 = true,
+      createdAt = 1729500015000L
+    )
+  )
+
+  private val initialCombos = listOf(
+    ComboPack(
+      id = "combo-1",
+      title = "রয়েল ব্রাইডাল শাড়ি + কুন্দন চোকার কম্বো",
+      subtitle = "ঈদ ও বিয়ের রাজকীয় সেট",
+      description = "এক্সক্লুসিভ কাতান শাড়ি এবং রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট একসাথে স্পেশাল কম্বো মূল্যে।",
+      badge = "ব্রাইডাল কম্বো ✨",
+      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      productIds = listOf("p1", "p2"),
+      regularPrice = 6499,
+      comboPrice = 5499,
+      savings = 1000,
+      isActive = true,
+      stock = 8
+    ),
+    ComboPack(
+      id = "combo-2",
+      title = "জামদানি শাড়ি + ঝুমকো & বালা উৎসব কম্বো",
+      subtitle = "৩টি প্রিমিয়াম পণ্যের সেট",
+      description = "জামদানি শাড়ি, মীনাকারি ঝুমকো ও সিটি গোল্ড চুড়ি সেট — উৎসবের সম্পূর্ণ সাজ এক প্যাকেজে।",
+      badge = "হট কম্বো 🔥",
+      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      productIds = listOf("p5", "p6", "p3"),
+      regularPrice = 6900,
+      comboPrice = 5850,
+      savings = 1050,
+      isActive = true,
+      stock = 6
+    ),
+    ComboPack(
+      id = "combo-3",
+      title = "ফ্যামিলি কটন টি-শার্ট + চিনো প্যান্ট কম্বো",
+      subtitle = "স্মার্ট ক্যাজুয়াল ডুয়ো",
+      description = "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট ও কম্ফোর্ট চিনো প্যান্ট কম্বো ডিল।",
+      badge = "সুপার সেভ 💰",
+      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      productIds = listOf("p13", "p14"),
+      regularPrice = 1740,
+      comboPrice = 1490,
+      savings = 250,
+      isActive = true,
+      stock = 12
+    ),
+    ComboPack(
+      id = "combo-4",
+      title = "লং কটন থ্রি-পিস + ক্রিস্টাল ব্রেসলেট কম্বো",
+      subtitle = "ডেইলি ও পার্টি স্টাইল",
+      description = "ডিজাইনার কটন থ্রি-পিস সাথে ফ্রি-ম্যাচিং রুবি ক্রিস্টাল ব্রেসলেট পেয়ার।",
+      badge = "মেগা অফার 🎁",
+      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      productIds = listOf("p12", "p4"),
+      regularPrice = 2780,
+      comboPrice = 2350,
+      savings = 430,
+      isActive = true,
+      stock = 10
     )
   )
 
   private val initialHomeSections = listOf(
-    HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", subtitle = "হোম পেজের প্রধান ব্যানার স্লাইডার", icon = "🖼️", layout = "banner", enabled = true),
-    HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", subtitle = "Claim Vouchers to Save More!", icon = "🎟️", layout = "strip", enabled = true),
-    HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", subtitle = "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি", icon = "🏷️", layout = "strip", enabled = true),
-    HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", subtitle = "নতুন আপলোড হওয়া প্রোডাক্ট (৩টি করে স্লাইড)", icon = "✨", badge = "NEW", layout = "slider3", enabled = true, maxItems = 12),
-    HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", subtitle = "হট সেল প্রোডাক্ট ডিসপ্লে (৩টি করে স্লাইড)", icon = "🔥", badge = "HOT 🔥", layout = "slider3", enabled = true, productIds = listOf("p9", "p6", "p5", "p4", "p2", "p1"), maxItems = 12),
-    HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6", "p9", "p10", "p11", "p12"), maxItems = 6),
-    HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", subtitle = "৩টি করে শপেবল ভিডিও ডিসপ্লে", icon = "🎬", badge = "REELS 🎥", layout = "slider3", enabled = true, maxItems = 12),
-    HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "৩ লাইনে ৯টি প্রোডাক্ট + আরো দেখুন", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", enabled = true, maxItems = 9)
+    HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", subtitle = "হোম পেজের প্রধান ব্যানার স্লাইডার", icon = "🖼️", layout = "banner", displayStyle = "banner", columnsPerRow = 1, rowCount = 1, enabled = true),
+    HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", subtitle = "Claim Vouchers to Save More!", icon = "🎟️", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
+    HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", subtitle = "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি", icon = "🏷️", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
+    HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", subtitle = "নতুন আপলোড হওয়া প্রোডাক্ট", icon = "✨", badge = "NEW", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
+    HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", subtitle = "হট সেল প্রোডাক্ট ডিসপ্লে", icon = "🔥", badge = "HOT 🔥", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, productIds = listOf("p9", "p6", "p5", "p4", "p2", "p1", "p13", "p15"), maxItems = 12),
+    HomeSectionConfig(id = "combo_packs", type = "combo_packs", title = "কম্বো প্যাক", subtitle = "বান্ডেল কিনে বিশাল সেভ করুন", icon = "🎁", badge = "COMBO", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
+    HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", subtitle = "যেকোনো ২টি নিলেই ১টি ফ্রি", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, productIds = listOf("p1", "p2", "p4", "p6", "p9", "p11", "p15"), maxItems = 12),
+    HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", columnsPerRow = 3, rowCount = 2, displayStyle = "grid", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6", "p9", "p10", "p11", "p12"), maxItems = 6),
+    HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "রিলস ভিডিও শপ", subtitle = "৩টি করে শপেবল ভিডিও ডিসপ্লে", icon = "🎬", badge = "REELS 🎥", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
+    HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "সব ক্যাটাগরির প্রোডাক্ট ডিসপ্লে", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9)
   )
 
   private val initialReels = listOf(
@@ -488,6 +608,9 @@ class StoreRepository(private val context: Context) {
   private val _reels = MutableStateFlow<List<ReelItem>>(initialReels)
   val reels: StateFlow<List<ReelItem>> = _reels.asStateFlow()
 
+  private val _combos = MutableStateFlow<List<ComboPack>>(initialCombos)
+  val combos: StateFlow<List<ComboPack>> = _combos.asStateFlow()
+
   private val initialReturns = listOf(
     ReturnRecord(
       id = "RET-884211",
@@ -615,6 +738,7 @@ class StoreRepository(private val context: Context) {
                 lastSyncSource = doc.getString("lastSyncSource") ?: "",
                 isHotSale = doc.getBoolean("isHotSale") ?: false,
                 isBestDeal = doc.getBoolean("isBestDeal") ?: false,
+                isB2G1 = doc.getBoolean("isB2G1") ?: false,
                 createdAt = doc.getLong("createdAt") ?: 0L
               )
             } catch (e: Exception) {
@@ -823,6 +947,29 @@ class StoreRepository(private val context: Context) {
     return true
   }
 
+  fun addComboToCart(combo: ComboPack): Boolean {
+    if (!combo.isActive || combo.stock <= 0) return false
+    val comboProduct = Product(
+      id = combo.id,
+      name = "🎁 ${combo.title}",
+      price = combo.comboPrice,
+      stock = combo.stock,
+      category = "কম্বো প্যাক",
+      imageUrl = combo.imageUrl.ifBlank { "res://${R.drawable.banner_eid_special_1792530116809}" },
+      sku = combo.id.uppercase(),
+      description = combo.description.ifBlank { combo.subtitle },
+      rating = 5.0f,
+      reviewsCount = 28
+    )
+    return addToCart(
+      product = comboProduct,
+      quantity = 1,
+      color = "কম্বো সেট",
+      size = "${combo.productIds.size}টি পণ্য",
+      ageGroup = ""
+    )
+  }
+
   fun updateCartQuantity(itemKey: String, delta: Int) {
     val current = _cart.value.toMutableList()
     val index = current.indexOfFirst { it.itemKey == itemKey }
@@ -913,6 +1060,15 @@ class StoreRepository(private val context: Context) {
     )
     _products.value = updatedProducts
     persistLocalSyncSnapshot()
+
+    // Deduct stock on any combo packs included in the order
+    val comboDeductions = newOrder.items.filter { it.productId.startsWith("combo-") }
+    if (comboDeductions.isNotEmpty()) {
+      _combos.value = _combos.value.map { combo ->
+        val qty = comboDeductions.filter { it.productId == combo.id }.sumOf { it.quantity }
+        if (qty > 0) combo.copy(stock = (combo.stock - qty).coerceAtLeast(0)) else combo
+      }
+    }
 
     // Add to orders
     _orders.value = listOf(newOrder) + _orders.value
@@ -1218,6 +1374,7 @@ class StoreRepository(private val context: Context) {
           "lastSyncSource" to stamped.lastSyncSource,
           "isHotSale" to stamped.isHotSale,
           "isBestDeal" to stamped.isBestDeal,
+          "isB2G1" to stamped.isB2G1,
           "createdAt" to stamped.createdAt
         )
       )
@@ -1275,6 +1432,7 @@ class StoreRepository(private val context: Context) {
           "lastSyncSource" to stamped.lastSyncSource,
           "isHotSale" to stamped.isHotSale,
           "isBestDeal" to stamped.isBestDeal,
+          "isB2G1" to stamped.isB2G1,
           "createdAt" to stamped.createdAt
         ),
         SetOptions.merge()
@@ -1442,10 +1600,51 @@ class StoreRepository(private val context: Context) {
           }
           sec.copy(productIds = updatedIds)
         }
+        "b2g1_offers" -> {
+          val updatedIds = if (product.isB2G1) {
+            if (sec.productIds.contains(product.id)) sec.productIds else listOf(product.id) + sec.productIds
+          } else {
+            sec.productIds.filterNot { it == product.id }
+          }
+          sec.copy(productIds = updatedIds)
+        }
         else -> sec
       }
     }
     saveHomeSections(next)
+  }
+
+  private fun normalizeSectionConfig(s: HomeSectionConfig): HomeSectionConfig {
+    val inferredCols = when {
+      s.columnsPerRow in 2..4 -> s.columnsPerRow
+      else -> 3
+    }
+    val inferredRows = when {
+      s.rowCount in 1..4 -> s.rowCount
+      s.layout == "grid3x2" -> 2
+      s.layout == "grid3x3" -> 3
+      else -> 1
+    }
+    val inferredStyle = when {
+      s.type in setOf("top_banner", "promo_banner") -> "banner"
+      s.type in setOf("voucher_strip", "category_slider") -> "strip"
+      s.displayStyle == "grid" || s.displayStyle == "slider" -> s.displayStyle
+      s.layout == "grid3x2" || s.layout == "grid3x3" -> "grid"
+      else -> "slider"
+    }
+    val fixedMax = if (s.type == "reels_showcase" && inferredStyle == "slider" && inferredRows == 1 && s.maxItems == 12) {
+      inferredCols
+    } else if (inferredStyle == "grid") {
+      inferredCols * inferredRows
+    } else {
+      s.maxItems
+    }
+    return s.copy(
+      columnsPerRow = inferredCols,
+      rowCount = inferredRows,
+      displayStyle = inferredStyle,
+      maxItems = fixedMax
+    )
   }
 
   private fun loadHomeSections(): List<HomeSectionConfig> {
@@ -1464,40 +1663,66 @@ class StoreRepository(private val context: Context) {
               }
             }
           }
+          val legacyLayout = o.optString("layout", "slider3")
+          val defaultCols = 3
+          val defaultRows = when (legacyLayout) {
+            "grid3x2" -> 2
+            "grid3x3" -> 3
+            else -> 1
+          }
+          val defaultStyle = when (legacyLayout) {
+            "grid3x2", "grid3x3" -> "grid"
+            "banner" -> "banner"
+            "strip" -> "strip"
+            else -> "slider"
+          }
           add(
-            HomeSectionConfig(
-              id = o.optString("id"),
-              type = o.optString("type"),
-              title = o.optString("title"),
-              subtitle = o.optString("subtitle"),
-              icon = o.optString("icon", "✨"),
-              badge = o.optString("badge", ""),
-              layout = o.optString("layout", "slider3"),
-              enabled = o.optBoolean("enabled", true),
-              isCustom = o.optBoolean("isCustom", false),
-              categoryName = o.optString("categoryName", ""),
-              productIds = pids,
-              imageUrl = o.optString("imageUrl", ""),
-              bannerButtonText = o.optString("bannerButtonText", "অফার দেখুন"),
-              bannerLinkCategory = o.optString("bannerLinkCategory", "All"),
-              maxItems = o.optInt("maxItems", 12)
+            normalizeSectionConfig(
+              HomeSectionConfig(
+                id = o.optString("id"),
+                type = o.optString("type"),
+                title = o.optString("title"),
+                subtitle = o.optString("subtitle"),
+                icon = o.optString("icon", "✨"),
+                badge = o.optString("badge", ""),
+                layout = legacyLayout,
+                columnsPerRow = if (o.has("columnsPerRow")) o.optInt("columnsPerRow", defaultCols) else defaultCols,
+                rowCount = if (o.has("rowCount")) o.optInt("rowCount", defaultRows) else defaultRows,
+                displayStyle = if (o.has("displayStyle")) o.optString("displayStyle", defaultStyle) else defaultStyle,
+                enabled = o.optBoolean("enabled", true),
+                isCustom = o.optBoolean("isCustom", false),
+                categoryName = o.optString("categoryName", ""),
+                productIds = pids,
+                imageUrl = o.optString("imageUrl", ""),
+                bannerButtonText = o.optString("bannerButtonText", "অফার দেখুন"),
+                bannerLinkCategory = o.optString("bannerLinkCategory", "All"),
+                maxItems = o.optInt("maxItems", 12)
+              )
             )
           )
         }
       }
       if (list.isNotEmpty()) {
-        val hasReels = list.any { it.type == "reels_showcase" }
-        if (!hasReels) {
-          val copy = list.toMutableList()
-          val reelsSec = initialHomeSections.find { it.type == "reels_showcase" }
-          if (reelsSec != null) {
+        val copy = list.toMutableList()
+        if (copy.none { it.type == "combo_packs" }) {
+          initialHomeSections.find { it.type == "combo_packs" }?.let { comboSec ->
+            val hotIdx = copy.indexOfFirst { it.id == "hot_sale" }
+            if (hotIdx >= 0) copy.add(hotIdx + 1, comboSec) else copy.add(comboSec)
+          }
+        }
+        if (copy.none { it.type == "b2g1_offers" }) {
+          initialHomeSections.find { it.type == "b2g1_offers" }?.let { b2g1Sec ->
+            val comboIdx = copy.indexOfFirst { it.type == "combo_packs" }
+            if (comboIdx >= 0) copy.add(comboIdx + 1, b2g1Sec) else copy.add(b2g1Sec)
+          }
+        }
+        if (copy.none { it.type == "reels_showcase" }) {
+          initialHomeSections.find { it.type == "reels_showcase" }?.let { reelsSec ->
             val dealsIdx = copy.indexOfFirst { it.id == "best_deals" }
             if (dealsIdx >= 0) copy.add(dealsIdx + 1, reelsSec) else copy.add(reelsSec)
           }
-          copy
-        } else {
-          list
         }
+        copy
       } else {
         initialHomeSections
       }
@@ -1507,9 +1732,10 @@ class StoreRepository(private val context: Context) {
   }
 
   fun saveHomeSections(sections: List<HomeSectionConfig>) {
-    _homeSections.value = sections
+    val normalized = sections.map { normalizeSectionConfig(it) }
+    _homeSections.value = normalized
     val arr = JSONArray()
-    sections.forEach { s ->
+    normalized.forEach { s ->
       arr.put(
         JSONObject().apply {
           put("id", s.id)
@@ -1519,6 +1745,9 @@ class StoreRepository(private val context: Context) {
           put("icon", s.icon)
           put("badge", s.badge)
           put("layout", s.layout)
+          put("columnsPerRow", s.columnsPerRow)
+          put("rowCount", s.rowCount)
+          put("displayStyle", s.displayStyle)
           put("enabled", s.enabled)
           put("isCustom", s.isCustom)
           put("categoryName", s.categoryName)
@@ -1565,18 +1794,21 @@ class StoreRepository(private val context: Context) {
     }
     saveHomeSections(next)
 
-    if (sectionId == "hot_sale" || sectionId == "best_deals") {
+    if (sectionId == "hot_sale" || sectionId == "best_deals" || sectionId == "b2g1_offers") {
       _products.value = _products.value.map { p ->
         if (p.id != productId) p
-        else if (sectionId == "hot_sale") p.copy(isHotSale = !p.isHotSale)
-        else p.copy(isBestDeal = !p.isBestDeal)
+        else when (sectionId) {
+          "hot_sale" -> p.copy(isHotSale = !p.isHotSale)
+          "best_deals" -> p.copy(isBestDeal = !p.isBestDeal)
+          else -> p.copy(isB2G1 = !p.isB2G1)
+        }
       }
       persistLocalSyncSnapshot()
     }
   }
 
   fun addCustomHomeSection(section: HomeSectionConfig) {
-    saveHomeSections(_homeSections.value + section)
+    saveHomeSections(_homeSections.value + normalizeSectionConfig(section))
   }
 
   fun deleteHomeSection(sectionId: String) {

@@ -196,6 +196,7 @@ class LocalInventoryStorageSync(
               lastSyncSource = o.optString("lastSyncSource", ""),
               isHotSale = o.optBoolean("isHotSale", false),
               isBestDeal = o.optBoolean("isBestDeal", false),
+              isB2G1 = o.optBoolean("isB2G1", false),
               createdAt = o.optLong("createdAt", 0L)
             )
           )
@@ -256,6 +257,7 @@ class LocalInventoryStorageSync(
         put("lastSyncSource", p.lastSyncSource)
         put("isHotSale", p.isHotSale)
         put("isBestDeal", p.isBestDeal)
+        put("isB2G1", p.isB2G1)
         put("createdAt", p.createdAt)
       }
       arr.put(o)

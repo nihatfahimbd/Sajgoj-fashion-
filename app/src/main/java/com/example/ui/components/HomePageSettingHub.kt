@@ -97,7 +97,9 @@ fun HomePageSettingHub(
   var newTitle by remember { mutableStateOf("") }
   var newSubtitle by remember { mutableStateOf("") }
   var newCategory by remember { mutableStateOf(categories.firstOrNull { it.type == "main" }?.name ?: categories.firstOrNull()?.name ?: "শাড়ি") }
-  var newLayout by remember { mutableStateOf("slider3") }
+  var newColumnsPerRow by remember { mutableStateOf(3) }
+  var newRowCount by remember { mutableStateOf(1) }
+  var newDisplayStyle by remember { mutableStateOf("slider") }
   var newBannerButtonText by remember { mutableStateOf("অফার দেখুন") }
 
   Column(modifier = modifier.fillMaxSize()) {
@@ -307,22 +309,57 @@ fun HomePageSettingHub(
                       modifier = Modifier.fillMaxWidth()
                     )
                   } else {
-                    Text(text = "ডিসপ্লে স্টাইল:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                    Text(text = "প্রতি লাইনে কয়টি প্রোডাক্ট ও কয় লাইন:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                      listOf(
-                        "slider3" to "৩টি স্লাইডার",
-                        "grid3x2" to "২ লাইনে ৬টি",
-                        "grid3x3" to "৩ লাইনে ৯টি"
-                      ).forEach { (layoutKey, layoutLabel) ->
-                        val chosen = newLayout == layoutKey
+                      listOf(2 to "২টি", 3 to "৩টি", 4 to "৪টি").forEach { (cols, label) ->
+                        val chosen = newColumnsPerRow == cols
+                        Surface(
+                          shape = RoundedCornerShape(10.dp),
+                          color = if (chosen) RoyalMaroon else CreamSurface,
+                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
+                          modifier = Modifier.clickable { newColumnsPerRow = cols }
+                        ) {
+                          Text(
+                            text = label,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (chosen) Color.White else DarkEspresso,
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                          )
+                        }
+                      }
+                      listOf("slider" to "স্লাইডার", "grid" to "গ্রিড").forEach { (styleKey, styleLabel) ->
+                        val chosen = newDisplayStyle == styleKey
                         Surface(
                           shape = RoundedCornerShape(10.dp),
                           color = if (chosen) DarkEspresso else CreamSurface,
                           border = BorderStroke(1.dp, BorderGold),
-                          modifier = Modifier.clickable { newLayout = layoutKey }
+                          modifier = Modifier.clickable { newDisplayStyle = styleKey }
                         ) {
                           Text(
-                            text = layoutLabel,
+                            text = styleLabel,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (chosen) Color.White else DarkEspresso,
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                          )
+                        }
+                      }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                      (1..4).forEach { r ->
+                        val chosen = newRowCount == r
+                        Surface(
+                          shape = RoundedCornerShape(10.dp),
+                          color = if (chosen) RoyalMaroon else CreamSurface,
+                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
+                          modifier = Modifier.clickable {
+                            newRowCount = r
+                            if (r > 1) newDisplayStyle = "grid"
+                          }
+                        ) {
+                          Text(
+                            text = "${r} লাইন",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (chosen) Color.White else DarkEspresso,
@@ -349,17 +386,16 @@ fun HomePageSettingHub(
                               else -> "✨"
                             },
                             badge = if (creatorType == "promo_banner") "AD / OFFER" else newCategory,
-                            layout = if (creatorType == "promo_banner") "banner" else newLayout,
+                            layout = if (creatorType == "promo_banner") "banner" else if (newDisplayStyle == "slider") "slider3" else "grid3x2",
+                            columnsPerRow = newColumnsPerRow,
+                            rowCount = newRowCount,
+                            displayStyle = if (creatorType == "promo_banner") "banner" else newDisplayStyle,
                             enabled = true,
                             isCustom = true,
                             categoryName = newCategory,
                             bannerButtonText = newBannerButtonText.ifBlank { "অফার দেখুন" },
                             bannerLinkCategory = newCategory,
-                            maxItems = when (newLayout) {
-                              "grid3x2" -> 6
-                              "grid3x3" -> 9
-                              else -> 12
-                            }
+                            maxItems = if (newDisplayStyle == "slider") 12 else (newColumnsPerRow * newRowCount)
                           )
                           onAddCustomSection(created)
                           expandedEditorSectionId = secId
@@ -389,11 +425,14 @@ fun HomePageSettingHub(
             }
           }
 
-          // Ordered Blocks with Up/Down + ON/OFF + Inline Search & Product Picker
+          // Ordered Blocks with Up/Down + ON/OFF + Inline Search & Product Picker + Columns/Rows Controls
           itemsIndexed(homeSections, key = { _, s -> s.id }) { index, section ->
             val isProductBlock = section.type in setOf(
-              "new_products", "hot_sale", "best_deals", "all_products", "category_products", "custom_products"
+              "new_products", "hot_sale", "b2g1_offers", "best_deals", "all_products", "category_products", "custom_products"
             )
+            val isLayoutConfigurable = isProductBlock || section.type == "reels_showcase" || section.type == "combo_packs"
+            val gridCfg = remember(section) { resolveBlockGridConfig(section) }
+            val layoutSummary = "${gridCfg.cols}টি × ${gridCfg.rows} লাইন (${if (gridCfg.isSlider) "স্লাইডার" else "গ্রিড"})"
             val isExpanded = expandedEditorSectionId == section.id
             val blockSearch = sectionProductQueries[section.id].orEmpty()
 
@@ -448,12 +487,14 @@ fun HomePageSettingHub(
                       )
                       Text(
                         text = when (section.type) {
-                          "new_products" -> "নতুন আপলোড অটো + পিন (${section.productIds.size} পিন্ড)"
-                          "hot_sale" -> "Hot Sale • ${products.count { it.isHotSale || section.productIds.contains(it.id) }} টি পণ্য"
-                          "best_deals" -> "সেরা ডিল (২x৩ = ৬টি) • ${section.productIds.size} টি সিলেক্টেড"
-                          "reels_showcase" -> "রিলস ভিডিও শপ (${section.layout})"
-                          "all_products" -> "সব প্রোডাক্ট (৩x৩ = ৯টি + আরো দেখুন)"
-                          "category_products" -> "ক্যাটাগরি: ${section.categoryName} (${section.layout})"
+                          "new_products" -> "$layoutSummary • নতুন আপলোড + ${section.productIds.size} পিন্ড"
+                          "hot_sale" -> "$layoutSummary • ${products.count { it.isHotSale || section.productIds.contains(it.id) }} টি পণ্য"
+                          "combo_packs" -> "$layoutSummary • স্পেশাল বান্ডেল অফার"
+                          "b2g1_offers" -> "$layoutSummary • ${products.count { it.isB2G1 || section.productIds.contains(it.id) }} টি অফার পণ্য"
+                          "best_deals" -> "$layoutSummary • ${section.productIds.size} টি সিলেক্টেড"
+                          "reels_showcase" -> "$layoutSummary • শপেবল রিলস ভিডিও"
+                          "all_products" -> "$layoutSummary • সব ক্যাটাগরির প্রোডাক্ট"
+                          "category_products" -> "$layoutSummary • ক্যাটাগরি: ${section.categoryName}"
                           "promo_banner" -> "প্রমোশন ব্যানার (${section.bannerLinkCategory})"
                           else -> section.subtitle.ifBlank { section.type }
                         },
@@ -518,7 +559,7 @@ fun HomePageSettingHub(
                   horizontalArrangement = Arrangement.SpaceBetween,
                   verticalAlignment = Alignment.CenterVertically
                 ) {
-                  if (isProductBlock || section.type == "promo_banner" || section.type == "reels_showcase") {
+                  if (isLayoutConfigurable || section.type == "promo_banner") {
                     Surface(
                       shape = RoundedCornerShape(10.dp),
                       color = if (isExpanded) RoyalMaroon else CreamSurface,
@@ -533,9 +574,9 @@ fun HomePageSettingHub(
                         text = if (isExpanded) {
                           "▾ এডিটর বন্ধ করুন"
                         } else if (isProductBlock) {
-                          "🔍 প্রোডাক্ট সার্চ ও সিলেক্ট করুন"
-                        } else if (section.type == "reels_showcase") {
-                          "🎬 রিলস লেআউট এডিট"
+                          "⚙️ কলাম/লাইন ও প্রোডাক্ট সেটিং"
+                        } else if (section.type == "reels_showcase" || section.type == "combo_packs") {
+                          "📐 কলাম/লাইন ও ডিসপ্লে সেটিং"
                         } else {
                           "✏️ ব্যানার এডিট করুন"
                         },
@@ -569,7 +610,7 @@ fun HomePageSettingHub(
                   }
                 }
 
-                // Expanded Editor Panel: Block Title/Category/Layout + Inline Search & Product Picker
+                // Expanded Editor Panel: Block Title + Columns (2/3/4) & Rows (1-4) & Slider/Grid + Product Picker
                 if (isExpanded) {
                   HorizontalDivider(color = BorderGold)
 
@@ -632,29 +673,162 @@ fun HomePageSettingHub(
                     }
                   }
 
-                  if (section.type == "reels_showcase") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                      listOf(
-                        "slider3" to "৩টি স্লাইডার",
-                        "grid3x2" to "২ লাইনে ৬টি",
-                        "grid3x3" to "৩ লাইনে ৯টি"
-                      ).forEach { (layoutKey, layoutLabel) ->
-                        val chosen = section.layout == layoutKey
-                        Surface(
-                          shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else CreamSurface,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
-                          modifier = Modifier.clickable {
-                            onUpdateSection(section.id) { it.copy(layout = layoutKey) }
-                          }
+                  if (isLayoutConfigurable) {
+                    Surface(
+                      shape = RoundedCornerShape(12.dp),
+                      color = CreamBackground,
+                      border = BorderStroke(1.dp, BorderGold),
+                      modifier = Modifier.fillMaxWidth()
+                    ) {
+                      Column(
+                        modifier = Modifier.padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                      ) {
+                        Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically
                         ) {
                           Text(
-                            text = layoutLabel,
+                            text = "📐 ডিসপ্লে কলাম ও লাইন সেটিং",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = RoyalMaroon
+                          )
+                          Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.White,
+                            border = BorderStroke(1.dp, BorderGold)
+                          ) {
+                            Text(
+                              text = layoutSummary,
+                              fontSize = 9.5.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = DarkEspresso,
+                              modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                            )
+                          }
+                        }
+
+                        // Columns per row (2 / 3 / 4) & Display Style (Slider / Grid)
+                        Row(
+                          modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                          horizontalArrangement = Arrangement.spacedBy(6.dp),
+                          verticalAlignment = Alignment.CenterVertically
+                        ) {
+                          Text(
+                            text = "প্রতি লাইন:",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (chosen) Color.White else DarkEspresso,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                            color = DarkEspresso
                           )
+                          listOf(2 to "২টি", 3 to "৩টি", 4 to "৪টি").forEach { (cols, label) ->
+                            val chosen = gridCfg.cols == cols
+                            Surface(
+                              shape = RoundedCornerShape(8.dp),
+                              color = if (chosen) RoyalMaroon else Color.White,
+                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
+                              modifier = Modifier
+                                .clickable {
+                                  onUpdateSection(section.id) { sec ->
+                                    val targetMax = if (sec.displayStyle == "grid") cols * gridCfg.rows else if (sec.type == "reels_showcase") cols else maxOf(sec.maxItems, cols * 2)
+                                    sec.copy(columnsPerRow = cols, maxItems = targetMax)
+                                  }
+                                }
+                                .testTag("cols_${section.id}_$cols")
+                            ) {
+                              Text(
+                                text = label,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (chosen) Color.White else DarkEspresso,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                              )
+                            }
+                          }
+
+                          Spacer(modifier = Modifier.width(4.dp))
+
+                          listOf("slider" to "স্লাইডার", "grid" to "গ্রিড").forEach { (styleKey, styleLabel) ->
+                            val chosen = (if (gridCfg.isSlider) "slider" else "grid") == styleKey
+                            Surface(
+                              shape = RoundedCornerShape(8.dp),
+                              color = if (chosen) DarkEspresso else Color.White,
+                              border = BorderStroke(1.dp, BorderGold),
+                              modifier = Modifier
+                                .clickable {
+                                  onUpdateSection(section.id) { sec ->
+                                    val nextRows = if (styleKey == "slider") 1 else maxOf(gridCfg.rows, 2)
+                                    sec.copy(
+                                      displayStyle = styleKey,
+                                      rowCount = nextRows,
+                                      layout = if (styleKey == "slider") "slider3" else "grid3x2",
+                                      maxItems = if (styleKey == "slider") {
+                                        if (sec.type == "reels_showcase") gridCfg.cols else 12
+                                      } else {
+                                        gridCfg.cols * nextRows
+                                      }
+                                    )
+                                  }
+                                }
+                                .testTag("style_${section.id}_$styleKey")
+                            ) {
+                              Text(
+                                text = styleLabel,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (chosen) Color.White else DarkEspresso,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                              )
+                            }
+                          }
+                        }
+
+                        // Row/Line Count (1..4)
+                        Row(
+                          modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                          horizontalArrangement = Arrangement.spacedBy(6.dp),
+                          verticalAlignment = Alignment.CenterVertically
+                        ) {
+                          Text(
+                            text = "লাইন সংখ্যা:",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DarkEspresso
+                          )
+                          (1..4).forEach { r ->
+                            val chosen = gridCfg.rows == r
+                            Surface(
+                              shape = RoundedCornerShape(8.dp),
+                              color = if (chosen) RoyalMaroon else Color.White,
+                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
+                              modifier = Modifier
+                                .clickable {
+                                  onUpdateSection(section.id) { sec ->
+                                    val nextStyle = if (r > 1) "grid" else sec.displayStyle
+                                    sec.copy(
+                                      rowCount = r,
+                                      displayStyle = nextStyle,
+                                      layout = if (nextStyle == "grid") "grid3x2" else "slider3",
+                                      maxItems = if (nextStyle == "grid") (gridCfg.cols * r) else if (sec.type == "reels_showcase") gridCfg.cols else 12
+                                    )
+                                  }
+                                }
+                                .testTag("rows_${section.id}_$r")
+                            ) {
+                              Text(
+                                text = "${r} লাইন",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (chosen) Color.White else DarkEspresso,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                              )
+                            }
+                          }
                         }
                       }
                     }
@@ -697,6 +871,7 @@ fun HomePageSettingHub(
                       filteredBlockProducts.take(15).forEach { prod ->
                         val isSelected = when (section.type) {
                           "hot_sale" -> prod.isHotSale || section.productIds.contains(prod.id)
+                          "b2g1_offers" -> prod.isB2G1 || section.productIds.contains(prod.id)
                           "best_deals" -> section.productIds.contains(prod.id) || prod.isBestDeal
                           else -> section.productIds.contains(prod.id)
                         }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.model.BannerItem
 import com.example.data.model.CartItem
 import com.example.data.model.Category
+import com.example.data.model.ComboPack
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
 import com.example.data.model.HomeSectionConfig
@@ -70,6 +71,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val banners: StateFlow<List<BannerItem>> = repository.banners
   val homeSections: StateFlow<List<HomeSectionConfig>> = repository.homeSections
   val reels: StateFlow<List<ReelItem>> = repository.reels
+  val combos: StateFlow<List<ComboPack>> = repository.combos
   val storeConfig: StateFlow<StoreConfig> = repository.storeConfig
   val courierConfig: StateFlow<CourierConfig> = repository.courierConfig
   val pixelConfig: StateFlow<PixelConfig> = repository.pixelConfig
@@ -288,6 +290,15 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       emitToast(toastMsg)
     } else {
       emitToast("দুঃখিত, এই পণ্যটি স্টক আউট!")
+    }
+  }
+
+  fun addComboToCart(combo: ComboPack) {
+    val success = repository.addComboToCart(combo)
+    if (success) {
+      emitToast("🎁 \"${combo.title}\" কম্বো প্যাক কার্টে যোগ করা হয়েছে! (সেভ ৳${combo.savings}) 🛒")
+    } else {
+      emitToast("দুঃখিত, এই কম্বো প্যাকটি বর্তমানে স্টক আউট!")
     }
   }
 

@@ -790,14 +790,45 @@
       { id: "top_banner", type: "top_banner", title: "হিরো ব্যানার ও স্লাইডার", subtitle: "হোম পেজের প্রধান ব্যানার স্লাইডার", icon: "🖼️", enabled: true, layout: "banner", productIds: [] },
       { id: "voucher_strip", type: "voucher_strip", title: "ভাউচার ডিসকাউন্ট কার্ড", subtitle: "Claim Vouchers to Save More!", icon: "🎟️", enabled: true, layout: "strip", productIds: [] },
       { id: "category_slider", type: "category_slider", title: "স্লাইডিং ক্যাটাগরি কার্ড", subtitle: "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি", icon: "🏷️", enabled: true, layout: "strip", productIds: [] },
-      { id: "new_products", type: "new_products", title: "নতুন প্রোডাক্ট", subtitle: "নতুন আপলোড হওয়া প্রোডাক্ট (৩টি করে স্লাইড)", icon: "✨", badge: "NEW", enabled: true, layout: "slider3", productIds: [], maxItems: 12 },
-      { id: "hot_sale", type: "hot_sale", title: "Hot Sale", subtitle: "হট সেল প্রোডাক্ট ডিসপ্লে (৩টি করে স্লাইড)", icon: "🔥", badge: "HOT 🔥", enabled: true, layout: "slider3", productIds: ["p9", "p6", "p5", "p4", "p2", "p1"], maxItems: 12 },
-      { id: "best_deals", type: "best_deals", title: "সেরা ডিল", subtitle: "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon: "⭐", badge: "সেরা ডিল", enabled: true, layout: "grid3x2", productIds: ["p1", "p2", "p3", "p4", "p5", "p6", "p10", "p11", "p12"], maxItems: 6 },
-      { id: "reels_showcase", type: "reels_showcase", title: "রিলস ভিডিও শপ", subtitle: "৩টি করে শপেবল ভিডিও ডিসপ্লে (ক্লিক করলে বড় সাইজ)", icon: "🎬", badge: "REELS 🎥", enabled: true, layout: "slider3", productIds: [], maxItems: 12 },
-      { id: "all_products", type: "all_products", title: "সব প্রোডাক্ট", subtitle: "৩ লাইনে ৯টি প্রোডাক্ট + আরো দেখুন", icon: "🛍️", badge: "সকল পণ্য", enabled: true, layout: "grid3x3", productIds: [], maxItems: 9 },
-      { id: "combo_packs", type: "combo_packs", title: "স্পেশাল কম্বো প্যাক", subtitle: "কম্বো বান্ডেল অফার শোকেস", icon: "🎁", enabled: true, layout: "showcase", productIds: [] },
+      { id: "new_products", type: "new_products", title: "নতুন প্রোডাক্ট", subtitle: "নতুন আপলোড হওয়া প্রোডাক্ট (৩টি করে স্লাইড)", icon: "✨", badge: "NEW", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: [], maxItems: 12 },
+      { id: "hot_sale", type: "hot_sale", title: "Hot Sale", subtitle: "হট সেল প্রোডাক্ট ডিসপ্লে (৩টি করে স্লাইড)", icon: "🔥", badge: "HOT 🔥", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: ["p9", "p6", "p5", "p4", "p2", "p1"], maxItems: 12 },
+      { id: "best_deals", type: "best_deals", title: "সেরা ডিল", subtitle: "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon: "⭐", badge: "সেরা ডিল", enabled: true, layout: "grid3x2", displayStyle: "grid", columnsPerRow: 3, rowCount: 2, productIds: ["p1", "p2", "p3", "p4", "p5", "p6", "p10", "p11", "p12"], maxItems: 6 },
+      { id: "reels_showcase", type: "reels_showcase", title: "রিলস ভিডিও শপ", subtitle: "৩টি করে শপেবল ভিডিও ডিসপ্লে (ক্লিক করলে বড় সাইজ)", icon: "🎬", badge: "REELS 🎥", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: [], maxItems: 3 },
+      { id: "combo_packs", type: "combo_packs", title: "কম্বো প্যাক", subtitle: "বান্ডেল কম্বো অফারে আকর্ষণীয় সাশ্রয়", icon: "🎁", badge: "COMBO", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: [], maxItems: 12 },
+      { id: "b2g1_offers", type: "b2g1_offers", title: "Buy 2 Get 1", subtitle: "২টি পণ্য কিনলে ১টি প্রোডাক্ট একদম ফ্রি!", icon: "🎉", badge: "২+১ ফ্রি", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: ["p1", "p2", "p4", "p6", "p9", "p11"], maxItems: 12 },
+      { id: "all_products", type: "all_products", title: "সব প্রোডাক্ট", subtitle: "সকল ক্যাটাগরির প্রোডাক্ট ডিসপ্লে + আরো দেখুন", icon: "🛍️", badge: "সকল পণ্য", enabled: true, layout: "grid3x3", displayStyle: "grid", columnsPerRow: 3, rowCount: 3, productIds: [], maxItems: 9 },
       { id: "category_pills", type: "category_pills", title: "ক্যাটাগরি ফিল্টার পিলস", subtitle: "ক্যাটাগরি অনুযায়ী ব্রাউজ বাটন", icon: "📂", enabled: true, layout: "pills", productIds: [] }
     ];
+
+    const normalizeHomeSectionsList = (rawList) => {
+      if (!Array.isArray(rawList) || rawList.length === 0) return initialHomeSections;
+      const list = rawList.map(s => {
+        const legacyLayout = s.layout || "slider3";
+        const derivedCols = Number(s.columnsPerRow) || (legacyLayout === "grid2" ? 2 : legacyLayout === "grid4" ? 4 : 3);
+        const derivedRows = Number(s.rowCount) || (legacyLayout === "grid3x2" ? 2 : legacyLayout === "grid3x3" ? 3 : 1);
+        const derivedStyle = s.displayStyle || ((legacyLayout === "slider3" || legacyLayout === "slider") && derivedRows === 1 ? "slider" : (legacyLayout.startsWith("grid") ? "grid" : "slider"));
+        return {
+          ...s,
+          columnsPerRow: Math.min(4, Math.max(2, derivedCols)),
+          rowCount: Math.min(6, Math.max(1, derivedRows)),
+          displayStyle: derivedStyle
+        };
+      });
+      const ensureSection = (type, afterId) => {
+        if (!list.some(s => s.type === type)) {
+          const def = initialHomeSections.find(s => s.type === type);
+          if (def) {
+            const idx = list.findIndex(s => s.id === afterId);
+            if (idx >= 0) list.splice(idx + 1, 0, def);
+            else list.push(def);
+          }
+        }
+      };
+      ensureSection("reels_showcase", "best_deals");
+      ensureSection("combo_packs", "reels_showcase");
+      ensureSection("b2g1_offers", "combo_packs");
+      return list;
+    };
 
     const initialReviews = [
       {
@@ -904,6 +935,38 @@
         active: true,
         stock: 8,
         createdAt: 1729100000000
+      },
+      {
+        id: "combo-3",
+        title: "ঈদ স্পেশাল ফ্যামিলি ড্রেস কম্বো",
+        subtitle: "কুর্তি ও কামিজ + কিউট বেবি পার্টি ফ্রক",
+        description: "মা ও মেয়ের ম্যাচিং উৎসব কালেকশন! একসাথে কিনলে থাকছে বিশেষ কম্বো ডিসকাউন্ট।",
+        productIds: ["p6", "p9"],
+        originalPrice: 2740,
+        comboPrice: 2290,
+        savings: 450,
+        discountPercent: 16,
+        badge: "ঈদ বান্ডেল 🎉",
+        image: imgKurti,
+        active: true,
+        stock: 10,
+        createdAt: 1729200000000
+      },
+      {
+        id: "combo-4",
+        title: "মেনজ স্মার্ট ক্যাজুয়াল কম্বো প্যাক",
+        subtitle: "প্রিমিয়াম কটন টি-শার্ট + স্ট্রেচ চিনো প্যান্ট",
+        description: "প্রতিদিনের অফিস ও ক্যাজুয়াল আউটিংয়ের জন্য সেরা ম্যাচিং মেনজ কম্বো।",
+        productIds: ["p5", "p7"],
+        originalPrice: 1800,
+        comboPrice: 1490,
+        savings: 310,
+        discountPercent: 17,
+        badge: "হট ডিল 🔥",
+        image: imgTshirt,
+        active: true,
+        stock: 14,
+        createdAt: 1729300000000
       }
     ];
 
@@ -1479,21 +1542,10 @@
       const [banners, setBanners] = useState(() => getStored("banners", initialBanners));
       const [homeSections, setHomeSections] = useState(() => {
         const saved = getStored("home_sections", initialHomeSections);
-        if (Array.isArray(saved) && saved.length > 0) {
-          const hasReels = saved.some(s => s.type === "reels_showcase");
-          if (!hasReels) {
-            const copy = [...saved];
-            const dealsIdx = copy.findIndex(s => s.id === "best_deals");
-            const reelsSec = initialHomeSections.find(s => s.type === "reels_showcase");
-            if (dealsIdx >= 0) copy.splice(dealsIdx + 1, 0, reelsSec);
-            else copy.push(reelsSec);
-            return copy;
-          }
-          return saved;
-        }
-        return initialHomeSections;
+        return normalizeHomeSectionsList(saved);
       });
       const [expandedHomeSections, setExpandedHomeSections] = useState({});
+      const [allProductsInlineCat, setAllProductsInlineCat] = useState("All");
       const [collectionModalSection, setCollectionModalSection] = useState(null);
       const [collectionSortBy, setCollectionSortBy] = useState("featured"); // "featured", "price_asc", "price_desc", "rating"
       const [homeSettingSubTab, setHomeSettingSubTab] = useState("blocks"); // "blocks", "banners", "header_elements"
@@ -1508,6 +1560,9 @@
         subtitle: "",
         categoryName: "শাড়ি",
         layout: "slider3",
+        displayStyle: "slider",
+        columnsPerRow: 3,
+        rowCount: 1,
         image: "",
         bannerButtonText: "কালেকশন দেখুন",
         bannerLinkCategory: "All",
@@ -1658,19 +1713,7 @@
                 if (k === "config") setConfig(prev => ({ ...prev, ...val }));
                 else if (k === "banners") setBanners(val);
                 else if (k === "home_sections" && Array.isArray(val) && val.length > 0) {
-                  const hasReels = val.some(s => s.type === "reels_showcase");
-                  if (!hasReels) {
-                    const copy = [...val];
-                    const dealsIdx = copy.findIndex(s => s.id === "best_deals");
-                    const reelsSec = initialHomeSections.find(s => s.type === "reels_showcase");
-                    if (reelsSec) {
-                      if (dealsIdx >= 0) copy.splice(dealsIdx + 1, 0, reelsSec);
-                      else copy.push(reelsSec);
-                    }
-                    setHomeSections(copy);
-                  } else {
-                    setHomeSections(val);
-                  }
+                  setHomeSections(normalizeHomeSectionsList(val));
                 }
                 else if (k === "products") setProducts(mergeWithPosLocalStorage(val));
                 else if (k === "combos") setCombos(val);
@@ -2122,11 +2165,11 @@
         const unsubHomeSections = firestoreDb.collection("config").doc("home_sections").onSnapshot((doc) => {
           if (!isMounted) return;
           if (doc.exists && Array.isArray(doc.data()?.sections) && doc.data().sections.length > 0) {
-            const list = doc.data().sections;
+            const list = normalizeHomeSectionsList(doc.data().sections);
             setHomeSections(list);
             setStored("home_sections", list);
           } else {
-            const localSections = getStored("home_sections", initialHomeSections);
+            const localSections = normalizeHomeSectionsList(getStored("home_sections", initialHomeSections));
             firestoreDb.collection("config").doc("home_sections").set({ sections: localSections }).catch(() => {});
           }
         }, (err) => console.warn("Home sections sync error:", err));
@@ -9112,6 +9155,9 @@
 
       const addCustomHomeSection = (form) => {
         const id = `sec_${Date.now()}`;
+        const cols = Math.min(4, Math.max(2, Number(form.columnsPerRow) || 3));
+        const rows = Math.min(6, Math.max(1, Number(form.rowCount) || (form.layout === "grid3x2" ? 2 : form.layout === "grid3x3" ? 3 : 1)));
+        const style = form.displayStyle || (rows > 1 ? "grid" : "slider");
         let nextSec = null;
         if (form.type === "category_products") {
           const catName = form.categoryName || categories[0]?.name || "শাড়ি";
@@ -9123,11 +9169,14 @@
             icon: "🏷️",
             badge: catName,
             categoryName: catName,
-            layout: form.layout || "slider3",
+            layout: style === "slider" ? "slider3" : "grid",
+            displayStyle: style,
+            columnsPerRow: cols,
+            rowCount: rows,
             enabled: true,
             isCustom: true,
             productIds: form.productIds || [],
-            maxItems: form.layout === "grid3x2" ? 6 : form.layout === "grid3x3" ? 9 : 12
+            maxItems: cols * rows
           };
         } else if (form.type === "promo_banner") {
           nextSec = {
@@ -9153,11 +9202,14 @@
             subtitle: (form.subtitle || "").trim() || "বাছাইকৃত স্পেশাল পণ্য",
             icon: "✨",
             badge: "FEATURED",
-            layout: form.layout || "slider3",
+            layout: style === "slider" ? "slider3" : "grid",
+            displayStyle: style,
+            columnsPerRow: cols,
+            rowCount: rows,
             enabled: true,
             isCustom: true,
             productIds: form.productIds || [],
-            maxItems: form.layout === "grid3x2" ? 6 : form.layout === "grid3x3" ? 9 : 12
+            maxItems: cols * rows
           };
         }
         const nextList = [...homeSections, nextSec];
@@ -11862,6 +11914,22 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   );
 
+                  const resolveBlockDisplayConfig = (sec) => {
+                    const legacyLayout = sec?.layout || "slider3";
+                    const cols = Math.min(4, Math.max(2, Number(sec?.columnsPerRow) || (legacyLayout === "grid2" ? 2 : legacyLayout === "grid4" ? 4 : 3)));
+                    const rows = Math.min(6, Math.max(1, Number(sec?.rowCount) || (legacyLayout === "grid3x2" ? 2 : legacyLayout === "grid3x3" ? 3 : 1)));
+                    const style = sec?.displayStyle || ((legacyLayout === "slider3" || legacyLayout === "slider") && rows === 1 ? "slider" : (legacyLayout.startsWith("grid") ? "grid" : "slider"));
+                    const isSlider = style === "slider" && rows === 1;
+                    const defaultLimit = cols * rows;
+                    const gridColsClass =
+                      cols === 2 ? "grid-cols-2" : cols === 4 ? "grid-cols-4" : "grid-cols-3";
+                    const sliderCardStyle = {
+                      width: `calc((100% - ${(cols - 1) * 8}px) / ${cols})`,
+                      flexShrink: 0
+                    };
+                    return { cols, rows, style, isSlider, defaultLimit, gridColsClass, sliderCardStyle };
+                  };
+
                   const getProductsForHomeSection = (sec) => {
                     const pinnedIds = Array.isArray(sec.productIds) ? sec.productIds : [];
                     const pinnedProducts = pinnedIds.map(id => webProducts.find(p => p.id === id)).filter(Boolean);
@@ -11888,7 +11956,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       const flagged = webProducts.filter(p => p.isBestDeal);
                       const merged = [...pinnedProducts];
                       flagged.forEach(p => { if (!merged.some(m => m.id === p.id)) merged.push(p); });
-                      // Include top-rated remaining deals when fewer than 9 so "আরো দেখুন" always reveals extra products
                       if (merged.length < webProducts.length) {
                         const restSorted = [...webProducts]
                           .filter(p => !merged.some(m => m.id === p.id))
@@ -11898,10 +11965,46 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       return merged;
                     }
 
-                    if (sec.type === "all_products") {
+                    if (sec.type === "b2g1_offers") {
+                      const bogoList = webProducts.filter(p => p.bogo || p.isB2G1 || p.id === config?.b2g1?.freeProductId);
                       const merged = [...pinnedProducts];
-                      webProducts.forEach(p => { if (!merged.some(m => m.id === p.id)) merged.push(p); });
+                      bogoList.forEach(p => { if (!merged.some(m => m.id === p.id)) merged.push(p); });
+                      if (merged.length < 6) {
+                        webProducts.forEach(p => { if (!merged.some(m => m.id === p.id)) merged.push(p); });
+                      }
                       return merged;
+                    }
+
+                    if (sec.type === "all_products") {
+                      // Ensure ALL categories are represented cleanly when All is selected
+                      const basePool = [...pinnedProducts];
+                      webProducts.forEach(p => { if (!basePool.some(m => m.id === p.id)) basePool.push(p); });
+
+                      if (allProductsInlineCat && allProductsInlineCat !== "All") {
+                        return basePool.filter(p => p.category === allProductsInlineCat);
+                      }
+
+                      // Round-robin diversify across every category so initial rows show ALL categories
+                      const byCategory = new Map();
+                      basePool.forEach(p => {
+                        const catKey = p.category || "অন্যান্য";
+                        if (!byCategory.has(catKey)) byCategory.set(catKey, []);
+                        byCategory.get(catKey).push(p);
+                      });
+                      const diverse = [];
+                      let added = true;
+                      let round = 0;
+                      while (added) {
+                        added = false;
+                        byCategory.forEach(items => {
+                          if (round < items.length) {
+                            diverse.push(items[round]);
+                            added = true;
+                          }
+                        });
+                        round++;
+                      }
+                      return diverse;
                     }
 
                     if (sec.type === "category_products") {
@@ -11927,31 +12030,23 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   const renderProductBlockSection = (sec) => {
                     const blockProducts = getProductsForHomeSection(sec);
                     const isExpanded = Boolean(expandedHomeSections[sec.id]);
-                    const layout = sec.layout || (sec.type === "best_deals" ? "grid3x2" : sec.type === "all_products" ? "grid3x3" : "slider3");
+                    const { cols, rows, isSlider, defaultLimit, gridColsClass, sliderCardStyle } = resolveBlockDisplayConfig(sec);
 
-                    if (blockProducts.length === 0) return null;
-
-                    const defaultLimit =
-                      layout === "grid3x2" ? 6 : layout === "grid3x3" ? 9 : 3;
+                    if (blockProducts.length === 0 && sec.type !== "all_products") return null;
 
                     let visibleProducts = blockProducts;
                     if (!isExpanded) {
-                      if (layout === "grid3x2") visibleProducts = blockProducts.slice(0, 6);
-                      else if (layout === "grid3x3") visibleProducts = blockProducts.slice(0, 9);
-                      else visibleProducts = blockProducts.slice(0, sec.maxItems || 12);
+                      visibleProducts = isSlider
+                        ? blockProducts.slice(0, Math.max(cols * 3, sec.maxItems || 12))
+                        : blockProducts.slice(0, defaultLimit);
                     }
 
-                    const hasMoreInlineItems =
-                      layout === "slider3"
-                        ? blockProducts.length > 0
-                        : blockProducts.length > defaultLimit;
+                    const hasMoreInlineItems = isSlider
+                      ? blockProducts.length > cols
+                      : blockProducts.length > defaultLimit;
 
                     const handleSeeMoreClick = () => {
-                      if (layout === "slider3") {
-                        setExpandedHomeSections(prev => ({ ...prev, [sec.id]: !isExpanded }));
-                        return;
-                      }
-                      if (hasMoreInlineItems) {
+                      if (hasMoreInlineItems || isExpanded) {
                         setExpandedHomeSections(prev => ({ ...prev, [sec.id]: !isExpanded }));
                       } else {
                         setCollectionSortBy("featured");
@@ -11959,13 +12054,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       }
                     };
 
+                    const allProductCats = sec.type === "all_products"
+                      ? ["All", ...Array.from(new Set(webProducts.map(p => p.category).filter(Boolean)))]
+                      : [];
+                    const totalCartQty = cart.reduce((sum, item) => sum + (Number(item.qty) || 1), 0);
+
                     return (
                       <section
                         key={sec.id}
                         id={sec.type === "all_products" ? "products-section" : `home-block-${sec.id}`}
                         className="liquid-glass-surface rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0"
                       >
-                        {/* Daraz-style Clean Section Header + Working "আরো দেখুন ›" on top right */}
+                        {/* Clean Section Header + Working "আরো দেখুন ›" */}
                         <div className="flex items-center justify-between gap-2 min-w-0">
                           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                             <span className="text-base sm:text-xl shrink-0">{sec.icon || "✨"}</span>
@@ -11989,18 +12089,56 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </button>
                         </div>
 
-                        {/* Layout Rendering */}
-                        {layout === "slider3" && !isExpanded ? (
-                          <div className="flex gap-2 sm:gap-3.5 overflow-x-auto pb-0.5 scroll-smooth scrollbar-none snap-x">
-                            {visibleProducts.map(p =>
-                              renderCompactProductCard(
-                                p,
-                                "flex-shrink-0 w-[31.8%] min-w-[100px] sm:w-[23.8%] lg:w-[19%] snap-start"
-                              )
-                            )}
+                        {/* Live B2G1 Offer Strip inside Buy 2 Get 1 Block */}
+                        {sec.type === "b2g1_offers" && (
+                          <div className="bg-white/85 border border-rose-200 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 text-[10px] sm:text-xs font-extrabold text-[#000000]">
+                            <span className="truncate">
+                              {totalCartQty >= 2
+                                ? "🎉 অভিনন্দন! আপনার Buy 2 Get 1 ফ্রি গিফট আনলক হয়েছে!"
+                                : `🎁 যেকোনো ২টি পণ্য নিলেই ১টি ফ্রি! (${totalCartQty}/২টি কার্টে)`}
+                            </span>
+                            <span className="cta-dark-pill text-[9px] px-2 py-0.5 rounded-full shrink-0">
+                              {totalCartQty >= 2 ? "FREE UNLOCKED" : "২+১ অফার"}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Inline All-Category Pills inside "সব প্রোডাক্ট" */}
+                        {sec.type === "all_products" && allProductCats.length > 1 && (
+                          <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+                            {allProductCats.map(catName => {
+                              const active = allProductsInlineCat === catName;
+                              return (
+                                <button
+                                  key={catName}
+                                  type="button"
+                                  onClick={() => setAllProductsInlineCat(catName)}
+                                  className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black whitespace-nowrap cursor-pointer transition ${
+                                    active
+                                      ? "cta-dark-pill shadow-xs"
+                                      : "bg-white/85 text-[#000000] border border-white hover:bg-white"
+                                  }`}
+                                >
+                                  {catName === "All" ? `🌟 সকল ক্যাটাগরি (${webProducts.length})` : catName}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Layout Rendering: Strict 2/3/4 Columns + 1..4 Lines */}
+                        {visibleProducts.length === 0 ? (
+                          <p className="text-xs text-slate-800 font-semibold py-4 text-center">এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি।</p>
+                        ) : isSlider && !isExpanded ? (
+                          <div className="flex gap-2 overflow-x-auto pb-0.5 scroll-smooth scrollbar-none snap-x">
+                            {visibleProducts.map(p => (
+                              <div key={p.id} style={sliderCardStyle} className="snap-start">
+                                {renderCompactProductCard(p, "h-full w-full")}
+                              </div>
+                            ))}
                           </div>
                         ) : (
-                          <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4">
+                          <div className={`grid ${gridColsClass} gap-2 sm:gap-3.5`}>
                             {visibleProducts.map(p => renderCompactProductCard(p))}
                           </div>
                         )}
@@ -12058,140 +12196,126 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     );
                   };
 
-                  const renderComboPacksBlock = () => (
-                    combos.filter(c => c.active).length > 0 ? (
-                      <div id="combo-pack-showcase" className="liquid-glass-surface p-3 sm:p-5 rounded-2xl sm:rounded-3xl space-y-3 scroll-mt-24">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-2xl">🎁</span>
-                              <h3 className="font-black text-xl sm:text-2xl text-[#000000] tracking-tight">
-                                স্পেশাল কম্বো প্যাক অফার
-                              </h3>
-                              <span className="cta-dark-pill text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                                সীমিত সময়ের অফার 🔥
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-900 mt-0.5 font-semibold">
-                              একসাথে কিনুন আকর্ষণীয় ডিজাইনার বান্ডেল এবং জিতে নিন বিশাল ছাড়!
-                            </p>
-                          </div>
-                          <span className="red-black-tab text-xs font-extrabold px-3 py-1 rounded-full">
-                            {combos.filter(c => c.active).length} টি অফার সক্রিয়
-                          </span>
-                        </div>
+                  const renderComboPacksBlock = (sec) => {
+                    const activeCombos = combos.filter(c => c.active);
+                    if (activeCombos.length === 0) return null;
+                    const secId = sec?.id || "combo_packs";
+                    const isExpanded = Boolean(expandedHomeSections[secId]);
+                    const { cols, isSlider, defaultLimit, gridColsClass, sliderCardStyle } = resolveBlockDisplayConfig(sec || { layout: "slider3", columnsPerRow: 3, rowCount: 1 });
+                    const visibleCombos = isExpanded ? activeCombos : activeCombos.slice(0, isSlider ? Math.max(cols * 2, activeCombos.length) : defaultLimit);
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                          {combos.filter(c => c.active).map(combo => {
-                            const bundledItems = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
-                            return (
-                              <div
-                                key={combo.id}
-                                className="red-black-photo-card rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
-                              >
-                                <div>
-                                  <div className="h-44 sm:h-52 w-full relative overflow-hidden bg-black/20">
-                                    <img
-                                      src={combo.image || (bundledItems[0]?.images?.[0]) || banner1}
-                                      alt={combo.title}
-                                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                                      onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
-                                    <span className="absolute top-3 left-3 cta-dark-pill text-xs font-bold px-3 py-1 rounded-full shadow">
-                                      {combo.badge || "সেরা অফার 🔥"}
-                                    </span>
-                                    {combo.savings > 0 && (
-                                      <span className="absolute top-3 right-3 bg-emerald-600 keep-white-text text-xs font-black px-3 py-1 rounded-full shadow border border-white/40">
-                                        সাশ্রয় {combo.savings.toLocaleString()} ৳ {combo.discountPercent ? `(-${combo.discountPercent}%)` : ''}
-                                      </span>
-                                    )}
-                                    <div className="absolute bottom-3 left-3 right-3 keep-white-text">
-                                      <h4 className="font-extrabold text-base sm:text-lg leading-snug drop-shadow">{combo.title}</h4>
-                                      <p className="text-xs opacity-90 truncate drop-shadow">{combo.subtitle}</p>
-                                    </div>
-                                  </div>
+                    const renderComboCompactCard = (combo, wrapperStyle = null) => {
+                      const bundledItems = (combo.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean);
+                      return (
+                        <div key={combo.id} style={wrapperStyle || undefined} className="snap-start">
+                          <div className="red-black-photo-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between h-full group">
+                            <div>
+                              <div className="aspect-square bg-black/20 overflow-hidden relative">
+                                <img
+                                  src={combo.image || (bundledItems[0]?.images?.[0]) || banner1}
+                                  alt={combo.title}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                  onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25 pointer-events-none"></div>
+                                <span className="absolute top-1.5 left-1.5 cta-dark-pill text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow">
+                                  🎁 COMBO
+                                </span>
+                                {combo.savings > 0 && (
+                                  <span className="absolute top-1.5 right-1.5 bg-emerald-600 keep-white-text text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow border border-white/40">
+                                    সেভ ৳{combo.savings}
+                                  </span>
+                                )}
+                                <span className="absolute bottom-1.5 left-1.5 bg-black/75 keep-white-text text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+                                  {bundledItems.length || 2} পিস সেট
+                                </span>
+                              </div>
 
-                                  <div className="p-4 sm:p-5 space-y-3">
-                                    <div>
-                                      <p className="text-[11px] font-black text-[#000000] uppercase tracking-wider mb-2 flex items-center gap-1">
-                                        <span>📦</span> <span>কম্বোতে অন্তর্ভুক্ত পণ্যসমূহ ({bundledItems.length} টি):</span>
-                                      </p>
-                                      <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-hide">
-                                        {bundledItems.map((prod, idx) => (
-                                          <React.Fragment key={prod.id || idx}>
-                                            <div className="flex items-center gap-2 bg-white/95 border border-white rounded-2xl p-1.5 pr-3 flex-shrink-0 max-w-[210px] shadow-2xs">
-                                              <img
-                                                src={prod.images?.[0] || imgSharee}
-                                                alt={prod.name}
-                                                className="w-10 h-10 rounded-xl object-cover border border-white flex-shrink-0 bg-white"
-                                                onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
-                                              />
-                                              <div className="min-w-0">
-                                                <p className="text-[11px] font-extrabold text-[#000000] truncate" title={prod.name}>{prod.name}</p>
-                                                <p className="text-[10px] text-[#000000] font-black">{prod.price} ৳</p>
-                                              </div>
-                                            </div>
-                                            {idx < bundledItems.length - 1 && (
-                                              <span className="text-[#000000] font-black text-sm flex-shrink-0">+</span>
-                                            )}
-                                          </React.Fragment>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    {combo.description && (
-                                      <p className="text-xs text-[#000000] font-medium line-clamp-2 leading-relaxed">
-                                        {combo.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="p-4 sm:p-5 pt-2 border-t border-red-900/20 mt-2 flex items-center justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <p className="text-[10px] text-[#000000] uppercase tracking-wider font-extrabold mb-1">কম্বো অফার মূল্য</p>
-                                    <div className="flex items-baseline gap-2 flex-wrap">
-                                      <span className="product-price text-lg sm:text-2xl font-black text-[#000000]">
-                                        {combo.comboPrice.toLocaleString()} ৳
-                                      </span>
-                                      {combo.originalPrice > combo.comboPrice && (
-                                        <span className="text-xs sm:text-sm bg-white/85 px-2 py-0.5 rounded-full text-[#000000]/80 font-bold line-through">
-                                          {combo.originalPrice.toLocaleString()} ৳
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <button
-                                    onClick={() => addComboToCart(combo)}
-                                    disabled={combo.stock <= 0}
-                                    className={`px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                                      combo.stock > 0
-                                        ? "cta-dark-pill active:scale-95"
-                                        : "bg-white/50 text-[#000000] cursor-not-allowed border border-black/30"
-                                    }`}
-                                  >
-                                    <span>🛒</span>
-                                    <span>{combo.stock > 0 ? "কম্বো অর্ডার করুন" : "স্টক শেষ"}</span>
-                                  </button>
+                              <div className="p-1.5 sm:p-2.5 space-y-1 min-w-0 w-full overflow-hidden">
+                                <h4 className="product-title font-black text-[10px] sm:text-xs leading-tight text-[#000000]">
+                                  <span className="line-clamp-2 leading-tight">{combo.title}</span>
+                                </h4>
+                                <div className="flex items-center justify-between gap-1 mt-0.5">
+                                  <span className="text-[8px] sm:text-[9.5px] text-[#000000] font-extrabold bg-white/95 px-1.5 py-0.5 rounded-full truncate max-w-[68%]">
+                                    {combo.subtitle || "কম্বো বান্ডেল"}
+                                  </span>
+                                  <span className="product-rating-yellow text-[8.5px] sm:text-[10px] shrink-0">★4.9</span>
                                 </div>
                               </div>
-                            );
-                          })}
+                            </div>
+
+                            <div className="px-1.5 pb-1.5 sm:px-2.5 sm:pb-2.5 pt-1 border-t border-red-900/20 flex items-center justify-between gap-1 min-w-0 w-full overflow-hidden">
+                              <div className="min-w-0">
+                                <span className="product-price text-[10.5px] sm:text-sm font-black text-[#000000]">
+                                  ৳{Number(combo.comboPrice || 0).toLocaleString()}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => addComboToCart(combo)}
+                                disabled={combo.stock <= 0}
+                                className={`text-[9px] sm:text-[11px] px-1.5 sm:px-2.5 py-1 rounded-full font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
+                                  combo.stock > 0
+                                    ? "cta-dark-pill active:scale-95"
+                                    : "bg-white/50 text-[#000000] border border-black/30 cursor-not-allowed"
+                                }`}
+                              >
+                                {combo.stock > 0 ? "🛒 কার্ট" : "শেষ"}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ) : null
-                  );
+                      );
+                    };
+
+                    return (
+                      <section
+                        id="combo-pack-showcase"
+                        className="liquid-glass-surface rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0"
+                      >
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                            <span className="text-base sm:text-xl shrink-0">{sec?.icon || "🎁"}</span>
+                            <h3 className="text-sm sm:text-lg font-black text-[#000000] tracking-tight truncate">
+                              {sec?.title || "কম্বো প্যাক"}
+                            </h3>
+                            <span className="cta-dark-pill text-[8.5px] sm:text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                              {sec?.badge || "COMBO"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedHomeSections(prev => ({ ...prev, [secId]: !isExpanded }))}
+                            className="text-[11px] sm:text-xs font-black text-[#000000] hover:underline flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer active:scale-95 px-2 py-1 rounded-full hover:bg-white/60 transition"
+                          >
+                            <span>{isExpanded ? "সংক্ষিপ্ত করুন" : "আরো দেখুন"}</span>
+                            <span className="text-sm font-black leading-none">{isExpanded ? "‹" : "›"}</span>
+                          </button>
+                        </div>
+
+                        {isSlider && !isExpanded ? (
+                          <div className="flex gap-2 overflow-x-auto pb-0.5 scroll-smooth scrollbar-none snap-x">
+                            {visibleCombos.map(combo => renderComboCompactCard(combo, sliderCardStyle))}
+                          </div>
+                        ) : (
+                          <div className={`grid ${gridColsClass} gap-2 sm:gap-3.5`}>
+                            {visibleCombos.map(combo => renderComboCompactCard(combo))}
+                          </div>
+                        )}
+                      </section>
+                    );
+                  };
 
                   const renderReelsShowcaseBlock = (sec) => {
                     const activeReels = reels.filter(r => r.active !== false);
                     if (activeReels.length === 0) return null;
                     const secId = sec?.id || "reels_showcase";
                     const isExpanded = Boolean(expandedHomeSections[secId]);
-                    const layout = sec?.layout || "slider3";
+                    const { cols, isSlider, defaultLimit, gridColsClass, sliderCardStyle } = resolveBlockDisplayConfig(sec || { layout: "slider3", columnsPerRow: 3, rowCount: 1 });
+                    // Strictly respect configured cards count (default 3x1 = 3 cards) unless expanded via "আরো দেখুন"
+                    const visibleReels = isExpanded ? activeReels : activeReels.slice(0, defaultLimit);
 
-                    const renderReelCompactCard = (reel, extraClass = "") => {
+                    const renderReelCompactCard = (reel, wrapperStyle = null) => {
                       const realIndex = reels.findIndex(r => r.id === reel.id);
                       const linkedProduct = products.find(p => p.id === reel.productId);
                       const effectiveProduct = linkedProduct || {
@@ -12205,9 +12329,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         colors: [],
                         sizes: []
                       };
-                      const hasVariantChoices =
-                        (effectiveProduct.colors && effectiveProduct.colors.length > 1) ||
-                        (effectiveProduct.sizes && effectiveProduct.sizes.length > 1);
 
                       const openOriginalReelModal = () => {
                         setActiveReelIndex(realIndex >= 0 ? realIndex : 0);
@@ -12216,89 +12337,85 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       };
 
                       return (
-                        <div
-                          key={reel.id}
-                          onClick={openOriginalReelModal}
-                          className={`red-black-photo-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col group cursor-pointer ${extraClass}`}
-                        >
-                          {/* Square Video Stage matching Product Card dimensions */}
-                          <div className="aspect-square bg-black overflow-hidden relative">
-                            {reel.videoUrl ? (
-                              <video
-                                src={reel.videoUrl}
-                                poster={reel.poster || effectiveProduct.images?.[0] || banner1}
-                                muted
-                                loop
-                                autoPlay
-                                playsInline
-                                preload="metadata"
-                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                              />
-                            ) : (
-                              <img
-                                src={reel.poster || effectiveProduct.images?.[0] || banner1}
-                                alt={reel.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                                onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/30 pointer-events-none"></div>
+                        <div key={reel.id} style={wrapperStyle || undefined} className="snap-start">
+                          <div
+                            onClick={openOriginalReelModal}
+                            className="red-black-photo-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col h-full group cursor-pointer"
+                          >
+                            {/* Square Video Stage matching Product Card dimensions */}
+                            <div className="aspect-square bg-black overflow-hidden relative">
+                              {reel.videoUrl ? (
+                                <video
+                                  src={reel.videoUrl}
+                                  poster={reel.poster || effectiveProduct.images?.[0] || banner1}
+                                  muted
+                                  loop
+                                  autoPlay
+                                  playsInline
+                                  preload="metadata"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                />
+                              ) : (
+                                <img
+                                  src={reel.poster || effectiveProduct.images?.[0] || banner1}
+                                  alt={reel.title}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                  onError={(e) => { e.target.onerror = null; e.target.src = banner1; }}
+                                />
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/30 pointer-events-none"></div>
 
-                            {/* Views pill top-left */}
-                            <span className="absolute top-1.5 left-1.5 z-10 bg-black/75 keep-white-text text-[8px] sm:text-[9.5px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border border-white/25">
-                              <span>👁️</span>
-                              <span>{reel.views || "1.5k"}</span>
-                            </span>
-
-                            {/* Reel badge top-right */}
-                            <span className="absolute top-1.5 right-1.5 z-10 cta-dark-pill text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow">
-                              {reel.badge ? reel.badge.split(" ")[0] : "🎬 রিল"}
-                            </span>
-
-                            {/* Center Play Video Button */}
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/55 backdrop-blur-sm border border-white/80 flex items-center justify-center keep-white-text text-xs sm:text-base shadow-lg group-hover:scale-110 group-hover:bg-[#dc2626] transition">
-                                ▶
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Product Info + Price + Add to Cart matching Compact Product Cards */}
-                          <div className="p-1.5 sm:p-3 flex-1 flex flex-col justify-between gap-1.5 min-w-0 w-full overflow-hidden">
-                            <div className="min-w-0 w-full">
-                              <h4 className="product-title font-black text-[10px] sm:text-xs leading-tight text-[#000000]">
-                                <span className="line-clamp-2 leading-tight">{effectiveProduct.name}</span>
-                              </h4>
-                              <div className="flex items-center justify-between gap-1 mt-1 min-w-0 w-full">
-                                <span className="text-[8px] sm:text-[10px] text-[#000000] font-extrabold bg-white/95 px-1.5 py-0.5 rounded-full truncate min-w-0 max-w-[66%] shadow-2xs">
-                                  🎬 {effectiveProduct.category || "ভিডিও রিল"}
-                                </span>
-                                <span className="product-rating-yellow text-[8.5px] sm:text-[10px] shrink-0">
-                                  ★{effectiveProduct.rating || 4.9}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="pt-1 border-t border-red-900/20 flex items-center justify-between gap-1 min-w-0 w-full overflow-hidden">
-                              <span className="product-price text-[11px] sm:text-sm font-black text-[#000000]">
-                                ৳{Number(effectiveProduct.price || 0).toLocaleString()}
+                              <span className="absolute top-1.5 left-1.5 z-10 bg-black/75 keep-white-text text-[8px] sm:text-[9.5px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border border-white/25">
+                                <span>👁️</span>
+                                <span>{reel.views || "1.5k"}</span>
                               </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  addToCart(effectiveProduct, 1);
-                                }}
-                                disabled={effectiveProduct.stock <= 0}
-                                className={`text-[9px] sm:text-[11px] px-1.5 sm:px-2.5 py-1 rounded-full font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
-                                  effectiveProduct.stock > 0
-                                    ? "cta-dark-pill active:scale-95"
-                                    : "bg-white/50 text-[#000000] border border-black/30 cursor-not-allowed"
-                                }`}
-                                title={hasVariantChoices ? "কার্টে যোগ করুন" : "কার্টে নিন"}
-                              >
-                                {effectiveProduct.stock > 0 ? "🛒 কার্ট" : "শেষ"}
-                              </button>
+
+                              <span className="absolute top-1.5 right-1.5 z-10 cta-dark-pill text-[8px] sm:text-[9.5px] font-black px-1.5 py-0.5 rounded-full shadow">
+                                {reel.badge ? reel.badge.split(" ")[0] : "🎬 রিল"}
+                              </span>
+
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/55 backdrop-blur-sm border border-white/80 flex items-center justify-center keep-white-text text-xs sm:text-base shadow-lg group-hover:scale-110 group-hover:bg-[#dc2626] transition">
+                                  ▶
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="p-1.5 sm:p-3 flex-1 flex flex-col justify-between gap-1.5 min-w-0 w-full overflow-hidden">
+                              <div className="min-w-0 w-full">
+                                <h4 className="product-title font-black text-[10px] sm:text-xs leading-tight text-[#000000]">
+                                  <span className="line-clamp-2 leading-tight">{effectiveProduct.name}</span>
+                                </h4>
+                                <div className="flex items-center justify-between gap-1 mt-1 min-w-0 w-full">
+                                  <span className="text-[8px] sm:text-[10px] text-[#000000] font-extrabold bg-white/95 px-1.5 py-0.5 rounded-full truncate min-w-0 max-w-[66%] shadow-2xs">
+                                    🎬 {effectiveProduct.category || "ভিডিও রিল"}
+                                  </span>
+                                  <span className="product-rating-yellow text-[8.5px] sm:text-[10px] shrink-0">
+                                    ★{effectiveProduct.rating || 4.9}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="pt-1 border-t border-red-900/20 flex items-center justify-between gap-1 min-w-0 w-full overflow-hidden">
+                                <span className="product-price text-[11px] sm:text-sm font-black text-[#000000]">
+                                  ৳{Number(effectiveProduct.price || 0).toLocaleString()}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    addToCart(effectiveProduct, 1);
+                                  }}
+                                  disabled={effectiveProduct.stock <= 0}
+                                  className={`text-[9px] sm:text-[11px] px-1.5 sm:px-2.5 py-1 rounded-full font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
+                                    effectiveProduct.stock > 0
+                                      ? "cta-dark-pill active:scale-95"
+                                      : "bg-white/50 text-[#000000] border border-black/30 cursor-not-allowed"
+                                  }`}
+                                >
+                                  {effectiveProduct.stock > 0 ? "🛒 কার্ট" : "শেষ"}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -12331,18 +12448,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </button>
                         </div>
 
-                        {layout === "slider3" && !isExpanded ? (
-                          <div className="flex gap-2 sm:gap-3.5 overflow-x-auto pb-0.5 scroll-smooth scrollbar-none snap-x">
-                            {activeReels.map(reel =>
-                              renderReelCompactCard(
-                                reel,
-                                "flex-shrink-0 w-[31.8%] min-w-[100px] sm:w-[23.8%] lg:w-[19%] snap-start"
-                              )
-                            )}
+                        {isSlider && !isExpanded ? (
+                          <div className="flex gap-2 overflow-x-auto pb-0.5 scroll-smooth scrollbar-none snap-x">
+                            {visibleReels.map(reel => renderReelCompactCard(reel, sliderCardStyle))}
                           </div>
                         ) : (
-                          <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4">
-                            {activeReels.map(reel => renderReelCompactCard(reel))}
+                          <div className={`grid ${gridColsClass} gap-2 sm:gap-3.5`}>
+                            {visibleReels.map(reel => renderReelCompactCard(reel))}
                           </div>
                         )}
                       </section>
@@ -12606,12 +12718,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       return;
                     }
                     flushTopBuffer(idx);
-                    if (["new_products", "hot_sale", "best_deals", "all_products", "category_products", "custom_products"].includes(sec.type)) {
+                    if (["new_products", "hot_sale", "best_deals", "b2g1_offers", "all_products", "category_products", "custom_products"].includes(sec.type)) {
                       groupedOutput.push(renderProductBlockSection(sec));
                     } else if (sec.type === "promo_banner") {
                       groupedOutput.push(renderPromoBannerBlock(sec));
                     } else if (sec.type === "combo_packs") {
-                      groupedOutput.push(<React.Fragment key={sec.id}>{renderComboPacksBlock()}</React.Fragment>);
+                      groupedOutput.push(<React.Fragment key={sec.id}>{renderComboPacksBlock(sec)}</React.Fragment>);
                     } else if (sec.type === "reels_showcase") {
                       groupedOutput.push(<React.Fragment key={sec.id}>{renderReelsShowcaseBlock(sec)}</React.Fragment>);
                     } else if (sec.type === "category_pills") {
@@ -19323,7 +19435,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {homeSections.map((sec, idx) => {
                         const isEnabled = sec.enabled !== false;
                         const isPickerOpen = expandedAdminBlockId === sec.id;
-                        const isProductEditable = ["new_products", "hot_sale", "best_deals", "all_products", "category_products", "custom_products"].includes(sec.type);
+                        const isProductEditable = ["new_products", "hot_sale", "best_deals", "b2g1_offers", "all_products", "category_products", "custom_products"].includes(sec.type);
+                        const isGridConfigurable = isProductEditable || ["reels_showcase", "combo_packs"].includes(sec.type);
+                        const secCols = Math.min(4, Math.max(2, Number(sec.columnsPerRow) || 3));
+                        const secRows = Math.min(6, Math.max(1, Number(sec.rowCount) || (sec.layout === "grid3x2" ? 2 : sec.layout === "grid3x3" ? 3 : 1)));
+                        const secStyle = sec.displayStyle || (secRows === 1 && sec.layout === "slider3" ? "slider" : "grid");
                         const query = (homeBlockSearchQueries[sec.id] || "").trim().toLowerCase();
                         const matchedAdminProducts = products.filter(p => {
                           if (!query) return true;
@@ -19366,7 +19482,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <h4 className="font-black text-sm sm:text-base text-white truncate">{sec.title}</h4>
                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-950/70 border border-red-800/50 text-rose-200 font-bold">
-                                      {sec.type === "promo_banner" ? "ব্যানার / বিজ্ঞাপন" : sec.layout || sec.type}
+                                      {sec.type === "promo_banner"
+                                        ? "ব্যানার / বিজ্ঞাপন"
+                                        : isGridConfigurable
+                                        ? `${secCols}টি × ${secRows} লাইন (${secStyle === "slider" && secRows === 1 ? "স্লাইডার" : "গ্রিড"})`
+                                        : (sec.layout || sec.type)}
                                     </span>
                                     {isProductEditable && selectedIds.length > 0 && (
                                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-bold">
@@ -19399,7 +19519,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   ⬇️
                                 </button>
 
-                                {(isProductEditable || sec.type === "promo_banner" || sec.type === "reels_showcase") && (
+                                {(isGridConfigurable || sec.type === "promo_banner") && (
                                   <button
                                     type="button"
                                     onClick={() => setExpandedAdminBlockId(isPickerOpen ? "" : sec.id)}
@@ -19409,7 +19529,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                         : "bg-black/50 border border-red-800/50 text-rose-200 hover:bg-red-950/70"
                                     }`}
                                   >
-                                    {isPickerOpen ? "▲ বন্ধ করুন" : (sec.type === "promo_banner" ? "🖼️ ব্যানার এডিট" : sec.type === "reels_showcase" ? "🎬 রিলস সেটিং ও এডিট" : "🔍 প্রোডাক্ট বাছাই ও এডিট")}
+                                    {isPickerOpen ? "▲ বন্ধ করুন" : (sec.type === "promo_banner" ? "🖼️ ব্যানার এডিট" : isProductEditable ? "⚙️ লেআউট ও প্রোডাক্ট বাছাই" : "⚙️ লেআউট (২/৩/৪ ও লাইন)")}
                                   </button>
                                 )}
 
@@ -19440,10 +19560,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               </div>
                             </div>
 
-                            {/* Expanded Editor: Title/Layout + Product Search Box RIGHT ABOVE Product Selection List */}
+                            {/* Expanded Editor: Title + Columns (2/3/4) + Rows (1/2/3/4) + Mode + Product Picker */}
                             {isPickerOpen && (
                               <div className="p-4 pt-3 border-t border-red-900/35 bg-[#14070a]/80 space-y-4 animate-fadeIn">
-                                <div className="grid sm:grid-cols-3 gap-3">
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                   <div>
                                     <label className="text-[11px] font-bold text-rose-200">ব্লকের নাম (শিরোনাম)</label>
                                     <input
@@ -19453,19 +19573,78 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                       className="w-full bg-black/55 border border-red-900/50 text-white rounded-full px-3.5 py-1.5 text-xs mt-1 outline-none"
                                     />
                                   </div>
-                                  {(isProductEditable || sec.type === "reels_showcase") && (
-                                    <div>
-                                      <label className="text-[11px] font-bold text-rose-200">ডিসপ্লে মোড</label>
-                                      <select
-                                        value={sec.layout || "slider3"}
-                                        onChange={(e) => updateHomeSectionField(sec.id, { layout: e.target.value })}
-                                        className="w-full bg-black/55 border border-red-900/50 text-white rounded-full px-3.5 py-1.5 text-xs mt-1 outline-none"
-                                      >
-                                        <option value="slider3">৩টি করে স্লাইডার (Mobile 3-col)</option>
-                                        <option value="grid3x2">২ লাইনে ৬টি (3x2)</option>
-                                        <option value="grid3x3">৩ লাইনে ৯টি (3x3)</option>
-                                      </select>
-                                    </div>
+                                  {isGridConfigurable && (
+                                    <>
+                                      <div>
+                                        <label className="text-[11px] font-bold text-rose-200">প্রতি লাইনে কার্ড সংখ্যা</label>
+                                        <div className="flex gap-1.5 mt-1">
+                                          {[2, 3, 4].map(cVal => (
+                                            <button
+                                              key={cVal}
+                                              type="button"
+                                              onClick={() => updateHomeSectionField(sec.id, { columnsPerRow: cVal, maxItems: cVal * secRows })}
+                                              className={`flex-1 py-1.5 rounded-full text-xs font-black transition cursor-pointer ${
+                                                secCols === cVal
+                                                  ? "bg-[#dc2626] text-white shadow"
+                                                  : "bg-black/55 border border-red-900/50 text-rose-200 hover:bg-red-950/70"
+                                              }`}
+                                            >
+                                              {cVal} টি
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="text-[11px] font-bold text-rose-200">কয় লাইন দেখাবে (Rows)</label>
+                                        <div className="flex gap-1.5 mt-1">
+                                          {[1, 2, 3, 4].map(rVal => (
+                                            <button
+                                              key={rVal}
+                                              type="button"
+                                              onClick={() => updateHomeSectionField(sec.id, {
+                                                rowCount: rVal,
+                                                displayStyle: rVal > 1 ? "grid" : secStyle,
+                                                layout: rVal === 1 && secStyle === "slider" ? "slider3" : "grid",
+                                                maxItems: secCols * rVal
+                                              })}
+                                              className={`flex-1 py-1.5 rounded-full text-xs font-black transition cursor-pointer ${
+                                                secRows === rVal
+                                                  ? "bg-amber-500 text-black shadow"
+                                                  : "bg-black/55 border border-red-900/50 text-rose-200 hover:bg-red-950/70"
+                                              }`}
+                                            >
+                                              {rVal} লাইন
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="text-[11px] font-bold text-rose-200">ডিসপ্লে স্টাইল</label>
+                                        <div className="flex gap-1.5 mt-1">
+                                          {[
+                                            { k: "slider", label: "স্লাইডার" },
+                                            { k: "grid", label: "গ্রিড" }
+                                          ].map(opt => (
+                                            <button
+                                              key={opt.k}
+                                              type="button"
+                                              onClick={() => updateHomeSectionField(sec.id, {
+                                                displayStyle: opt.k,
+                                                layout: opt.k === "slider" ? "slider3" : "grid",
+                                                rowCount: opt.k === "slider" ? 1 : Math.max(1, secRows)
+                                              })}
+                                              className={`flex-1 py-1.5 rounded-full text-xs font-black transition cursor-pointer ${
+                                                secStyle === opt.k
+                                                  ? "bg-emerald-600 text-white shadow"
+                                                  : "bg-black/55 border border-red-900/50 text-rose-200 hover:bg-red-950/70"
+                                              }`}
+                                            >
+                                              {opt.label}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </>
                                   )}
                                   {sec.type === "reels_showcase" && (
                                     <div className="flex items-end">

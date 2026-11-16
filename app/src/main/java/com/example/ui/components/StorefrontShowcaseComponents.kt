@@ -68,20 +68,48 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.data.model.ComboPack
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
 import com.example.data.model.ReelItem
+import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
+import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.RoyalMaroon
+
+data class BlockGridConfig(
+  val cols: Int,
+  val rows: Int,
+  val isSlider: Boolean,
+  val defaultLimit: Int
+)
+
+fun resolveBlockGridConfig(section: HomeSectionConfig): BlockGridConfig {
+  val cols = section.columnsPerRow.coerceIn(2, 4)
+  val rows = section.rowCount.coerceIn(1, 4)
+  val isSlider = when {
+    section.displayStyle == "grid" -> false
+    section.displayStyle == "slider" -> true
+    section.layout == "grid3x2" || section.layout == "grid3x3" -> false
+    else -> true
+  }
+  val defaultLimit = if (isSlider) {
+    if (section.type == "reels_showcase") cols else maxOf(section.maxItems, cols * 2)
+  } else {
+    cols * rows
+  }
+  return BlockGridConfig(cols = cols, rows = rows, isSlider = isSlider, defaultLimit = defaultLimit)
+}
 
 fun resolveReelLinkedProduct(reel: ReelItem, products: List<Product>): Product {
   val found = products.find { it.id == reel.productId }
@@ -111,15 +139,11 @@ fun StorefrontReelsBlockCard(
   modifier: Modifier = Modifier
 ) {
   val activeReels = remember(reels) { reels.filter { it.active } }
-  val defaultLimit = when (section.layout) {
-    "grid3x2" -> 6
-    "grid3x3" -> 9
-    else -> section.maxItems.coerceAtLeast(3)
-  }
-  val displayReels = remember(activeReels, isExpanded, section.layout, defaultLimit) {
-    if (isExpanded) activeReels
-    else if (section.layout == "slider3") activeReels.take(section.maxItems.coerceAtLeast(6))
-    else activeReels.take(defaultLimit)
+  val cfg = remember(section) { resolveBlockGridConfig(section) }
+  // Strictly show configured columns (default 3 reels on Home), expanding to all on "আরো দেখুন"
+  val defaultVisibleCount = if (cfg.isSlider) cfg.cols else (cfg.cols * cfg.rows)
+  val displayReels = remember(activeReels, isExpanded, defaultVisibleCount) {
+    if (isExpanded) activeReels else activeReels.take(defaultVisibleCount)
   }
 
   Surface(
@@ -198,10 +222,10 @@ fun StorefrontReelsBlockCard(
           color = Color.Gray,
           modifier = Modifier.padding(vertical = 8.dp)
         )
-      } else if (!isExpanded && section.layout == "slider3") {
-        // Exact 3-card width matching StorefrontProductBlockCard
+      } else if (!isExpanded && cfg.isSlider) {
+        // Exact configured columns (3 cards default, no peeking 4th card)
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-          val cardWidth = (maxWidth - 16.dp) / 3f
+          val cardWidth = (maxWidth - (8.dp * (cfg.cols - 1))) / cfg.cols.toFloat()
           LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -219,12 +243,12 @@ fun StorefrontReelsBlockCard(
           }
         }
       } else {
-        // 3-Column Grid View matching all product grids
+        // Configurable 2/3/4-Column Grid View
         Column(
           modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-          displayReels.chunked(3).forEach { rowReels ->
+          displayReels.chunked(cfg.cols).forEach { rowReels ->
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -239,9 +263,283 @@ fun StorefrontReelsBlockCard(
                   modifier = Modifier.weight(1f)
                 )
               }
-              repeat(3 - rowReels.size) {
+              repeat(cfg.cols - rowReels.size) {
                 Spacer(modifier = Modifier.weight(1f))
               }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun StorefrontComboBlockCard(
+  section: HomeSectionConfig,
+  combos: List<ComboPack>,
+  isExpanded: Boolean,
+  onSeeMoreClick: () -> Unit,
+  onAddComboToCart: (ComboPack) -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val activeCombos = remember(combos) { combos.filter { it.isActive } }
+  val cfg = remember(section) { resolveBlockGridConfig(section) }
+  val displayCombos = remember(activeCombos, isExpanded, cfg) {
+    if (isExpanded) activeCombos
+    else if (cfg.isSlider) activeCombos.take(maxOf(cfg.cols * 2, 6))
+    else activeCombos.take(cfg.cols * cfg.rows)
+  }
+
+  Surface(
+    shape = RoundedCornerShape(16.dp),
+    color = Color.White,
+    border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.7f)),
+    shadowElevation = 1.dp,
+    modifier = modifier
+      .fillMaxWidth()
+      .testTag("home_section_${section.id}")
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 8.dp, vertical = 8.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+          modifier = Modifier.weight(1f)
+        ) {
+          Text(text = section.icon.ifBlank { "🎁" }, fontSize = 15.sp)
+          Text(
+            text = section.title.ifBlank { "কম্বো প্যাক" },
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Black,
+            color = RoyalMaroon,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+          )
+          Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = Color(0xFFECFDF5),
+            border = BorderStroke(1.dp, AccentGreen)
+          ) {
+            Text(
+              text = section.badge.ifBlank { "COMBO" },
+              fontSize = 8.5.sp,
+              fontWeight = FontWeight.Black,
+              color = Color(0xFF047857),
+              modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+            )
+          }
+        }
+
+        if (activeCombos.isNotEmpty()) {
+          Row(
+            modifier = Modifier
+              .clip(RoundedCornerShape(10.dp))
+              .clickable { onSeeMoreClick() }
+              .padding(horizontal = 6.dp, vertical = 3.dp)
+              .testTag("see_more_${section.id}"),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text(
+              text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold,
+              color = RoyalMaroon
+            )
+          }
+        }
+      }
+
+      if (displayCombos.isEmpty()) {
+        Text(
+          text = "এখনো কোনো কম্বো প্যাক যুক্ত করা হয়নি।",
+          fontSize = 11.sp,
+          color = Color.Gray,
+          modifier = Modifier.padding(vertical = 8.dp)
+        )
+      } else if (!isExpanded && cfg.isSlider) {
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+          val cardWidth = (maxWidth - (8.dp * (cfg.cols - 1))) / cfg.cols.toFloat()
+          LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            items(displayCombos, key = { "${section.id}_${it.id}" }) { combo ->
+              CompactComboPackCard(
+                combo = combo,
+                onAddComboToCart = { onAddComboToCart(combo) },
+                modifier = Modifier.width(cardWidth)
+              )
+            }
+          }
+        }
+      } else {
+        Column(
+          modifier = Modifier.fillMaxWidth(),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          displayCombos.chunked(cfg.cols).forEach { rowCombos ->
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              rowCombos.forEach { combo ->
+                CompactComboPackCard(
+                  combo = combo,
+                  onAddComboToCart = { onAddComboToCart(combo) },
+                  modifier = Modifier.weight(1f)
+                )
+              }
+              repeat(cfg.cols - rowCombos.size) {
+                Spacer(modifier = Modifier.weight(1f))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun CompactComboPackCard(
+  combo: ComboPack,
+  onAddComboToCart: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  Card(
+    modifier = modifier
+      .clickable(enabled = combo.stock > 0) { onAddComboToCart() }
+      .testTag("compact_combo_card_${combo.id}"),
+    shape = RoundedCornerShape(12.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.White),
+    border = BorderStroke(1.dp, BorderGold),
+    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
+  ) {
+    Column {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .aspectRatio(1f)
+          .background(CreamSurface)
+      ) {
+        AppImage(
+          model = combo.imageUrl,
+          contentDescription = combo.title,
+          contentScale = ContentScale.Crop,
+          modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+        )
+
+        Box(
+          modifier = Modifier
+            .padding(4.dp)
+            .align(Alignment.TopStart)
+            .clip(RoundedCornerShape(6.dp))
+            .background(AccentGreen)
+            .padding(horizontal = 4.dp, vertical = 1.dp)
+        ) {
+          Text(
+            text = "🎁 সেভ ৳${combo.savings}",
+            color = Color.White,
+            fontSize = 7.5.sp,
+            fontWeight = FontWeight.Black
+          )
+        }
+
+        Box(
+          modifier = Modifier
+            .padding(4.dp)
+            .align(Alignment.BottomStart)
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color.Black.copy(alpha = 0.65f))
+            .padding(horizontal = 4.dp, vertical = 1.dp)
+        ) {
+          Text(
+            text = "${combo.productIds.size}টি পণ্য",
+            color = Color(0xFFFACC15),
+            fontSize = 7.5.sp,
+            fontWeight = FontWeight.Black
+          )
+        }
+      }
+
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 6.dp, vertical = 6.dp)
+      ) {
+        Text(
+          text = combo.title,
+          color = DarkEspresso,
+          fontSize = 10.5.sp,
+          fontWeight = FontWeight.SemiBold,
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
+          lineHeight = 13.sp,
+          modifier = Modifier.height(27.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Column {
+            Text(
+              text = "৳${combo.comboPrice}",
+              color = RoyalMaroon,
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Black,
+              maxLines = 1
+            )
+            if (combo.regularPrice > combo.comboPrice) {
+              Text(
+                text = "৳${combo.regularPrice}",
+                color = Color.Gray,
+                fontSize = 8.5.sp,
+                textDecoration = TextDecoration.LineThrough,
+                maxLines = 1
+              )
+            }
+          }
+
+          Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = if (combo.stock > 0) RoyalMaroon else Color(0xFFE0E0E0),
+            modifier = Modifier
+              .clickable(enabled = combo.stock > 0) { onAddComboToCart() }
+              .testTag("combo_add_to_cart_${combo.id}")
+          ) {
+            Row(
+              modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+              Icon(
+                imageVector = Icons.Default.AddShoppingCart,
+                contentDescription = "কার্টে যোগ করুন",
+                tint = if (combo.stock > 0) Color.White else Color.Gray,
+                modifier = Modifier.size(10.dp)
+              )
+              Text(
+                text = if (combo.stock > 0) "কার্ট" else "শেষ",
+                color = if (combo.stock > 0) Color.White else Color.Gray,
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Bold
+              )
             }
           }
         }

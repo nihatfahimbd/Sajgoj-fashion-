@@ -19,17 +19,21 @@ data class Product(
   val lastSyncSource: String = "",
   val isHotSale: Boolean = false,
   val isBestDeal: Boolean = false,
+  val isB2G1: Boolean = false,
   val createdAt: Long = 0L
 )
 
 data class HomeSectionConfig(
   val id: String,
-  val type: String, // top_banner, voucher_strip, category_slider, new_products, hot_sale, best_deals, reels_showcase, all_products, category_products, promo_banner, custom_products
+  val type: String, // top_banner, voucher_strip, category_slider, new_products, hot_sale, combo_packs, b2g1_offers, best_deals, reels_showcase, all_products, category_products, promo_banner, custom_products
   val title: String,
   val subtitle: String = "",
   val icon: String = "✨",
   val badge: String = "",
   val layout: String = "slider3", // slider3, grid3x2, grid3x3, banner, strip
+  val columnsPerRow: Int = 3, // 2, 3, 4 cards per row
+  val rowCount: Int = 1, // 1..4 rows/lines
+  val displayStyle: String = "slider", // "slider" or "grid"
   val enabled: Boolean = true,
   val isCustom: Boolean = false,
   val categoryName: String = "",
