@@ -128,12 +128,12 @@ fun ProductCard(
             Icon(
               imageVector = Icons.Default.Star,
               contentDescription = "Rating",
-              tint = AntiqueGold,
+              tint = Color(0xFFFACC15),
               modifier = Modifier.size(11.dp)
             )
             Text(
               text = product.rating.toString(),
-              color = Color.White,
+              color = Color(0xFFFACC15),
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold
             )
@@ -359,12 +359,12 @@ fun CompactProductCard(
             Icon(
               imageVector = Icons.Default.Star,
               contentDescription = null,
-              tint = AntiqueGold,
+              tint = Color(0xFFFACC15),
               modifier = Modifier.size(9.dp)
             )
             Text(
               text = product.rating.toString(),
-              color = Color.White,
+              color = Color(0xFFFACC15),
               fontSize = 8.sp,
               fontWeight = FontWeight.Bold
             )

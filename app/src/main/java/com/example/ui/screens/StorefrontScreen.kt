@@ -213,8 +213,8 @@ fun StorefrontScreen(
   Box(modifier = modifier.fillMaxSize()) {
     LazyColumn(
       state = listState,
-      contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 84.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
+      contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 84.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp),
       modifier = Modifier
         .fillMaxSize()
         .testTag("storefront_grid")
@@ -487,8 +487,8 @@ private fun StorefrontProductBlockCard(
     Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 10.dp, vertical = 10.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp)
+        .padding(horizontal = 8.dp, vertical = 8.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
       // Section Title Header + Small "আরো দেখুন ›" Action at the end
       Row(
