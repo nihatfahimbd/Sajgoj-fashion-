@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Search
@@ -65,6 +67,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -91,9 +95,24 @@ import com.example.data.model.StoreConfig
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.ui.AdminTab
+import com.example.ui.components.AdminAmberGradEnd
+import com.example.ui.components.AdminAmberGradStart
+import com.example.ui.components.AdminCardBorderSoft
+import com.example.ui.components.AdminCardBorderWarm
 import com.example.ui.components.AdminDeliveryTrackingTab
+import com.example.ui.components.AdminEmeraldGradEnd
+import com.example.ui.components.AdminEmeraldGradStart
+import com.example.ui.components.AdminInkMuted
+import com.example.ui.components.AdminInkPrimary
+import com.example.ui.components.AdminInkSecondary
+import com.example.ui.components.AdminNavyGradEnd
+import com.example.ui.components.AdminNavyGradStart
+import com.example.ui.components.AdminRoyalGradEnd
+import com.example.ui.components.AdminRoyalGradStart
 import com.example.ui.components.AppImage
 import com.example.ui.components.DailyRevenueTrendChartCard
+import com.example.ui.components.GlossyAdminCard
+import com.example.ui.components.GlossySegmentPill
 import com.example.ui.components.HomePageSettingHub
 import com.example.ui.components.InventorySyncPanel
 import com.example.ui.components.PaymentMethodsToggleSection
@@ -102,6 +121,10 @@ import com.example.ui.components.ReturnExchangeDialog
 import com.example.ui.components.ReturnSlipDialog
 import com.example.ui.components.ShippingLabelPrintFormat
 import com.example.ui.components.StorefrontDesignStudioPanel
+import com.example.ui.components.adminAccentGlossBrush
+import com.example.ui.components.adminCanvasBrush
+import com.example.ui.components.adminOutlinedTextFieldColors
+import com.example.ui.components.adminRoyalGlossBrush
 import com.example.ui.components.printShippingLabels
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
@@ -186,51 +209,68 @@ fun AdminDashboardScreen(
   var viewingReturnSlip by remember { mutableStateOf<ReturnRecord?>(null) }
 
   if (!isAdminLoggedIn) {
-    // Admin Login Screen
+    // Glossy Luxury Admin Login Screen
     Box(
       modifier = modifier
         .fillMaxSize()
-        .background(CreamBackground)
-        .padding(24.dp),
+        .background(adminCanvasBrush())
+        .padding(20.dp),
       contentAlignment = Alignment.Center
     ) {
-      Card(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+      GlossyAdminCard(
+        modifier = Modifier.padding(horizontal = 8.dp),
+        cornerRadius = 24.dp,
+        accentBorderColor = Color(0xFFE8C8B0),
+        containerTintTop = Color.White,
+        containerTintBottom = Color(0xFFFFF6F0),
+        elevation = 10.dp,
+        contentPadding = 24.dp
       ) {
         Column(
-          modifier = Modifier.padding(24.dp),
+          modifier = Modifier.fillMaxWidth(),
           horizontalAlignment = Alignment.CenterHorizontally
         ) {
           Box(
             modifier = Modifier
-              .size(60.dp)
+              .size(66.dp)
+              .shadow(8.dp, CircleShape, spotColor = RoyalMaroon.copy(alpha = 0.35f))
               .clip(CircleShape)
-              .background(CreamSurface),
+              .background(adminRoyalGlossBrush())
+              .border(2.dp, Color.White.copy(alpha = 0.75f), CircleShape),
             contentAlignment = Alignment.Center
           ) {
-            Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = RoyalMaroon, modifier = Modifier.size(32.dp))
+            Icon(
+              imageVector = Icons.Default.Lock,
+              contentDescription = "Admin Security",
+              tint = Color.White,
+              modifier = Modifier.size(30.dp)
+            )
           }
 
           Spacer(modifier = Modifier.height(14.dp))
 
           Text(
             text = "অ্যাডমিন প্যানেলে প্রবেশ",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = RoyalMaroon
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Black,
+            color = AdminInkPrimary
           )
 
-          Text(
-            text = "ইমেইল: nihatfahimbd@gmail.com",
-            fontSize = 12.sp,
-            color = Color.Gray
-          )
+          Spacer(modifier = Modifier.height(4.dp))
+
+          Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = Color(0xFFF1F5F9),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+          ) {
+            Text(
+              text = "ইমেইল: nihatfahimbd@gmail.com",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.SemiBold,
+              color = AdminInkSecondary,
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+          }
 
           Spacer(modifier = Modifier.height(18.dp))
 
@@ -240,7 +280,8 @@ fun AdminDashboardScreen(
             label = { Text("অ্যাডমিন পাসওয়ার্ড", fontSize = 12.sp) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier
               .fillMaxWidth()
               .testTag("admin_password_input")
@@ -250,21 +291,22 @@ fun AdminDashboardScreen(
 
           Button(
             onClick = { onLogin(loginPasswordInput) },
-            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-            shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
               .fillMaxWidth()
               .height(48.dp)
               .testTag("admin_login_submit")
           ) {
-            Text("লগইন করুন", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("লগইন করুন", fontSize = 14.5.sp, fontWeight = FontWeight.ExtraBold)
           }
 
-          Spacer(modifier = Modifier.height(8.dp))
+          Spacer(modifier = Modifier.height(10.dp))
           Text(
             text = "ডিফল্ট পাসওয়ার্ড: admin123",
-            fontSize = 11.sp,
-            color = AntiqueGoldDark
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = AdminInkMuted
           )
         }
       }
@@ -272,58 +314,117 @@ fun AdminDashboardScreen(
     return
   }
 
-  // Admin Dashboard Content with Tabs
+  // Glossy Admin Dashboard Content
   Column(
     modifier = modifier
       .fillMaxSize()
-      .background(CreamBackground)
+      .background(adminCanvasBrush())
   ) {
-    // Admin Sub Navigation Bar
-    Row(
+    // 1. Glossy Royal Command Bar
+    Box(
       modifier = Modifier
         .fillMaxWidth()
-        .background(Color.White)
-        .horizontalScroll(rememberScrollState())
-        .padding(horizontal = 12.dp, vertical = 8.dp),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.CenterVertically
+        .background(adminRoyalGlossBrush())
+        .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
-      AdminTab.values().forEach { tab ->
-        val isSelected = currentTab == tab
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
+          modifier = Modifier.weight(1f)
+        ) {
+          Box(
+            modifier = Modifier
+              .size(38.dp)
+              .clip(RoundedCornerShape(12.dp))
+              .background(Color.White.copy(alpha = 0.16f))
+              .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(text = "👑", fontSize = 18.sp)
+          }
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = "সাজগোজ অ্যাডমিন কন্ট্রোল",
+              fontSize = 14.5.sp,
+              fontWeight = FontWeight.Black,
+              color = Color.White,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+            Text(
+              text = "${products.size} পণ্য • ${orders.size} অর্ডার • ${homeSections.count { it.enabled }} ব্লক সক্রিয়",
+              fontSize = 10.5.sp,
+              fontWeight = FontWeight.Medium,
+              color = Color.White.copy(alpha = 0.88f),
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+        }
+
         Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = if (isSelected) RoyalMaroon else CreamSurface,
-          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+          shape = RoundedCornerShape(12.dp),
+          color = Color.White.copy(alpha = 0.18f),
+          border = BorderStroke(1.dp, Color.White.copy(alpha = 0.45f)),
           modifier = Modifier
-            .clickable { onSelectTab(tab) }
-            .testTag("admin_tab_${tab.name}")
+            .heightIn(min = 40.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onLogout() }
         ) {
           Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
           ) {
-            Text(text = tab.icon, fontSize = 12.sp)
+            Icon(
+              imageVector = Icons.Default.PowerSettingsNew,
+              contentDescription = "Logout",
+              tint = Color.White,
+              modifier = Modifier.size(15.dp)
+            )
             Text(
-              text = tab.title,
-              fontSize = 12.sp,
-              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-              color = if (isSelected) Color.White else DarkEspresso
+              text = "লগআউট",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color.White
             )
           }
         }
       }
+    }
 
-      // Logout
-      IconButton(
-        onClick = onLogout,
-        modifier = Modifier.size(32.dp)
+    // 2. Glossy Admin Sub Navigation Bar
+    Surface(
+      color = Color.White.copy(alpha = 0.94f),
+      shadowElevation = 4.dp,
+      modifier = Modifier.fillMaxWidth()
+    ) {
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .horizontalScroll(rememberScrollState())
+          .padding(horizontal = 12.dp, vertical = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Icon(imageVector = Icons.Default.Close, contentDescription = "Logout", tint = AccentRed)
+        AdminTab.values().forEach { tab ->
+          val isSelected = currentTab == tab
+          GlossySegmentPill(
+            label = "${tab.icon} ${tab.title}",
+            selected = isSelected,
+            onClick = { onSelectTab(tab) },
+            modifier = Modifier.testTag("admin_tab_${tab.name}")
+          )
+        }
       }
     }
 
-    HorizontalDivider(color = BorderGold)
+    HorizontalDivider(color = AdminCardBorderWarm)
 
     // Tab Contents
     Box(
@@ -558,50 +659,75 @@ fun AdminOverviewTab(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Column {
-        Text(text = "স্টোর ড্যাশবোর্ড ও পরিসংখ্যান", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-        Text(text = "লাইভ সেলস ও অপারেশন ট্র্যাকিং", fontSize = 11.sp, color = Color.Gray)
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = "স্টোর ড্যাশবোর্ড ও পরিসংখ্যান",
+          fontSize = 16.5.sp,
+          fontWeight = FontWeight.Black,
+          color = AdminInkPrimary
+        )
+        Text(
+          text = "লাইভ সেলস ও অপারেশন ট্র্যাকিং",
+          fontSize = 11.5.sp,
+          fontWeight = FontWeight.Medium,
+          color = AdminInkMuted
+        )
       }
       Button(
         onClick = onAddProductClick,
-        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-        shape = RoundedCornerShape(16.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+        shape = RoundedCornerShape(14.dp),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+        modifier = Modifier.heightIn(min = 44.dp)
       ) {
         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
-        Text(text = "নতুন পণ্য", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Text(text = "নতুন পণ্য", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
       }
     }
 
-    // Metric Cards Grid
+    // Metric Cards Grid (Glossy Jewel-Accented KPI Cards)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-      Card(
+      GlossyAdminCard(
         modifier = Modifier.weight(1f),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+        cornerRadius = 18.dp,
+        accentBorderColor = Color(0xFFBFDBFE),
+        containerTintTop = Color.White,
+        containerTintBottom = Color(0xFFF0F7FF),
+        contentPadding = 13.dp
       ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "মোট বিক্রয়", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
-          Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "$totalRevenue ৳", fontSize = 18.sp, fontWeight = FontWeight.Black, color = NavyBlue)
-          Text(text = "↑ লাইভ হিসাব", fontSize = 10.sp, color = AccentGreen, fontWeight = FontWeight.Bold)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(text = "মোট বিক্রয়", fontSize = 11.5.sp, color = AdminInkSecondary, fontWeight = FontWeight.Bold)
+          Text(text = "💰", fontSize = 14.sp)
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = "৳$totalRevenue", fontSize = 19.sp, fontWeight = FontWeight.Black, color = NavyBlue)
+        Text(text = "↑ লাইভ হিসাব", fontSize = 10.5.sp, color = AccentGreen, fontWeight = FontWeight.Bold)
       }
 
-      Card(
+      GlossyAdminCard(
         modifier = Modifier.weight(1f),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+        cornerRadius = 18.dp,
+        accentBorderColor = Color(0xFFFDE68A),
+        containerTintTop = Color.White,
+        containerTintBottom = Color(0xFFFFFBEB),
+        contentPadding = 13.dp
       ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "মোট অর্ডার", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
-          Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "${orders.size}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = NavyBlue)
-          Text(text = "${pendingOrders.size} টি পেন্ডিং", fontSize = 10.sp, color = Color(0xFFB45309), fontWeight = FontWeight.Bold)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(text = "মোট অর্ডার", fontSize = 11.5.sp, color = AdminInkSecondary, fontWeight = FontWeight.Bold)
+          Text(text = "🛒", fontSize = 14.sp)
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = "${orders.size} টি", fontSize = 19.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
+        Text(text = "${pendingOrders.size} টি পেন্ডিং", fontSize = 10.5.sp, color = Color(0xFFB45309), fontWeight = FontWeight.Bold)
       }
     }
 
@@ -609,32 +735,46 @@ fun AdminOverviewTab(
     val totalStockValuation = products.sumOf { it.price * it.stock }
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-      Card(
+      GlossyAdminCard(
         modifier = Modifier.weight(1f),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+        cornerRadius = 18.dp,
+        accentBorderColor = Color(0xFFA7F3D0),
+        containerTintTop = Color.White,
+        containerTintBottom = Color(0xFFECFDF5),
+        contentPadding = 13.dp
       ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "ইনভেন্টরি স্টক ও মূল্য", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.Bold)
-          Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "$totalStockUnits পিস", fontSize = 18.sp, fontWeight = FontWeight.Black, color = NavyBlue)
-          Text(text = "মোট মূল্য: ৳$totalStockValuation", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Bold)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(text = "ইনভেন্টরি স্টক", fontSize = 11.5.sp, color = AdminInkSecondary, fontWeight = FontWeight.Bold)
+          Text(text = "📦", fontSize = 14.sp)
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = "$totalStockUnits পিস", fontSize = 19.sp, fontWeight = FontWeight.Black, color = Color(0xFF065F46))
+        Text(text = "মূল্য: ৳$totalStockValuation", fontSize = 10.5.sp, color = AdminInkSecondary, fontWeight = FontWeight.Bold)
       }
 
-      Card(
+      GlossyAdminCard(
         modifier = Modifier.weight(1f),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = if (lowStockProducts.isNotEmpty()) Color(0xFFFEF2F2) else Color.White),
-        border = BorderStroke(1.dp, if (lowStockProducts.isNotEmpty()) Color(0xFFFCA5A5) else Color(0xFFCBD5E1))
+        cornerRadius = 18.dp,
+        accentBorderColor = if (lowStockProducts.isNotEmpty()) Color(0xFFFCA5A5) else Color(0xFFE2E8F0),
+        containerTintTop = Color.White,
+        containerTintBottom = if (lowStockProducts.isNotEmpty()) Color(0xFFFEF2F2) else Color(0xFFF8FAFC),
+        contentPadding = 13.dp
       ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-          Text(text = "কম স্টক সতর্কতা", fontSize = 11.sp, color = AccentRed, fontWeight = FontWeight.Bold)
-          Spacer(modifier = Modifier.height(2.dp))
-          Text(text = "${lowStockProducts.size}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = AccentRed)
-          Text(text = "রিস্টক প্রয়োজন", fontSize = 10.sp, color = AccentRed, fontWeight = FontWeight.Bold)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(text = "কম স্টক সতর্কতা", fontSize = 11.5.sp, color = AccentRed, fontWeight = FontWeight.Bold)
+          Text(text = "⚠️", fontSize = 14.sp)
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = "${lowStockProducts.size} টি", fontSize = 19.sp, fontWeight = FontWeight.Black, color = AccentRed)
+        Text(text = "রিস্টক প্রয়োজন", fontSize = 10.5.sp, color = AccentRed, fontWeight = FontWeight.Bold)
       }
     }
 
@@ -642,34 +782,47 @@ fun AdminOverviewTab(
     DailyRevenueTrendChartCard(orders = orders)
 
     // Quick Shortcuts Header
-    Text(text = "মূল প্রশাসনিক হাবসমূহ (Master Function Hubs):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+    Text(
+      text = "মূল প্রশাসনিক হাবসমূহ (Master Function Hubs):",
+      fontSize = 13.5.sp,
+      fontWeight = FontWeight.Black,
+      color = AdminInkPrimary
+    )
 
     // Master Hub 1: Product Hub Card
-    Card(
+    GlossyAdminCard(
       modifier = Modifier
-        .fillMaxWidth()
         .clickable { onGoToTab(AdminTab.PRODUCTS) }
         .testTag("dashboard_product_hub_card"),
-      shape = RoundedCornerShape(18.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.5.dp, Color(0xFFFCD34D))
+      cornerRadius = 18.dp,
+      accentBorderColor = Color(0xFFFCD34D),
+      contentPadding = 14.dp
     ) {
-      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = "👗", fontSize = 22.sp)
+          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
+            Box(
+              modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(adminAccentGlossBrush(AdminAmberGradStart, AdminAmberGradEnd)),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(text = "👗", fontSize = 19.sp)
+            }
             Column {
-              Text(text = "১. প্রোডাক্ট ও ইনভেন্টরি হাব", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
-              Text(text = "${products.size} টি পণ্য • ${categories.size} টি ক্যাটাগরি", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.SemiBold)
+              Text(text = "১. প্রোডাক্ট ও ইনভেন্টরি হাব", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = AdminInkPrimary)
+              Text(text = "${products.size} টি পণ্য • ${categories.size} টি ক্যাটাগরি", fontSize = 11.sp, color = AdminInkSecondary, fontWeight = FontWeight.SemiBold)
             }
           }
           Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFFEF3C7)
+            shape = RoundedCornerShape(10.dp),
+            color = Color(0xFFFEF3C7),
+            border = BorderStroke(1.dp, Color(0xFFFDE68A))
           ) {
             Text(
               text = "পণ্য সংক্রান্ত সব",
@@ -682,47 +835,54 @@ fun AdminOverviewTab(
         }
 
         Text(
-          text = "নতুন পণ্য যোগ, স্টক ও টাকার ভ্যালুয়েশন, ক্যাটাগরিভিত্তিক স্টক ব্রেকডাউন (কোন ক্যাটাগরির কত পিস কত টাকা), সেলস ও রিটার্ন রিপোর্ট এবং ক্যাটাগরি ফিল্টার সহ প্রোডাক্ট তালিকা।",
-          fontSize = 11.sp,
-          color = SlateTextSecondary,
-          lineHeight = 15.sp
+          text = "নতুন পণ্য যোগ, স্টক ও টাকার ভ্যালুয়েশন, ক্যাটাগরিভিত্তিক স্টক ব্রেকডাউন, POS সিঙ্ক এবং সেলস ও রিটার্ন রিপোর্ট।",
+          fontSize = 11.5.sp,
+          color = AdminInkMuted,
+          lineHeight = 16.sp
         )
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-          Text(text = "প্রোডাক্ট হাবে প্রবেশ করুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "প্রোডাক্ট হাবে প্রবেশ করুন →", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = RoyalMaroon)
         }
       }
     }
 
     // Master Hub 2: Order Hub Card
-    Card(
+    GlossyAdminCard(
       modifier = Modifier
-        .fillMaxWidth()
         .clickable { onGoToTab(AdminTab.ORDERS) }
         .testTag("dashboard_order_hub_card"),
-      shape = RoundedCornerShape(18.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.5.dp, Color(0xFF6EE7B7))
+      cornerRadius = 18.dp,
+      accentBorderColor = Color(0xFF6EE7B7),
+      contentPadding = 14.dp
     ) {
-      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = "📦", fontSize = 22.sp)
+          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
+            Box(
+              modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(adminAccentGlossBrush(AdminEmeraldGradStart, AdminEmeraldGradEnd)),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(text = "📦", fontSize = 19.sp)
+            }
             Column {
-              Text(text = "২. অর্ডার ম্যানেজমেন্ট হাব", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-              Text(text = "${orders.size} টি মোট অর্ডার • ${pendingOrders.size} টি নতুন পেন্ডিং", fontSize = 11.sp, color = Color(0xFF047857))
+              Text(text = "২. অর্ডার ম্যানেজমেন্ট হাব", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = AdminInkPrimary)
+              Text(text = "${orders.size} টি মোট অর্ডার • ${pendingOrders.size} টি পেন্ডিং", fontSize = 11.sp, color = Color(0xFF047857), fontWeight = FontWeight.Bold)
             }
           }
           Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(10.dp),
             color = if (pendingOrders.isNotEmpty()) Color(0xFFFEE2E2) else Color(0xFFD1FAE5)
           ) {
             Text(
-              text = if (pendingOrders.isNotEmpty()) "${pendingOrders.size} পেন্ডিং অনুমোদন" else "সকল অর্ডার সম্পন্ন",
+              text = if (pendingOrders.isNotEmpty()) "${pendingOrders.size} পেন্ডিং" else "সব সম্পন্ন",
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold,
               color = if (pendingOrders.isNotEmpty()) Color(0xFFB91C1C) else Color(0xFF065F46),
@@ -732,78 +892,87 @@ fun AdminOverviewTab(
         }
 
         Text(
-          text = "নতুন অর্ডার অনুমোদন ডেস্কে সরাসরি কনফার্ম, প্রসেসিং, Steadfast/Pathao কুরিয়ার বুকিং, চালান মেমো প্রিন্ট, ক্যানসেল, অর্ডার স্ট্যাটাস ও রিটার্ন এক্সচেঞ্জ নিষ্পত্তি।",
-          fontSize = 11.sp,
-          color = Color(0xFF6B7280),
-          lineHeight = 15.sp
+          text = "নতুন অর্ডার অনুমোদন, Steadfast/Pathao কুরিয়ার বুকিং, চালান মেমো প্রিন্ট, ডেলিভারি ট্র্যাকিং ও রিটার্ন এক্সচেঞ্জ।",
+          fontSize = 11.5.sp,
+          color = AdminInkMuted,
+          lineHeight = 16.sp
         )
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-          Text(text = "অর্ডার হাবে প্রবেশ করুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF047857))
+          Text(text = "অর্ডার হাবে প্রবেশ করুন →", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF047857))
         }
       }
     }
 
     // Master Hub 3 & 4: Marketing & Settings Cards
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-      Card(
+      GlossyAdminCard(
         modifier = Modifier
           .weight(1f)
           .clickable { onGoToTab(AdminTab.MARKETING) },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFFDA4AF))
+        cornerRadius = 16.dp,
+        accentBorderColor = Color(0xFFFDA4AF),
+        contentPadding = 12.dp
       ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
           Text(text = "🎁", fontSize = 20.sp)
-          Text(text = "৩. মার্কেটিং হাব", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-          Text(text = "কুপন, ভাউচার, কম্বো, B2G1 ও ব্যানার", fontSize = 10.sp, color = Color(0xFF6B7280))
-          Text(text = "ম্যানেজ করুন →", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFBE123C))
+          Text(text = "৩. মার্কেটিং হাব", fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = AdminInkPrimary)
+          Text(text = "কুপন, ভাউচার, কম্বো, B2G1 ও ব্যানার", fontSize = 10.5.sp, color = AdminInkMuted)
+          Text(text = "ম্যানেজ করুন →", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFFBE123C))
         }
       }
 
-      Card(
+      GlossyAdminCard(
         modifier = Modifier
           .weight(1f)
           .clickable { onGoToTab(AdminTab.SETTINGS) },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFA5B4FC))
+        cornerRadius = 16.dp,
+        accentBorderColor = Color(0xFFA5B4FC),
+        contentPadding = 12.dp
       ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
           Text(text = "⚙️", fontSize = 20.sp)
-          Text(text = "৪. সেটিংস হাব", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-          Text(text = "শপ ইনফো, পেমেন্ট, কুরিয়ার ও ব্যাকআপ", fontSize = 10.sp, color = Color(0xFF6B7280))
-          Text(text = "কনফিগ করুন →", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4338CA))
+          Text(text = "৪. সেটিংস হাব", fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = AdminInkPrimary)
+          Text(text = "শপ ইনফো, পেমেন্ট, কুরিয়ার ও ব্যাকআপ", fontSize = 10.5.sp, color = AdminInkMuted)
+          Text(text = "কনফিগ করুন →", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4338CA))
         }
       }
     }
 
     // Master Hub 5: Home Page Setting Card
-    Card(
+    GlossyAdminCard(
       modifier = Modifier
-        .fillMaxWidth()
         .clickable { onGoToTab(AdminTab.HOME_PAGE_SETTING) }
         .testTag("dashboard_home_page_setting_card"),
-      shape = RoundedCornerShape(18.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.5.dp, RoyalMaroon)
+      cornerRadius = 18.dp,
+      accentBorderColor = RoyalMaroon.copy(alpha = 0.65f),
+      containerTintTop = Color.White,
+      containerTintBottom = Color(0xFFFFF5F7),
+      contentPadding = 14.dp
     ) {
-      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = "🏠", fontSize = 22.sp)
+          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
+            Box(
+              modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(adminAccentGlossBrush(AdminRoyalGradStart, AdminRoyalGradEnd)),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(text = "🏠", fontSize = 19.sp)
+            }
             Column {
-              Text(text = "৫. Home Page Setting (মাস্টার হাব)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = NavyBlue)
-              Text(text = "নতুন প্রোডাক্ট, Hot Sale, সেরা ডিল, সব প্রোডাক্ট ও + Add New", fontSize = 11.sp, color = SlateTextSecondary, fontWeight = FontWeight.SemiBold)
+              Text(text = "৫. Home Page Setting (মাস্টার হাব)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
+              Text(text = "ব্লক লেআউট, ON/OFF, ব্যানার ও কালার স্টুডিও", fontSize = 11.sp, color = AdminInkSecondary, fontWeight = FontWeight.SemiBold)
             }
           }
           Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(10.dp),
             color = Color(0xFFEFF6FF),
             border = BorderStroke(1.dp, NavyBlue.copy(alpha = 0.35f))
           ) {
@@ -818,14 +987,14 @@ fun AdminOverviewTab(
         }
 
         Text(
-          text = "হোম পেজের প্রতিটি ব্লকের প্রোডাক্ট সার্চ করে যুক্ত/বাদ দিন, ON/OFF করুন, উপরে-নিচে মুভ করুন এবং নতুন ক্যাটাগরি বা বিজ্ঞাপন ব্যানার যুক্ত করুন।",
-          fontSize = 11.sp,
-          color = SlateTextSecondary,
-          lineHeight = 15.sp
+          text = "হোম পেজের প্রতিটি ব্লকের প্রোডাক্ট সার্চ করে যুক্ত/বাদ দিন, ON/OFF করুন, উপরে-নিচে মুভ করুন এবং নতুন ক্যাটাগরি বা ডিজাইন স্টুডিও কাস্টমাইজ করুন।",
+          fontSize = 11.5.sp,
+          color = AdminInkMuted,
+          lineHeight = 16.sp
         )
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-          Text(text = "Home Page Setting খুলুন →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+          Text(text = "Home Page Setting খুলুন →", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = NavyBlue)
         }
       }
     }
@@ -870,25 +1039,27 @@ fun AdminProductsHub(
         Text(
           text = "প্রোডাক্ট ও ইনভেন্টরি হাব",
           fontSize = 16.sp,
-          fontWeight = FontWeight.Bold,
-          color = RoyalMaroon
+          fontWeight = FontWeight.Black,
+          color = AdminInkPrimary
         )
         Text(
           text = "মোট স্টক: $totalStockUnits পিস • ভ্যালু: ৳$totalStockValuation",
-          fontSize = 11.sp,
-          color = AntiqueGoldDark
+          fontSize = 11.5.sp,
+          fontWeight = FontWeight.SemiBold,
+          color = AdminInkSecondary
         )
       }
 
       Button(
         onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-        shape = RoundedCornerShape(16.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+        shape = RoundedCornerShape(14.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        modifier = Modifier.heightIn(min = 44.dp)
       ) {
         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
-        Text(text = "নতুন পণ্য যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Text(text = "নতুন পণ্য যোগ", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
       }
     }
 
@@ -899,7 +1070,7 @@ fun AdminProductsHub(
       modifier = Modifier
         .fillMaxWidth()
         .horizontalScroll(rememberScrollState()),
-      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
       val subTabs = listOf(
@@ -911,27 +1082,11 @@ fun AdminProductsHub(
       )
 
       subTabs.forEach { (key, label, icon) ->
-        val isSelected = selectedSubTab == key
-        Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = if (isSelected) RoyalMaroon else CreamSurface,
-          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
-          modifier = Modifier.clickable { selectedSubTab = key }
-        ) {
-          Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-          ) {
-            Text(text = icon, fontSize = 12.sp)
-            Text(
-              text = label,
-              fontSize = 12.sp,
-              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-              color = if (isSelected) Color.White else DarkEspresso
-            )
-          }
-        }
+        GlossySegmentPill(
+          label = "$icon $label",
+          selected = selectedSubTab == key,
+          onClick = { selectedSubTab = key }
+        )
       }
     }
 
@@ -945,23 +1100,18 @@ fun AdminProductsHub(
           modifier = Modifier.fillMaxWidth(),
           placeholder = { Text("নাম বা SKU দিয়ে খুঁজুন...", fontSize = 12.sp) },
           leadingIcon = {
-            Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+            Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = RoyalMaroon, modifier = Modifier.size(17.dp))
           },
           trailingIcon = {
             if (productSearchQuery.isNotEmpty()) {
-              IconButton(onClick = { productSearchQuery = "" }, modifier = Modifier.size(24.dp)) {
-                Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+              IconButton(onClick = { productSearchQuery = "" }, modifier = Modifier.size(28.dp)) {
+                Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = AdminInkMuted, modifier = Modifier.size(15.dp))
               }
             }
           },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
-          colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = RoyalMaroon,
-            unfocusedBorderColor = BorderGold,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = CreamSurface
-          )
+          colors = adminOutlinedTextFieldColors()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -979,16 +1129,16 @@ fun AdminProductsHub(
             val count = if (cat == "All") products.size else products.count { it.category == cat }
             Surface(
               shape = RoundedCornerShape(14.dp),
-              color = if (isCatSelected) AntiqueGoldDark else CreamSurface,
-              border = BorderStroke(1.dp, if (isCatSelected) AntiqueGoldDark else BorderGold),
+              color = if (isCatSelected) RoyalMaroon else Color.White,
+              border = BorderStroke(1.dp, if (isCatSelected) RoyalMaroon else AdminCardBorderSoft),
               modifier = Modifier.clickable { selectedCategoryFilter = cat }
             ) {
               Text(
                 text = if (cat == "All") "সকল পণ্য ($count)" else "$cat ($count)",
                 fontSize = 11.sp,
-                fontWeight = if (isCatSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isCatSelected) Color.White else DarkEspresso,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                fontWeight = if (isCatSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isCatSelected) Color.White else AdminInkPrimary,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
               )
             }
           }
@@ -1018,29 +1168,29 @@ fun AdminProductsHub(
         ) {
           item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
+                cornerRadius = 16.dp,
+                contentPadding = 12.dp
               ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "মোট স্টক সংখ্যা", fontSize = 11.sp, color = Color.Gray)
-                  Text(text = "$totalStockUnits পিস", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-                  Text(text = "${products.size} টি আলাদা পণ্য", fontSize = 10.sp, color = DarkEspresso)
+                Column {
+                  Text(text = "মোট স্টক সংখ্যা", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
+                  Text(text = "$totalStockUnits পিস", fontSize = 17.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+                  Text(text = "${products.size} টি আলাদা পণ্য", fontSize = 10.sp, color = AdminInkSecondary)
                 }
               }
 
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
+                cornerRadius = 16.dp,
+                accentBorderColor = Color(0xFFA7F3D0),
+                containerTintBottom = Color(0xFFF0FDF4),
+                contentPadding = 12.dp
               ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "মোট স্টক মূল্য (Valuation)", fontSize = 11.sp, color = Color.Gray)
-                  Text(text = "৳$totalStockValuation", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
-                  Text(text = "ইনভেন্টরি অ্যাসেট", fontSize = 10.sp, color = AntiqueGoldDark)
+                Column {
+                  Text(text = "মোট স্টক মূল্য (Valuation)", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
+                  Text(text = "৳$totalStockValuation", fontSize = 17.sp, fontWeight = FontWeight.Black, color = AdminEmeraldGradStart)
+                  Text(text = "ইনভেন্টরি অ্যাসেট", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = AdminInkSecondary)
                 }
               }
             }
@@ -1048,30 +1198,30 @@ fun AdminProductsHub(
 
           item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
+                cornerRadius = 16.dp,
+                contentPadding = 12.dp
               ) {
                 val avgPrice = if (products.isNotEmpty()) products.sumOf { it.price } / products.size else 0
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "গড় পণ্যের মূল্য", fontSize = 11.sp, color = Color.Gray)
-                  Text(text = "৳$avgPrice", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-                  Text(text = "আইটেম প্রতি গড়", fontSize = 10.sp, color = Color.Gray)
+                Column {
+                  Text(text = "গড় পণ্যের মূল্য", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
+                  Text(text = "৳$avgPrice", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
+                  Text(text = "আইটেম প্রতি গড়", fontSize = 10.sp, color = AdminInkMuted)
                 }
               }
 
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = if (lowStockProducts.isNotEmpty()) Color(0xFFFEF2F2) else Color.White),
-                border = BorderStroke(1.dp, if (lowStockProducts.isNotEmpty()) Color(0xFFFECACA) else BorderGold)
+                cornerRadius = 16.dp,
+                accentBorderColor = if (lowStockProducts.isNotEmpty()) Color(0xFFFECACA) else AdminCardBorderWarm,
+                containerTintBottom = if (lowStockProducts.isNotEmpty()) Color(0xFFFEF2F2) else Color(0xFFFFF9F5),
+                contentPadding = 12.dp
               ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "কম স্টক সতর্কতা (≤৫)", fontSize = 11.sp, color = AccentRed)
-                  Text(text = "${lowStockProducts.size} টি পণ্য", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentRed)
-                  Text(text = "রিস্টক প্রয়োজন", fontSize = 10.sp, color = AccentRed)
+                Column {
+                  Text(text = "কম স্টক সতর্কতা (≤৫)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AccentRed)
+                  Text(text = "${lowStockProducts.size} টি পণ্য", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AccentRed)
+                  Text(text = "রিস্টক প্রয়োজন", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = AccentRed)
                 }
               }
             }
@@ -1082,8 +1232,8 @@ fun AdminProductsHub(
             Text(
               text = "ক্যাটাগরি অনুযায়ী স্টক ও টাকার হিসাব (Category Breakdown):",
               fontSize = 13.sp,
-              fontWeight = FontWeight.Bold,
-              color = DarkEspresso
+              fontWeight = FontWeight.Black,
+              color = AdminInkPrimary
             )
           }
 
@@ -1094,13 +1244,11 @@ fun AdminProductsHub(
             val catValue = catProducts.sumOf { it.price * it.stock }
             val pct = if (totalStockValuation > 0) (catValue * 100) / totalStockValuation else 0
 
-            Card(
-              modifier = Modifier.fillMaxWidth(),
-              shape = RoundedCornerShape(14.dp),
-              colors = CardDefaults.cardColors(containerColor = Color.White),
-              border = BorderStroke(1.dp, BorderGold)
+            GlossyAdminCard(
+              cornerRadius = 16.dp,
+              contentPadding = 12.dp
             ) {
-              Column(modifier = Modifier.padding(12.dp)) {
+              Column {
                 Row(
                   modifier = Modifier.fillMaxWidth(),
                   horizontalArrangement = Arrangement.SpaceBetween,
@@ -1117,7 +1265,7 @@ fun AdminProductsHub(
                       Text(
                         text = "${catProducts.size} টি পণ্য",
                         fontSize = 10.sp,
-                        color = DarkEspresso,
+                        color = AdminInkPrimary,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                       )
                     }
@@ -1127,7 +1275,7 @@ fun AdminProductsHub(
                     text = "$pct% ইনভেন্টরি",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AntiqueGoldDark
+                    color = AdminInkSecondary
                   )
                 }
 
@@ -1138,17 +1286,17 @@ fun AdminProductsHub(
                   horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                   Column {
-                    Text(text = "মোট স্টক পরিমাণ:", fontSize = 10.sp, color = Color.Gray)
-                    Text(text = "$catPieces পিস", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                    Text(text = "মোট স্টক পরিমাণ:", fontSize = 10.sp, color = AdminInkMuted)
+                    Text(text = "$catPieces পিস", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
                   }
                   Column(horizontalAlignment = Alignment.End) {
-                    Text(text = "মোট স্টক মূল্য:", fontSize = 10.sp, color = Color.Gray)
-                    Text(text = "৳$catValue", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                    Text(text = "মোট স্টক মূল্য:", fontSize = 10.sp, color = AdminInkMuted)
+                    Text(text = "৳$catValue", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AdminEmeraldGradStart)
                   }
                 }
 
                 if (catProducts.isNotEmpty()) {
-                  HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CreamBackground)
+                  HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = AdminCardBorderSoft)
                   catProducts.forEach { cp ->
                     Row(
                       modifier = Modifier
@@ -1160,13 +1308,13 @@ fun AdminProductsHub(
                       Text(
                         text = "• ${cp.name}",
                         fontSize = 11.sp,
-                        color = DarkEspresso,
+                        color = AdminInkPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                       )
                       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "${cp.stock} পিস × ৳${cp.price}", fontSize = 10.sp, color = Color.Gray)
+                        Text(text = "${cp.stock} পিস × ৳${cp.price}", fontSize = 10.sp, color = AdminInkMuted)
                         Text(text = "= ৳${cp.stock * cp.price}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
                       }
                     }
@@ -1188,29 +1336,29 @@ fun AdminProductsHub(
         ) {
           item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
+                cornerRadius = 16.dp,
+                accentBorderColor = Color(0xFFA7F3D0),
+                containerTintBottom = Color(0xFFF0FDF4),
+                contentPadding = 12.dp
               ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "মোট সম্পন্ন অর্ডার", fontSize = 11.sp, color = Color.Gray)
-                  Text(text = "${completedOrders.size} টি", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
-                  Text(text = "সফল ডেলিভারি", fontSize = 10.sp, color = DarkEspresso)
+                Column {
+                  Text(text = "মোট সম্পন্ন অর্ডার", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
+                  Text(text = "${completedOrders.size} টি", fontSize = 17.sp, fontWeight = FontWeight.Black, color = AdminEmeraldGradStart)
+                  Text(text = "সফল ডেলিভারি", fontSize = 10.sp, color = AdminInkSecondary)
                 }
               }
 
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
+                cornerRadius = 16.dp,
+                contentPadding = 12.dp
               ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "মোট সম্পন্ন বিক্রয় আয়", fontSize = 11.sp, color = Color.Gray)
-                  Text(text = "৳$completedRevenue", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-                  Text(text = "ক্যাশ ও বিকাশ ক্যাশড", fontSize = 10.sp, color = AntiqueGoldDark)
+                Column {
+                  Text(text = "মোট সম্পন্ন বিক্রয় আয়", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
+                  Text(text = "৳$completedRevenue", fontSize = 17.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+                  Text(text = "ক্যাশ ও বিকাশ ক্যাশড", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = AdminInkSecondary)
                 }
               }
             }
@@ -1218,32 +1366,30 @@ fun AdminProductsHub(
 
           item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
+                cornerRadius = 16.dp,
+                contentPadding = 12.dp
               ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "মোট রিটার্ন রেকর্ড", fontSize = 11.sp, color = Color.Gray)
-                  Text(text = "${returns.size} টি রেকর্ড", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
+                Column {
+                  Text(text = "মোট রিটার্ন রেকর্ড", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
+                  Text(text = "${returns.size} টি রেকর্ড", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminAmberGradStart)
                   val retPieces = returns.sumOf { r -> r.returnedItems.sumOf { it.quantity } }
-                  Text(text = "মোট $retPieces পিস ফেরত", fontSize = 10.sp, color = Color.Gray)
+                  Text(text = "মোট $retPieces পিস ফেরত", fontSize = 10.sp, color = AdminInkMuted)
                 }
               }
 
-              Card(
+              GlossyAdminCard(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
+                cornerRadius = 16.dp,
+                contentPadding = 12.dp
               ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                  Text(text = "পণ্য এক্সচেঞ্জ রিপোর্ট", fontSize = 11.sp, color = Color.Gray)
+                Column {
+                  Text(text = "পণ্য এক্সচেঞ্জ রিপোর্ট", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
                   val exchangeCount = returns.count { it.exchangeItems.isNotEmpty() }
-                  Text(text = "$exchangeCount টি এক্সচেঞ্জ", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                  Text(text = "$exchangeCount টি এক্সচেঞ্জ", fontSize = 16.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
                   val diffSum = returns.sumOf { it.priceDifference }
-                  Text(text = "নিষ্পত্তি: ৳$diffSum", fontSize = 10.sp, color = DarkEspresso)
+                  Text(text = "নিষ্পত্তি: ৳$diffSum", fontSize = 10.sp, color = AdminInkSecondary)
                 }
               }
             }
@@ -1261,42 +1407,29 @@ fun AdminProductsHub(
 
           if (completedOrders.isEmpty()) {
             item {
-              Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, BorderGold),
-                modifier = Modifier.fillMaxWidth()
-              ) {
+              GlossyAdminCard(cornerRadius = 14.dp, contentPadding = 16.dp) {
                 Text(
                   text = "এখনও কোনো সম্পন্ন (Delivered) অর্ডার নেই।",
                   fontSize = 12.sp,
-                  color = Color.Gray,
-                  modifier = Modifier.padding(16.dp)
+                  color = AdminInkMuted
                 )
               }
             }
           } else {
             items(completedOrders.take(15)) { co ->
-              Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold)
-              ) {
+              GlossyAdminCard(cornerRadius = 14.dp, contentPadding = 12.dp) {
                 Row(
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
+                  modifier = Modifier.fillMaxWidth(),
                   horizontalArrangement = Arrangement.SpaceBetween,
                   verticalAlignment = Alignment.CenterVertically
                 ) {
-                  Column {
+                  Column(modifier = Modifier.weight(1f)) {
                     Text(text = "অর্ডার #${co.id}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-                    Text(text = "গ্রাহক: ${co.customerName} (${co.phone})", fontSize = 11.sp, color = DarkEspresso)
-                    Text(text = "পণ্য: ${co.items.joinToString { "${it.name} ×${it.quantity}" }}", fontSize = 10.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(text = "গ্রাহক: ${co.customerName} (${co.phone})", fontSize = 11.sp, color = AdminInkPrimary)
+                    Text(text = "পণ্য: ${co.items.joinToString { "${it.name} ×${it.quantity}" }}", fontSize = 10.sp, color = AdminInkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                   }
                   Column(horizontalAlignment = Alignment.End) {
-                    Text(text = "৳${co.total}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                    Text(text = "৳${co.total}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminEmeraldGradStart)
                     Surface(
                       shape = RoundedCornerShape(8.dp),
                       color = Color(0xFFDCFCE7)
@@ -1366,13 +1499,14 @@ fun AdminOrdersHub(
         Text(
           text = "অর্ডার ও কুরিয়ার হাব",
           fontSize = 16.sp,
-          fontWeight = FontWeight.Bold,
-          color = RoyalMaroon
+          fontWeight = FontWeight.Black,
+          color = AdminInkPrimary
         )
         Text(
           text = "মোট অর্ডার: ${orders.size} • পেন্ডিং অনুমোদন: ${pendingOrders.size}",
-          fontSize = 11.sp,
-          color = AntiqueGoldDark
+          fontSize = 11.5.sp,
+          fontWeight = FontWeight.SemiBold,
+          color = AdminInkSecondary
         )
       }
 
@@ -1383,11 +1517,11 @@ fun AdminOrdersHub(
           border = BorderStroke(1.dp, Color(0xFFFECACA))
         ) {
           Text(
-            text = "🔔 ${pendingOrders.size} টি নতুন অনুমোদন প্রয়োজন",
+            text = "🔔 ${pendingOrders.size} টি নতুন",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = AccentRed,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
           )
         }
       }
@@ -1399,7 +1533,7 @@ fun AdminOrdersHub(
       modifier = Modifier
         .fillMaxWidth()
         .horizontalScroll(rememberScrollState()),
-      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
       val trackedOrdersCount = remember(orders) {
@@ -1429,42 +1563,13 @@ fun AdminOrdersHub(
           else -> null
         }
 
-        Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = if (isSelected) RoyalMaroon else CreamSurface,
-          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
-          modifier = Modifier
-            .testTag("order_hub_tab_$key")
-            .clickable { selectedOrderSubTab = key }
-        ) {
-          Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-          ) {
-            Text(text = icon, fontSize = 12.sp)
-            Text(
-              text = label,
-              fontSize = 12.sp,
-              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-              color = if (isSelected) Color.White else DarkEspresso
-            )
-            if (badgeText != null) {
-              Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = if (isSelected) Color.White.copy(alpha = 0.25f) else Color.White
-              ) {
-                Text(
-                  text = badgeText,
-                  fontSize = 10.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = if (isSelected) Color.White else RoyalMaroon,
-                  modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                )
-              }
-            }
-          }
-        }
+        GlossySegmentPill(
+          label = "$icon $label",
+          selected = isSelected,
+          badgeText = badgeText,
+          onClick = { selectedOrderSubTab = key },
+          modifier = Modifier.testTag("order_hub_tab_$key")
+        )
       }
     }
 
@@ -1473,16 +1578,12 @@ fun AdminOrdersHub(
     when (selectedOrderSubTab) {
       "NEW_ORDERS" -> {
         if (pendingOrders.isEmpty()) {
-          Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, BorderGold)
+          GlossyAdminCard(
+            cornerRadius = 18.dp,
+            contentPadding = 24.dp
           ) {
             Column(
-              modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
+              modifier = Modifier.fillMaxWidth(),
               horizontalAlignment = Alignment.CenterHorizontally
             ) {
               Text(text = "🎉", fontSize = 36.sp)
@@ -1491,18 +1592,18 @@ fun AdminOrdersHub(
                 text = "সব নতুন অর্ডার পর্যালোচনা সম্পন্ন হয়েছে!",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkEspresso
+                color = AdminInkPrimary
               )
               Text(
                 text = "বর্তমানে কোনো নতুন পেন্ডিং অর্ডার নেই। পূর্ববর্তী অর্ডার দেখতে 'সকল অর্ডার ও ফিল্টার' ট্যাবে যান।",
-                fontSize = 11.sp,
-                color = Color.Gray,
+                fontSize = 11.5.sp,
+                color = AdminInkMuted,
                 modifier = Modifier.padding(top = 4.dp)
               )
               Spacer(modifier = Modifier.height(12.dp))
               Button(
                 onClick = { selectedOrderSubTab = "ALL_ORDERS" },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
                 shape = RoundedCornerShape(12.dp)
               ) {
                 Text("📋 সকল অর্ডার দেখুন (${orders.size})", fontSize = 12.sp)
@@ -1523,26 +1624,25 @@ fun AdminOrdersHub(
                 Text(
                   text = "অপেক্ষমান নতুন অর্ডার (${pendingOrders.size} টি):",
                   fontSize = 13.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = DarkEspresso
+                  fontWeight = FontWeight.Black,
+                  color = AdminInkPrimary
                 )
                 Text(
                   text = "১-ক্লিকে অনুমোদন করুন",
                   fontSize = 11.sp,
-                  color = Color(0xFFD97706),
+                  color = AdminAmberGradStart,
                   fontWeight = FontWeight.Bold
                 )
               }
             }
 
             items(pendingOrders, key = { it.id }) { order ->
-              Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.5.dp, Color(0xFFFBBF24))
+              GlossyAdminCard(
+                cornerRadius = 16.dp,
+                accentBorderColor = Color(0xFFFBBF24),
+                contentPadding = 14.dp
               ) {
-                Column(modifier = Modifier.padding(14.dp)) {
+                Column {
                   Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1555,7 +1655,7 @@ fun AdminOrdersHub(
                         fontWeight = FontWeight.Bold,
                         color = RoyalMaroon
                       )
-                      Text(text = order.date, fontSize = 10.sp, color = Color.Gray)
+                      Text(text = order.date, fontSize = 10.sp, color = AdminInkMuted)
                     }
 
                     Surface(
@@ -1575,8 +1675,8 @@ fun AdminOrdersHub(
 
                   Spacer(modifier = Modifier.height(8.dp))
 
-                  Text(text = "গ্রাহক: ${order.customerName} • 📞 ${order.phone}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-                  Text(text = "ঠিকানা: ${order.address}", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "গ্রাহক: ${order.customerName} • 📞 ${order.phone}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+                  Text(text = "ঠিকানা: ${order.address}", fontSize = 11.sp, color = AdminInkMuted)
                   Text(text = "পেমেন্ট মেথড: ${order.paymentMethod} • সর্বমোট: ৳${order.total}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
 
                   Spacer(modifier = Modifier.height(6.dp))
@@ -1787,16 +1887,12 @@ fun AdminShippingLabelsTab(
     Spacer(modifier = Modifier.height(10.dp))
 
     if (shippedOrders.isEmpty()) {
-      Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold)
+      GlossyAdminCard(
+        cornerRadius = 18.dp,
+        contentPadding = 24.dp
       ) {
         Column(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
+          modifier = Modifier.fillMaxWidth(),
           horizontalAlignment = Alignment.CenterHorizontally,
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -1805,16 +1901,16 @@ fun AdminShippingLabelsTab(
             text = "কোনো Shipped অর্ডার পাওয়া যায়নি",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = DarkEspresso
+            color = AdminInkPrimary
           )
           Text(
             text = "যেকোনো অর্ডারের স্ট্যাটাস 'Shipped' করলে এখানে পার্সেল শিপিং লেবেল তৈরি ও প্রিন্ট করা যাবে।",
-            fontSize = 11.sp,
-            color = Color.Gray
+            fontSize = 11.5.sp,
+            color = AdminInkMuted
           )
           Button(
             onClick = onGoToAllOrders,
-            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.heightIn(min = 48.dp)
           ) {
@@ -1828,16 +1924,12 @@ fun AdminShippingLabelsTab(
         modifier = Modifier.fillMaxSize()
       ) {
         items(shippedOrders, key = { it.id }) { order ->
-          Card(
-            modifier = Modifier
-              .fillMaxWidth()
-              .testTag("shipping_label_card_${order.id}"),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, BorderGold)
+          GlossyAdminCard(
+            modifier = Modifier.testTag("shipping_label_card_${order.id}"),
+            cornerRadius = 16.dp,
+            contentPadding = 14.dp
           ) {
             Column(
-              modifier = Modifier.padding(14.dp),
               verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
               Row(
@@ -1855,7 +1947,7 @@ fun AdminShippingLabelsTab(
                   Text(
                     text = if (order.trackingId.isNotBlank()) "Tracking: ${order.trackingId}" else "তারিখ: ${order.date}",
                     fontSize = 11.sp,
-                    color = Color.Gray
+                    color = AdminInkMuted
                   )
                 }
                 Surface(
@@ -1876,12 +1968,12 @@ fun AdminShippingLabelsTab(
                 text = "${order.customerName} • 📞 ${order.phone}",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = DarkEspresso
+                color = AdminInkPrimary
               )
               Text(
                 text = "📍 ${order.address}, ${order.thana}, ${order.district}",
                 fontSize = 11.sp,
-                color = Color.Gray,
+                color = AdminInkMuted,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
               )
@@ -1941,8 +2033,8 @@ fun AdminMarketingHub(
       verticalAlignment = Alignment.CenterVertically
     ) {
       Column {
-        Text(text = "মার্কেটিং ও অফার হাব", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-        Text(text = "কুপন কোড ও প্রমোশনাল ব্যানার স্লাইডার", fontSize = 11.sp, color = Color.Gray)
+        Text(text = "মার্কেটিং ও অফার হাব", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
+        Text(text = "কুপন কোড ও প্রমোশনাল ব্যানার স্লাইডার", fontSize = 11.5.sp, color = AdminInkMuted)
       }
     }
 
@@ -1954,26 +2046,15 @@ fun AdminMarketingHub(
     ) {
       val tabs = listOf(
         Pair("COUPONS", "🎟️ কুপন কোড (${coupons.size})"),
-        Pair("BANNERS", "🖼️ ব্যানার ও স্লাইডার (${banners.size})")
+        Pair("BANNERS", "🖼️ ব্যানার (${banners.size})")
       )
       tabs.forEach { (key, label) ->
-        val isSelected = selectedSubTab == key
-        Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = if (isSelected) RoyalMaroon else CreamSurface,
-          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
-          modifier = Modifier
-            .clickable { selectedSubTab = key }
-            .weight(1f)
-        ) {
-          Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.White else DarkEspresso,
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)
-          )
-        }
+        GlossySegmentPill(
+          label = label,
+          selected = selectedSubTab == key,
+          onClick = { selectedSubTab = key },
+          modifier = Modifier.weight(1f)
+        )
       }
     }
 
@@ -2020,8 +2101,8 @@ fun AdminSettingsHub(
       verticalAlignment = Alignment.CenterVertically
     ) {
       Column {
-        Text(text = "সেটিংস ও ব্যাকআপ হাব", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-        Text(text = "স্টোর তথ্য, পেমেন্ট, পিক্সেল ও ডাটাবেজ ব্যাকআপ", fontSize = 11.sp, color = Color.Gray)
+        Text(text = "সেটিংস ও ব্যাকআপ হাব", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
+        Text(text = "স্টোর তথ্য, পেমেন্ট, পিক্সেল ও ডাটাবেজ ব্যাকআপ", fontSize = 11.5.sp, color = AdminInkMuted)
       }
     }
 
@@ -2036,23 +2117,12 @@ fun AdminSettingsHub(
         Pair("BACKUP", "💾 ব্যাকআপ ও রিস্টোর")
       )
       tabs.forEach { (key, label) ->
-        val isSelected = selectedSubTab == key
-        Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = if (isSelected) RoyalMaroon else CreamSurface,
-          border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
-          modifier = Modifier
-            .clickable { selectedSubTab = key }
-            .weight(1f)
-        ) {
-          Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.White else DarkEspresso,
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)
-          )
-        }
+        GlossySegmentPill(
+          label = label,
+          selected = selectedSubTab == key,
+          onClick = { selectedSubTab = key },
+          modifier = Modifier.weight(1f)
+        )
       }
     }
 
@@ -2092,11 +2162,11 @@ fun AdminProductsTab(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Text(text = "সকল পণ্য তালিকা (${products.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+      Text(text = "সকল পণ্য তালিকা (${products.size})", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
       Button(
         onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+        shape = RoundedCornerShape(14.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
       ) {
         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -2112,16 +2182,12 @@ fun AdminProductsTab(
       modifier = Modifier.fillMaxSize()
     ) {
       items(products, key = { it.id }) { product ->
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold)
+        GlossyAdminCard(
+          cornerRadius = 16.dp,
+          contentPadding = 10.dp
         ) {
           Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(10.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
           ) {
             AppImage(
@@ -2139,7 +2205,7 @@ fun AdminProductsTab(
                 text = product.name,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkEspresso,
+                color = AdminInkPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
               )
@@ -2148,8 +2214,8 @@ fun AdminProductsTab(
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Text(text = "${product.price} ৳", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-                Text(text = "স্টক: ${product.stock}", fontSize = 11.sp, color = if (product.stock <= 5) AccentRed else Color.Gray)
-                Text(text = product.category, fontSize = 10.sp, color = AntiqueGoldDark)
+                Text(text = "স্টক: ${product.stock}", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (product.stock <= 5) AccentRed else AdminInkMuted)
+                Text(text = product.category, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = AdminInkSecondary)
               }
 
               // Badges for colors, sizes, age groups
@@ -2283,23 +2349,18 @@ fun AdminOrdersTab(
       modifier = Modifier.fillMaxWidth(),
       placeholder = { Text("গ্রাহকের ফোন নম্বর দিয়ে খুঁজুন (যেমন: 017...)", fontSize = 12.sp) },
       leadingIcon = {
-        Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = Color.Gray, modifier = Modifier.size(18.dp))
+        Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = RoyalMaroon, modifier = Modifier.size(18.dp))
       },
       trailingIcon = {
         if (phoneSearchQuery.isNotEmpty()) {
-          IconButton(onClick = { phoneSearchQuery = "" }, modifier = Modifier.size(24.dp)) {
-            Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", tint = Color.Gray, modifier = Modifier.size(16.dp))
+          IconButton(onClick = { phoneSearchQuery = "" }, modifier = Modifier.size(28.dp)) {
+            Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", tint = AdminInkMuted, modifier = Modifier.size(16.dp))
           }
         }
       },
       singleLine = true,
       shape = RoundedCornerShape(12.dp),
-      colors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = RoyalMaroon,
-        unfocusedBorderColor = BorderGold,
-        focusedContainerColor = Color.White,
-        unfocusedContainerColor = CreamSurface
-      )
+      colors = adminOutlinedTextFieldColors()
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -2373,12 +2434,12 @@ fun AdminOrdersTab(
             text = "কোন অর্ডার খুঁজে পাওয়া যায়নি!",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = DarkEspresso
+            color = AdminInkPrimary
           )
           Text(
             text = "অন্য কোনো ফোন নম্বর বা স্ট্যাটাস দিয়ে চেষ্টা করুন।",
             fontSize = 11.sp,
-            color = Color.Gray
+            color = AdminInkMuted
           )
           Button(
             onClick = {
@@ -2386,7 +2447,7 @@ fun AdminOrdersTab(
               phoneSearchQuery = ""
             },
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon)
+            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White)
           ) {
             Text("ফিল্টার রিসেট করুন", fontSize = 12.sp)
           }
@@ -2397,13 +2458,11 @@ fun AdminOrdersTab(
         items(filteredOrders, key = { it.id }) { order ->
         var isDropdownExpanded by remember { mutableStateOf(false) }
 
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(16.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold)
+        GlossyAdminCard(
+          cornerRadius = 16.dp,
+          contentPadding = 12.dp
         ) {
-          Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
@@ -2411,7 +2470,7 @@ fun AdminOrdersTab(
             ) {
               Column {
                 Text(text = "#${order.id}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-                Text(text = order.date, fontSize = 10.sp, color = Color.Gray)
+                Text(text = order.date, fontSize = 10.sp, color = AdminInkMuted)
               }
 
               // Status Selector Dropdown
@@ -2451,10 +2510,10 @@ fun AdminOrdersTab(
               }
             }
 
-            HorizontalDivider(color = BorderGold)
+            HorizontalDivider(color = AdminCardBorderSoft)
 
-            Text(text = "গ্রাহক: ${order.customerName} (${order.phone})", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            Text(text = "ঠিকানা: ${order.address}, ${order.thana}, ${order.district}", fontSize = 11.sp, color = DarkEspresso)
+            Text(text = "গ্রাহক: ${order.customerName} (${order.phone})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+            Text(text = "ঠিকানা: ${order.address}, ${order.thana}, ${order.district}", fontSize = 11.sp, color = AdminInkSecondary)
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
               Text(text = "অর্ডারকৃত পণ্যসমূহ (${order.items.size}):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
               order.items.forEach { itm ->
@@ -2466,7 +2525,7 @@ fun AdminOrdersTab(
                 Text(
                   text = "• ${itm.name} x${itm.quantity}${if (v.isNotBlank()) " [$v]" else ""}",
                   fontSize = 11.sp,
-                  color = DarkEspresso,
+                  color = AdminInkPrimary,
                   maxLines = 2,
                   overflow = TextOverflow.Ellipsis
                 )
@@ -2626,10 +2685,10 @@ fun AdminReturnsTab(
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(12.dp),
         color = Color.White,
-        border = BorderStroke(1.dp, BorderGold)
+        border = BorderStroke(1.dp, AdminCardBorderWarm)
       ) {
         Column(modifier = Modifier.padding(8.dp)) {
-          Text(text = "মোট মেমো", fontSize = 10.sp, color = Color.Gray)
+          Text(text = "মোট মেমো", fontSize = 10.sp, color = AdminInkMuted)
           Text(text = "${returns.size} টি", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
         }
       }
@@ -2664,10 +2723,11 @@ fun AdminReturnsTab(
     OutlinedTextField(
       value = searchQuery,
       onValueChange = { searchQuery = it },
-      placeholder = { Text("রিটার্ন ID, অর্ডার ID বা ফোন দিয়ে খুঁজুন...", fontSize = 11.sp) },
+      placeholder = { Text("রিটার্ন ID, অর্ডার ID বা ফোন দিয়ে খুঁজুন...", fontSize = 11.5.sp) },
+      singleLine = true,
       modifier = Modifier.fillMaxWidth(),
       shape = RoundedCornerShape(12.dp),
-      colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = BorderGold)
+      colors = adminOutlinedTextFieldColors()
     )
 
     Spacer(modifier = Modifier.height(10.dp))
@@ -2679,18 +2739,16 @@ fun AdminReturnsTab(
           .padding(32.dp),
         contentAlignment = Alignment.Center
       ) {
-        Text("কোনো রিটার্ন বা এক্সচেঞ্জ রেকর্ড নেই", fontSize = 13.sp, color = Color.Gray)
+        Text("কোনো রিটার্ন বা এক্সচেঞ্জ রেকর্ড নেই", fontSize = 13.sp, color = AdminInkMuted)
       }
     } else {
       LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()) {
         items(filteredReturns, key = { it.id }) { ret ->
-          Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, BorderGold)
+          GlossyAdminCard(
+            cornerRadius = 16.dp,
+            contentPadding = 12.dp
           ) {
-            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -2710,19 +2768,19 @@ fun AdminReturnsTab(
                       modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                   }
-                  Text(text = "অর্ডার: #${ret.orderId}", fontSize = 11.sp, color = Color.Gray)
+                  Text(text = "অর্ডার: #${ret.orderId}", fontSize = 11.sp, color = AdminInkMuted)
                 }
 
-                Text(text = ret.date, fontSize = 10.sp, color = Color.Gray)
+                Text(text = ret.date, fontSize = 10.sp, color = AdminInkMuted)
               }
 
-              HorizontalDivider(color = BorderGold)
+              HorizontalDivider(color = AdminCardBorderSoft)
 
-              Text(text = "${ret.customerName} • 📞 ${ret.phone}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+              Text(text = "${ret.customerName} • 📞 ${ret.phone}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
               Text(
                 text = "ফেরত পণ্য (${ret.returnedItems.size}টি): ${ret.returnedItems.joinToString { "${it.name} (${it.quantity}টি)" }}",
-                fontSize = 10.sp,
-                color = DarkEspresso,
+                fontSize = 10.5.sp,
+                color = AdminInkSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
               )
@@ -2826,32 +2884,28 @@ fun AdminCategoriesTab(
 
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
       items(categories, key = { it.id }) { cat ->
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold)
+        GlossyAdminCard(
+          cornerRadius = 14.dp,
+          contentPadding = 12.dp
         ) {
           Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
               Text(text = cat.icon, fontSize = 24.sp)
               Column {
-                Text(text = cat.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                Text(text = cat.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
                 Text(
                   text = "${products.count { it.category == cat.name }} টি পণ্য সংযুক্ত",
                   fontSize = 11.sp,
-                  color = Color.Gray
+                  color = AdminInkMuted
                 )
               }
             }
 
-            IconButton(onClick = { onDeleteCategory(cat.id) }, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = { onDeleteCategory(cat.id) }, modifier = Modifier.size(36.dp)) {
               Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = AccentRed, modifier = Modifier.size(18.dp))
             }
           }
@@ -2874,11 +2928,11 @@ fun AdminCouponsTab(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Text(text = "কুপন কোড ও অফার (${coupons.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+      Text(text = "কুপন কোড ও অফার (${coupons.size})", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
       Button(
         onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+        shape = RoundedCornerShape(14.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
       ) {
         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -2891,16 +2945,12 @@ fun AdminCouponsTab(
 
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
       items(coupons, key = { it.id }) { cp ->
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold)
+        GlossyAdminCard(
+          cornerRadius = 14.dp,
+          contentPadding = 12.dp
         ) {
           Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
@@ -2909,18 +2959,18 @@ fun AdminCouponsTab(
               Text(
                 text = "ছাড়: ${if (cp.type == "%") "${cp.value}%" else "${cp.value} ৳"}  |  মিনিমাম: ${cp.minOrder} ৳",
                 fontSize = 11.sp,
-                color = DarkEspresso
+                color = AdminInkPrimary
               )
-              Text(text = "মেয়াদ: ${cp.expiry}", fontSize = 10.sp, color = Color.Gray)
+              Text(text = "মেয়াদ: ${cp.expiry}", fontSize = 10.sp, color = AdminInkMuted)
             }
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
               Switch(
                 checked = cp.isActive,
                 onCheckedChange = { onToggle(cp.id) },
-                colors = SwitchDefaults.colors(checkedThumbColor = RoyalMaroon, checkedTrackColor = CreamSurface)
+                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AccentGreen)
               )
-              IconButton(onClick = { onDelete(cp.id) }, modifier = Modifier.size(32.dp)) {
+              IconButton(onClick = { onDelete(cp.id) }, modifier = Modifier.size(36.dp)) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = AccentRed, modifier = Modifier.size(18.dp))
               }
             }
@@ -2948,19 +2998,14 @@ fun AdminCourierTab(
       .verticalScroll(rememberScrollState()),
     verticalArrangement = Arrangement.spacedBy(14.dp)
   ) {
-    Text(text = "কুরিয়ার লজিস্টিকস ইন্টিগ্রেশন", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+    Text(text = "কুরিয়ার লজিস্টিকস ইন্টিগ্রেশন", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
 
     // Steadfast
-    Card(
-      modifier = Modifier.fillMaxWidth(),
-      shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.dp, BorderGold)
-    ) {
-      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    GlossyAdminCard(cornerRadius = 18.dp, contentPadding = 14.dp) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
           Text(text = "Steadfast Courier API", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-          Text(text = "সক্রিয়", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+          Text(text = "সক্রিয়", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminEmeraldGradStart)
         }
 
         OutlinedTextField(
@@ -2969,6 +3014,7 @@ fun AdminCourierTab(
           label = { Text("Steadfast API Key", fontSize = 11.sp) },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -2978,12 +3024,13 @@ fun AdminCourierTab(
           label = { Text("Secret Key", fontSize = 11.sp) },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
         Button(
           onClick = { onTest("Steadfast API সংযোগ সফল! টেস্ট পিং কার্যকর হয়েছে। ✅") },
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
@@ -2993,16 +3040,11 @@ fun AdminCourierTab(
     }
 
     // Pathao
-    Card(
-      modifier = Modifier.fillMaxWidth(),
-      shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.dp, BorderGold)
-    ) {
-      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    GlossyAdminCard(cornerRadius = 18.dp, contentPadding = 14.dp) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-          Text(text = "Pathao Logistics API", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-          Text(text = "প্রস্তুত", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AntiqueGoldDark)
+          Text(text = "Pathao Logistics API", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+          Text(text = "প্রস্তুত", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminInkSecondary)
         }
 
         OutlinedTextField(
@@ -3011,6 +3053,7 @@ fun AdminCourierTab(
           label = { Text("Client ID", fontSize = 11.sp) },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3020,12 +3063,13 @@ fun AdminCourierTab(
           label = { Text("Client Secret", fontSize = 11.sp) },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
         Button(
           onClick = { onTest("Pathao API সংযোগ সফল! ✅") },
-          colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
+          colors = ButtonDefaults.buttonColors(containerColor = NavyBlue, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
@@ -3038,7 +3082,7 @@ fun AdminCourierTab(
       onClick = {
         onSave(config.copy(steadfastApiKey = steadfastKey, steadfastSecret = steadfastSec, pathaoClientId = pathaoId, pathaoClientSecret = pathaoSec))
       },
-      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
       shape = RoundedCornerShape(18.dp),
       modifier = Modifier
         .fillMaxWidth()
@@ -3062,12 +3106,12 @@ fun AdminBannersTab(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Text(text = "হোম ব্যানার ব্যবস্থাপনা (${banners.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+      Text(text = "হোম ব্যানার ব্যবস্থাপনা (${banners.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
       Button(
         onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-        shape = RoundedCornerShape(16.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+        shape = RoundedCornerShape(14.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
       ) {
         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
@@ -3079,16 +3123,12 @@ fun AdminBannersTab(
 
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
       items(banners, key = { it.id }) { b ->
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold)
+        GlossyAdminCard(
+          cornerRadius = 14.dp,
+          contentPadding = 10.dp
         ) {
           Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(10.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
           ) {
             AppImage(
@@ -3102,8 +3142,8 @@ fun AdminBannersTab(
             Spacer(modifier = Modifier.width(10.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-              Text(text = b.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso, maxLines = 1)
-              Text(text = b.subtitle, fontSize = 11.sp, color = Color.Gray, maxLines = 1)
+              Text(text = b.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary, maxLines = 1)
+              Text(text = b.subtitle, fontSize = 11.sp, color = AdminInkMuted, maxLines = 1)
               Text(text = "বাটন: ${b.buttonText}", fontSize = 10.sp, color = RoyalMaroon, fontWeight = FontWeight.SemiBold)
             }
 
@@ -3111,9 +3151,9 @@ fun AdminBannersTab(
               Switch(
                 checked = b.isActive,
                 onCheckedChange = { onToggle(b.id) },
-                colors = SwitchDefaults.colors(checkedThumbColor = RoyalMaroon, checkedTrackColor = CreamSurface)
+                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AccentGreen)
               )
-              IconButton(onClick = { onDelete(b.id) }, modifier = Modifier.size(28.dp)) {
+              IconButton(onClick = { onDelete(b.id) }, modifier = Modifier.size(32.dp)) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = AccentRed, modifier = Modifier.size(16.dp))
               }
             }
@@ -3149,21 +3189,20 @@ fun AdminSettingsTab(
       .verticalScroll(rememberScrollState()),
     verticalArrangement = Arrangement.spacedBy(12.dp)
   ) {
-    Text(text = "স্টোর ও নোটিফিকেশন কনফিগারেশন", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+    Text(text = "স্টোর ও নোটিফিকেশন কনফিগারেশন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
 
-    Card(
-      modifier = Modifier.fillMaxWidth(),
-      shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.dp, BorderGold)
+    GlossyAdminCard(
+      cornerRadius = 18.dp,
+      contentPadding = 14.dp
     ) {
-      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedTextField(
           value = storeName,
           onValueChange = { storeName = it },
           label = { Text("স্টোরের নাম") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3173,6 +3212,7 @@ fun AdminSettingsTab(
           label = { Text("ট্যাগলাইন") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3181,7 +3221,7 @@ fun AdminSettingsTab(
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Text(text = "অ্যানাউন্সমেন্ট বার চালু রাখুন", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "অ্যানাউন্সমেন্ট বার চালু রাখুন", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
           Switch(checked = isAnnouncementEnabled, onCheckedChange = { isAnnouncementEnabled = it })
         }
 
@@ -3191,6 +3231,7 @@ fun AdminSettingsTab(
           label = { Text("অ্যানাউন্সমেন্ট টেক্সট") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3200,6 +3241,7 @@ fun AdminSettingsTab(
           label = { Text("হটলাইন ফোন নম্বর") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3209,6 +3251,7 @@ fun AdminSettingsTab(
           label = { Text("WhatsApp হেল্পলাইন নম্বর") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3218,6 +3261,7 @@ fun AdminSettingsTab(
           label = { Text("ইমেইল ঠিকানা") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3227,6 +3271,7 @@ fun AdminSettingsTab(
           label = { Text("শপ / শোরুম ঠিকানা") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3245,11 +3290,13 @@ fun AdminSettingsTab(
               )
             )
           },
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-          shape = RoundedCornerShape(16.dp),
-          modifier = Modifier.fillMaxWidth()
+          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+          shape = RoundedCornerShape(14.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
         ) {
-          Text("স্টোর সেটিংস সেভ করুন")
+          Text("স্টোর সেটিংস সেভ করুন", fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -3267,19 +3314,17 @@ fun AdminSettingsTab(
     )
 
     // Pixel Card
-    Card(
-      modifier = Modifier.fillMaxWidth(),
-      shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.dp, BorderGold)
+    GlossyAdminCard(
+      cornerRadius = 18.dp,
+      contentPadding = 14.dp
     ) {
-      Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Text(text = "Meta / Facebook Pixel ট্র্যাকিং", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "Meta / Facebook Pixel ট্র্যাকিং", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
           Switch(checked = isPixelEnabled, onCheckedChange = { isPixelEnabled = it })
         }
 
@@ -3289,6 +3334,7 @@ fun AdminSettingsTab(
           label = { Text("Pixel ID (Numeric)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3296,11 +3342,13 @@ fun AdminSettingsTab(
           onClick = {
             onSavePixel(pixelConfig.copy(isEnabled = isPixelEnabled, pixelId = pixelId))
           },
-          colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
-          shape = RoundedCornerShape(16.dp),
-          modifier = Modifier.fillMaxWidth()
+          colors = ButtonDefaults.buttonColors(containerColor = NavyBlue, contentColor = Color.White),
+          shape = RoundedCornerShape(14.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
         ) {
-          Text("পিক্সেল কনফিগারেশন সেভ করুন")
+          Text("পিক্সেল কনফিগারেশন সেভ করুন", fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -3322,17 +3370,12 @@ fun AdminBackupTab(
       .verticalScroll(rememberScrollState()),
     verticalArrangement = Arrangement.spacedBy(14.dp)
   ) {
-    Text(text = "ডাটা ব্যাকআপ ও রিসেট সেন্টার", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+    Text(text = "ডাটা ব্যাকআপ ও রিসেট সেন্টার", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
 
-    Card(
-      modifier = Modifier.fillMaxWidth(),
-      shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = Color.White),
-      border = BorderStroke(1.dp, BorderGold)
-    ) {
-      Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "ক্লিপবোর্ডে সম্পূর্ণ ব্যাকআপ কপি করুন", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-        Text(text = "মোট $productsCount টি পণ্য এবং $ordersCount টি অর্ডারের ডাটা রয়েছে।", fontSize = 11.sp, color = Color.Gray)
+    GlossyAdminCard(cornerRadius = 18.dp, contentPadding = 16.dp) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = "ক্লিপবোর্ডে সম্পূর্ণ ব্যাকআপ কপি করুন", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+        Text(text = "মোট $productsCount টি পণ্য এবং $ordersCount টি অর্ডারের ডাটা রয়েছে।", fontSize = 11.5.sp, color = AdminInkMuted)
 
         Button(
           onClick = {
@@ -3341,7 +3384,7 @@ fun AdminBackupTab(
             clipboard.setPrimaryClip(clip)
             onShowToast("ব্যাকআপ ডেটা সফলভাবে ক্লিপবোর্ডে কপি হয়েছে! 📋")
           },
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
@@ -3352,19 +3395,20 @@ fun AdminBackupTab(
       }
     }
 
-    Card(
-      modifier = Modifier.fillMaxWidth(),
-      shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
-      border = BorderStroke(1.dp, Color(0xFFFECACA))
+    GlossyAdminCard(
+      cornerRadius = 18.dp,
+      accentBorderColor = Color(0xFFFECACA),
+      containerTintTop = Color.White,
+      containerTintBottom = Color(0xFFFEF2F2),
+      contentPadding = 16.dp
     ) {
-      Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "⚠️ ডিফল্ট ডাটায় রিসেট করুন", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AccentRed)
-        Text(text = "সকল প্রোডাক্ট এবং অর্ডার ডিফল্ট ক্যাটালগ অনুযায়ী রিসেট হবে।", fontSize = 11.sp, color = DarkEspresso)
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = "⚠️ ডিফল্ট ডাটায় রিসেট করুন", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+        Text(text = "সকল প্রোডাক্ট এবং অর্ডার ডিফল্ট ক্যাটালগ অনুযায়ী রিসেট হবে।", fontSize = 11.5.sp, color = AdminInkSecondary)
 
         Button(
           onClick = onReset,
-          colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
+          colors = ButtonDefaults.buttonColors(containerColor = AccentRed, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
@@ -3451,6 +3495,8 @@ fun ProductFormDialog(
     Surface(
       shape = RoundedCornerShape(24.dp),
       color = Color.White,
+      border = BorderStroke(1.5.dp, AdminCardBorderWarm),
+      shadowElevation = 10.dp,
       modifier = Modifier
         .fillMaxWidth(0.96f)
         .padding(vertical = 16.dp)
@@ -3469,32 +3515,32 @@ fun ProductFormDialog(
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Column {
+          Column(modifier = Modifier.weight(1f)) {
             Text(
               text = if (product != null) "পণ্য এডিট করুন" else "নতুন পণ্য যোগ করুন",
               fontSize = 17.sp,
-              fontWeight = FontWeight.Bold,
+              fontWeight = FontWeight.Black,
               color = RoyalMaroon
             )
             Text(
               text = "পণ্যের বিবরণ, কালার, সাইজ ও বাচ্চার বয়স সেট করুন",
               fontSize = 11.sp,
-              color = Color.Gray
+              color = AdminInkMuted
             )
           }
 
           IconButton(
             onClick = onDismiss,
             modifier = Modifier
-              .size(28.dp)
+              .size(34.dp)
               .clip(CircleShape)
-              .background(CreamSurface)
+              .background(Color(0xFFF1F5F9))
           ) {
-            Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = DarkEspresso, modifier = Modifier.size(16.dp))
+            Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = AdminInkPrimary, modifier = Modifier.size(16.dp))
           }
         }
 
-        HorizontalDivider(color = BorderGold)
+        HorizontalDivider(color = AdminCardBorderSoft)
 
         // 1. Basic Product Info
         OutlinedTextField(
@@ -3507,6 +3553,7 @@ fun ProductFormDialog(
           placeholder = { Text("যেমন: বাচ্চাদের ডিজাইনার ফ্রক বা কাতান শাড়ি") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3518,6 +3565,7 @@ fun ProductFormDialog(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier.weight(1f)
           )
 
@@ -3529,6 +3577,7 @@ fun ProductFormDialog(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier
               .weight(1f)
               .testTag("product_form_offer_price_input")
@@ -3542,6 +3591,7 @@ fun ProductFormDialog(
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -3559,6 +3609,7 @@ fun ProductFormDialog(
               trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryDropdownExpanded) },
               singleLine = true,
               shape = RoundedCornerShape(12.dp),
+              colors = adminOutlinedTextFieldColors(),
               modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
@@ -3585,13 +3636,14 @@ fun ProductFormDialog(
             label = { Text("SKU কোড") },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier.weight(1f)
           )
         }
 
         // Image Selection
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-          Text(text = "পণ্যের ছবি নির্বাচন বা ইউআরএল:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DarkEspresso)
+          Text(text = "পণ্যের ছবি নির্বাচন বা ইউআরএল:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AdminInkPrimary)
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -3608,14 +3660,14 @@ fun ProductFormDialog(
                   .clickable { imageUrl = url }
               ) {
                 Box(
-                  modifier = Modifier.padding(vertical = 6.dp),
+                  modifier = Modifier.padding(vertical = 8.dp),
                   contentAlignment = Alignment.Center
                 ) {
                   Text(
                     text = label,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isChosen) Color.White else DarkEspresso
+                    color = if (isChosen) Color.White else AdminInkPrimary
                   )
                 }
               }
@@ -3628,6 +3680,7 @@ fun ProductFormDialog(
             label = { Text("অথবা সরাসরি ছবির লিঙ্ক (Image URL)") },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier.fillMaxWidth()
           )
         }
@@ -3685,7 +3738,7 @@ fun ProductFormDialog(
               Text(
                 text = "কোনো নির্দিষ্ট কালার যুক্ত করা হয়নি। নিচে ক্লিক করে বা লিখে যোগ করুন।",
                 fontSize = 11.sp,
-                color = Color.Gray
+                color = AdminInkMuted
               )
             } else {
               Row(
@@ -3732,9 +3785,10 @@ fun ProductFormDialog(
                 placeholder = { Text("নতুন কালার লিখুন (যেমন: টিয়া সবুজ)", fontSize = 11.sp) },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier
                   .weight(1f)
-                  .height(44.dp)
+                  .heightIn(min = 48.dp)
               )
 
               Button(
@@ -3745,16 +3799,16 @@ fun ProductFormDialog(
                     customColorInput = ""
                   }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(44.dp)
+                modifier = Modifier.heightIn(min = 48.dp)
               ) {
                 Text("+ কালার যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
               }
             }
 
             // Quick preset chips
-            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Medium)
+            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = AdminInkPrimary, fontWeight = FontWeight.Medium)
             Row(
               modifier = Modifier
                 .fillMaxWidth()
@@ -3775,7 +3829,7 @@ fun ProductFormDialog(
                     text = if (alreadyAdded) "✓ $col" else "+ $col",
                     fontSize = 11.sp,
                     fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
-                    color = if (alreadyAdded) RoyalMaroon else DarkEspresso,
+                    color = if (alreadyAdded) RoyalMaroon else AdminInkPrimary,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                   )
                 }
@@ -3789,8 +3843,8 @@ fun ProductFormDialog(
         // ==========================================
         Card(
           shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = CreamBackground),
-          border = BorderStroke(1.dp, BorderGold),
+          colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBF8)),
+          border = BorderStroke(1.dp, AdminCardBorderWarm),
           modifier = Modifier.fillMaxWidth()
         ) {
           Column(
@@ -3824,7 +3878,7 @@ fun ProductFormDialog(
               Text(
                 text = "কোনো সাইজ নির্ধারণ করা হয়নি। নিচে ক্লিক করে বা লিখে যোগ করুন।",
                 fontSize = 11.sp,
-                color = Color.Gray
+                color = AdminInkMuted
               )
             } else {
               Row(
@@ -3836,8 +3890,8 @@ fun ProductFormDialog(
                 sizes.forEach { sz ->
                   Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = DarkEspresso,
-                    border = BorderStroke(1.dp, DarkEspresso)
+                    color = AdminNavyGradStart,
+                    border = BorderStroke(1.dp, AdminNavyGradStart)
                   ) {
                     Row(
                       modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
@@ -3871,9 +3925,10 @@ fun ProductFormDialog(
                 placeholder = { Text("নতুন সাইজ লিখুন (যেমন: 40 বা 38 Semi-Stitch)", fontSize = 11.sp) },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier
                   .weight(1f)
-                  .height(44.dp)
+                  .heightIn(min = 48.dp)
               )
 
               Button(
@@ -3884,16 +3939,16 @@ fun ProductFormDialog(
                     customSizeInput = ""
                   }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminNavyGradStart, contentColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(44.dp)
+                modifier = Modifier.heightIn(min = 48.dp)
               ) {
                 Text("+ সাইজ যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
               }
             }
 
             // Quick preset chips
-            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Medium)
+            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = AdminInkPrimary, fontWeight = FontWeight.Medium)
             Row(
               modifier = Modifier
                 .fillMaxWidth()
@@ -3905,7 +3960,7 @@ fun ProductFormDialog(
                 Surface(
                   shape = RoundedCornerShape(12.dp),
                   color = if (alreadyAdded) CreamSurface else Color.White,
-                  border = BorderStroke(1.dp, if (alreadyAdded) DarkEspresso else BorderGold),
+                  border = BorderStroke(1.dp, if (alreadyAdded) AdminNavyGradStart else BorderGold),
                   modifier = Modifier.clickable {
                     sizes = if (alreadyAdded) sizes.filterNot { it == sz } else sizes + sz
                   }
@@ -3914,7 +3969,7 @@ fun ProductFormDialog(
                     text = if (alreadyAdded) "✓ $sz" else "+ $sz",
                     fontSize = 11.sp,
                     fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
-                    color = if (alreadyAdded) DarkEspresso else DarkEspresso.copy(alpha = 0.8f),
+                    color = if (alreadyAdded) AdminNavyGradStart else AdminInkPrimary,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                   )
                 }
@@ -3928,8 +3983,8 @@ fun ProductFormDialog(
         // ==========================================
         Card(
           shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = AntiqueGold.copy(alpha = 0.08f)),
-          border = BorderStroke(1.dp, BorderGold),
+          colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
+          border = BorderStroke(1.dp, AdminCardBorderWarm),
           modifier = Modifier.fillMaxWidth()
         ) {
           Column(
@@ -3964,7 +4019,7 @@ fun ProductFormDialog(
             Text(
               text = "বাচ্চাদের পোশাকের ক্ষেত্রে ক্রেতাদের বয়সের মাপ সিলেক্ট করার সুযোগ দিন।",
               fontSize = 11.sp,
-              color = DarkEspresso.copy(alpha = 0.7f)
+              color = AdminInkSecondary
             )
 
             // Current added age groups
@@ -3972,7 +4027,7 @@ fun ProductFormDialog(
               Text(
                 text = "কোনো বয়স গ্রুপ যুক্ত করা হয়নি। নিচের বয়সগুলো ক্লিক করুন বা নতুন বয়স লিখুন।",
                 fontSize = 11.sp,
-                color = Color.Gray
+                color = AdminInkMuted
               )
             } else {
               Row(
@@ -3984,8 +4039,8 @@ fun ProductFormDialog(
                 ageGroups.forEach { age ->
                   Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = AntiqueGoldDark,
-                    border = BorderStroke(1.dp, AntiqueGoldDark)
+                    color = AdminAmberGradStart,
+                    border = BorderStroke(1.dp, AdminAmberGradStart)
                   ) {
                     Row(
                       modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
@@ -4019,9 +4074,10 @@ fun ProductFormDialog(
                 placeholder = { Text("নতুন বাচ্চার বয়স লিখুন (যেমন: নবজাতক বা ৭-৯ মাস)", fontSize = 11.sp) },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier
                   .weight(1f)
-                  .height(44.dp)
+                  .heightIn(min = 48.dp)
               )
 
               Button(
@@ -4032,16 +4088,16 @@ fun ProductFormDialog(
                     customAgeInput = ""
                   }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AntiqueGoldDark),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminAmberGradStart, contentColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(44.dp)
+                modifier = Modifier.heightIn(min = 48.dp)
               ) {
                 Text("+ বয়স যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
               }
             }
 
             // Quick preset age chips
-            Text(text = "দ্রুত বয়সের মাপ যুক্ত করুন:", fontSize = 10.sp, color = DarkEspresso, fontWeight = FontWeight.Medium)
+            Text(text = "দ্রুত বয়সের মাপ যুক্ত করুন:", fontSize = 10.sp, color = AdminInkPrimary, fontWeight = FontWeight.Medium)
             Row(
               modifier = Modifier
                 .fillMaxWidth()
@@ -4053,7 +4109,7 @@ fun ProductFormDialog(
                 Surface(
                   shape = RoundedCornerShape(12.dp),
                   color = if (alreadyAdded) CreamSurface else Color.White,
-                  border = BorderStroke(1.dp, if (alreadyAdded) AntiqueGoldDark else BorderGold),
+                  border = BorderStroke(1.dp, if (alreadyAdded) AdminAmberGradStart else BorderGold),
                   modifier = Modifier.clickable {
                     ageGroups = if (alreadyAdded) ageGroups.filterNot { it == age } else ageGroups + age
                   }
@@ -4062,7 +4118,7 @@ fun ProductFormDialog(
                     text = if (alreadyAdded) "✓ $age" else "+ $age",
                     fontSize = 11.sp,
                     fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
-                    color = if (alreadyAdded) AntiqueGoldDark else DarkEspresso,
+                    color = if (alreadyAdded) AdminAmberGradStart else AdminInkPrimary,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                   )
                 }
@@ -4079,6 +4135,7 @@ fun ProductFormDialog(
           placeholder = { Text("কাপড়ের কোয়ালিটি, ফেব্রিক ও স্পেসিফিকেশন লিখুন") },
           minLines = 2,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4102,7 +4159,7 @@ fun ProductFormDialog(
             Text(
               text = "নতুন আপলোড করলে অটোমেটিক \"নতুন প্রোডাক্ট\" ব্লকে প্রথমে যুক্ত হবে।",
               fontSize = 10.sp,
-              color = Color.Gray
+              color = AdminInkMuted
             )
 
             Row(
@@ -4245,17 +4302,19 @@ fun CategoryFormDialog(
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
-      shape = RoundedCornerShape(20.dp),
+      shape = RoundedCornerShape(22.dp),
       color = Color.White,
+      border = BorderStroke(1.5.dp, AdminCardBorderWarm),
+      shadowElevation = 10.dp,
       modifier = Modifier
-        .fillMaxWidth(0.9f)
+        .fillMaxWidth(0.92f)
         .padding(16.dp)
     ) {
       Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Text(text = "নতুন ক্যাটাগরি তৈরি করুন", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+        Text(text = "নতুন ক্যাটাগরি তৈরি করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
 
         OutlinedTextField(
           value = name,
@@ -4263,6 +4322,7 @@ fun CategoryFormDialog(
           label = { Text("ক্যাটাগরির নাম (যেমন: ব্রাইডাল সেট)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4272,6 +4332,7 @@ fun CategoryFormDialog(
           label = { Text("ইমোজি আইকন (যেমন: 👑)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4281,11 +4342,11 @@ fun CategoryFormDialog(
               onSave(Category(id = "c_${System.currentTimeMillis()}", name = name, icon = icon.ifBlank { "✨" }))
             }
           },
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
-          Text("যুক্ত করুন")
+          Text("যুক্ত করুন", fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -4305,17 +4366,19 @@ fun CouponFormDialog(
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
-      shape = RoundedCornerShape(20.dp),
+      shape = RoundedCornerShape(22.dp),
       color = Color.White,
+      border = BorderStroke(1.5.dp, AdminCardBorderWarm),
+      shadowElevation = 10.dp,
       modifier = Modifier
-        .fillMaxWidth(0.9f)
+        .fillMaxWidth(0.92f)
         .padding(16.dp)
     ) {
       Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Text(text = "নতুন কুপন কোড তৈরি করুন", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+        Text(text = "নতুন কুপন কোড তৈরি করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
 
         OutlinedTextField(
           value = code,
@@ -4323,6 +4386,7 @@ fun CouponFormDialog(
           label = { Text("কুপন কোড (যেমন: EID2026)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4334,6 +4398,7 @@ fun CouponFormDialog(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier.weight(1f)
           )
 
@@ -4344,6 +4409,7 @@ fun CouponFormDialog(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier.weight(1f)
           )
         }
@@ -4354,6 +4420,7 @@ fun CouponFormDialog(
           label = { Text("মেয়াদ শেষ তারিখ (YYYY-MM-DD)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4373,11 +4440,11 @@ fun CouponFormDialog(
               )
             }
           },
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
-          Text("কুপন সেভ করুন")
+          Text("কুপন সেভ করুন", fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -4395,17 +4462,19 @@ fun BannerFormDialog(
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
-      shape = RoundedCornerShape(20.dp),
+      shape = RoundedCornerShape(22.dp),
       color = Color.White,
+      border = BorderStroke(1.5.dp, AdminCardBorderWarm),
+      shadowElevation = 10.dp,
       modifier = Modifier
-        .fillMaxWidth(0.9f)
+        .fillMaxWidth(0.92f)
         .padding(16.dp)
     ) {
       Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Text(text = "নতুন ব্যানার যোগ করুন", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+        Text(text = "নতুন ব্যানার যোগ করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
 
         OutlinedTextField(
           value = title,
@@ -4413,6 +4482,7 @@ fun BannerFormDialog(
           label = { Text("ব্যানার টাইটেল") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4422,6 +4492,7 @@ fun BannerFormDialog(
           label = { Text("সাবটাইটেল / অফার টেক্সট") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4431,6 +4502,7 @@ fun BannerFormDialog(
           label = { Text("বাটন টেক্সট") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
         )
 
@@ -4449,11 +4521,11 @@ fun BannerFormDialog(
               )
             }
           },
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
-          Text("ব্যানার যুক্ত করুন")
+          Text("ব্যানার যুক্ত করুন", fontWeight = FontWeight.Bold)
         }
       }
     }

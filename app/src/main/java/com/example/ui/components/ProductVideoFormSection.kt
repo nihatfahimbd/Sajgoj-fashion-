@@ -360,10 +360,7 @@ fun ProductVideoFormSection(
             label = { Text("অথবা সরাসরি ভিডিও লিংক (.mp4 CDN URL)", fontSize = 11.sp) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = SellerOrange,
-              focusedLabelColor = SellerOrange
-            ),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier
               .fillMaxWidth()
               .testTag("video_direct_url_input")
@@ -381,10 +378,7 @@ fun ProductVideoFormSection(
             placeholder = { Text("https://youtube.com/watch?v=... বা shorts/...", fontSize = 11.sp) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = SellerOrange,
-              focusedLabelColor = SellerOrange
-            ),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier
               .fillMaxWidth()
               .testTag("video_youtube_url_input")
@@ -437,10 +431,7 @@ fun ProductVideoFormSection(
             placeholder = { Text("https://www.facebook.com/reel/... বা https://fb.watch/...", fontSize = 11.sp) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = RoyalMaroon,
-              focusedLabelColor = RoyalMaroon
-            ),
+            colors = adminOutlinedTextFieldColors(),
             modifier = Modifier
               .fillMaxWidth()
               .testTag("video_facebook_reels_url_input")

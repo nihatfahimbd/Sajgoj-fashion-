@@ -174,28 +174,25 @@ fun PaymentMethodsToggleSection(
   onSaveConfig: (StoreConfig) -> Unit,
   modifier: Modifier = Modifier
 ) {
-  Card(
-    modifier = modifier
-      .fillMaxWidth()
-      .testTag("payment_methods_toggle_section"),
-    shape = RoundedCornerShape(16.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.5.dp, BorderGold)
+  GlossyAdminCard(
+    modifier = modifier.testTag("payment_methods_toggle_section"),
+    cornerRadius = 18.dp,
+    accentBorderColor = Color(0xFFE3C8B2),
+    contentPadding = 14.dp
   ) {
     Column(
-      modifier = Modifier.padding(14.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       Text(
         text = "💳 পেমেন্ট মেথড কন্ট্রোল (Storefront Footer)",
         fontSize = 14.sp,
         fontWeight = FontWeight.Black,
-        color = RoyalMaroon
+        color = AdminInkPrimary
       )
       Text(
         text = "এখান থেকে bKash, Nagad, Rocket, COD এবং Visa/Mastercard অন/অফ করলে সাথে সাথে Storefront ফুটারে আপডেট হবে।",
         fontSize = 11.sp,
-        color = AntiqueGoldDark,
+        color = AdminInkMuted,
         lineHeight = 15.sp
       )
 
@@ -290,12 +287,12 @@ private fun PaymentMethodToggleRow(
             text = label,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold,
-            color = DarkEspresso
+            color = AdminInkPrimary
           )
           Text(
             text = subtitle,
-            fontSize = 10.sp,
-            color = Color.Gray
+            fontSize = 10.5.sp,
+            color = AdminInkMuted
           )
         }
       }
@@ -322,16 +319,13 @@ fun StorefrontDesignStudioPanel(
 ) {
   var draft by remember(config.design) { mutableStateOf(config.design) }
 
-  Card(
-    modifier = modifier
-      .fillMaxWidth()
-      .testTag("storefront_design_studio_panel"),
-    shape = RoundedCornerShape(16.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.5.dp, BorderGold)
+  GlossyAdminCard(
+    modifier = modifier.testTag("storefront_design_studio_panel"),
+    cornerRadius = 18.dp,
+    accentBorderColor = Color(0xFFE3C8B2),
+    contentPadding = 14.dp
   ) {
     Column(
-      modifier = Modifier.padding(14.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
       Row(
@@ -344,12 +338,12 @@ fun StorefrontDesignStudioPanel(
             text = "🎨 স্টোরফ্রন্ট ডিজাইন ও কালার স্টুডিও",
             fontSize = 14.5.sp,
             fontWeight = FontWeight.Black,
-            color = RoyalMaroon
+            color = AdminInkPrimary
           )
           Text(
             text = "পেজ ব্যাকগ্রাউন্ড, ব্লক, কার্ড, প্রাইস বক্স, বাটন স্টাইল ও উইশলিস্ট নিজেই সাজান",
-            fontSize = 10.5.sp,
-            color = AntiqueGoldDark
+            fontSize = 11.sp,
+            color = AdminInkMuted
           )
         }
 
@@ -359,20 +353,20 @@ fun StorefrontDesignStudioPanel(
             draft = reset
             onSaveConfig(config.copy(design = reset))
           },
-          border = BorderStroke(1.dp, BorderGold),
+          border = BorderStroke(1.dp, Color(0xFFFDA4AF)),
           shape = RoundedCornerShape(10.dp),
-          contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+          contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
           modifier = Modifier
-            .height(34.dp)
+            .heightIn(min = 38.dp)
             .testTag("reset_design_studio_btn")
         ) {
-          Text(text = "↺ রিসেট", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "↺ রিসেট", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
         }
       }
 
       // 1. One-Click Presets
       Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(text = "১. রেডিমেড ডিজাইন প্রিসেট", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+        Text(text = "১. রেডিমেড ডিজাইন প্রিসেট", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
         Row(
           modifier = Modifier
             .fillMaxWidth()
@@ -382,18 +376,19 @@ fun StorefrontDesignStudioPanel(
           designPresets.forEach { preset ->
             Surface(
               shape = RoundedCornerShape(12.dp),
-              color = CreamSurface,
-              border = BorderStroke(1.dp, BorderGold),
+              color = Color.White,
+              border = BorderStroke(1.dp, Color(0xFFE2C3AA)),
+              shadowElevation = 2.dp,
               modifier = Modifier
-                .heightIn(min = 40.dp)
+                .heightIn(min = 42.dp)
                 .clickable {
                   draft = preset.design
                   onSaveConfig(config.copy(design = preset.design))
                 }
                 .testTag("design_preset_${preset.id}")
             ) {
-              Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
-                Text(text = preset.label, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+              Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp)) {
+                Text(text = preset.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
               }
             }
           }
@@ -413,7 +408,7 @@ fun StorefrontDesignStudioPanel(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Text(text = "কাস্টম পেজ ব্যাকগ্রাউন্ড চালু করুন", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = DarkEspresso)
+        Text(text = "কাস্টম পেজ ব্যাকগ্রাউন্ড চালু করুন", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = AdminInkPrimary)
         Switch(
           checked = draft.useCustomPageBg,
           onCheckedChange = { draft = draft.copy(useCustomPageBg = it) }
@@ -440,7 +435,7 @@ fun StorefrontDesignStudioPanel(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Text(text = "কাস্টম প্রোডাক্ট ব্লক ব্যাকগ্রাউন্ড", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = DarkEspresso)
+        Text(text = "কাস্টম প্রোডাক্ট ব্লক ব্যাকগ্রাউন্ড", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = AdminInkPrimary)
         Switch(
           checked = draft.useCustomBlockBg,
           onCheckedChange = { draft = draft.copy(useCustomBlockBg = it) }
@@ -498,6 +493,7 @@ fun StorefrontDesignStudioPanel(
         label = { Text("রিলস মাঝের ক্যাপশন টেক্সট", fontSize = 11.sp) },
         singleLine = true,
         shape = RoundedCornerShape(10.dp),
+        colors = adminOutlinedTextFieldColors(),
         modifier = Modifier.fillMaxWidth()
       )
 
@@ -597,6 +593,7 @@ fun StorefrontDesignStudioPanel(
           label = { Text("বাটন লেখা", fontSize = 10.5.sp) },
           singleLine = true,
           shape = RoundedCornerShape(10.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.weight(1.4f)
         )
         OutlinedTextField(
@@ -605,6 +602,7 @@ fun StorefrontDesignStudioPanel(
           label = { Text("উইশলিস্ট", fontSize = 10.5.sp) },
           singleLine = true,
           shape = RoundedCornerShape(10.dp),
+          colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.weight(0.8f)
         )
       }
@@ -671,7 +669,7 @@ fun StorefrontDesignStudioPanel(
 
       Button(
         onClick = { onSaveConfig(config.copy(design = draft)) },
-        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
         shape = RoundedCornerShape(14.dp),
         modifier = Modifier
           .fillMaxWidth()
@@ -711,6 +709,7 @@ private fun ColorHexField(
     },
     singleLine = true,
     shape = RoundedCornerShape(10.dp),
+    colors = adminOutlinedTextFieldColors(),
     modifier = modifier
   )
 }

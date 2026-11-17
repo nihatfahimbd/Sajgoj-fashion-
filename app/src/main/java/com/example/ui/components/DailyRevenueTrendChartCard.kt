@@ -96,18 +96,14 @@ fun DailyRevenueTrendChartCard(
   val total7dOrders = remember(series) { series.sumOf { it.orderCount } }
   val selectedPoint = series.getOrElse(selectedIndex) { series.last() }
 
-  Card(
-    shape = RoundedCornerShape(18.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.dp, BorderGold),
-    modifier = modifier
-      .fillMaxWidth()
-      .testTag("daily_revenue_7d_chart_card")
+  GlossyAdminCard(
+    cornerRadius = 20.dp,
+    accentBorderColor = Color(0xFFE3C8B2),
+    contentPadding = 14.dp,
+    modifier = modifier.testTag("daily_revenue_7d_chart_card")
   ) {
     Column(
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(14.dp),
+      modifier = Modifier.fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
       Row(
@@ -120,20 +116,20 @@ fun DailyRevenueTrendChartCard(
             text = "📈 গত ৭ দিনের দৈনিক রেভিনিউ ট্রেন্ড",
             fontSize = 14.sp,
             fontWeight = FontWeight.Black,
-            color = RoyalMaroon
+            color = AdminInkPrimary
           )
           Text(
             text = "মোট: ৳$total7dRevenue • দৈনিক গড়: ৳$avgDailyRevenue • $total7dOrders টি অর্ডার",
-            fontSize = 10.5.sp,
-            color = AntiqueGoldDark,
+            fontSize = 11.sp,
+            color = AdminInkSecondary,
             fontWeight = FontWeight.SemiBold
           )
         }
 
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = CreamSurface,
-          border = BorderStroke(1.dp, BorderGold)
+          color = Color(0xFFFFF1F2),
+          border = BorderStroke(1.dp, Color(0xFFFDA4AF))
         ) {
           Text(
             text = "${selectedPoint.label}: ৳${selectedPoint.revenue}",
@@ -249,14 +245,14 @@ fun DailyRevenueTrendChartCard(
                 text = pt.label,
                 fontSize = 8.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White else DarkEspresso,
+                color = if (isSelected) Color.White else AdminInkPrimary,
                 maxLines = 1,
                 textAlign = TextAlign.Center
               )
               Text(
                 text = "${pt.orderCount}টি",
                 fontSize = 8.sp,
-                color = if (isSelected) Color.White.copy(alpha = 0.9f) else Color.Gray
+                color = if (isSelected) Color.White.copy(alpha = 0.92f) else AdminInkMuted
               )
             }
           }

@@ -2,23 +2,28 @@ package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,11 +31,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -61,13 +67,11 @@ import com.example.data.model.Product
 import com.example.data.model.StoreConfig
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
-import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
-import com.example.ui.theme.CreamBackground
-import com.example.ui.theme.CreamSurface
-import com.example.ui.theme.DarkEspresso
+import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomePageSettingHub(
   homeSections: List<HomeSectionConfig>,
@@ -91,81 +95,144 @@ fun HomePageSettingHub(
   var subTab by remember { mutableStateOf("BLOCKS") } // BLOCKS, BANNERS, HEADER, DESIGN
   var expandedEditorSectionId by remember { mutableStateOf<String?>("best_deals") }
   var sectionProductQueries by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-  var creatorType by remember { mutableStateOf<String?>(null) } // category_products, promo_banner, custom_products
+  var creatorType by remember { mutableStateOf<String?>(null) }
 
   // Add New Creator States
   var newTitle by remember { mutableStateOf("") }
   var newSubtitle by remember { mutableStateOf("") }
-  var newCategory by remember { mutableStateOf(categories.firstOrNull { it.type == "main" }?.name ?: categories.firstOrNull()?.name ?: "শাড়ি") }
+  var newCategory by remember {
+    mutableStateOf(
+      categories.firstOrNull { it.type == "main" }?.name
+        ?: categories.firstOrNull()?.name
+        ?: "শাড়ি"
+    )
+  }
   var newColumnsPerRow by remember { mutableStateOf(3) }
   var newRowCount by remember { mutableStateOf(1) }
   var newDisplayStyle by remember { mutableStateOf("slider") }
   var newBannerButtonText by remember { mutableStateOf("অফার দেখুন") }
 
+  val enabledCount = remember(homeSections) { homeSections.count { it.enabled } }
+
   Column(modifier = modifier.fillMaxSize()) {
-    // Master Hub Title Row
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
+    // 1. Glossy Master Hub Header Card (Bright luminous surface + crisp dark ink text)
+    GlossyAdminCard(
+      cornerRadius = 20.dp,
+      accentBorderColor = Color(0xFFE9C9B1),
+      containerTintTop = Color.White,
+      containerTintBottom = Color(0xFFFFF5EE),
+      elevation = 7.dp,
+      contentPadding = 14.dp
     ) {
-      Column(modifier = Modifier.weight(1f)) {
-        Text(
-          text = "🏠 Home Page Setting (মাস্টার হাব)",
-          fontSize = 15.5.sp,
-          fontWeight = FontWeight.Black,
-          color = RoyalMaroon
-        )
-        Text(
-          text = "ব্লক রি-অর্ডার, ON/OFF, + Add New, ব্যানার ও প্রোডাক্ট ডিসপ্লে",
-          fontSize = 10.5.sp,
-          color = AntiqueGoldDark
-        )
-      }
-
-      OutlinedButton(
-        onClick = onResetSectionsToDefault,
-        border = BorderStroke(1.dp, BorderGold),
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-        modifier = Modifier
-          .height(34.dp)
-          .testTag("reset_home_layout_btn")
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Text(text = "রিসেট", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-      }
-    }
+        Row(
+          modifier = Modifier.weight(1f),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          Box(
+            modifier = Modifier
+              .size(44.dp)
+              .shadow(4.dp, RoundedCornerShape(14.dp))
+              .clip(RoundedCornerShape(14.dp))
+              .background(adminAccentGlossBrush())
+              .border(1.dp, Color.White.copy(alpha = 0.65f), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(text = "🏠", fontSize = 20.sp)
+          }
 
-    Spacer(modifier = Modifier.height(8.dp))
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = "Home Page Setting",
+              fontSize = 16.sp,
+              fontWeight = FontWeight.Black,
+              color = AdminInkPrimary,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+            Text(
+              text = "মাস্টার হাব • ব্লক, ব্যানার, ON/OFF ও কালার স্টুডিও",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.SemiBold,
+              color = AdminInkSecondary,
+              maxLines = 2,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+        }
 
-    // Sub-tabs
-    Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .horizontalScroll(rememberScrollState()),
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-      listOf(
-        "BLOCKS" to "🧱 ব্লক ও প্রোডাক্ট (${homeSections.size})",
-        "BANNERS" to "🖼️ হিরো ব্যানার (${banners.size})",
-        "HEADER" to "📢 হেডার ও নোটিশ",
-        "DESIGN" to "🎨 ডিজাইন ও কালার স্টুডিও"
-      ).forEach { (key, label) ->
-        val selected = subTab == key
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Crisp Reset Pill Button (min 44dp touch target, clear dark ink on glossy pearl)
         Surface(
           shape = RoundedCornerShape(12.dp),
-          color = if (selected) RoyalMaroon else Color.White,
-          border = BorderStroke(1.dp, if (selected) RoyalMaroon else BorderGold),
+          color = Color(0xFFFFF1F2),
+          border = BorderStroke(1.dp, Color(0xFFFDA4AF)),
+          shadowElevation = 2.dp,
           modifier = Modifier
-            .clickable { subTab = key }
-            .testTag("home_setting_subtab_$key")
+            .heightIn(min = 42.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onResetSectionsToDefault)
+            .testTag("reset_home_layout_btn")
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.Refresh,
+              contentDescription = "ডিফল্ট রিসেট",
+              tint = RoyalMaroon,
+              modifier = Modifier.size(15.dp)
+            )
+            Text(
+              text = "রিসেট",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = RoyalMaroon
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      // Live Status Strip inside Header Card
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Surface(
+          shape = RoundedCornerShape(10.dp),
+          color = Color(0xFFECFDF5),
+          border = BorderStroke(1.dp, Color(0xFFA7F3D0))
         ) {
           Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            color = if (selected) Color.White else DarkEspresso,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+            text = "● $enabledCount/${homeSections.size} ব্লক চালু",
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF065F46),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+          )
+        }
+        Surface(
+          shape = RoundedCornerShape(10.dp),
+          color = Color(0xFFEFF6FF),
+          border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+        ) {
+          Text(
+            text = "🖼️ ${banners.count { it.isActive }} ব্যানার সক্রিয়",
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = NavyBlue,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
           )
         }
       }
@@ -173,101 +240,150 @@ fun HomePageSettingHub(
 
     Spacer(modifier = Modifier.height(10.dp))
 
+    // 2. Clean 2x2 Glossy Sub-Tab Grid (Never clips or truncates labels!)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        GlossySegmentPill(
+          label = "🧱 ব্লক ও প্রোডাক্ট (${homeSections.size})",
+          selected = subTab == "BLOCKS",
+          onClick = { subTab = "BLOCKS" },
+          modifier = Modifier
+            .weight(1f)
+            .testTag("home_setting_subtab_BLOCKS")
+        )
+        GlossySegmentPill(
+          label = "🖼️ হিরো ব্যানার (${banners.size})",
+          selected = subTab == "BANNERS",
+          onClick = { subTab = "BANNERS" },
+          modifier = Modifier
+            .weight(1f)
+            .testTag("home_setting_subtab_BANNERS")
+        )
+      }
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        GlossySegmentPill(
+          label = "📢 হেডার ও নোটিশ",
+          selected = subTab == "HEADER",
+          onClick = { subTab = "HEADER" },
+          modifier = Modifier
+            .weight(1f)
+            .testTag("home_setting_subtab_HEADER")
+        )
+        GlossySegmentPill(
+          label = "🎨 ডিজাইন স্টুডিও",
+          selected = subTab == "DESIGN",
+          onClick = { subTab = "DESIGN" },
+          selectedBrush = adminAccentGlossBrush(AdminNavyGradStart, AdminNavyGradEnd),
+          modifier = Modifier
+            .weight(1f)
+            .testTag("home_setting_subtab_DESIGN")
+        )
+      }
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
     when (subTab) {
       "BLOCKS" -> {
         LazyColumn(
           modifier = Modifier.fillMaxSize(),
-          verticalArrangement = Arrangement.spacedBy(10.dp),
-          contentPadding = PaddingValues(bottom = 24.dp)
+          verticalArrangement = Arrangement.spacedBy(12.dp),
+          contentPadding = PaddingValues(bottom = 28.dp)
         ) {
           // + Add New Preset Creator Card
           item {
-            Card(
-              shape = RoundedCornerShape(16.dp),
-              colors = CardDefaults.cardColors(containerColor = Color.White),
-              border = BorderStroke(1.5.dp, BorderGold),
-              modifier = Modifier.fillMaxWidth()
+            GlossyAdminCard(
+              cornerRadius = 18.dp,
+              accentBorderColor = Color(0xFFE2C3AA),
+              containerTintTop = Color.White,
+              containerTintBottom = Color(0xFFFFF8F2),
+              elevation = 5.dp,
+              contentPadding = 14.dp
             ) {
-              Column(
-                modifier = Modifier.padding(12.dp),
+              Text(
+                text = "➕ Add New — হোম পেজে নতুন ব্লক / ব্যানার",
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Black,
+                color = AdminInkPrimary
+              )
+              Spacer(modifier = Modifier.height(2.dp))
+              Text(
+                text = "নিচের যেকোনো অপশনে ট্যাপ করে ক্যাটাগরি, ব্যানার বা কাস্টম প্রোডাক্ট ব্লক তৈরি করুন:",
+                fontSize = 11.sp,
+                color = AdminInkMuted,
+                lineHeight = 15.sp
+              )
+              Spacer(modifier = Modifier.height(10.dp))
+
+              FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
               ) {
-                Text(
-                  text = "➕ Add New — হোম পেজে নতুন ব্লক / ব্যানার যুক্ত করুন",
-                  fontSize = 12.5.sp,
-                  fontWeight = FontWeight.Black,
-                  color = RoyalMaroon
-                )
-
-                Row(
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                  horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                  listOf(
-                    Triple("category_products", "🏷️ + Add ক্যাটাগরি প্রোডাক্ট", "নির্বাচিত ক্যাটাগরির প্রোডাক্ট"),
-                    Triple("promo_banner", "🖼️ + Add ব্যানার / বিজ্ঞাপন", "অফার বা প্রমোশন ব্যানার"),
-                    Triple("custom_products", "✨ + Add কাস্টম প্রোডাক্ট ব্লক", "নিজের পছন্দমতো কালেকশন")
-                  ).forEach { (typeKey, btnLabel, defaultSub) ->
-                    val activeCreator = creatorType == typeKey
-                    Surface(
-                      shape = RoundedCornerShape(12.dp),
-                      color = if (activeCreator) RoyalMaroon else CreamSurface,
-                      border = BorderStroke(1.dp, if (activeCreator) RoyalMaroon else BorderGold),
-                      modifier = Modifier
-                        .clickable {
-                          if (activeCreator) {
-                            creatorType = null
-                          } else {
-                            creatorType = typeKey
-                            newTitle = when (typeKey) {
-                              "category_products" -> "$newCategory স্পেশাল"
-                              "promo_banner" -> "ঈদ ধামাকা বিজ্ঞাপন অফার"
-                              else -> "স্পেশাল সিলেকশন"
-                            }
-                            newSubtitle = defaultSub
-                          }
+                listOf(
+                  Triple("category_products", "🏷️ + Add ক্যাটাগরি প্রোডাক্ট", "নির্বাচিত ক্যাটাগরির প্রোডাক্ট"),
+                  Triple("promo_banner", "🖼️ + Add ব্যানার / বিজ্ঞাপন", "অফার বা প্রমোশন ব্যানার"),
+                  Triple("custom_products", "✨ + Add কাস্টম প্রোডাক্ট ব্লক", "নিজের পছন্দমতো কালেকশন")
+                ).forEach { (typeKey, btnLabel, defaultSub) ->
+                  val activeCreator = creatorType == typeKey
+                  GlossySegmentPill(
+                    label = btnLabel,
+                    selected = activeCreator,
+                    onClick = {
+                      if (activeCreator) {
+                        creatorType = null
+                      } else {
+                        creatorType = typeKey
+                        newTitle = when (typeKey) {
+                          "category_products" -> "$newCategory স্পেশাল"
+                          "promo_banner" -> "ঈদ ধামাকা বিজ্ঞাপন অফার"
+                          else -> "স্পেশাল সিলেকশন"
                         }
-                        .testTag("add_new_preset_$typeKey")
-                    ) {
-                      Text(
-                        text = btnLabel,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (activeCreator) Color.White else DarkEspresso,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
-                      )
-                    }
-                  }
+                        newSubtitle = defaultSub
+                      }
+                    },
+                    modifier = Modifier.testTag("add_new_preset_$typeKey")
+                  )
                 }
+              }
 
-                if (creatorType != null) {
-                  HorizontalDivider(color = BorderGold)
+              if (creatorType != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = AdminCardBorderWarm)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                   OutlinedTextField(
                     value = newTitle,
                     onValueChange = { newTitle = it },
-                    label = { Text("ব্লক / ব্যানারের নাম *", fontSize = 11.sp) },
+                    label = { Text("ব্লক / ব্যানারের নাম *", fontSize = 11.5.sp) },
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = adminOutlinedTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                   )
 
                   OutlinedTextField(
                     value = newSubtitle,
                     onValueChange = { newSubtitle = it },
-                    label = { Text("বিবরণ / সাবটাইটেল", fontSize = 11.sp) },
+                    label = { Text("বিবরণ / সাবটাইটেল", fontSize = 11.5.sp) },
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = adminOutlinedTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                   )
 
                   if (creatorType == "category_products" || creatorType == "promo_banner") {
                     Text(
                       text = if (creatorType == "category_products") "মেইন ক্যাটাগরি নির্বাচন করুন:" else "ব্যানারে ক্লিক করলে কোন ক্যাটাগরি খুলবে:",
-                      fontSize = 11.sp,
+                      fontSize = 11.5.sp,
                       fontWeight = FontWeight.Bold,
-                      color = DarkEspresso
+                      color = AdminInkPrimary
                     )
                     Row(
                       modifier = Modifier
@@ -279,22 +395,25 @@ fun HomePageSettingHub(
                         val chosen = newCategory == cat.name
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else CreamBackground,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
-                          modifier = Modifier.clickable {
-                            newCategory = cat.name
-                            if (creatorType == "category_products") {
-                              newTitle = "${cat.name} কালেকশন"
+                          color = if (chosen) RoyalMaroon else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                          modifier = Modifier
+                            .heightIn(min = 38.dp)
+                            .clickable {
+                              newCategory = cat.name
+                              if (creatorType == "category_products") {
+                                newTitle = "${cat.name} কালেকশন"
+                              }
                             }
-                          }
                         ) {
-                          Text(
-                            text = "${cat.icon} ${cat.name}",
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (chosen) Color.White else DarkEspresso,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                          )
+                          Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                            Text(
+                              text = "${cat.icon} ${cat.name}",
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = if (chosen) Color.White else AdminInkPrimary
+                            )
+                          }
                         }
                       }
                     }
@@ -304,74 +423,93 @@ fun HomePageSettingHub(
                     OutlinedTextField(
                       value = newBannerButtonText,
                       onValueChange = { newBannerButtonText = it },
-                      label = { Text("বাটন টেক্সট (যেমন: অফার দেখুন)", fontSize = 11.sp) },
+                      label = { Text("বাটন টেক্সট (যেমন: অফার দেখুন)", fontSize = 11.5.sp) },
                       singleLine = true,
-                      shape = RoundedCornerShape(10.dp),
+                      shape = RoundedCornerShape(12.dp),
+                      colors = adminOutlinedTextFieldColors(),
                       modifier = Modifier.fillMaxWidth()
                     )
                   } else {
-                    Text(text = "প্রতি লাইনে কয়টি প্রোডাক্ট ও কয় লাইন:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                      text = "প্রতি লাইনে কয়টি প্রোডাক্ট ও কয় লাইন:",
+                      fontSize = 11.5.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = AdminInkPrimary
+                    )
+                    FlowRow(
+                      horizontalArrangement = Arrangement.spacedBy(6.dp),
+                      verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                       listOf(2 to "২টি", 3 to "৩টি", 4 to "৪টি").forEach { (cols, label) ->
                         val chosen = newColumnsPerRow == cols
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else CreamSurface,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
-                          modifier = Modifier.clickable { newColumnsPerRow = cols }
+                          color = if (chosen) RoyalMaroon else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                          modifier = Modifier
+                            .heightIn(min = 36.dp)
+                            .clickable { newColumnsPerRow = cols }
                         ) {
-                          Text(
-                            text = label,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (chosen) Color.White else DarkEspresso,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                          )
+                          Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)) {
+                            Text(
+                              text = label,
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = if (chosen) Color.White else AdminInkPrimary
+                            )
+                          }
                         }
                       }
                       listOf("slider" to "স্লাইডার", "grid" to "গ্রিড").forEach { (styleKey, styleLabel) ->
                         val chosen = newDisplayStyle == styleKey
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) DarkEspresso else CreamSurface,
-                          border = BorderStroke(1.dp, BorderGold),
-                          modifier = Modifier.clickable { newDisplayStyle = styleKey }
+                          color = if (chosen) NavyBlue else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) NavyBlue else Color(0xFFCBD5E1)),
+                          modifier = Modifier
+                            .heightIn(min = 36.dp)
+                            .clickable { newDisplayStyle = styleKey }
                         ) {
-                          Text(
-                            text = styleLabel,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (chosen) Color.White else DarkEspresso,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                          )
+                          Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)) {
+                            Text(
+                              text = styleLabel,
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = if (chosen) Color.White else AdminInkPrimary
+                            )
+                          }
                         }
                       }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                       (1..4).forEach { r ->
                         val chosen = newRowCount == r
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else CreamSurface,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
-                          modifier = Modifier.clickable {
-                            newRowCount = r
-                            if (r > 1) newDisplayStyle = "grid"
-                          }
+                          color = if (chosen) RoyalMaroon else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                          modifier = Modifier
+                            .heightIn(min = 36.dp)
+                            .clickable {
+                              newRowCount = r
+                              if (r > 1) newDisplayStyle = "grid"
+                            }
                         ) {
-                          Text(
-                            text = "${r} লাইন",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (chosen) Color.White else DarkEspresso,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                          )
+                          Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)) {
+                            Text(
+                              text = "${r} লাইন",
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = if (chosen) Color.White else AdminInkPrimary
+                            )
+                          }
                         }
                       }
                     }
                   }
 
-                  Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                  ) {
                     Button(
                       onClick = {
                         if (newTitle.isNotBlank()) {
@@ -403,22 +541,25 @@ fun HomePageSettingHub(
                           creatorType = null
                         }
                       },
-                      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
                       shape = RoundedCornerShape(12.dp),
                       modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = 46.dp)
                         .testTag("save_new_home_block_btn")
                     ) {
                       Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                       Spacer(modifier = Modifier.width(4.dp))
-                      Text("হোম পেজে যুক্ত করুন", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                      Text("হোম পেজে যুক্ত করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
 
                     OutlinedButton(
                       onClick = { creatorType = null },
-                      shape = RoundedCornerShape(12.dp)
+                      border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                      shape = RoundedCornerShape(12.dp),
+                      modifier = Modifier.heightIn(min = 46.dp)
                     ) {
-                      Text("বাতিল", fontSize = 11.5.sp)
+                      Text("বাতিল", fontSize = 12.sp, color = AdminInkPrimary, fontWeight = FontWeight.Bold)
                     }
                   }
                 }
@@ -437,140 +578,163 @@ fun HomePageSettingHub(
             val isExpanded = expandedEditorSectionId == section.id
             val blockSearch = sectionProductQueries[section.id].orEmpty()
 
-            Card(
-              shape = RoundedCornerShape(16.dp),
-              colors = CardDefaults.cardColors(
-                containerColor = if (section.enabled) Color.White else Color(0xFFF3F4F6)
-              ),
-              border = BorderStroke(
-                width = if (isExpanded) 1.5.dp else 1.dp,
-                color = if (isExpanded) RoyalMaroon else BorderGold
-              ),
-              modifier = Modifier
-                .fillMaxWidth()
-                .testTag("home_setting_block_${section.id}")
+            GlossyAdminCard(
+              cornerRadius = 18.dp,
+              accentBorderColor = when {
+                isExpanded -> RoyalMaroon
+                section.enabled -> Color(0xFFE3C8B2)
+                else -> Color(0xFFCBD5E1)
+              },
+              containerTintTop = if (section.enabled) Color.White else Color(0xFFF8FAFC),
+              containerTintBottom = if (section.enabled) Color(0xFFFFFAF6) else Color(0xFFF1F5F9),
+              elevation = if (isExpanded) 8.dp else 4.dp,
+              contentPadding = 13.dp,
+              modifier = Modifier.testTag("home_setting_block_${section.id}")
             ) {
-              Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
               ) {
                 Row(
-                  modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.SpaceBetween
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  modifier = Modifier.weight(1f)
                 ) {
-                  Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
+                  // Glossy Rank Pill
+                  Box(
+                    modifier = Modifier
+                      .shadow(2.dp, RoundedCornerShape(9.dp))
+                      .clip(RoundedCornerShape(9.dp))
+                      .background(
+                        if (section.enabled) adminAccentGlossBrush()
+                        else Brush.horizontalGradient(listOf(Color(0xFF475569), Color(0xFF64748B)))
+                      )
+                      .padding(horizontal = 8.dp, vertical = 4.dp)
                   ) {
-                    Surface(
-                      shape = RoundedCornerShape(8.dp),
-                      color = RoyalMaroon
-                    ) {
-                      Text(
-                        text = "#${index + 1}",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                      )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                      Text(
-                        text = "${section.icon} ${section.title}",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (section.enabled) DarkEspresso else Color.Gray,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                      )
-                      Text(
-                        text = when (section.type) {
-                          "new_products" -> "$layoutSummary • নতুন আপলোড + ${section.productIds.size} পিন্ড"
-                          "hot_sale" -> "$layoutSummary • ${products.count { it.isHotSale || section.productIds.contains(it.id) }} টি পণ্য"
-                          "combo_packs" -> "$layoutSummary • স্পেশাল বান্ডেল অফার"
-                          "b2g1_offers" -> "$layoutSummary • ${products.count { it.isB2G1 || section.productIds.contains(it.id) }} টি অফার পণ্য"
-                          "best_deals" -> "$layoutSummary • ${section.productIds.size} টি সিলেক্টেড"
-                          "reels_showcase" -> "$layoutSummary • শপেবল রিলস ভিডিও"
-                          "all_products" -> "$layoutSummary • সব ক্যাটাগরির প্রোডাক্ট"
-                          "category_products" -> "$layoutSummary • ক্যাটাগরি: ${section.categoryName}"
-                          "promo_banner" -> "প্রমোশন ব্যানার (${section.bannerLinkCategory})"
-                          else -> section.subtitle.ifBlank { section.type }
-                        },
-                        fontSize = 10.sp,
-                        color = AntiqueGoldDark,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                      )
-                    }
+                    Text(
+                      text = "#${index + 1}",
+                      fontSize = 10.5.sp,
+                      fontWeight = FontWeight.Black,
+                      color = Color.White
+                    )
                   }
 
-                  // Reorder Arrows + ON/OFF Switch
-                  Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                  Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                      text = "${section.icon} ${section.title}",
+                      fontSize = 13.5.sp,
+                      fontWeight = FontWeight.ExtraBold,
+                      color = if (section.enabled) AdminInkPrimary else AdminInkMuted,
+                      maxLines = 1,
+                      overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                      text = when (section.type) {
+                        "new_products" -> "$layoutSummary • নতুন আপলোড + ${section.productIds.size} পিন্ড"
+                        "hot_sale" -> "$layoutSummary • ${products.count { it.isHotSale || section.productIds.contains(it.id) }} টি পণ্য"
+                        "combo_packs" -> "$layoutSummary • স্পেশাল বান্ডেল অফার"
+                        "b2g1_offers" -> "$layoutSummary • ${products.count { it.isB2G1 || section.productIds.contains(it.id) }} টি অফার পণ্য"
+                        "best_deals" -> "$layoutSummary • ${section.productIds.size} টি সিলেক্টেড"
+                        "reels_showcase" -> "$layoutSummary • শপেবল রিলস ভিডিও"
+                        "all_products" -> "$layoutSummary • সব ক্যাটাগরির প্রোডাক্ট"
+                        "category_products" -> "$layoutSummary • ক্যাটাগরি: ${section.categoryName}"
+                        "promo_banner" -> "প্রমোশন ব্যানার (${section.bannerLinkCategory})"
+                        else -> section.subtitle.ifBlank { section.type }
+                      },
+                      fontSize = 10.5.sp,
+                      fontWeight = FontWeight.SemiBold,
+                      color = if (section.enabled) AdminInkSecondary else AdminInkMuted,
+                      maxLines = 1,
+                      overflow = TextOverflow.Ellipsis
+                    )
+                  }
+                }
+
+                // Reorder Arrows + ON/OFF Switch
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                  Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (index > 0) Color(0xFFFFF1F2) else Color(0xFFF1F5F9),
+                    border = BorderStroke(1.dp, if (index > 0) Color(0xFFFECDD3) else Color(0xFFE2E8F0))
                   ) {
                     IconButton(
                       onClick = { onMoveSection(section.id, -1) },
                       enabled = index > 0,
                       modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .testTag("move_up_${section.id}")
                     ) {
                       Icon(
                         imageVector = Icons.Default.ArrowUpward,
                         contentDescription = "উপরে নিন",
-                        tint = if (index > 0) RoyalMaroon else Color.LightGray,
+                        tint = if (index > 0) RoyalMaroon else Color(0xFF94A3B8),
                         modifier = Modifier.size(16.dp)
                       )
                     }
+                  }
 
+                  Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (index < homeSections.lastIndex) Color(0xFFFFF1F2) else Color(0xFFF1F5F9),
+                    border = BorderStroke(1.dp, if (index < homeSections.lastIndex) Color(0xFFFECDD3) else Color(0xFFE2E8F0))
+                  ) {
                     IconButton(
                       onClick = { onMoveSection(section.id, 1) },
                       enabled = index < homeSections.lastIndex,
                       modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .testTag("move_down_${section.id}")
                     ) {
                       Icon(
                         imageVector = Icons.Default.ArrowDownward,
                         contentDescription = "নিচে নিন",
-                        tint = if (index < homeSections.lastIndex) RoyalMaroon else Color.LightGray,
+                        tint = if (index < homeSections.lastIndex) RoyalMaroon else Color(0xFF94A3B8),
                         modifier = Modifier.size(16.dp)
                       )
                     }
-
-                    Switch(
-                      checked = section.enabled,
-                      onCheckedChange = { onToggleSection(section.id) },
-                      colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = AccentGreen
-                      ),
-                      modifier = Modifier.testTag("toggle_section_${section.id}")
-                    )
                   }
-                }
 
-                // Action Strip: Manage Products / Customize / Delete Custom Block
-                Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.SpaceBetween,
-                  verticalAlignment = Alignment.CenterVertically
-                ) {
-                  if (isLayoutConfigurable || section.type == "promo_banner") {
-                    Surface(
-                      shape = RoundedCornerShape(10.dp),
-                      color = if (isExpanded) RoyalMaroon else CreamSurface,
-                      border = BorderStroke(1.dp, if (isExpanded) RoyalMaroon else BorderGold),
-                      modifier = Modifier
-                        .clickable {
-                          expandedEditorSectionId = if (isExpanded) null else section.id
-                        }
-                        .testTag("manage_block_${section.id}")
-                    ) {
+                  Switch(
+                    checked = section.enabled,
+                    onCheckedChange = { onToggleSection(section.id) },
+                    colors = SwitchDefaults.colors(
+                      checkedThumbColor = Color.White,
+                      checkedTrackColor = AccentGreen,
+                      uncheckedThumbColor = Color.White,
+                      uncheckedTrackColor = Color(0xFF94A3B8)
+                    ),
+                    modifier = Modifier.testTag("toggle_section_${section.id}")
+                  )
+                }
+              }
+
+              Spacer(modifier = Modifier.height(8.dp))
+
+              // Action Strip: Manage Products / Customize / Delete Block
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                if (isLayoutConfigurable || section.type == "promo_banner") {
+                  Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isExpanded) RoyalMaroon else Color(0xFFFFF1F2),
+                    border = BorderStroke(1.dp, if (isExpanded) RoyalMaroon else Color(0xFFFDA4AF)),
+                    shadowElevation = 1.dp,
+                    modifier = Modifier
+                      .heightIn(min = 38.dp)
+                      .clip(RoundedCornerShape(10.dp))
+                      .clickable {
+                        expandedEditorSectionId = if (isExpanded) null else section.id
+                      }
+                      .testTag("manage_block_${section.id}")
+                  ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)) {
                       Text(
                         text = if (isExpanded) {
                           "▾ এডিটর বন্ধ করুন"
@@ -581,25 +745,37 @@ fun HomePageSettingHub(
                         } else {
                           "✏️ ব্যানার এডিট করুন"
                         },
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isExpanded) Color.White else RoyalMaroon,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        color = if (isExpanded) Color.White else RoyalMaroon
                       )
                     }
-                  } else {
+                  }
+                } else {
+                  Surface(
+                    shape = RoundedCornerShape(9.dp),
+                    color = if (section.enabled) Color(0xFFECFDF5) else Color(0xFFF1F5F9),
+                    border = BorderStroke(1.dp, if (section.enabled) Color(0xFFA7F3D0) else Color(0xFFCBD5E1))
+                  ) {
                     Text(
                       text = if (section.enabled) "✅ হোম পেজে চালু আছে" else "⛔ বন্ধ আছে",
-                      fontSize = 10.sp,
-                      color = if (section.enabled) AccentGreen else Color.Gray,
-                      fontWeight = FontWeight.Bold
+                      fontSize = 10.5.sp,
+                      color = if (section.enabled) Color(0xFF065F46) else AdminInkMuted,
+                      fontWeight = FontWeight.Bold,
+                      modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
                     )
                   }
+                }
 
+                Surface(
+                  shape = RoundedCornerShape(10.dp),
+                  color = Color(0xFFFEF2F2),
+                  border = BorderStroke(1.dp, Color(0xFFFECACA))
+                ) {
                   IconButton(
                     onClick = { onDeleteSection(section.id) },
                     modifier = Modifier
-                      .size(32.dp)
+                      .size(36.dp)
                       .testTag("delete_section_${section.id}")
                   ) {
                     Icon(
@@ -610,11 +786,15 @@ fun HomePageSettingHub(
                     )
                   }
                 }
+              }
 
-                // Expanded Editor Panel: Block Title/Subtitle/Icon + Columns (2/3/4) & Rows (1-4) & Slider/Grid + Product Picker
-                if (isExpanded) {
-                  HorizontalDivider(color = BorderGold)
+              // Expanded Editor Panel
+              if (isExpanded) {
+                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(color = AdminCardBorderWarm)
+                Spacer(modifier = Modifier.height(10.dp))
 
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                   var editTitle by remember(section.id, section.title) { mutableStateOf(section.title) }
                   var editSubtitle by remember(section.id, section.subtitle) { mutableStateOf(section.subtitle) }
                   var editIcon by remember(section.id, section.icon) { mutableStateOf(section.icon) }
@@ -630,7 +810,8 @@ fun HomePageSettingHub(
                       label = { Text("আইকন", fontSize = 10.sp) },
                       singleLine = true,
                       shape = RoundedCornerShape(10.dp),
-                      modifier = Modifier.width(66.dp)
+                      colors = adminOutlinedTextFieldColors(),
+                      modifier = Modifier.width(68.dp)
                     )
                     OutlinedTextField(
                       value = editTitle,
@@ -638,6 +819,7 @@ fun HomePageSettingHub(
                       label = { Text("ব্লকের শিরোনাম", fontSize = 10.sp) },
                       singleLine = true,
                       shape = RoundedCornerShape(10.dp),
+                      colors = adminOutlinedTextFieldColors(),
                       modifier = Modifier.weight(1f)
                     )
                     Button(
@@ -652,20 +834,22 @@ fun HomePageSettingHub(
                           }
                         }
                       },
-                      colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
+                      colors = ButtonDefaults.buttonColors(containerColor = NavyBlue, contentColor = Color.White),
                       shape = RoundedCornerShape(10.dp),
-                      contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp)
+                      contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                      modifier = Modifier.heightIn(min = 48.dp)
                     ) {
-                      Text("সেভ", fontSize = 10.5.sp)
+                      Text("সেভ", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                     }
                   }
 
                   OutlinedTextField(
                     value = editSubtitle,
                     onValueChange = { editSubtitle = it },
-                    label = { Text("সাবটাইটেল / বিবরণ (ঐচ্ছিক)", fontSize = 10.sp) },
+                    label = { Text("সাবটাইটেল / বিবরণ (ঐচ্ছিক)", fontSize = 10.5.sp) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
+                    colors = adminOutlinedTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                   )
 
@@ -680,8 +864,8 @@ fun HomePageSettingHub(
                         val chosen = section.categoryName == cat.name
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else CreamBackground,
-                          border = BorderStroke(1.dp, BorderGold),
+                          color = if (chosen) RoyalMaroon else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
                           modifier = Modifier.clickable {
                             onUpdateSection(section.id) {
                               it.copy(categoryName = cat.name, badge = cat.name)
@@ -690,10 +874,10 @@ fun HomePageSettingHub(
                         ) {
                           Text(
                             text = "${cat.icon} ${cat.name}",
-                            fontSize = 10.sp,
-                            color = if (chosen) Color.White else DarkEspresso,
+                            fontSize = 10.5.sp,
+                            color = if (chosen) Color.White else AdminInkPrimary,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                           )
                         }
                       }
@@ -702,13 +886,13 @@ fun HomePageSettingHub(
 
                   if (isLayoutConfigurable) {
                     Surface(
-                      shape = RoundedCornerShape(12.dp),
-                      color = CreamBackground,
-                      border = BorderStroke(1.dp, BorderGold),
+                      shape = RoundedCornerShape(14.dp),
+                      color = Color(0xFFF8FAFC),
+                      border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                       modifier = Modifier.fillMaxWidth()
                     ) {
                       Column(
-                        modifier = Modifier.padding(10.dp),
+                        modifier = Modifier.padding(11.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                       ) {
                         Row(
@@ -718,21 +902,21 @@ fun HomePageSettingHub(
                         ) {
                           Text(
                             text = "📐 ডিসপ্লে কলাম ও লাইন সেটিং",
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Black,
-                            color = RoyalMaroon
+                            color = AdminInkPrimary
                           )
                           Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color.White,
-                            border = BorderStroke(1.dp, BorderGold)
+                            color = Color(0xFFEFF6FF),
+                            border = BorderStroke(1.dp, Color(0xFFBFDBFE))
                           ) {
                             Text(
                               text = layoutSummary,
-                              fontSize = 9.5.sp,
+                              fontSize = 10.sp,
                               fontWeight = FontWeight.Bold,
-                              color = DarkEspresso,
-                              modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                              color = NavyBlue,
+                              modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                             )
                           }
                         }
@@ -747,16 +931,16 @@ fun HomePageSettingHub(
                         ) {
                           Text(
                             text = "প্রতি লাইন:",
-                            fontSize = 10.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = DarkEspresso
+                            color = AdminInkSecondary
                           )
                           listOf(2 to "২টি", 3 to "৩টি", 4 to "৪টি").forEach { (cols, label) ->
                             val chosen = gridCfg.cols == cols
                             Surface(
                               shape = RoundedCornerShape(8.dp),
                               color = if (chosen) RoyalMaroon else Color.White,
-                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
+                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
                               modifier = Modifier
                                 .clickable {
                                   onUpdateSection(section.id) { sec ->
@@ -768,10 +952,10 @@ fun HomePageSettingHub(
                             ) {
                               Text(
                                 text = label,
-                                fontSize = 10.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (chosen) Color.White else DarkEspresso,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                color = if (chosen) Color.White else AdminInkPrimary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                               )
                             }
                           }
@@ -782,8 +966,8 @@ fun HomePageSettingHub(
                             val chosen = (if (gridCfg.isSlider) "slider" else "grid") == styleKey
                             Surface(
                               shape = RoundedCornerShape(8.dp),
-                              color = if (chosen) DarkEspresso else Color.White,
-                              border = BorderStroke(1.dp, BorderGold),
+                              color = if (chosen) NavyBlue else Color.White,
+                              border = BorderStroke(1.dp, if (chosen) NavyBlue else Color(0xFFCBD5E1)),
                               modifier = Modifier
                                 .clickable {
                                   onUpdateSection(section.id) { sec ->
@@ -804,10 +988,10 @@ fun HomePageSettingHub(
                             ) {
                               Text(
                                 text = styleLabel,
-                                fontSize = 10.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (chosen) Color.White else DarkEspresso,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                color = if (chosen) Color.White else AdminInkPrimary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                               )
                             }
                           }
@@ -823,16 +1007,16 @@ fun HomePageSettingHub(
                         ) {
                           Text(
                             text = "লাইন সংখ্যা:",
-                            fontSize = 10.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = DarkEspresso
+                            color = AdminInkSecondary
                           )
                           (1..4).forEach { r ->
                             val chosen = gridCfg.rows == r
                             Surface(
                               shape = RoundedCornerShape(8.dp),
                               color = if (chosen) RoyalMaroon else Color.White,
-                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else BorderGold),
+                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
                               modifier = Modifier
                                 .clickable {
                                   onUpdateSection(section.id) { sec ->
@@ -849,10 +1033,10 @@ fun HomePageSettingHub(
                             ) {
                               Text(
                                 text = "${r} লাইন",
-                                fontSize = 10.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (chosen) Color.White else DarkEspresso,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                color = if (chosen) Color.White else AdminInkPrimary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                               )
                             }
                           }
@@ -862,7 +1046,6 @@ fun HomePageSettingHub(
                   }
 
                   if (isProductBlock) {
-                    // Inline Product Search Box directly above Product Selection for this Block
                     OutlinedTextField(
                       value = blockSearch,
                       onValueChange = { q ->
@@ -877,10 +1060,14 @@ fun HomePageSettingHub(
                         )
                       },
                       placeholder = {
-                        Text("🔍 ${section.title}-এর প্রোডাক্ট খুঁজুন (নাম, SKU, ক্যাটাগরি)...", fontSize = 11.sp)
+                        Text(
+                          "🔍 ${section.title}-এর প্রোডাক্ট খুঁজুন (নাম, SKU, ক্যাটাগরি)...",
+                          fontSize = 11.sp
+                        )
                       },
                       singleLine = true,
                       shape = RoundedCornerShape(12.dp),
+                      colors = adminOutlinedTextFieldColors(),
                       modifier = Modifier
                         .fillMaxWidth()
                         .testTag("block_search_${section.id}")
@@ -903,12 +1090,13 @@ fun HomePageSettingHub(
                           else -> section.productIds.contains(prod.id)
                         }
                         Surface(
-                          shape = RoundedCornerShape(10.dp),
-                          color = if (isSelected) Color(0xFFFFF8E1) else CreamBackground,
+                          shape = RoundedCornerShape(12.dp),
+                          color = if (isSelected) Color(0xFFFFFBEB) else Color.White,
                           border = BorderStroke(
                             1.dp,
-                            if (isSelected) RoyalMaroon else BorderGold.copy(alpha = 0.6f)
+                            if (isSelected) Color(0xFFF59E0B) else Color(0xFFE2E8F0)
                           ),
+                          shadowElevation = 1.dp,
                           modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onToggleProductInSection(section.id, prod.id) }
@@ -917,7 +1105,7 @@ fun HomePageSettingHub(
                           Row(
                             modifier = Modifier
                               .fillMaxWidth()
-                              .padding(horizontal = 8.dp, vertical = 6.dp),
+                              .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                           ) {
@@ -930,37 +1118,38 @@ fun HomePageSettingHub(
                                 model = prod.imageUrl,
                                 contentDescription = prod.name,
                                 modifier = Modifier
-                                  .size(34.dp)
+                                  .size(36.dp)
                                   .clip(RoundedCornerShape(8.dp))
                               )
                               Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                   text = prod.name,
-                                  fontSize = 11.sp,
+                                  fontSize = 11.5.sp,
                                   fontWeight = FontWeight.Bold,
-                                  color = DarkEspresso,
+                                  color = AdminInkPrimary,
                                   maxLines = 1,
                                   overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                   text = "${prod.category} • SKU: ${prod.sku} • ৳${prod.price}",
-                                  fontSize = 9.5.sp,
-                                  color = Color.Gray,
+                                  fontSize = 10.sp,
+                                  fontWeight = FontWeight.Medium,
+                                  color = AdminInkMuted,
                                   maxLines = 1
                                 )
                               }
                             }
 
                             Surface(
-                              shape = RoundedCornerShape(8.dp),
+                              shape = RoundedCornerShape(9.dp),
                               color = if (isSelected) AccentGreen else RoyalMaroon
                             ) {
                               Text(
                                 text = if (isSelected) "✓ যুক্ত" else "+ যোগ",
-                                fontSize = 10.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                               )
                             }
                           }
@@ -977,64 +1166,78 @@ fun HomePageSettingHub(
 
       "BANNERS" -> {
         Column(modifier = Modifier.fillMaxSize()) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+          GlossyAdminCard(
+            cornerRadius = 16.dp,
+            contentPadding = 12.dp
           ) {
-            Text(
-              text = "হোম পেজ ব্যানার স্লাইডার (${banners.size})",
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
-            )
-            Button(
-              onClick = onAddBannerClick,
-              colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-              shape = RoundedCornerShape(14.dp),
-              contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
             ) {
-              Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-              Spacer(modifier = Modifier.width(4.dp))
-              Text("নতুন ব্যানার", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = "হোম পেজ ব্যানার স্লাইডার (${banners.size})",
+                  fontSize = 14.5.sp,
+                  fontWeight = FontWeight.Black,
+                  color = AdminInkPrimary
+                )
+                Text(
+                  text = "প্রোমোশনাল স্লাইডার ব্যানার চালু/বন্ধ ও যোগ করুন",
+                  fontSize = 11.sp,
+                  color = AdminInkMuted
+                )
+              }
+              Button(
+                onClick = onAddBannerClick,
+                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                modifier = Modifier.heightIn(min = 44.dp)
+              ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("নতুন ব্যানার", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+              }
             }
           }
 
           Spacer(modifier = Modifier.height(10.dp))
 
-          LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
+          ) {
             itemsIndexed(banners) { _, b ->
-              Card(
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, BorderGold),
-                modifier = Modifier.fillMaxWidth()
+              GlossyAdminCard(
+                cornerRadius = 16.dp,
+                accentBorderColor = if (b.isActive) BorderGold else Color(0xFFCBD5E1),
+                contentPadding = 11.dp
               ) {
                 Row(
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
+                  modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically
                 ) {
                   AppImage(
                     model = b.imageUrl,
                     contentDescription = b.title,
                     modifier = Modifier
-                      .size(56.dp)
-                      .clip(RoundedCornerShape(8.dp))
+                      .size(58.dp)
+                      .clip(RoundedCornerShape(10.dp))
                   )
                   Spacer(modifier = Modifier.width(10.dp))
                   Column(modifier = Modifier.weight(1f)) {
-                    Text(text = b.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso, maxLines = 1)
-                    Text(text = b.subtitle, fontSize = 10.5.sp, color = Color.Gray, maxLines = 1)
-                    Text(text = "বাটন: ${b.buttonText}", fontSize = 10.sp, color = RoyalMaroon, fontWeight = FontWeight.SemiBold)
+                    Text(text = b.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary, maxLines = 1)
+                    Text(text = b.subtitle, fontSize = 11.sp, color = AdminInkMuted, maxLines = 1)
+                    Text(text = "বাটন: ${b.buttonText}", fontSize = 10.5.sp, color = RoyalMaroon, fontWeight = FontWeight.Bold)
                   }
                   Switch(
                     checked = b.isActive,
-                    onCheckedChange = { onToggleBanner(b.id) }
+                    onCheckedChange = { onToggleBanner(b.id) },
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AccentGreen)
                   )
-                  IconButton(onClick = { onDeleteBanner(b.id) }, modifier = Modifier.size(30.dp)) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = "মুছুন", tint = AccentRed, modifier = Modifier.size(17.dp))
+                  IconButton(onClick = { onDeleteBanner(b.id) }, modifier = Modifier.size(36.dp)) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = "মুছুন", tint = AccentRed, modifier = Modifier.size(18.dp))
                   }
                 }
               }
@@ -1055,33 +1258,43 @@ fun HomePageSettingHub(
             .verticalScroll(rememberScrollState()),
           verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-          Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, BorderGold),
-            modifier = Modifier.fillMaxWidth()
+          GlossyAdminCard(
+            cornerRadius = 18.dp,
+            contentPadding = 16.dp
           ) {
-            Column(
-              modifier = Modifier.padding(14.dp),
-              verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
               Text(
-                text = "হোম পেজ হেডার ও অ্যানাউন্সমেন্ট বার",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = RoyalMaroon
+                text = "📢 হোম পেজ হেডার ও অ্যানাউন্সমেন্ট বার",
+                fontSize = 14.5.sp,
+                fontWeight = FontWeight.Black,
+                color = AdminInkPrimary
               )
 
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFF8FAFC),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                modifier = Modifier.fillMaxWidth()
               ) {
-                Text(text = "অ্যানাউন্সমেন্ট বার প্রদর্শন করুন", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DarkEspresso)
-                Switch(
-                  checked = isAnnouncementEnabled,
-                  onCheckedChange = { isAnnouncementEnabled = it }
-                )
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Text(
+                    text = "অ্যানাউন্সমেন্ট বার প্রদর্শন করুন",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AdminInkPrimary
+                  )
+                  Switch(
+                    checked = isAnnouncementEnabled,
+                    onCheckedChange = { isAnnouncementEnabled = it },
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AccentGreen)
+                  )
+                }
               }
 
               OutlinedTextField(
@@ -1090,6 +1303,7 @@ fun HomePageSettingHub(
                 label = { Text("অ্যানাউন্সমেন্ট নোটিশ টেক্সট") },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier.fillMaxWidth()
               )
 
@@ -1099,6 +1313,7 @@ fun HomePageSettingHub(
                 label = { Text("স্টোর ব্র্যান্ড নাম") },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier.fillMaxWidth()
               )
 
@@ -1108,6 +1323,7 @@ fun HomePageSettingHub(
                 label = { Text("ট্যাগলাইন / স্লোগান") },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier.fillMaxWidth()
               )
 
@@ -1122,13 +1338,13 @@ fun HomePageSettingHub(
                     )
                   )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                   .fillMaxWidth()
-                  .height(46.dp)
+                  .height(48.dp)
               ) {
-                Text("হেডার সেটিংস সেভ করুন", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text("💾 হেডার সেটিংস সেভ করুন", fontSize = 13.sp, fontWeight = FontWeight.Bold)
               }
             }
           }

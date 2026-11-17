@@ -230,7 +230,7 @@ fun PosSyncDiagnosticCard(
           Icon(
             imageVector = Icons.Default.DeleteSweep,
             contentDescription = "ত্রুটি লগ মুছুন",
-            tint = if (syncErrorLogs.isNotEmpty()) AccentRed else Color.Gray,
+            tint = if (syncErrorLogs.isNotEmpty()) AccentRed else AdminInkMuted,
             modifier = Modifier.size(16.dp)
           )
           Spacer(modifier = Modifier.width(6.dp))
@@ -238,7 +238,7 @@ fun PosSyncDiagnosticCard(
             text = "লগ মুছুন (${syncErrorLogs.size})",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = if (syncErrorLogs.isNotEmpty()) AccentRed else Color.Gray
+            color = if (syncErrorLogs.isNotEmpty()) AccentRed else AdminInkMuted
           )
         }
       }
@@ -367,7 +367,7 @@ fun PosSyncDiagnosticCard(
                   Text(
                     text = fullTimestampFormatter.format(Date(log.timestamp)),
                     fontSize = 9.sp,
-                    color = AntiqueGoldDark
+                    color = AdminInkMuted
                   )
                 }
 
@@ -375,7 +375,7 @@ fun PosSyncDiagnosticCard(
                   text = log.message,
                   fontSize = 11.sp,
                   fontWeight = FontWeight.SemiBold,
-                  color = DarkEspresso
+                  color = AdminInkPrimary
                 )
 
                 if (log.details.isNotBlank()) {
@@ -383,7 +383,7 @@ fun PosSyncDiagnosticCard(
                     text = log.details,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace,
-                    color = AntiqueGoldDark,
+                    color = AdminInkSecondary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                   )
@@ -440,8 +440,8 @@ private fun DiagnosticTimestampTile(
       )
       Text(
         text = subtitle,
-        fontSize = 9.sp,
-        color = AntiqueGoldDark,
+        fontSize = 9.5.sp,
+        color = AdminInkMuted,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )

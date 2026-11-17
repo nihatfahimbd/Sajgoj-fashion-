@@ -101,13 +101,11 @@ fun InventorySyncPanel(
   ) {
     // 1. Live Bidirectional Sync Status Header Card
     item {
-      Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+      GlossyAdminCard(
+        cornerRadius = 20.dp,
+        contentPadding = 14.dp
       ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column {
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -142,7 +140,8 @@ fun InventorySyncPanel(
                 Text(
                   text = "স্ট্যাটাস: ${if (syncHealth.status == "CONNECTED") "ফায়ারস্টোর ও POS সক্রিয়" else "লোকাল ব্রিজ সক্রিয়"} • ${timeFormatter.format(Date(syncHealth.lastSyncTimestamp))}",
                   fontSize = 11.sp,
-                  color = DarkEspresso
+                  fontWeight = FontWeight.Medium,
+                  color = AdminInkSecondary
                 )
               }
             }
@@ -204,12 +203,11 @@ fun InventorySyncPanel(
 
     // 2. Quick POS Counter Sale (Instant Bidirectional Test & Billing)
     item {
-      Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold)
+      GlossyAdminCard(
+        cornerRadius = 20.dp,
+        contentPadding = 14.dp
       ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
           Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(imageVector = Icons.Default.PointOfSale, contentDescription = null, tint = RoyalMaroon, modifier = Modifier.size(18.dp))
             Text(
@@ -232,10 +230,7 @@ fun InventorySyncPanel(
                 label = { Text("POS পণ্য সিলেক্ট করুন", fontSize = 11.sp) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productDropdownExpanded) },
                 shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                  focusedBorderColor = RoyalMaroon,
-                  unfocusedBorderColor = BorderGold
-                ),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier
                   .menuAnchor()
                   .fillMaxWidth()
@@ -275,6 +270,7 @@ fun InventorySyncPanel(
                 placeholder = { Text("ক্রেতার নাম (ঐচ্ছিক)", fontSize = 12.sp) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
+                colors = adminOutlinedTextFieldColors(),
                 modifier = Modifier.weight(1f)
               )
 
@@ -374,12 +370,11 @@ fun InventorySyncPanel(
 
     // 3. Storefront vs POS Stock Parity Matrix
     item {
-      Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold)
+      GlossyAdminCard(
+        cornerRadius = 20.dp,
+        contentPadding = 14.dp
       ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column {
           Text(
             text = "স্টোরফ্রন্ট বনাম POS লাইভ স্টক তুলনা",
             fontSize = 13.sp,
@@ -404,14 +399,14 @@ fun InventorySyncPanel(
                   text = product.name,
                   fontSize = 12.sp,
                   fontWeight = FontWeight.SemiBold,
-                  color = DarkEspresso,
+                  color = AdminInkPrimary,
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis
                 )
                 Text(
                   text = "SKU: ${product.sku.ifBlank { product.id }}",
                   fontSize = 10.sp,
-                  color = AntiqueGoldDark
+                  color = AdminInkMuted
                 )
               }
               Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -482,15 +477,12 @@ fun InventorySyncPanel(
       }
     } else {
       items(syncEvents.take(25), key = { it.id }) { ev ->
-        Card(
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.6f))
+        GlossyAdminCard(
+          cornerRadius = 14.dp,
+          contentPadding = 10.dp
         ) {
           Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(10.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
@@ -509,7 +501,7 @@ fun InventorySyncPanel(
                   text = ev.productName,
                   fontSize = 12.sp,
                   fontWeight = FontWeight.Bold,
-                  color = DarkEspresso,
+                  color = AdminInkPrimary,
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis
                 )
@@ -518,7 +510,7 @@ fun InventorySyncPanel(
               Text(
                 text = "${ev.reason} • ${timeFormatter.format(Date(ev.timestamp))}",
                 fontSize = 10.sp,
-                color = AntiqueGoldDark
+                color = AdminInkMuted
               )
             }
 
@@ -559,7 +551,7 @@ private fun SyncMetricChip(
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
       Text(text = value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = accent)
-      Text(text = label, fontSize = 10.sp, color = DarkEspresso)
+      Text(text = label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = AdminInkSecondary)
     }
   }
 }

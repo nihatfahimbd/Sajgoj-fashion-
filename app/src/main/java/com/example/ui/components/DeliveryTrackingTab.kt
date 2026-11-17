@@ -135,23 +135,13 @@ fun AdminDeliveryTrackingTab(
   ) {
     // 1. Hero Summary Chart Card
     item {
-      Card(
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("delivery_summary_chart_card"),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderGold)
+      GlossyAdminCard(
+        modifier = Modifier.testTag("delivery_summary_chart_card"),
+        cornerRadius = 18.dp,
+        contentPadding = 16.dp
       ) {
         Column(
-          modifier = Modifier
-            .fillMaxWidth()
-            .background(
-              Brush.verticalGradient(
-                colors = listOf(Color.White, CreamSurface.copy(alpha = 0.7f))
-              )
-            )
-            .padding(16.dp),
+          modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
           Row(
@@ -163,13 +153,14 @@ fun AdminDeliveryTrackingTab(
               Text(
                 text = "ডেলিভারি ট্র্যাকিং ওভারভিউ",
                 fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = RoyalMaroon
+                fontWeight = FontWeight.Black,
+                color = AdminInkPrimary
               )
               Text(
                 text = "Pending, Shipped ও Delivered অর্ডারের ডিস্ট্রিবিউশন",
-                fontSize = 11.sp,
-                color = AntiqueGoldDark
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = AdminInkMuted
               )
             }
             Surface(
@@ -199,19 +190,19 @@ fun AdminDeliveryTrackingTab(
               Icon(
                 imageVector = Icons.Default.Inventory2,
                 contentDescription = "কোনো ডেলিভারি ডেটা নেই",
-                tint = AntiqueGoldDark,
+                tint = AdminInkMuted,
                 modifier = Modifier.size(34.dp)
               )
               Text(
                 text = "এখনও কোনো ট্র্যাকযোগ্য ডেলিভারি নেই",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkEspresso
+                color = AdminInkPrimary
               )
               Text(
                 text = "নতুন অর্ডার এলে Pending, Shipped এবং Delivered চার্ট এখানে দেখা যাবে।",
                 fontSize = 11.sp,
-                color = Color.Gray
+                color = AdminInkMuted
               )
             }
           } else {
@@ -276,13 +267,13 @@ fun AdminDeliveryTrackingTab(
                     text = "$totalTracked",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = DarkEspresso
+                    color = AdminInkPrimary
                   )
                   Text(
                     text = "অর্ডার",
                     fontSize = 10.sp,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Medium
+                    color = AdminInkMuted,
+                    fontWeight = FontWeight.SemiBold
                   )
                 }
               }
@@ -322,9 +313,9 @@ fun AdminDeliveryTrackingTab(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
               Text(
                 text = "অনুপাত বার (Pending / Shipped / Delivered)",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = AntiqueGoldDark
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = AdminInkSecondary
               )
               Canvas(
                 modifier = Modifier
@@ -474,16 +465,12 @@ fun AdminDeliveryTrackingTab(
           else -> Triple(PendingAmberBg, PendingAmberDark, "Pending")
         }
 
-        Card(
-          modifier = Modifier
-            .fillMaxWidth()
-            .testTag("delivery_order_card_${order.id}"),
-          shape = RoundedCornerShape(16.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold)
+        GlossyAdminCard(
+          modifier = Modifier.testTag("delivery_order_card_${order.id}"),
+          cornerRadius = 16.dp,
+          contentPadding = 14.dp
         ) {
           Column(
-            modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
           ) {
             Row(
@@ -501,7 +488,7 @@ fun AdminDeliveryTrackingTab(
                 Text(
                   text = order.date,
                   fontSize = 11.sp,
-                  color = Color.Gray
+                  color = AdminInkMuted
                 )
               }
 
@@ -523,14 +510,14 @@ fun AdminDeliveryTrackingTab(
               text = "${order.customerName} • ${order.phone}",
               fontSize = 12.sp,
               fontWeight = FontWeight.SemiBold,
-              color = DarkEspresso,
+              color = AdminInkPrimary,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
             )
             Text(
               text = "ঠিকানা: ${order.address}${if (order.district.isNotBlank()) ", ${order.district}" else ""}",
               fontSize = 11.sp,
-              color = Color.Gray,
+              color = AdminInkMuted,
               maxLines = 2,
               overflow = TextOverflow.Ellipsis
             )
@@ -724,14 +711,13 @@ private fun DeliveryKpiCard(
   icon: androidx.compose.ui.graphics.vector.ImageVector,
   modifier: Modifier = Modifier
 ) {
-  Card(
+  GlossyAdminCard(
     modifier = modifier,
-    shape = RoundedCornerShape(14.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.dp, BorderGold)
+    cornerRadius = 14.dp,
+    accentBorderColor = accent.copy(alpha = 0.35f),
+    contentPadding = 10.dp
   ) {
     Column(
-      modifier = Modifier.padding(10.dp),
       verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
       Surface(
@@ -761,13 +747,13 @@ private fun DeliveryKpiCard(
         text = "$count টি",
         fontSize = 17.sp,
         fontWeight = FontWeight.ExtraBold,
-        color = DarkEspresso
+        color = AdminInkPrimary
       )
       Text(
         text = "৳$amount",
         fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = AntiqueGoldDark,
+        fontWeight = FontWeight.Bold,
+        color = AdminInkSecondary,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )
