@@ -210,4 +210,39 @@ class InventorySyncServiceTest {
     assertEquals(10, service.posInventory.value["p1"]?.stock)
     assertEquals(0, service.syncHealth.value.driftCount)
   }
+
+  @Test
+  fun syncDiagnostic_capturesErrors_updatesTimestamps_andClearsLogs() {
+    var now = 10_000L
+    val service = InventorySyncService(firestore = null, clock = { now })
+    val products = sampleProducts()
+
+    now = 12_500L
+    service.markLocalSync(timestamp = now, products = products)
+    assertEquals(12_500L, service.syncHealth.value.lastLocalSyncTimestamp)
+
+    now = 15_000L
+    service.markFirestoreSync(timestamp = now, products = products)
+    assertEquals(15_000L, service.syncHealth.value.lastFirestoreSyncTimestamp)
+    assertEquals(15_000L, service.syncHealth.value.lastSyncTimestamp)
+
+    now = 16_000L
+    service.recordSyncError(
+      source = "FIRESTORE_WRITE",
+      severity = "ERROR",
+      code = "PERMISSION_DENIED",
+      message = "Missing or insufficient permissions",
+      details = "collection=pos_inventory doc=p1",
+      products = products
+    )
+
+    assertEquals(1, service.syncErrorLogs.value.size)
+    assertEquals(1, service.syncHealth.value.errorCount)
+    assertEquals("PERMISSION_DENIED", service.syncErrorLogs.value.first().code)
+    assertEquals("FIRESTORE_WRITE", service.syncErrorLogs.value.first().source)
+
+    service.clearSyncErrorLogs(products)
+    assertEquals(0, service.syncErrorLogs.value.size)
+    assertEquals(0, service.syncHealth.value.errorCount)
+  }
 }

@@ -88,6 +88,7 @@ import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
+import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.ui.AdminTab
 import com.example.ui.components.AdminDeliveryTrackingTab
@@ -154,8 +155,10 @@ fun AdminDashboardScreen(
   posInventory: Map<String, PosInventoryItem> = emptyMap(),
   syncEvents: List<InventorySyncEvent> = emptyList(),
   syncHealth: SyncHealthState = SyncHealthState(),
+  syncErrorLogs: List<SyncErrorLog> = emptyList(),
   onRecordPosSale: (Product, Int, String, String) -> Unit = { _, _, _, _ -> },
   onReconcileInventory: () -> Unit = {},
+  onClearSyncErrors: () -> Unit = {},
   homeSections: List<HomeSectionConfig> = emptyList(),
   onToggleHomeSection: (String) -> Unit = {},
   onMoveHomeSection: (String, Int) -> Unit = { _, _ -> },
@@ -376,8 +379,10 @@ fun AdminDashboardScreen(
             posInventory = posInventory,
             syncEvents = syncEvents,
             syncHealth = syncHealth,
+            syncErrorLogs = syncErrorLogs,
             onRecordPosSale = onRecordPosSale,
             onReconcileInventory = onReconcileInventory,
+            onClearSyncErrors = onClearSyncErrors,
             onAddClick = {
               editingProduct = null
               showProductDialog = true
@@ -835,8 +840,10 @@ fun AdminProductsHub(
   posInventory: Map<String, PosInventoryItem> = emptyMap(),
   syncEvents: List<InventorySyncEvent> = emptyList(),
   syncHealth: SyncHealthState = SyncHealthState(),
+  syncErrorLogs: List<SyncErrorLog> = emptyList(),
   onRecordPosSale: (Product, Int, String, String) -> Unit = { _, _, _, _ -> },
   onReconcileInventory: () -> Unit = {},
+  onClearSyncErrors: () -> Unit = {},
   onAddClick: () -> Unit,
   onEditClick: (Product) -> Unit,
   onDeleteClick: (String) -> Unit,
@@ -896,7 +903,7 @@ fun AdminProductsHub(
     ) {
       val subTabs = listOf(
         Triple("LIST", "পণ্য তালিকা", "📋"),
-        Triple("POS_SYNC", "POS সিঙ্ক", "🔄"),
+        Triple("POS_SYNC", if (syncErrorLogs.isNotEmpty()) "POS সিঙ্ক (${syncErrorLogs.size})" else "POS সিঙ্ক", "🔄"),
         Triple("STOCK", "স্টক ও ভ্যালুয়েশন", "💰"),
         Triple("SALES", "সেলস ও রিটার্ন", "📈"),
         Triple("CATEGORIES", "ক্যাটাগরি", "🏷️")
@@ -1309,8 +1316,10 @@ fun AdminProductsHub(
           posInventory = posInventory,
           syncEvents = syncEvents,
           syncHealth = syncHealth,
+          syncErrorLogs = syncErrorLogs,
           onRecordPosSale = onRecordPosSale,
-          onReconcileNow = onReconcileInventory
+          onReconcileNow = onReconcileInventory,
+          onClearSyncErrors = onClearSyncErrors
         )
       }
 

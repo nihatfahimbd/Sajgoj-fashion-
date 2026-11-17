@@ -3,8 +3,10 @@ package com.example.data.sync
 import android.content.SharedPreferences
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
+import com.example.data.model.SyncErrorLog
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * Persists both Website (`sajgoj_store_products`) and POS (`sajgoj_products`) inventory lists
@@ -18,10 +20,17 @@ class LocalInventoryStorageSync(
   companion object {
     const val KEY_WEBSITE_PRODUCTS = "sajgoj_store_products"
     const val KEY_POS_PRODUCTS = "sajgoj_products"
+    const val KEY_POS_LAST_SYNC_TS = "sajgoj_pos_last_sync_ts"
+    const val KEY_CLOUD_LAST_SYNC_TS = "sajgoj_cloud_last_sync_ts"
+    const val KEY_POS_SYNC_ERRORS = "sajgoj_pos_sync_errors"
+    private const val MAX_STORED_ERRORS = 50
   }
 
   @Volatile
   private var isApplyingLocalSync = false
+
+  @Volatile
+  var errorReporter: ((source: String, code: String, message: String, details: String) -> Unit)? = null
 
   // Keep a strong reference so Android SharedPreferences' WeakHashMap does not GC the listener
   private var activeListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
@@ -163,6 +172,7 @@ class LocalInventoryStorageSync(
 
     isApplyingLocalSync = true
     try {
+      val now = clock()
       val editor = prefs.edit()
       if (keyToSkipNotify != KEY_WEBSITE_PRODUCTS && prefs.getString(KEY_WEBSITE_PRODUCTS, null) != webJson) {
         editor.putString(KEY_WEBSITE_PRODUCTS, webJson)
@@ -170,7 +180,15 @@ class LocalInventoryStorageSync(
       if (keyToSkipNotify != KEY_POS_PRODUCTS && prefs.getString(KEY_POS_PRODUCTS, null) != posJson) {
         editor.putString(KEY_POS_PRODUCTS, posJson)
       }
+      editor.putLong(KEY_POS_LAST_SYNC_TS, now)
       editor.apply()
+    } catch (e: Exception) {
+      reportStorageError(
+        source = "LOCAL_POS_STORAGE",
+        code = e.javaClass.simpleName,
+        message = "লোকাল POS স্টোরেজে সিঙ্ক ডেটা সংরক্ষণ ব্যর্থ হয়েছে",
+        details = e.localizedMessage ?: e.toString()
+      )
     } finally {
       isApplyingLocalSync = false
     }
@@ -211,7 +229,13 @@ class LocalInventoryStorageSync(
           )
         }
       }
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+      reportStorageError(
+        source = "LOCAL_STORE_STORAGE",
+        code = e.javaClass.simpleName,
+        message = "লোকাল স্টোরফ্রন্ট প্রোডাক্ট JSON পার্স করতে ত্রুটি হয়েছে",
+        details = "key=$KEY_WEBSITE_PRODUCTS • ${e.localizedMessage ?: e.toString()}"
+      )
       emptyList()
     }
   }
@@ -239,8 +263,106 @@ class LocalInventoryStorageSync(
           )
         }
       }
+    } catch (e: Exception) {
+      reportStorageError(
+        source = "LOCAL_POS_STORAGE",
+        code = e.javaClass.simpleName,
+        message = "লোকাল POS স্টোরেজ ডেটা পার্স করতে ত্রুটি হয়েছে",
+        details = "key=$KEY_POS_PRODUCTS • ${e.localizedMessage ?: e.toString()}"
+      )
+      emptyList()
+    }
+  }
+
+  fun getLastLocalSyncTimestamp(): Long = prefs.getLong(KEY_POS_LAST_SYNC_TS, 0L)
+
+  fun saveLastLocalSyncTimestamp(timestamp: Long) {
+    prefs.edit().putLong(KEY_POS_LAST_SYNC_TS, timestamp).apply()
+  }
+
+  fun getLastCloudSyncTimestamp(): Long = prefs.getLong(KEY_CLOUD_LAST_SYNC_TS, 0L)
+
+  fun saveLastCloudSyncTimestamp(timestamp: Long) {
+    prefs.edit().putLong(KEY_CLOUD_LAST_SYNC_TS, timestamp).apply()
+  }
+
+  fun loadSyncErrorLogs(): List<SyncErrorLog> {
+    val raw = prefs.getString(KEY_POS_SYNC_ERRORS, null) ?: return emptyList()
+    return try {
+      val arr = JSONArray(raw)
+      buildList {
+        for (i in 0 until arr.length()) {
+          val o = arr.optJSONObject(i) ?: continue
+          add(
+            SyncErrorLog(
+              id = o.optString("id"),
+              timestamp = o.optLong("timestamp", 0L),
+              source = o.optString("source", "FIRESTORE_SYNC"),
+              severity = o.optString("severity", "ERROR"),
+              code = o.optString("code", ""),
+              message = o.optString("message", ""),
+              details = o.optString("details", "")
+            )
+          )
+        }
+      }
     } catch (_: Exception) {
       emptyList()
+    }
+  }
+
+  fun saveSyncErrorLogs(logs: List<SyncErrorLog>) {
+    val trimmed = logs.take(MAX_STORED_ERRORS)
+    val arr = JSONArray()
+    trimmed.forEach { log ->
+      arr.put(
+        JSONObject().apply {
+          put("id", log.id)
+          put("timestamp", log.timestamp)
+          put("source", log.source)
+          put("severity", log.severity)
+          put("code", log.code)
+          put("message", log.message)
+          put("details", log.details)
+        }
+      )
+    }
+    prefs.edit().putString(KEY_POS_SYNC_ERRORS, arr.toString()).apply()
+  }
+
+  fun appendSyncErrorLog(log: SyncErrorLog): List<SyncErrorLog> {
+    val existing = loadSyncErrorLogs()
+    val updated = (listOf(log) + existing).take(MAX_STORED_ERRORS)
+    saveSyncErrorLogs(updated)
+    return updated
+  }
+
+  fun clearSyncErrorLogs() {
+    prefs.edit().remove(KEY_POS_SYNC_ERRORS).apply()
+  }
+
+  private fun reportStorageError(
+    source: String,
+    code: String,
+    message: String,
+    details: String
+  ) {
+    val reporter = errorReporter
+    if (reporter != null) {
+      reporter.invoke(source, code, message, details)
+    } else {
+      val now = clock()
+      appendSyncErrorLog(
+        SyncErrorLog(
+          id = "ERR-$now-${UUID.randomUUID().toString().take(4)}",
+          timestamp = now,
+          source = source,
+          severity = "ERROR",
+          code = code,
+          message = message,
+          details = details
+        )
+      )
     }
   }
 

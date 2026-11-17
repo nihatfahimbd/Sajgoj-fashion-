@@ -2248,6 +2248,10 @@
       const [inventorySyncEvents, setInventorySyncEvents] = useState(() => getStored("inventory_sync_events", []));
       const [posInventoryCloudMap, setPosInventoryCloudMap] = useState({});
       const [isSyncLogDrawerOpen, setIsSyncLogDrawerOpen] = useState(false);
+      const [posSyncErrorLogs, setPosSyncErrorLogs] = useState(() => getStored("pos_sync_error_logs", []));
+      const [lastPosLocalSyncTs, setLastPosLocalSyncTs] = useState(() => Number(getStored("pos_last_local_sync_ts", 0)) || 0);
+      const [lastFirestorePosSyncTs, setLastFirestorePosSyncTs] = useState(() => Number(getStored("pos_last_firestore_sync_ts", 0)) || 0);
+      const [isPosDiagnosticOpen, setIsPosDiagnosticOpen] = useState(true);
 
       const syncOriginIdRef = useRef("WEB-" + Math.random().toString(36).slice(2, 8));
       const suppressPosPushRef = useRef(false);
@@ -2259,6 +2263,62 @@
       useEffect(() => {
         try { setStored("inventory_sync_events", (inventorySyncEvents || []).slice(0, 60)); } catch (e) {}
       }, [inventorySyncEvents]);
+      useEffect(() => {
+        try { setStored("pos_sync_error_logs", (posSyncErrorLogs || []).slice(0, 50)); } catch (e) {}
+      }, [posSyncErrorLogs]);
+
+      const markPosLocalSync = (ts = Date.now()) => {
+        setLastPosLocalSyncTs(prev => {
+          const next = Math.max(prev || 0, ts);
+          try { setStored("pos_last_local_sync_ts", next); } catch (e) {}
+          return next;
+        });
+      };
+
+      const markFirestorePosSync = (ts = Date.now()) => {
+        setLastFirestorePosSyncTs(prev => {
+          const next = Math.max(prev || 0, ts);
+          try { setStored("pos_last_firestore_sync_ts", next); } catch (e) {}
+          return next;
+        });
+        setLastCloudSyncTime(new Date(ts).toLocaleTimeString("bn-BD"));
+      };
+
+      const recordPosSyncError = ({ source = "FIRESTORE_SYNC", severity = "ERROR", code = "", message = "", details = "" }) => {
+        const entry = {
+          id: `ERR-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          timestamp: Date.now(),
+          source,
+          severity,
+          code: String(code || ""),
+          message: String(message || "অজানা সিঙ্ক ত্রুটি"),
+          details: String(details || "")
+        };
+        setPosSyncErrorLogs(prev => [entry, ...(Array.isArray(prev) ? prev : [])].slice(0, 50));
+      };
+
+      const clearPosSyncErrorLogs = () => {
+        setPosSyncErrorLogs([]);
+        try { setStored("pos_sync_error_logs", []); } catch (e) {}
+        notify("🗑️ POS সিঙ্ক ত্রুটির লগ পরিষ্কার করা হয়েছে।");
+      };
+
+      const formatDiagnosticTimestamp = (ts) => {
+        if (!ts || Number(ts) <= 0) return "এখনো সিঙ্ক হয়নি";
+        try {
+          return new Date(Number(ts)).toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+          });
+        } catch (e) {
+          return new Date(Number(ts)).toISOString();
+        }
+      };
 
       // Realtime Order Alerts & Badge Indicators (Firebase Listener)
       const [newOrderAlert, setNewOrderAlert] = useState(null);
@@ -2279,9 +2339,22 @@
             timeoutPromise
           ]);
           setCloudSyncStatus("connected");
-          setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+          if (collectionName === "products" || collectionName === "pos_inventory" || collectionName === "inventory_sync_events") {
+            markFirestorePosSync(Date.now());
+          } else {
+            setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+          }
         } catch(e) {
           console.warn(`Cloud sync notice [${collectionName}/${docId}]:`, e.message || e);
+          if (collectionName === "products" || collectionName === "pos_inventory" || collectionName === "inventory_sync_events") {
+            recordPosSyncError({
+              source: "FIRESTORE_WRITE",
+              severity: "ERROR",
+              code: e.code || "WRITE_FAILED",
+              message: e.message || `Firestore ${collectionName} ডকুমেন্ট আপডেট ব্যর্থ হয়েছে`,
+              details: `collection=${collectionName} doc=${docId}`
+            });
+          }
           // Keep connected indicator healthy; Firestore SDK continues retrying in background
           setCloudSyncStatus("connected");
         }
@@ -2293,9 +2366,22 @@
           setCloudSyncStatus("syncing");
           await firestoreDb.collection(collectionName).doc(docId).delete();
           setCloudSyncStatus("connected");
-          setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+          if (collectionName === "products" || collectionName === "pos_inventory") {
+            markFirestorePosSync(Date.now());
+          } else {
+            setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+          }
         } catch(e) {
           console.error(`Cloud delete error [${collectionName}/${docId}]:`, e);
+          if (collectionName === "products" || collectionName === "pos_inventory") {
+            recordPosSyncError({
+              source: "FIRESTORE_WRITE",
+              severity: "ERROR",
+              code: e.code || "DELETE_FAILED",
+              message: e.message || `Firestore ${collectionName} থেকে মুছতে ব্যর্থ হয়েছে`,
+              details: `collection=${collectionName} doc=${docId}`
+            });
+          }
           setCloudSyncStatus("offline");
         }
       };
@@ -2320,15 +2406,23 @@
             setProducts(normalized);
             setStored("products", normalized);
             setCloudSyncStatus("connected");
-            setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+            markFirestorePosSync(Date.now());
           } else {
             console.log("Seeding products to Firestore from local state...");
             const currentProds = getStored("products", initialProducts);
             currentProds.forEach(p => firestoreDb.collection("products").doc(p.id).set(p));
             setCloudSyncStatus("connected");
+            markFirestorePosSync(Date.now());
           }
         }, (err) => {
           console.warn("Firestore products sync error:", err);
+          recordPosSyncError({
+            source: "FIRESTORE_PRODUCTS_LISTENER",
+            severity: "ERROR",
+            code: err?.code || "LISTENER_ERROR",
+            message: err?.message || "Firestore products স্ন্যাপশট লিসেনার ব্যর্থ হয়েছে",
+            details: "collection=products"
+          });
           setCloudSyncStatus("offline");
         });
 
@@ -2550,6 +2644,7 @@
             }
           });
           setPosInventoryCloudMap(map);
+          markFirestorePosSync(Date.now());
 
           if (posUpdates.length > 0) {
             const currentList = productsRef.current || [];
@@ -2585,7 +2680,15 @@
                   firestoreDb.collection("products").doc(String(np.id)).set({
                     stock: np.stock,
                     stockUpdatedAt: np.stockUpdatedAt
-                  }, { merge: true }).catch(() => {});
+                  }, { merge: true }).catch((err) => {
+                    recordPosSyncError({
+                      source: "FIRESTORE_WRITE",
+                      severity: "ERROR",
+                      code: err?.code || "WRITE_FAILED",
+                      message: err?.message || "POS থেকে স্টোরফ্রন্ট প্রোডাক্ট স্টক আপডেট ব্যর্থ",
+                      details: `collection=products doc=${np.id}`
+                    });
+                  });
                 }
               });
               // Push clean updated list to POS iframe/localStorage without echoing back
@@ -2593,10 +2696,19 @@
                 suppressPosPushRef.current = false;
                 syncProductsToPos(nextList, { syncCloud: false });
               }, 60);
-              setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+              markFirestorePosSync(Date.now());
             }
           }
-        }, (err) => console.warn("POS inventory sync error:", err));
+        }, (err) => {
+          console.warn("POS inventory sync error:", err);
+          recordPosSyncError({
+            source: "FIRESTORE_POS_LISTENER",
+            severity: "ERROR",
+            code: err?.code || "LISTENER_ERROR",
+            message: err?.message || "Firestore pos_inventory স্ন্যাপশট ত্রুটি",
+            details: "collection=pos_inventory"
+          });
+        });
 
         // 12. Real-time Bidirectional Sync Audit Events Feed
         const unsubSyncEvents = firestoreDb.collection("inventory_sync_events")
@@ -2604,12 +2716,22 @@
           .limit(50)
           .onSnapshot((snapshot) => {
             if (!isMounted) return;
+            markFirestorePosSync(Date.now());
             if (!snapshot.empty) {
               const evList = [];
               snapshot.forEach(doc => evList.push(doc.data()));
               setInventorySyncEvents(evList);
             }
-          }, (err) => console.warn("Inventory sync events error:", err));
+          }, (err) => {
+            console.warn("Inventory sync events error:", err);
+            recordPosSyncError({
+              source: "FIRESTORE_EVENTS_LISTENER",
+              severity: "ERROR",
+              code: err?.code || "LISTENER_ERROR",
+              message: err?.message || "Firestore inventory_sync_events লিসেনার ত্রুটি",
+              details: "collection=inventory_sync_events"
+            });
+          });
 
         // 13. Home Page Sections Layout Subscription
         const unsubHomeSections = firestoreDb.collection("config").doc("home_sections").onSnapshot((doc) => {
@@ -8693,7 +8815,19 @@
         const { syncCloud = false, source = "STOREFRONT_SYNC", referenceId = "" } = options;
         try {
           const raw = localStorage.getItem("sajgoj_products");
-          let posProducts = raw ? JSON.parse(raw) : [];
+          let posProducts = [];
+          try {
+            posProducts = raw ? JSON.parse(raw) : [];
+          } catch (parseErr) {
+            posProducts = [];
+            recordPosSyncError({
+              source: "LOCAL_POS_STORAGE",
+              severity: "ERROR",
+              code: "JSON_PARSE_ERROR",
+              message: "লোকাল POS স্টোরেজ (sajgoj_products) পার্স করতে ব্যর্থ হয়েছে",
+              details: parseErr?.message || String(parseErr)
+            });
+          }
           if (!Array.isArray(posProducts)) posProducts = [];
           const now = Date.now();
 
@@ -8756,7 +8890,17 @@
                 lastSource: source,
                 lastOrigin: syncOriginIdRef.current,
                 lastReferenceId: referenceId || ""
-              }, { merge: true }).catch(() => {});
+              }, { merge: true }).then(() => {
+                markFirestorePosSync(Date.now());
+              }).catch((err) => {
+                recordPosSyncError({
+                  source: "FIRESTORE_WRITE",
+                  severity: "ERROR",
+                  code: err?.code || "WRITE_FAILED",
+                  message: err?.message || "Firestore pos_inventory সিঙ্ক ব্যর্থ হয়েছে",
+                  details: `collection=pos_inventory doc=${p.id} (${p.name})`
+                });
+              });
             }
           });
 
@@ -8774,6 +8918,7 @@
               window.dispatchEvent(new Event("storage"));
             }
           }
+          markPosLocalSync(now);
 
           const payload = {
             type: "SAJGOJ_PRODUCTS_SYNC",
@@ -8791,6 +8936,13 @@
           }
         } catch (err) {
           console.error("Failed to sync products to POS:", err);
+          recordPosSyncError({
+            source: "LOCAL_POS_STORAGE",
+            severity: "ERROR",
+            code: err?.name || "STORAGE_SYNC_ERROR",
+            message: err?.message || "লোকাল POS স্টোরেজে প্রোডাক্ট সিঙ্ক করতে ত্রুটি হয়েছে",
+            details: String(err)
+          });
         }
       };
 
@@ -8886,7 +9038,17 @@
               stock: nextStock,
               stockUpdatedAt: now,
               lastSyncSource: source
-            }, { merge: true }).catch(() => {});
+            }, { merge: true }).then(() => {
+              markFirestorePosSync(Date.now());
+            }).catch((err) => {
+              recordPosSyncError({
+                source: "FIRESTORE_WRITE",
+                severity: "ERROR",
+                code: err?.code || "WRITE_FAILED",
+                message: err?.message || "Firestore products স্টক আপডেট ব্যর্থ",
+                details: `collection=products doc=${p.id} (${p.name})`
+              });
+            });
 
             firestoreDb.collection("pos_inventory").doc(String(p.id)).set({
               productId: String(p.id),
@@ -8898,9 +9060,27 @@
               lastSource: source,
               lastOrigin: syncOriginIdRef.current,
               lastReferenceId: referenceId || ""
-            }, { merge: true }).catch(() => {});
+            }, { merge: true }).then(() => {
+              markFirestorePosSync(Date.now());
+            }).catch((err) => {
+              recordPosSyncError({
+                source: "FIRESTORE_WRITE",
+                severity: "ERROR",
+                code: err?.code || "WRITE_FAILED",
+                message: err?.message || "Firestore pos_inventory স্টক আপডেট ব্যর্থ",
+                details: `collection=pos_inventory doc=${p.id} (${p.name})`
+              });
+            });
 
-            firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch(() => {});
+            firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch((err) => {
+              recordPosSyncError({
+                source: "FIRESTORE_WRITE",
+                severity: "WARNING",
+                code: err?.code || "EVENT_WRITE_FAILED",
+                message: err?.message || "সিঙ্ক অডিট ইভেন্ট ক্লাউডে সেভ হয়নি",
+                details: `collection=inventory_sync_events doc=${ev.id}`
+              });
+            });
           }
 
           return updatedProduct;
@@ -8912,7 +9092,7 @@
           setProducts(nextList);
           setStored("products", nextList);
           setInventorySyncEvents(prev => [...newEvents, ...(prev || [])].slice(0, 60));
-          setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+          markPosLocalSync(now);
 
           if (syncPos) {
             syncProductsToPos(nextList, { syncCloud: false, source, referenceId });
@@ -8944,7 +9124,16 @@
           const raw = localStorage.getItem("sajgoj_products");
           if (raw) posLocal = JSON.parse(raw);
           if (!Array.isArray(posLocal)) posLocal = [];
-        } catch (e) { posLocal = []; }
+        } catch (e) {
+          posLocal = [];
+          recordPosSyncError({
+            source: "LOCAL_POS_STORAGE",
+            severity: "ERROR",
+            code: "RECONCILE_PARSE_ERROR",
+            message: "রিকনসিল করার সময় লোকাল POS স্টোরেজ পড়া যায়নি",
+            details: e?.message || String(e)
+          });
+        }
 
         let fixedCount = 0;
         const syncEvents = [];
@@ -9010,17 +9199,43 @@
             firestoreDb.collection("products").doc(String(rp.id)).set({
               stock: rp.stock,
               stockUpdatedAt: rp.stockUpdatedAt
-            }, { merge: true }).catch(() => {});
+            }, { merge: true }).then(() => {
+              markFirestorePosSync(Date.now());
+            }).catch((err) => {
+              recordPosSyncError({
+                source: "FIRESTORE_WRITE",
+                severity: "ERROR",
+                code: err?.code || "RECONCILE_WRITE_FAILED",
+                message: err?.message || "রিকনসিল করার সময় Firestore products আপডেট ব্যর্থ",
+                details: `collection=products doc=${rp.id}`
+              });
+            });
           });
           syncEvents.forEach(ev => {
-            firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch(() => {});
+            firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch((err) => {
+              recordPosSyncError({
+                source: "FIRESTORE_WRITE",
+                severity: "WARNING",
+                code: err?.code || "EVENT_WRITE_FAILED",
+                message: err?.message || "রিকনসিল ইভেন্ট সংরক্ষণ ব্যর্থ",
+                details: `collection=inventory_sync_events doc=${ev.id}`
+              });
+            });
+          });
+        } else {
+          recordPosSyncError({
+            source: "FIRESTORE_SYNC",
+            severity: "WARNING",
+            code: "FIRESTORE_OFFLINE",
+            message: "Firestore সংযুক্ত না থাকায় কেবল লোকাল POS স্টোরেজে রিকনসিল সম্পন্ন হয়েছে",
+            details: `localItems=${reconciled.length}`
           });
         }
 
         if (syncEvents.length > 0) {
           setInventorySyncEvents(prev => [...syncEvents, ...(prev || [])].slice(0, 60));
         }
-        setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+        markPosLocalSync(now);
         setTimeout(() => { suppressPosPushRef.current = false; }, 80);
 
         if (!silent) {
@@ -14724,6 +14939,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                           <button
                             type="button"
+                            onClick={() => setIsPosDiagnosticOpen(prev => !prev)}
+                            className="red-black-tab px-3.5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-sm"
+                            title="লোকাল POS ও Firestore সিঙ্ক ডায়াগনস্টিক"
+                          >
+                            <span>🩺</span>
+                            <span>ডায়াগনস্টিক {(posSyncErrorLogs || []).length > 0 ? `(${posSyncErrorLogs.length})` : ""}</span>
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => {
                               const frame = document.getElementById("sajgoj-fullpos-frame");
                               if (frame && frame.requestFullscreen) {
@@ -14770,6 +14995,101 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </span>
                         </div>
                       </div>
+
+                      {/* POS <-> Firestore Sync Diagnostic View (Last Sync Timestamp + Error Logs) */}
+                      {isPosDiagnosticOpen && (
+                        <div className="mt-4 pt-3 border-t border-black/15 space-y-3 animate-fadeIn">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-[#000000]">
+                                🩺 POS ↔ Firestore সিঙ্ক ডায়াগনস্টিকস (Timestamps & Error Logs)
+                              </h4>
+                              <p className="text-[11px] font-semibold text-[#000000]/80">
+                                লোকাল POS স্টোরেজ (localStorage) ও সেন্ট্রাল Firestore ডাটাবেজের শেষ সিঙ্ক সময় এবং ত্রুটি লগ
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => reconcileStorefrontAndPos(false)}
+                                className="red-black-tab px-3 py-1.5 rounded-xl text-[11px] font-bold"
+                              >
+                                🔄 ডায়াগনস্টিক সিঙ্ক
+                              </button>
+                              <button
+                                type="button"
+                                onClick={clearPosSyncErrorLogs}
+                                disabled={(posSyncErrorLogs || []).length === 0}
+                                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border ${
+                                  (posSyncErrorLogs || []).length > 0
+                                    ? "bg-red-600 text-white border-red-700"
+                                    : "bg-black/5 text-black/40 border-black/10 cursor-not-allowed"
+                                }`}
+                              >
+                                🗑️ লগ মুছুন ({(posSyncErrorLogs || []).length})
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div className="bg-white/95 border border-black/15 rounded-2xl p-3 text-[#000000]">
+                              <div className="text-[11px] font-bold text-[#000000]/75">💾 লোকাল POS স্টোরেজ সিঙ্ক (localStorage)</div>
+                              <div className="text-xs sm:text-sm font-black mt-1 text-[#000000]">
+                                {formatDiagnosticTimestamp(lastPosLocalSyncTs)}
+                              </div>
+                              <div className="text-[10px] font-semibold mt-0.5 text-[#000000]/70">
+                                সিঙ্কড SKU: {products.length}টি • POS মিরর: {Object.keys(posInventoryCloudMap || {}).length}টি
+                              </div>
+                            </div>
+
+                            <div className="bg-white/95 border border-black/15 rounded-2xl p-3 text-[#000000]">
+                              <div className="text-[11px] font-bold text-[#000000]/75">☁️ সেন্ট্রাল Firestore ডাটাবেজ সিঙ্ক</div>
+                              <div className="text-xs sm:text-sm font-black mt-1 text-[#000000]">
+                                {lastFirestorePosSyncTs > 0
+                                  ? formatDiagnosticTimestamp(lastFirestorePosSyncTs)
+                                  : cloudSyncStatus === "offline"
+                                    ? "অফলাইন / সংযুক্ত নয়"
+                                    : "এখনো সিঙ্ক হয়নি"}
+                              </div>
+                              <div className="text-[10px] font-semibold mt-0.5 text-[#000000]/70">
+                                স্ট্যাটাস: {cloudSyncStatus === "offline" ? "LOCAL_ONLY" : "CONNECTED"} • ত্রুটি: {(posSyncErrorLogs || []).length}টি
+                              </div>
+                            </div>
+                          </div>
+
+                          {(posSyncErrorLogs || []).length === 0 ? (
+                            <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl px-3.5 py-2.5 text-xs font-bold">
+                              ✅ লোকাল POS স্টোরেজ ও সেন্ট্রাল Firestore-এর মধ্যে কোনো সিঙ্ক ত্রুটি পাওয়া যায়নি।
+                            </div>
+                          ) : (
+                            <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                              {(posSyncErrorLogs || []).slice(0, 20).map(errLog => (
+                                <div key={errLog.id} className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-[#000000]">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black text-white ${errLog.severity === "WARNING" ? "bg-amber-600" : "bg-red-600"}`}>
+                                        {errLog.source}
+                                      </span>
+                                      {errLog.code && (
+                                        <span className="font-mono text-[10px] bg-white border border-red-200 px-1.5 py-0.5 rounded font-bold">
+                                          {errLog.code}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] font-semibold text-[#000000]/70">
+                                      {formatDiagnosticTimestamp(errLog.timestamp)}
+                                    </span>
+                                  </div>
+                                  <div className="font-bold mt-1 text-[#000000]">{errLog.message}</div>
+                                  {errLog.details && (
+                                    <div className="font-mono text-[10px] text-[#000000]/75 mt-0.5 break-all">{errLog.details}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Collapsible Bidirectional Sync Audit Feed */}
                       {isSyncLogDrawerOpen && (

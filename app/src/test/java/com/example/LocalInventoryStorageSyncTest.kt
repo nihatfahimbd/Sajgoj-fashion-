@@ -9,6 +9,7 @@ import com.example.data.sync.LocalInventoryStorageSync
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -169,5 +170,23 @@ class LocalInventoryStorageSyncTest {
     prefs.edit().putString(LocalInventoryStorageSync.KEY_POS_PRODUCTS, arr.toString()).commit()
 
     assertEquals(expectedAfterOrder, repo.products.value.first { it.id == "p1" }.stock)
+  }
+
+  @Test
+  fun corruptedLocalPosStorage_recordsDiagnosticErrorLog_andPersistsTimestamp() {
+    // Write malformed JSON into POS local storage prior to StoreRepository initialization
+    prefs.edit().putString(LocalInventoryStorageSync.KEY_POS_PRODUCTS, "{corrupted_json").commit()
+
+    val repo = StoreRepository(context)
+    assertTrue(repo.syncErrorLogs.value.isNotEmpty())
+    val firstError = repo.syncErrorLogs.value.first()
+    assertEquals("LOCAL_POS_STORAGE", firstError.source)
+    assertTrue(repo.syncHealth.value.lastLocalSyncTimestamp > 0L)
+    assertTrue(prefs.getLong(LocalInventoryStorageSync.KEY_POS_LAST_SYNC_TS, 0L) > 0L)
+
+    // Clearing error logs updates both StateFlow and SharedPreferences
+    repo.clearSyncErrorLogs()
+    assertEquals(0, repo.syncErrorLogs.value.size)
+    assertEquals(0, repo.syncHealth.value.errorCount)
   }
 }

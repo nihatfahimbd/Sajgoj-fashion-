@@ -20,6 +20,7 @@ import com.example.data.model.ProductReview
 import com.example.data.model.ReelItem
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
+import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.data.repository.StoreRepository
 import com.example.util.VisualImageSearchHelper
@@ -78,6 +79,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val posInventory: StateFlow<Map<String, PosInventoryItem>> = repository.posInventory
   val syncEvents: StateFlow<List<InventorySyncEvent>> = repository.syncEvents
   val syncHealth: StateFlow<SyncHealthState> = repository.syncHealth
+  val syncErrorLogs: StateFlow<List<SyncErrorLog>> = repository.syncErrorLogs
 
   // UI State
   private val _currentScreen = MutableStateFlow(AppScreen.STOREFRONT)
@@ -395,6 +397,11 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun reconcileInventoryNow() {
     val count = repository.reconcileInventoryNow()
     emitToast("🔄 দ্বিমুখী সিঙ্ক সম্পন্ন! ${if (count > 0) "$count টি পণ্যের স্টক সমন্বয় হয়েছে" else "সব স্টক ১০০% সিঙ্কড আছে"} ✅")
+  }
+
+  fun clearSyncErrorLogs() {
+    repository.clearSyncErrorLogs()
+    emitToast("🗑️ POS সিঙ্ক ত্রুটির লগ পরিষ্কার করা হয়েছে।")
   }
 
   fun dispatchCourier(orderId: String, provider: String) {

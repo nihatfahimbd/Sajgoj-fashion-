@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.InventorySyncEvent
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
+import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
@@ -81,6 +82,8 @@ fun InventorySyncPanel(
   syncHealth: SyncHealthState,
   onRecordPosSale: (Product, Int, String, String) -> Unit,
   onReconcileNow: () -> Unit,
+  syncErrorLogs: List<SyncErrorLog> = emptyList(),
+  onClearSyncErrors: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   var selectedProduct by remember(products) { mutableStateOf(products.firstOrNull { it.stock > 0 } ?: products.firstOrNull()) }
@@ -187,6 +190,16 @@ fun InventorySyncPanel(
           }
         }
       }
+    }
+
+    // 1B. Diagnostic View: Local POS Storage <-> Central Firestore Timestamp & Error Logs
+    item {
+      PosSyncDiagnosticCard(
+        syncHealth = syncHealth,
+        syncErrorLogs = syncErrorLogs,
+        onRunDiagnosticSync = onReconcileNow,
+        onClearErrorLogs = onClearSyncErrors
+      )
     }
 
     // 2. Quick POS Counter Sale (Instant Bidirectional Test & Billing)

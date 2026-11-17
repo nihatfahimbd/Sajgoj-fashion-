@@ -23,6 +23,7 @@ import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.example.data.model.StoreDesignConfig
+import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.data.sync.InventorySyncService
 import com.example.data.sync.LocalInventoryStorageSync
@@ -701,7 +702,7 @@ class StoreRepository(private val context: Context) {
   }
 
   val inventorySyncService: InventorySyncService by lazy {
-    InventorySyncService(firestore = firestore)
+    InventorySyncService(firestore = firestore, localStorageSync = localStorageSync)
   }
 
   val posInventory: StateFlow<Map<String, PosInventoryItem>>
@@ -713,7 +714,20 @@ class StoreRepository(private val context: Context) {
   val syncHealth: StateFlow<SyncHealthState>
     get() = inventorySyncService.syncHealth
 
+  val syncErrorLogs: StateFlow<List<SyncErrorLog>>
+    get() = inventorySyncService.syncErrorLogs
+
   init {
+    localStorageSync.errorReporter = { source, code, message, details ->
+      inventorySyncService.recordSyncError(
+        source = source,
+        severity = "ERROR",
+        code = code,
+        message = message,
+        details = details,
+        products = _products.value
+      )
+    }
     inventorySyncService.mirrorCatalogToPos(_products.value, source = "INITIAL_SEED", pushToCloud = false)
     persistLocalSyncSnapshot()
     localStorageSync.startListening(
@@ -725,6 +739,7 @@ class StoreRepository(private val context: Context) {
         } else {
           "WEBSITE_LOCAL_STORAGE"
         }
+        inventorySyncService.markLocalSync(products = updatedProducts)
         inventorySyncService.mirrorCatalogToPos(updatedProducts, source = source, pushToCloud = true)
       }
     )
@@ -736,13 +751,25 @@ class StoreRepository(private val context: Context) {
       products = _products.value,
       posMap = inventorySyncService.posInventory.value
     )
+    inventorySyncService.markLocalSync(products = _products.value)
   }
 
   private fun initFirestoreSync() {
     val db = firestore ?: return
     try {
       db.collection("products").addSnapshotListener { snapshot, error ->
-        if (error == null && snapshot != null && !snapshot.isEmpty) {
+        if (error != null) {
+          inventorySyncService.recordSyncError(
+            source = "FIRESTORE_PRODUCTS_LISTENER",
+            severity = "ERROR",
+            code = error.code.name,
+            message = error.localizedMessage ?: "Firestore products লিসেনার ব্যর্থ হয়েছে",
+            details = "collection=products",
+            products = _products.value
+          )
+          return@addSnapshotListener
+        }
+        if (snapshot != null && !snapshot.isEmpty) {
           val list = snapshot.documents.mapNotNull { doc ->
             try {
               val ratingVal = (doc.getDouble("rating") ?: doc.getLong("rating")?.toDouble() ?: 4.8).toFloat()
@@ -787,11 +814,19 @@ class StoreRepository(private val context: Context) {
                 offerPrice = offerPriceVal
               )
             } catch (e: Exception) {
+              inventorySyncService.recordSyncError(
+                source = "FIRESTORE_PRODUCTS_PARSE",
+                severity = "WARNING",
+                code = e.javaClass.simpleName,
+                message = "Firestore প্রোডাক্ট ডকুমেন্ট পার্স করতে ব্যর্থ",
+                details = "doc=${doc.id} • ${e.localizedMessage ?: e.toString()}"
+              )
               null
             }
           }
           if (list.isNotEmpty()) {
             _products.value = list
+            inventorySyncService.markFirestoreSync(products = list)
             inventorySyncService.mirrorCatalogToPos(list, source = "STOREFRONT_CLOUD", pushToCloud = true)
             persistLocalSyncSnapshot()
           }
@@ -953,7 +988,14 @@ class StoreRepository(private val context: Context) {
         }
       )
     } catch (e: Exception) {
-      // Fallback gracefully
+      inventorySyncService.recordSyncError(
+        source = "FIRESTORE_INIT",
+        severity = "ERROR",
+        code = e.javaClass.simpleName,
+        message = e.localizedMessage ?: "Firestore রিয়েল-টাইম সিঙ্ক শুরু করতে ব্যর্থ",
+        details = e.toString(),
+        products = _products.value
+      )
     }
   }
 
@@ -1240,8 +1282,28 @@ class StoreRepository(private val context: Context) {
           "date" to posOrder.date,
           "trackingId" to ""
         )
+      )?.addOnSuccessListener {
+        inventorySyncService.markFirestoreSync(products = _products.value)
+      }?.addOnFailureListener { e ->
+        inventorySyncService.recordSyncError(
+          source = "FIRESTORE_POS_ORDER_WRITE",
+          severity = "ERROR",
+          code = e.javaClass.simpleName,
+          message = e.localizedMessage ?: "POS অর্ডার Firestore-এ সেভ করতে ব্যর্থ",
+          details = "collection=orders doc=${posOrder.id}",
+          products = _products.value
+        )
+      }
+    } catch (e: Exception) {
+      inventorySyncService.recordSyncError(
+        source = "FIRESTORE_POS_ORDER_WRITE",
+        severity = "ERROR",
+        code = e.javaClass.simpleName,
+        message = e.localizedMessage ?: "POS অর্ডার Firestore-এ লিখতে ব্যতিক্রম",
+        details = "collection=orders doc=${posOrder.id}",
+        products = _products.value
       )
-    } catch (_: Exception) {}
+    }
 
     return posOrder
   }
@@ -1281,6 +1343,10 @@ class StoreRepository(private val context: Context) {
     _products.value = reconciledProducts
     persistLocalSyncSnapshot()
     return count
+  }
+
+  fun clearSyncErrorLogs() {
+    inventorySyncService.clearSyncErrorLogs(_products.value)
   }
 
   // Order Management

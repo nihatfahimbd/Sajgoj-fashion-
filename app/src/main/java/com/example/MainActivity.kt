@@ -109,6 +109,7 @@ class MainActivity : ComponentActivity() {
         val posInventory by viewModel.posInventory.collectAsStateWithLifecycle()
         val syncEvents by viewModel.syncEvents.collectAsStateWithLifecycle()
         val syncHealth by viewModel.syncHealth.collectAsStateWithLifecycle()
+        val syncErrorLogs by viewModel.syncErrorLogs.collectAsStateWithLifecycle()
         val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
         val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
         val imageSearchState by viewModel.imageSearchState.collectAsStateWithLifecycle()
@@ -344,8 +345,10 @@ class MainActivity : ComponentActivity() {
                     posInventory = posInventory,
                     syncEvents = syncEvents,
                     syncHealth = syncHealth,
+                    syncErrorLogs = syncErrorLogs,
                     onRecordPosSale = { prod, qty, cust, pay -> viewModel.recordPosSale(prod, qty, cust, pay) },
                     onReconcileInventory = { viewModel.reconcileInventoryNow() },
+                    onClearSyncErrors = { viewModel.clearSyncErrorLogs() },
                     homeSections = homeSections,
                     onToggleHomeSection = { viewModel.toggleHomeSection(it) },
                     onMoveHomeSection = { id, delta -> viewModel.moveHomeSection(id, delta) },

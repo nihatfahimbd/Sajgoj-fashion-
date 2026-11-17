@@ -306,9 +306,23 @@ data class InventorySyncEvent(
   val timestamp: Long = System.currentTimeMillis()
 )
 
+data class SyncErrorLog(
+  val id: String = "",
+  val timestamp: Long = System.currentTimeMillis(),
+  val source: String = "FIRESTORE_SYNC", // LOCAL_POS_STORAGE, FIRESTORE_POS_LISTENER, FIRESTORE_EVENTS_LISTENER, FIRESTORE_PRODUCTS_LISTENER, FIRESTORE_WRITE, RECONCILE
+  val severity: String = "ERROR", // ERROR, WARNING
+  val code: String = "",
+  val message: String = "",
+  val details: String = ""
+)
+
 data class SyncHealthState(
-  val status: String = "CONNECTED", // CONNECTED, SYNCING, LOCAL_ONLY
+  val status: String = "CONNECTED", // CONNECTED, SYNCING, LOCAL_ONLY, ERROR
   val lastSyncTimestamp: Long = System.currentTimeMillis(),
+  val lastLocalSyncTimestamp: Long = lastSyncTimestamp,
+  val lastFirestoreSyncTimestamp: Long = 0L,
+  val firestoreConnected: Boolean = false,
+  val errorCount: Int = 0,
   val totalSyncedEvents: Int = 0,
   val storefrontProductCount: Int = 0,
   val posProductCount: Int = 0,

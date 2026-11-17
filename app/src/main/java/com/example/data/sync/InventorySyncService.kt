@@ -6,6 +6,7 @@ import com.example.data.model.OrderItem
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ReturnRecord
+import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -31,7 +32,8 @@ data class StockDeltaRequest(
 class InventorySyncService(
   private val firestore: FirebaseFirestore? = null,
   private val clock: () -> Long = { System.currentTimeMillis() },
-  val clientId: String = "AND-${UUID.randomUUID().toString().take(8)}"
+  val clientId: String = "AND-${UUID.randomUUID().toString().take(8)}",
+  private val localStorageSync: LocalInventoryStorageSync? = null
 ) {
 
   private val _posInventory = MutableStateFlow<Map<String, PosInventoryItem>>(emptyMap())
@@ -40,10 +42,32 @@ class InventorySyncService(
   private val _syncEvents = MutableStateFlow<List<InventorySyncEvent>>(emptyList())
   val syncEvents: StateFlow<List<InventorySyncEvent>> = _syncEvents.asStateFlow()
 
+  private val _syncErrorLogs = MutableStateFlow<List<SyncErrorLog>>(
+    localStorageSync?.loadSyncErrorLogs() ?: emptyList()
+  )
+  val syncErrorLogs: StateFlow<List<SyncErrorLog>> = _syncErrorLogs.asStateFlow()
+
+  @Volatile
+  private var lastLocalSyncTs: Long =
+    localStorageSync?.getLastLocalSyncTimestamp()?.takeIf { it > 0L } ?: clock()
+
+  @Volatile
+  private var lastFirestoreSyncTs: Long =
+    localStorageSync?.getLastCloudSyncTimestamp() ?: 0L
+
+  @Volatile
+  private var cachedProducts: List<Product> = emptyList()
+
   private val _syncHealth = MutableStateFlow(
     SyncHealthState(
-      status = if (firestore != null) "CONNECTED" else "LOCAL_ONLY",
-      lastSyncTimestamp = clock()
+      status = computeStatus(firestore != null, _syncErrorLogs.value, lastFirestoreSyncTs),
+      lastSyncTimestamp = maxOf(lastLocalSyncTs, lastFirestoreSyncTs),
+      lastLocalSyncTimestamp = lastLocalSyncTs,
+      lastFirestoreSyncTimestamp = lastFirestoreSyncTs,
+      firestoreConnected = firestore != null && _syncErrorLogs.value.none {
+        it.severity == "ERROR" && it.timestamp >= lastFirestoreSyncTs
+      },
+      errorCount = _syncErrorLogs.value.size
     )
   )
   val syncHealth: StateFlow<SyncHealthState> = _syncHealth.asStateFlow()
@@ -51,41 +75,137 @@ class InventorySyncService(
   private var posListener: ListenerRegistration? = null
   private var eventsListener: ListenerRegistration? = null
 
+  private fun computeStatus(
+    hasFirestore: Boolean,
+    errors: List<SyncErrorLog>,
+    cloudTs: Long
+  ): String {
+    if (!hasFirestore) return "LOCAL_ONLY"
+    val hasActiveError = errors.any { it.severity == "ERROR" && it.timestamp >= cloudTs }
+    return if (hasActiveError) "ERROR" else "CONNECTED"
+  }
+
+  fun markLocalSync(
+    timestamp: Long = clock(),
+    products: List<Product> = cachedProducts
+  ) {
+    lastLocalSyncTs = maxOf(lastLocalSyncTs, timestamp)
+    localStorageSync?.saveLastLocalSyncTimestamp(lastLocalSyncTs)
+    refreshHealth(products)
+  }
+
+  fun markFirestoreSync(
+    timestamp: Long = clock(),
+    products: List<Product> = cachedProducts
+  ) {
+    lastFirestoreSyncTs = maxOf(lastFirestoreSyncTs, timestamp)
+    localStorageSync?.saveLastCloudSyncTimestamp(lastFirestoreSyncTs)
+    refreshHealth(products)
+  }
+
+  fun recordSyncError(
+    source: String,
+    severity: String = "ERROR",
+    code: String = "",
+    message: String,
+    details: String = "",
+    products: List<Product> = cachedProducts
+  ) {
+    val now = clock()
+    val log = SyncErrorLog(
+      id = "ERR-$now-${UUID.randomUUID().toString().take(4)}",
+      timestamp = now,
+      source = source,
+      severity = severity,
+      code = code,
+      message = message,
+      details = details
+    )
+    val updated = (listOf(log) + _syncErrorLogs.value).take(50)
+    _syncErrorLogs.value = updated
+    localStorageSync?.saveSyncErrorLogs(updated)
+    refreshHealth(products)
+  }
+
+  fun clearSyncErrorLogs(products: List<Product> = cachedProducts) {
+    _syncErrorLogs.value = emptyList()
+    localStorageSync?.clearSyncErrorLogs()
+    refreshHealth(products)
+  }
+
   fun startListening(
     getCurrentProducts: () -> List<Product>,
     onRemotePosUpdateProducts: (List<Product>) -> Unit
   ) {
-    val db = firestore ?: return
+    val db = firestore
+    if (db == null) {
+      refreshHealth(getCurrentProducts())
+      return
+    }
     stopListening()
 
     posListener = db.collection("pos_inventory").addSnapshotListener { snapshot, error ->
-      if (error != null || snapshot == null) return@addSnapshotListener
+      val currentProducts = getCurrentProducts()
+      if (error != null) {
+        recordSyncError(
+          source = "FIRESTORE_POS_LISTENER",
+          severity = "ERROR",
+          code = error.code.name,
+          message = error.localizedMessage ?: "Firestore pos_inventory স্ন্যাপশট ত্রুটি",
+          details = "collection=pos_inventory",
+          products = currentProducts
+        )
+        return@addSnapshotListener
+      }
+      if (snapshot == null) {
+        recordSyncError(
+          source = "FIRESTORE_POS_LISTENER",
+          severity = "WARNING",
+          code = "NULL_SNAPSHOT",
+          message = "pos_inventory থেকে খালি স্ন্যাপশট পাওয়া গেছে",
+          details = "collection=pos_inventory",
+          products = currentProducts
+        )
+        return@addSnapshotListener
+      }
 
       val remoteMap = mutableMapOf<String, PosInventoryItem>()
       val incomingChanges = mutableListOf<PosInventoryItem>()
 
       for (doc in snapshot.documents) {
-        val productId = doc.getString("productId") ?: doc.id
-        val item = PosInventoryItem(
-          productId = productId,
-          name = doc.getString("name") ?: "",
-          sku = doc.getString("sku") ?: "",
-          stock = (doc.getLong("stock") ?: 0L).toInt().coerceAtLeast(0),
-          price = (doc.getLong("price") ?: 0L).toInt(),
-          updatedAt = doc.getLong("updatedAt") ?: 0L,
-          lastSource = doc.getString("lastSource") ?: "POS_CLOUD",
-          lastOrigin = doc.getString("lastOrigin") ?: "",
-          lastReferenceId = doc.getString("lastReferenceId") ?: ""
-        )
-        remoteMap[productId] = item
-        if (item.lastOrigin != clientId) {
-          incomingChanges.add(item)
+        try {
+          val productId = doc.getString("productId") ?: doc.id
+          val item = PosInventoryItem(
+            productId = productId,
+            name = doc.getString("name") ?: "",
+            sku = doc.getString("sku") ?: "",
+            stock = (doc.getLong("stock") ?: 0L).toInt().coerceAtLeast(0),
+            price = (doc.getLong("price") ?: 0L).toInt(),
+            updatedAt = doc.getLong("updatedAt") ?: 0L,
+            lastSource = doc.getString("lastSource") ?: "POS_CLOUD",
+            lastOrigin = doc.getString("lastOrigin") ?: "",
+            lastReferenceId = doc.getString("lastReferenceId") ?: ""
+          )
+          remoteMap[productId] = item
+          if (item.lastOrigin != clientId) {
+            incomingChanges.add(item)
+          }
+        } catch (e: Exception) {
+          recordSyncError(
+            source = "FIRESTORE_POS_PARSE",
+            severity = "WARNING",
+            code = e.javaClass.simpleName,
+            message = "pos_inventory ডকুমেন্ট পার্স করতে ব্যর্থ",
+            details = "doc=${doc.id} • ${e.localizedMessage ?: e.toString()}",
+            products = currentProducts
+          )
         }
       }
 
       _posInventory.value = remoteMap
+      lastFirestoreSyncTs = maxOf(lastFirestoreSyncTs, clock())
+      localStorageSync?.saveLastCloudSyncTimestamp(lastFirestoreSyncTs)
 
-      val currentProducts = getCurrentProducts()
       if (incomingChanges.isNotEmpty() && currentProducts.isNotEmpty()) {
         var changed = false
         val updatedProducts = currentProducts.map { product ->
@@ -103,7 +223,17 @@ class InventorySyncService(
                 "lastSyncSource" to remote.lastSource
               ),
               SetOptions.merge()
-            )
+            ).addOnSuccessListener {
+              markFirestoreSync(products = currentProducts)
+            }.addOnFailureListener { e ->
+              recordSyncError(
+                source = "FIRESTORE_WRITE",
+                severity = "ERROR",
+                code = e.javaClass.simpleName,
+                message = e.localizedMessage ?: "স্টোরফ্রন্ট প্রোডাক্ট স্টক আপডেট ব্যর্থ",
+                details = "collection=products doc=${product.id}"
+              )
+            }
             product.copy(
               stock = remote.stock,
               stockUpdatedAt = remote.updatedAt,
@@ -127,7 +257,19 @@ class InventorySyncService(
       .orderBy("timestamp", Query.Direction.DESCENDING)
       .limit(50)
       .addSnapshotListener { snapshot, error ->
-        if (error != null || snapshot == null) return@addSnapshotListener
+        val currentProducts = getCurrentProducts()
+        if (error != null) {
+          recordSyncError(
+            source = "FIRESTORE_EVENTS_LISTENER",
+            severity = "ERROR",
+            code = error.code.name,
+            message = error.localizedMessage ?: "inventory_sync_events লিসেনার ত্রুটি",
+            details = "collection=inventory_sync_events",
+            products = currentProducts
+          )
+          return@addSnapshotListener
+        }
+        if (snapshot == null) return@addSnapshotListener
         val events = snapshot.documents.mapNotNull { doc ->
           try {
             InventorySyncEvent(
@@ -144,13 +286,23 @@ class InventorySyncService(
               timestamp = doc.getLong("timestamp") ?: 0L
             )
           } catch (e: Exception) {
+            recordSyncError(
+              source = "FIRESTORE_EVENTS_PARSE",
+              severity = "WARNING",
+              code = e.javaClass.simpleName,
+              message = "সিঙ্ক ইভেন্ট ডকুমেন্ট পার্স করতে ব্যর্থ",
+              details = "doc=${doc.id} • ${e.localizedMessage ?: e.toString()}",
+              products = currentProducts
+            )
             null
           }
         }
+        lastFirestoreSyncTs = maxOf(lastFirestoreSyncTs, clock())
+        localStorageSync?.saveLastCloudSyncTimestamp(lastFirestoreSyncTs)
         if (events.isNotEmpty()) {
           _syncEvents.value = events
-          refreshHealth(getCurrentProducts())
         }
+        refreshHealth(currentProducts)
       }
   }
 
@@ -205,7 +357,25 @@ class InventorySyncService(
     _posInventory.value = nextMap
     try {
       firestore?.collection("pos_inventory")?.document(productId)?.delete()
-    } catch (_: Exception) {}
+        ?.addOnSuccessListener { markFirestoreSync() }
+        ?.addOnFailureListener { e ->
+          recordSyncError(
+            source = "FIRESTORE_WRITE",
+            severity = "ERROR",
+            code = e.javaClass.simpleName,
+            message = e.localizedMessage ?: "pos_inventory ডকুমেন্ট মুছতে ব্যর্থ",
+            details = "collection=pos_inventory doc=$productId"
+          )
+        }
+    } catch (e: Exception) {
+      recordSyncError(
+        source = "FIRESTORE_WRITE",
+        severity = "ERROR",
+        code = e.javaClass.simpleName,
+        message = e.localizedMessage ?: "pos_inventory ডকুমেন্ট মুছতে ব্যতিক্রম",
+        details = "collection=pos_inventory doc=$productId"
+      )
+    }
   }
 
   fun applySaleStockDeduction(
@@ -534,6 +704,7 @@ class InventorySyncService(
   }
 
   fun refreshHealth(products: List<Product>) {
+    cachedProducts = products
     val posMap = _posInventory.value
     var inSync = 0
     var drift = 0
@@ -545,9 +716,18 @@ class InventorySyncService(
         drift++
       }
     }
+    val errors = _syncErrorLogs.value
+    val status = computeStatus(firestore != null, errors, lastFirestoreSyncTs)
+    val connected = firestore != null && errors.none {
+      it.severity == "ERROR" && it.timestamp >= lastFirestoreSyncTs
+    }
     _syncHealth.value = SyncHealthState(
-      status = if (firestore != null) "CONNECTED" else "LOCAL_ONLY",
-      lastSyncTimestamp = clock(),
+      status = status,
+      lastSyncTimestamp = maxOf(lastLocalSyncTs, lastFirestoreSyncTs),
+      lastLocalSyncTimestamp = lastLocalSyncTs,
+      lastFirestoreSyncTimestamp = lastFirestoreSyncTs,
+      firestoreConnected = connected,
+      errorCount = errors.size,
       totalSyncedEvents = _syncEvents.value.size,
       storefrontProductCount = products.size,
       posProductCount = posMap.size,
@@ -565,8 +745,26 @@ class InventorySyncService(
           "lastSyncSource" to product.lastSyncSource
         ),
         SetOptions.merge()
+      )?.addOnSuccessListener {
+        markFirestoreSync()
+      }?.addOnFailureListener { e ->
+        recordSyncError(
+          source = "FIRESTORE_WRITE",
+          severity = "ERROR",
+          code = e.javaClass.simpleName,
+          message = e.localizedMessage ?: "Firestore products স্টক আপডেট ব্যর্থ",
+          details = "collection=products doc=${product.id} (${product.name})"
+        )
+      }
+    } catch (e: Exception) {
+      recordSyncError(
+        source = "FIRESTORE_WRITE",
+        severity = "ERROR",
+        code = e.javaClass.simpleName,
+        message = e.localizedMessage ?: "Firestore products স্টক আপডেট ব্যতিক্রম",
+        details = "collection=products doc=${product.id}"
       )
-    } catch (_: Exception) {}
+    }
   }
 
   private fun pushPosInventoryDoc(item: PosInventoryItem) {
@@ -584,8 +782,26 @@ class InventorySyncService(
           "lastReferenceId" to item.lastReferenceId
         ),
         SetOptions.merge()
+      )?.addOnSuccessListener {
+        markFirestoreSync()
+      }?.addOnFailureListener { e ->
+        recordSyncError(
+          source = "FIRESTORE_WRITE",
+          severity = "ERROR",
+          code = e.javaClass.simpleName,
+          message = e.localizedMessage ?: "Firestore pos_inventory সিঙ্ক ব্যর্থ",
+          details = "collection=pos_inventory doc=${item.productId} (${item.name})"
+        )
+      }
+    } catch (e: Exception) {
+      recordSyncError(
+        source = "FIRESTORE_WRITE",
+        severity = "ERROR",
+        code = e.javaClass.simpleName,
+        message = e.localizedMessage ?: "Firestore pos_inventory সিঙ্ক ব্যতিক্রম",
+        details = "collection=pos_inventory doc=${item.productId}"
       )
-    } catch (_: Exception) {}
+    }
   }
 
   private fun pushSyncEventDoc(event: InventorySyncEvent) {
@@ -604,7 +820,25 @@ class InventorySyncService(
           "referenceId" to event.referenceId,
           "timestamp" to event.timestamp
         )
+      )?.addOnSuccessListener {
+        markFirestoreSync()
+      }?.addOnFailureListener { e ->
+        recordSyncError(
+          source = "FIRESTORE_WRITE",
+          severity = "ERROR",
+          code = e.javaClass.simpleName,
+          message = e.localizedMessage ?: "সিঙ্ক অডিট ইভেন্ট সংরক্ষণ ব্যর্থ",
+          details = "collection=inventory_sync_events doc=${event.id}"
+        )
+      }
+    } catch (e: Exception) {
+      recordSyncError(
+        source = "FIRESTORE_WRITE",
+        severity = "ERROR",
+        code = e.javaClass.simpleName,
+        message = e.localizedMessage ?: "সিঙ্ক অডিট ইভেন্ট ব্যতিক্রম",
+        details = "collection=inventory_sync_events doc=${event.id}"
       )
-    } catch (_: Exception) {}
+    }
   }
 }
