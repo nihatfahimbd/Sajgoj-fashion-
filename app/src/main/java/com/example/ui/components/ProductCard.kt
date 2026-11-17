@@ -19,7 +19,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
+import com.example.util.ProductMediaHelper
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -67,8 +69,12 @@ fun ProductCard(
   design: StoreDesignConfig = StoreDesignConfig(),
   isWishlisted: Boolean = false,
   onToggleWishlist: (() -> Unit)? = null,
+  onMediaClick: ((Product) -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
+  val hasActiveVideo = ProductMediaHelper.hasActiveVideo(product)
+  val cardMediaModel = ProductMediaHelper.cardPreviewThumbUrl(product)
+
   Card(
     modifier = modifier
       .fillMaxWidth()
@@ -80,20 +86,60 @@ fun ProductCard(
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column {
-      // Product Image with Stock / Rating Badges
+      // Product Image with Video-First Thumbnail & Touch-to-Original-Size
       Box(
         modifier = Modifier
           .fillMaxWidth()
           .aspectRatio(1f)
+          .clickable {
+            if (onMediaClick != null) onMediaClick(product) else onProductClick(product)
+          }
+          .testTag("product_card_media_${product.id}")
       ) {
         AppImage(
-          model = product.imageUrl,
+          model = cardMediaModel,
           contentDescription = product.name,
           modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
         )
+
+        if (hasActiveVideo) {
+          Box(
+            modifier = Modifier
+              .align(Alignment.Center)
+              .size(40.dp)
+              .clip(CircleShape)
+              .background(Color.Black.copy(alpha = 0.58f))
+              .border(1.5.dp, Color.White.copy(alpha = 0.9f), CircleShape),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.PlayArrow,
+              contentDescription = "ভিডিও দেখুন",
+              tint = Color.White,
+              modifier = Modifier.size(22.dp)
+            )
+          }
+
+          Surface(
+            shape = RoundedCornerShape(50),
+            color = Color.Black.copy(alpha = 0.78f),
+            border = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.35f)),
+            modifier = Modifier
+              .align(Alignment.BottomEnd)
+              .padding(6.dp)
+          ) {
+            Text(
+              text = "🎬 ভিডিও • ছবি",
+              color = Color.White,
+              fontSize = 9.sp,
+              fontWeight = FontWeight.Bold,
+              modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+          }
+        }
 
         // Low stock / Stock out badge
         if (product.stock == 0) {
@@ -429,8 +475,12 @@ fun CompactProductCard(
   design: StoreDesignConfig = StoreDesignConfig(),
   isWishlisted: Boolean = false,
   onToggleWishlist: (() -> Unit)? = null,
+  onMediaClick: ((Product) -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
+  val hasActiveVideo = ProductMediaHelper.hasActiveVideo(product)
+  val cardMediaModel = ProductMediaHelper.cardPreviewThumbUrl(product)
+
   Card(
     modifier = modifier
       .clickable { onProductClick(product) }
@@ -446,15 +496,55 @@ fun CompactProductCard(
           .fillMaxWidth()
           .aspectRatio(1f)
           .background(Color.White)
+          .clickable {
+            if (onMediaClick != null) onMediaClick(product) else onProductClick(product)
+          }
+          .testTag("compact_card_media_${product.id}")
       ) {
         AppImage(
-          model = product.imageUrl,
+          model = cardMediaModel,
           contentDescription = product.name,
           modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
         )
+
+        if (hasActiveVideo) {
+          Box(
+            modifier = Modifier
+              .align(Alignment.Center)
+              .size(34.dp)
+              .clip(CircleShape)
+              .background(Color.Black.copy(alpha = 0.58f))
+              .border(1.2.dp, Color.White.copy(alpha = 0.9f), CircleShape),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.PlayArrow,
+              contentDescription = "ভিডিও দেখুন",
+              tint = Color.White,
+              modifier = Modifier.size(18.dp)
+            )
+          }
+
+          Surface(
+            shape = RoundedCornerShape(50),
+            color = Color.Black.copy(alpha = 0.78f),
+            border = BorderStroke(0.6.dp, Color.White.copy(alpha = 0.35f)),
+            modifier = Modifier
+              .align(Alignment.BottomEnd)
+              .padding(4.dp)
+          ) {
+            Text(
+              text = "🎬 ভিডিও",
+              color = Color.White,
+              fontSize = 8.sp,
+              fontWeight = FontWeight.Bold,
+              modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+            )
+          }
+        }
 
         if (product.stock == 0) {
           Box(

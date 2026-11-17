@@ -1093,7 +1093,8 @@ fun FullSectionCollectionDialog(
   onAddToCart: (Product) -> Unit,
   design: StoreDesignConfig = StoreDesignConfig(),
   wishlistIds: Set<String> = emptySet(),
-  onToggleWishlist: ((String) -> Unit)? = null
+  onToggleWishlist: ((String) -> Unit)? = null,
+  onMediaClick: ((Product) -> Unit)? = null
 ) {
   BackHandler { onDismiss() }
 
@@ -1224,6 +1225,7 @@ fun FullSectionCollectionDialog(
                   design = design,
                   isWishlisted = wishlistIds.contains(prod.id),
                   onToggleWishlist = onToggleWishlist?.let { toggle -> { toggle(prod.id) } },
+                  onMediaClick = onMediaClick,
                   modifier = Modifier.weight(1f)
                 )
               }

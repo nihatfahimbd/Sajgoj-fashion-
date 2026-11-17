@@ -9,12 +9,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,12 +30,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarBorder
+import com.example.util.ProductMediaHelper
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -84,6 +89,10 @@ fun ProductDetailDialog(
   var selectedSize by remember { mutableStateOf(product.sizes.firstOrNull() ?: "") }
   var selectedAgeGroup by remember { mutableStateOf(product.ageGroups.firstOrNull() ?: "") }
   var selectionError by remember { mutableStateOf<String?>(null) }
+
+  val mediaGallery = remember(product) { ProductMediaHelper.buildMediaGallery(product) }
+  var selectedMediaIdx by remember(product.id) { mutableIntStateOf(0) }
+  var showOriginalMediaViewer by remember { mutableStateOf(false) }
 
   // Review Form States
   var isReviewFormOpen by remember { mutableStateOf(false) }
@@ -148,19 +157,156 @@ fun ProductDetailDialog(
           }
         }
 
-        // Product Large Image
-        Box(
+        // Product Large Video-First Media Gallery
+        val safeMediaIdx = selectedMediaIdx.coerceIn(0, (mediaGallery.size - 1).coerceAtLeast(0))
+        val activeMedia = mediaGallery.getOrNull(safeMediaIdx)
+        Column(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-          AppImage(
-            model = product.imageUrl,
-            contentDescription = product.name,
+          Box(
             modifier = Modifier
               .fillMaxWidth()
-              .aspectRatio(1.2f)
+              .aspectRatio(1.1f)
               .clip(RoundedCornerShape(18.dp))
+              .background(Color(0xFFF8FAFC))
+              .clickable { showOriginalMediaViewer = true }
+              .testTag("product_detail_media_box")
+          ) {
+            AppImage(
+              model = activeMedia?.thumbUrl ?: product.imageUrl,
+              contentDescription = product.name,
+              modifier = Modifier.fillMaxSize()
+            )
+
+            if (activeMedia?.isVideo == true) {
+              Box(
+                modifier = Modifier
+                  .fillMaxSize()
+                  .background(Color.Black.copy(alpha = 0.22f)),
+                contentAlignment = Alignment.Center
+              ) {
+                Box(
+                  modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFDC2626).copy(alpha = 0.9f))
+                    .border(2.dp, Color.White, CircleShape),
+                  contentAlignment = Alignment.Center
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "ভিডিও প্লে করুন",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                  )
+                }
+              }
+
+              Surface(
+                shape = RoundedCornerShape(50),
+                color = Color(0xFFEA580C),
+                modifier = Modifier
+                  .align(Alignment.TopStart)
+                  .padding(10.dp)
+              ) {
+                Text(
+                  text = "🎬 ${activeMedia.label}",
+                  color = Color.White,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Black,
+                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+              }
+            }
+
+            Surface(
+              shape = RoundedCornerShape(50),
+              color = Color.Black.copy(alpha = 0.72f),
+              border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+              modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(10.dp)
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+              ) {
+                Icon(
+                  imageVector = Icons.Default.ZoomIn,
+                  contentDescription = null,
+                  tint = Color.White,
+                  modifier = Modifier.size(13.dp)
+                )
+                Text(
+                  text = "অরিজিনাল সাইজ",
+                  color = Color.White,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold
+                )
+              }
+            }
+          }
+
+          if (mediaGallery.size > 1) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              mediaGallery.forEachIndexed { idx, item ->
+                val isSelected = idx == safeMediaIdx
+                Box(
+                  modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(
+                      width = if (isSelected) 2.dp else 1.dp,
+                      color = if (isSelected) RoyalMaroon else BorderGold,
+                      shape = RoundedCornerShape(12.dp)
+                    )
+                    .clickable { selectedMediaIdx = idx }
+                ) {
+                  AppImage(
+                    model = item.thumbUrl,
+                    contentDescription = item.label,
+                    modifier = Modifier.fillMaxSize()
+                  )
+                  if (item.isVideo) {
+                    Box(
+                      modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.45f)),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                          imageVector = Icons.Default.PlayArrow,
+                          contentDescription = "ভিডিও",
+                          tint = Color.White,
+                          modifier = Modifier.size(18.dp)
+                        )
+                        Text("ভিডিও", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        if (showOriginalMediaViewer) {
+          ProductMediaViewerDialog(
+            product = product,
+            initialIndex = safeMediaIdx,
+            onDismiss = { showOriginalMediaViewer = false },
+            onOpenProductDetail = { showOriginalMediaViewer = false },
+            onAddToCart = { prod -> onAddToCart(prod, 1, selectedColor, selectedSize, selectedAgeGroup) }
           )
         }
 

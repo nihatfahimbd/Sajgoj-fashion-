@@ -74,6 +74,7 @@ import com.example.ui.components.BannerCarousel
 import com.example.ui.components.CompactProductCard
 import com.example.ui.components.FullSectionCollectionDialog
 import com.example.ui.components.ProductCard
+import com.example.ui.components.ProductMediaViewerDialog
 import com.example.ui.components.ReelVideoPlayerDialog
 import com.example.ui.components.StorefrontComboBlockCard
 import com.example.ui.components.StorefrontReelsBlockCard
@@ -137,6 +138,7 @@ fun StorefrontScreen(
   var activeReelForPlayback by remember { mutableStateOf<ReelItem?>(null) }
   var allProductsInlineCat by remember { mutableStateOf("All") }
   var wishlistIds by remember { mutableStateOf(setOf<String>()) }
+  var mediaViewerProduct by remember { mutableStateOf<Product?>(null) }
   val design = config.design
   val toggleWishlist: (String) -> Unit = { pid ->
     wishlistIds = if (wishlistIds.contains(pid)) wishlistIds - pid else wishlistIds + pid
@@ -375,6 +377,7 @@ fun StorefrontScreen(
                   design = design,
                   isWishlisted = wishlistIds.contains(product.id),
                   onToggleWishlist = { toggleWishlist(product.id) },
+                  onMediaClick = { mediaViewerProduct = it },
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -527,7 +530,8 @@ fun StorefrontScreen(
                   onAddToCart = onAddToCart,
                   design = design,
                   wishlistIds = wishlistIds,
-                  onToggleWishlist = toggleWishlist
+                  onToggleWishlist = toggleWishlist,
+                  onMediaClick = { mediaViewerProduct = it }
                 )
               }
             }
@@ -599,7 +603,8 @@ fun StorefrontScreen(
         onAddToCart = onAddToCart,
         design = design,
         wishlistIds = wishlistIds,
-        onToggleWishlist = toggleWishlist
+        onToggleWishlist = toggleWishlist,
+        onMediaClick = { mediaViewerProduct = it }
       )
     }
 
@@ -612,6 +617,16 @@ fun StorefrontScreen(
         onLikeReel = onLikeReel,
         onAddToCart = onAddToCart,
         onProductClick = onProductClick
+      )
+    }
+
+    if (mediaViewerProduct != null) {
+      ProductMediaViewerDialog(
+        product = mediaViewerProduct!!,
+        initialIndex = 0,
+        onDismiss = { mediaViewerProduct = null },
+        onOpenProductDetail = onProductClick,
+        onAddToCart = onAddToCart
       )
     }
   }
@@ -632,7 +647,8 @@ private fun StorefrontProductBlockCard(
   onAddToCart: (Product) -> Unit,
   design: StoreDesignConfig = StoreDesignConfig(),
   wishlistIds: Set<String> = emptySet(),
-  onToggleWishlist: ((String) -> Unit)? = null
+  onToggleWishlist: ((String) -> Unit)? = null,
+  onMediaClick: ((Product) -> Unit)? = null
 ) {
   val cfg = remember(section) { resolveBlockGridConfig(section) }
   val defaultLimit = cfg.defaultLimit
@@ -846,6 +862,7 @@ private fun StorefrontProductBlockCard(
                 design = design,
                 isWishlisted = wishlistIds.contains(prod.id),
                 onToggleWishlist = onToggleWishlist?.let { toggle -> { toggle(prod.id) } },
+                onMediaClick = onMediaClick,
                 modifier = Modifier.width(cardWidth)
               )
             }
@@ -871,6 +888,7 @@ private fun StorefrontProductBlockCard(
                   design = design,
                   isWishlisted = wishlistIds.contains(prod.id),
                   onToggleWishlist = onToggleWishlist?.let { toggle -> { toggle(prod.id) } },
+                  onMediaClick = onMediaClick,
                   modifier = Modifier.weight(1f)
                 )
               }

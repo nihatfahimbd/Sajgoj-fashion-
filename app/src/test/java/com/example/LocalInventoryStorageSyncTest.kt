@@ -189,4 +189,25 @@ class LocalInventoryStorageSyncTest {
     assertEquals(0, repo.syncErrorLogs.value.size)
     assertEquals(0, repo.syncHealth.value.errorCount)
   }
+
+  @Test
+  fun productVideoMetadata_persistsAcrossLocalStorageReload() {
+    val repo = StoreRepository(context)
+    val base = repo.products.value.first { it.id == "p1" }
+    repo.updateProduct(
+      base.copy(
+        videoEnabled = true,
+        videoType = "facebook_reels",
+        videoUrl = "https://www.facebook.com/reel/555666777",
+        videoThumbUrl = "https://cdn.example.com/reel_poster.jpg"
+      )
+    )
+
+    val reloadedRepo = StoreRepository(context)
+    val reloaded = reloadedRepo.products.value.first { it.id == "p1" }
+    assertTrue(reloaded.videoEnabled)
+    assertEquals("facebook_reels", reloaded.videoType)
+    assertEquals("https://www.facebook.com/reel/555666777", reloaded.videoUrl)
+    assertEquals("https://cdn.example.com/reel_poster.jpg", reloaded.videoThumbUrl)
+  }
 }

@@ -224,7 +224,12 @@ class LocalInventoryStorageSync(
               isB2G1 = o.optBoolean("isB2G1", false),
               createdAt = o.optLong("createdAt", 0L),
               regularPrice = o.optInt("regularPrice", 0),
-              offerPrice = o.optInt("offerPrice", 0)
+              offerPrice = o.optInt("offerPrice", 0),
+              videoEnabled = o.optBoolean("videoEnabled", false),
+              videoType = o.optString("videoType", "upload"),
+              videoUrl = o.optString("videoUrl", ""),
+              videoThumbUrl = o.optString("videoThumbUrl", ""),
+              additionalImages = jsonArrayToStrings(o.optJSONArray("additionalImages"))
             )
           )
         }
@@ -392,6 +397,11 @@ class LocalInventoryStorageSync(
         put("createdAt", p.createdAt)
         put("regularPrice", p.regularPrice)
         put("offerPrice", p.offerPrice)
+        put("videoEnabled", p.videoEnabled)
+        put("videoType", p.videoType)
+        put("videoUrl", p.videoUrl)
+        put("videoThumbUrl", p.videoThumbUrl)
+        put("additionalImages", JSONArray(p.additionalImages))
       }
       arr.put(o)
     }

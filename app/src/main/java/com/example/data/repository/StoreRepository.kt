@@ -789,6 +789,9 @@ class StoreRepository(private val context: Context) {
                 regularPriceVal > docPrice && docPrice > 0 -> docPrice
                 else -> (seedMatch?.offerPrice ?: 0)
               }
+              val extraImages = (doc.get("images") as? List<*>)?.mapNotNull { it?.toString() }?.drop(1)
+                ?: (doc.get("additionalImages") as? List<*>)?.mapNotNull { it?.toString() }
+                ?: emptyList()
               Product(
                 id = docId,
                 name = doc.getString("name") ?: "",
@@ -811,7 +814,12 @@ class StoreRepository(private val context: Context) {
                 isB2G1 = doc.getBoolean("isB2G1") ?: false,
                 createdAt = doc.getLong("createdAt") ?: 0L,
                 regularPrice = regularPriceVal,
-                offerPrice = offerPriceVal
+                offerPrice = offerPriceVal,
+                videoEnabled = doc.getBoolean("videoEnabled") ?: false,
+                videoType = doc.getString("videoType") ?: "upload",
+                videoUrl = doc.getString("videoUrl") ?: "",
+                videoThumbUrl = doc.getString("videoThumbUrl") ?: "",
+                additionalImages = extraImages
               )
             } catch (e: Exception) {
               inventorySyncService.recordSyncError(
@@ -1488,7 +1496,12 @@ class StoreRepository(private val context: Context) {
           "isB2G1" to stamped.isB2G1,
           "createdAt" to stamped.createdAt,
           "regularPrice" to stamped.regularPrice,
-          "offerPrice" to stamped.offerPrice
+          "offerPrice" to stamped.offerPrice,
+          "videoEnabled" to stamped.videoEnabled,
+          "videoType" to stamped.videoType,
+          "videoUrl" to stamped.videoUrl,
+          "videoThumbUrl" to stamped.videoThumbUrl,
+          "additionalImages" to stamped.additionalImages
         )
       )
     } catch (e: Exception) {}
@@ -1548,7 +1561,12 @@ class StoreRepository(private val context: Context) {
           "isB2G1" to stamped.isB2G1,
           "createdAt" to stamped.createdAt,
           "regularPrice" to stamped.regularPrice,
-          "offerPrice" to stamped.offerPrice
+          "offerPrice" to stamped.offerPrice,
+          "videoEnabled" to stamped.videoEnabled,
+          "videoType" to stamped.videoType,
+          "videoUrl" to stamped.videoUrl,
+          "videoThumbUrl" to stamped.videoThumbUrl,
+          "additionalImages" to stamped.additionalImages
         ),
         SetOptions.merge()
       )

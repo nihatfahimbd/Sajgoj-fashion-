@@ -22,7 +22,12 @@ data class Product(
   val isB2G1: Boolean = false,
   val createdAt: Long = 0L,
   val regularPrice: Int = 0,
-  val offerPrice: Int = 0
+  val offerPrice: Int = 0,
+  val videoEnabled: Boolean = false,
+  val videoType: String = "upload", // "upload", "youtube", "facebook_reels"
+  val videoUrl: String = "",
+  val videoThumbUrl: String = "",
+  val additionalImages: List<String> = emptyList()
 )
 
 data class HomeSectionConfig(

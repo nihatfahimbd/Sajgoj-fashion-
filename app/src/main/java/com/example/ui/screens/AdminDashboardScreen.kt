@@ -97,6 +97,7 @@ import com.example.ui.components.DailyRevenueTrendChartCard
 import com.example.ui.components.HomePageSettingHub
 import com.example.ui.components.InventorySyncPanel
 import com.example.ui.components.PaymentMethodsToggleSection
+import com.example.ui.components.ProductVideoFormSection
 import com.example.ui.components.ReturnExchangeDialog
 import com.example.ui.components.ReturnSlipDialog
 import com.example.ui.components.ShippingLabelPrintFormat
@@ -3414,6 +3415,10 @@ fun ProductFormDialog(
   var sku by remember { mutableStateOf(product?.sku ?: "SAJ-${(100..999).random()}") }
   var description by remember { mutableStateOf(product?.description ?: "") }
   var imageUrl by remember { mutableStateOf(product?.imageUrl ?: "res://${R.drawable.banner_eid_special_1792530116809}") }
+  var videoEnabled by remember { mutableStateOf(product?.videoEnabled ?: false) }
+  var videoType by remember { mutableStateOf(product?.videoType ?: "upload") }
+  var videoUrl by remember { mutableStateOf(product?.videoUrl ?: "") }
+  var videoThumbUrl by remember { mutableStateOf(product?.videoThumbUrl ?: "") }
 
   // Variants lists
   var colors by remember { mutableStateOf(product?.colors ?: emptyList()) }
@@ -3626,6 +3631,19 @@ fun ProductFormDialog(
             modifier = Modifier.fillMaxWidth()
           )
         }
+
+        ProductVideoFormSection(
+          videoEnabled = videoEnabled,
+          videoType = videoType,
+          videoUrl = videoUrl,
+          videoThumbUrl = videoThumbUrl,
+          onVideoChanged = { enabled, type, url, thumb ->
+            videoEnabled = enabled
+            videoType = type
+            videoUrl = url
+            videoThumbUrl = thumb
+          }
+        )
 
         // ==========================================
         // 2. COLOR MANAGEMENT SECTION
@@ -4169,6 +4187,15 @@ fun ProductFormDialog(
             val effectivePrice = if (hasValidOffer) offerInput else regularInput
             val stock = stockStr.toIntOrNull() ?: 1
 
+            val cleanVideoUrl = videoUrl.trim()
+            val finalVideoEnabled = videoEnabled && cleanVideoUrl.isNotBlank()
+            val parsedVideo = com.example.util.ProductMediaHelper.parseVideoSource(cleanVideoUrl, videoType)
+            val resolvedThumb = if (finalVideoEnabled) {
+              videoThumbUrl.trim().ifBlank { parsedVideo.thumbUrl }
+            } else {
+              ""
+            }
+
             val p = Product(
               id = product?.id ?: "p_${System.currentTimeMillis()}",
               name = name.trim(),
@@ -4186,7 +4213,12 @@ fun ProductFormDialog(
               isHotSale = isHotSale,
               isBestDeal = isBestDeal,
               isB2G1 = isB2G1,
-              createdAt = product?.createdAt ?: System.currentTimeMillis()
+              createdAt = product?.createdAt ?: System.currentTimeMillis(),
+              videoEnabled = finalVideoEnabled,
+              videoType = videoType,
+              videoUrl = cleanVideoUrl,
+              videoThumbUrl = resolvedThumb,
+              additionalImages = product?.additionalImages ?: emptyList()
             )
             onSave(p)
           },
