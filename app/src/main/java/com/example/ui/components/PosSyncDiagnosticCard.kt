@@ -50,11 +50,6 @@ import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
-import com.example.ui.theme.AntiqueGoldDark
-import com.example.ui.theme.BorderGold
-import com.example.ui.theme.CreamSurface
-import com.example.ui.theme.DarkEspresso
-import com.example.ui.theme.RoyalMaroon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -86,17 +81,13 @@ fun PosSyncDiagnosticCard(
     else -> DiagnosticAmber
   }
 
-  Card(
-    shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.dp, if (hasActiveErrors) AccentRed.copy(alpha = 0.55f) else BorderGold),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    modifier = modifier
-      .fillMaxWidth()
-      .testTag("pos_sync_diagnostic_card")
+  GlossyAdminCard(
+    cornerRadius = 20.dp,
+    accentBorderColor = if (hasActiveErrors) AccentRed.copy(alpha = 0.55f) else AdminCardBorderWarm,
+    contentPadding = 14.dp,
+    modifier = modifier.testTag("pos_sync_diagnostic_card")
   ) {
     Column(
-      modifier = Modifier.padding(14.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
       // Header + Connection Status Pill
@@ -133,7 +124,7 @@ fun PosSyncDiagnosticCard(
               text = "POS ↔ Firestore সিঙ্ক ডায়াগনস্টিক",
               fontSize = 14.sp,
               fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
+              color = AdminInkPrimary
             )
             Text(
               text = statusLabel,
@@ -172,7 +163,7 @@ fun PosSyncDiagnosticCard(
           },
           subtitle = "POS SKU: ${syncHealth.posProductCount} • স্টোরফ্রন্ট: ${syncHealth.storefrontProductCount}",
           icon = Icons.Default.Storage,
-          accent = RoyalMaroon,
+          accent = AdminV2CyanDeep,
           modifier = Modifier
             .weight(1f)
             .testTag("local_pos_sync_timestamp")
@@ -203,7 +194,7 @@ fun PosSyncDiagnosticCard(
       ) {
         Button(
           onClick = onRunDiagnosticSync,
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
           shape = RoundedCornerShape(12.dp),
           contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
           modifier = Modifier
@@ -220,7 +211,7 @@ fun PosSyncDiagnosticCard(
           onClick = onClearErrorLogs,
           enabled = syncErrorLogs.isNotEmpty(),
           shape = RoundedCornerShape(12.dp),
-          border = BorderStroke(1.dp, if (syncErrorLogs.isNotEmpty()) AccentRed else BorderGold),
+          border = BorderStroke(1.dp, if (syncErrorLogs.isNotEmpty()) AccentRed else AdminCardBorderWarm),
           contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
           modifier = Modifier
             .weight(1f)
@@ -243,7 +234,7 @@ fun PosSyncDiagnosticCard(
         }
       }
 
-      HorizontalDivider(color = BorderGold.copy(alpha = 0.45f))
+      HorizontalDivider(color = AdminCardBorderSoft)
 
       // Error Logs Section Header
       Row(
@@ -255,7 +246,7 @@ fun PosSyncDiagnosticCard(
           text = "সিঙ্ক ত্রুটি লগ (Local POS ↔ Firestore Error Logs)",
           fontSize = 12.sp,
           fontWeight = FontWeight.Bold,
-          color = DarkEspresso
+          color = AdminInkPrimary
         )
         Surface(
           shape = RoundedCornerShape(8.dp),
@@ -302,7 +293,7 @@ fun PosSyncDiagnosticCard(
                 text = "লোকাল POS স্টোরেজ ও সেন্ট্রাল Firestore-এর মধ্যে কোনো সিঙ্ক ত্রুটি পাওয়া যায়নি।",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = DarkEspresso
+                color = AdminInkPrimary
               )
             }
           }
@@ -350,15 +341,15 @@ fun PosSyncDiagnosticCard(
                     if (log.code.isNotBlank()) {
                       Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = CreamSurface,
-                        border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.7f))
+                        color = AdminV2IceSurface,
+                        border = BorderStroke(1.dp, AdminCardBorderWarm)
                       ) {
                         Text(
                           text = log.code,
                           fontSize = 9.sp,
                           fontFamily = FontFamily.Monospace,
                           fontWeight = FontWeight.SemiBold,
-                          color = DarkEspresso,
+                          color = AdminInkPrimary,
                           modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                         )
                       }
@@ -409,8 +400,8 @@ private fun DiagnosticTimestampTile(
   Surface(
     modifier = modifier,
     shape = RoundedCornerShape(14.dp),
-    color = CreamSurface,
-    border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.75f))
+    color = AdminV2IceSurface,
+    border = BorderStroke(1.dp, AdminCardBorderWarm)
   ) {
     Column(
       modifier = Modifier.padding(10.dp),
@@ -425,7 +416,7 @@ private fun DiagnosticTimestampTile(
           text = title,
           fontSize = 10.sp,
           fontWeight = FontWeight.Bold,
-          color = DarkEspresso,
+          color = AdminInkPrimary,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis
         )

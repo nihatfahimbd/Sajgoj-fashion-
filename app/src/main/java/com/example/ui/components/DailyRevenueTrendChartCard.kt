@@ -39,12 +39,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Order
-import com.example.ui.theme.AntiqueGoldDark
-import com.example.ui.theme.BorderGold
-import com.example.ui.theme.CreamBackground
-import com.example.ui.theme.CreamSurface
-import com.example.ui.theme.DarkEspresso
-import com.example.ui.theme.RoyalMaroon
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -98,7 +92,7 @@ fun DailyRevenueTrendChartCard(
 
   GlossyAdminCard(
     cornerRadius = 20.dp,
-    accentBorderColor = Color(0xFFE3C8B2),
+    accentBorderColor = AdminCardBorderWarm,
     contentPadding = 14.dp,
     modifier = modifier.testTag("daily_revenue_7d_chart_card")
   ) {
@@ -128,25 +122,28 @@ fun DailyRevenueTrendChartCard(
 
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = Color(0xFFFFF1F2),
-          border = BorderStroke(1.dp, Color(0xFFFDA4AF))
+          color = AdminV2SkySoft,
+          border = BorderStroke(1.dp, AdminV2Cyan.copy(alpha = 0.45f))
         ) {
           Text(
             text = "${selectedPoint.label}: ৳${selectedPoint.revenue}",
             fontSize = 10.5.sp,
             fontWeight = FontWeight.Black,
-            color = RoyalMaroon,
+            color = AdminV2CyanDeep,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
           )
         }
       }
 
-      // Line Chart Canvas
+      // Smooth Sky-Cyan Area Line Chart Canvas
       Box(
         modifier = Modifier
           .fillMaxWidth()
-          .height(140.dp)
-          .background(CreamBackground, RoundedCornerShape(12.dp))
+          .height(145.dp)
+          .background(
+            Brush.verticalGradient(listOf(Color(0xFFF6FBFE), Color(0xFFECF6FC))),
+            RoundedCornerShape(14.dp)
+          )
           .padding(horizontal = 12.dp, vertical = 14.dp)
       ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -158,7 +155,7 @@ fun DailyRevenueTrendChartCard(
           listOf(0.25f, 0.5f, 0.75f, 1f).forEach { ratio ->
             val y = size.height * (1f - ratio)
             drawLine(
-              color = Color(0xFFD6CFC2),
+              color = Color(0xFFD0E4F0),
               start = Offset(0f, y),
               end = Offset(size.width, y),
               strokeWidth = 1.5f,
@@ -194,25 +191,32 @@ fun DailyRevenueTrendChartCard(
             drawPath(
               path = areaPath,
               brush = Brush.verticalGradient(
-                listOf(RoyalMaroon.copy(alpha = 0.24f), Color.Transparent)
+                listOf(AdminV2Cyan.copy(alpha = 0.28f), AdminV2SkySoft.copy(alpha = 0.03f))
               )
             )
 
             drawPath(
               path = linePath,
-              color = RoyalMaroon,
-              style = Stroke(width = 5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+              brush = Brush.horizontalGradient(listOf(AdminV2CyanDeep, AdminV2Cyan)),
+              style = Stroke(width = 5.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
 
             points.forEachIndexed { idx, offset ->
               val isSelected = idx == selectedIndex
+              if (isSelected) {
+                drawCircle(
+                  color = AdminV2Cyan.copy(alpha = 0.22f),
+                  radius = 18f,
+                  center = offset
+                )
+              }
               drawCircle(
-                color = if (isSelected) RoyalMaroon else Color.White,
-                radius = if (isSelected) 11f else 8f,
+                color = if (isSelected) AdminV2CyanDeep else Color.White,
+                radius = if (isSelected) 11f else 7.5f,
                 center = offset
               )
               drawCircle(
-                color = if (isSelected) Color.White else RoyalMaroon,
+                color = if (isSelected) Color.White else AdminV2CyanDeep,
                 radius = if (isSelected) 5.5f else 4f,
                 center = offset
               )
@@ -229,16 +233,16 @@ fun DailyRevenueTrendChartCard(
         series.forEachIndexed { idx, pt ->
           val isSelected = idx == selectedIndex
           Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = if (isSelected) RoyalMaroon else CreamSurface,
-            border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+            shape = RoundedCornerShape(10.dp),
+            color = if (isSelected) AdminV2DeepOcean else AdminV2IceSurface,
+            border = BorderStroke(1.dp, if (isSelected) AdminV2CyanDeep else AdminCardBorderSoft),
             modifier = Modifier
               .weight(1f)
               .clickable { selectedIndex = idx }
               .testTag("rev_day_$idx")
           ) {
             Column(
-              modifier = Modifier.padding(vertical = 4.dp, horizontal = 2.dp),
+              modifier = Modifier.padding(vertical = 5.dp, horizontal = 2.dp),
               horizontalAlignment = Alignment.CenterHorizontally
             ) {
               Text(

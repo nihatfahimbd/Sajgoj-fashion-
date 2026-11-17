@@ -177,7 +177,7 @@ fun PaymentMethodsToggleSection(
   GlossyAdminCard(
     modifier = modifier.testTag("payment_methods_toggle_section"),
     cornerRadius = 18.dp,
-    accentBorderColor = Color(0xFFE3C8B2),
+    accentBorderColor = AdminCardBorderWarm,
     contentPadding = 14.dp
   ) {
     Column(
@@ -251,8 +251,8 @@ private fun PaymentMethodToggleRow(
 ) {
   Surface(
     shape = RoundedCornerShape(12.dp),
-    color = if (checked) CreamSurface else Color(0xFFF8FAFC),
-    border = BorderStroke(1.dp, if (checked) BorderGold else Color(0xFFE2E8F0)),
+    color = if (checked) AdminV2IceSurface else Color(0xFFF8FAFC),
+    border = BorderStroke(1.dp, if (checked) AdminCardBorderWarm else Color(0xFFE2E8F0)),
     modifier = Modifier
       .fillMaxWidth()
       .heightIn(min = 52.dp)
@@ -322,7 +322,7 @@ fun StorefrontDesignStudioPanel(
   GlossyAdminCard(
     modifier = modifier.testTag("storefront_design_studio_panel"),
     cornerRadius = 18.dp,
-    accentBorderColor = Color(0xFFE3C8B2),
+    accentBorderColor = AdminCardBorderWarm,
     contentPadding = 14.dp
   ) {
     Column(
@@ -353,14 +353,14 @@ fun StorefrontDesignStudioPanel(
             draft = reset
             onSaveConfig(config.copy(design = reset))
           },
-          border = BorderStroke(1.dp, Color(0xFFFDA4AF)),
+          border = BorderStroke(1.dp, AdminCardBorderWarm),
           shape = RoundedCornerShape(10.dp),
           contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
           modifier = Modifier
             .heightIn(min = 38.dp)
             .testTag("reset_design_studio_btn")
         ) {
-          Text(text = "↺ রিসেট", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+          Text(text = "↺ রিসেট", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
         }
       }
 
@@ -376,8 +376,8 @@ fun StorefrontDesignStudioPanel(
           designPresets.forEach { preset ->
             Surface(
               shape = RoundedCornerShape(12.dp),
-              color = Color.White,
-              border = BorderStroke(1.dp, Color(0xFFE2C3AA)),
+              color = AdminV2IceSurface,
+              border = BorderStroke(1.dp, AdminCardBorderWarm),
               shadowElevation = 2.dp,
               modifier = Modifier
                 .heightIn(min = 42.dp)
@@ -398,10 +398,10 @@ fun StorefrontDesignStudioPanel(
       // 2. Live Card Preview
       DesignLivePreviewBox(design = draft)
 
-      HorizontalDivider(color = BorderGold)
+      HorizontalDivider(color = AdminCardBorderSoft)
 
       // 3. Page & Block Background Section
-      Text(text = "২. ওয়েবসাইট পেজ ও ব্লক ডিজাইন", fontSize = 12.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+      Text(text = "২. ওয়েবসাইট পেজ ও ব্লক ডিজাইন", fontSize = 12.sp, fontWeight = FontWeight.Black, color = AdminV2DeepOcean)
 
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -497,10 +497,10 @@ fun StorefrontDesignStudioPanel(
         modifier = Modifier.fillMaxWidth()
       )
 
-      HorizontalDivider(color = BorderGold)
+      HorizontalDivider(color = AdminCardBorderSoft)
 
       // 4. Product Card, Cream Price Box, Button Style & Wishlist
-      Text(text = "৩. প্রোডাক্ট কার্ড, ক্রিম প্রাইস বক্স, বাটন ও উইশলিস্ট", fontSize = 12.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+      Text(text = "৩. প্রোডাক্ট কার্ড, ক্রিম প্রাইস বক্স, বাটন ও উইশলিস্ট", fontSize = 12.sp, fontWeight = FontWeight.Black, color = AdminV2DeepOcean)
 
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ColorHexField(
@@ -538,7 +538,7 @@ fun StorefrontDesignStudioPanel(
         )
       }
 
-      Text(text = "অ্যাকশন বাটন স্টাইল:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+      Text(text = "অ্যাকশন বাটন স্টাইল:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
       FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -552,8 +552,8 @@ fun StorefrontDesignStudioPanel(
           val selected = draft.cardBtnStyle == styleKey
           Surface(
             shape = RoundedCornerShape(10.dp),
-            color = if (selected) RoyalMaroon else CreamBackground,
-            border = BorderStroke(1.dp, if (selected) RoyalMaroon else BorderGold),
+            color = if (selected) AdminV2DeepOcean else AdminV2IceSurface,
+            border = BorderStroke(1.dp, if (selected) AdminV2CyanDeep else AdminCardBorderWarm),
             modifier = Modifier
               .heightIn(min = 38.dp)
               .clickable { draft = draft.copy(cardBtnStyle = styleKey) }
@@ -564,7 +564,7 @@ fun StorefrontDesignStudioPanel(
                 text = styleLabel,
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (selected) Color.White else DarkEspresso
+                color = if (selected) Color.White else AdminInkPrimary
               )
             }
           }
@@ -622,7 +622,7 @@ fun StorefrontDesignStudioPanel(
         )
       }
 
-      HorizontalDivider(color = BorderGold)
+      HorizontalDivider(color = AdminCardBorderSoft)
 
       // 5. Header, Announcement & Cart Overrides
       Row(
@@ -630,7 +630,7 @@ fun StorefrontDesignStudioPanel(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Text(text = "৪. কাস্টম হেডার, নোটিশ ও কার্ট কালার", fontSize = 12.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+        Text(text = "৪. কাস্টম হেডার, নোটিশ ও কার্ট কালার", fontSize = 12.sp, fontWeight = FontWeight.Black, color = AdminV2DeepOcean)
         Switch(
           checked = draft.useCustomHeaderColors,
           onCheckedChange = { draft = draft.copy(useCustomHeaderColors = it) }
@@ -669,7 +669,7 @@ fun StorefrontDesignStudioPanel(
 
       Button(
         onClick = { onSaveConfig(config.copy(design = draft)) },
-        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+        colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
         shape = RoundedCornerShape(14.dp),
         modifier = Modifier
           .fillMaxWidth()

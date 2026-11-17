@@ -64,12 +64,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Order
 import com.example.ui.theme.AccentGreen
-import com.example.ui.theme.AntiqueGoldDark
-import com.example.ui.theme.BorderGold
-import com.example.ui.theme.CreamBackground
-import com.example.ui.theme.CreamSurface
-import com.example.ui.theme.DarkEspresso
-import com.example.ui.theme.RoyalMaroon
 import kotlin.math.roundToInt
 
 private val PendingAmber = Color(0xFFF59E0B)
@@ -165,14 +159,14 @@ fun AdminDeliveryTrackingTab(
             }
             Surface(
               shape = RoundedCornerShape(12.dp),
-              color = RoyalMaroon.copy(alpha = 0.1f),
-              border = BorderStroke(1.dp, RoyalMaroon.copy(alpha = 0.25f))
+              color = AdminV2SkySoft,
+              border = BorderStroke(1.dp, AdminV2Cyan.copy(alpha = 0.45f))
             ) {
               Text(
                 text = "মোট $totalTracked টি",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = RoyalMaroon,
+                color = AdminV2CyanDeep,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
               )
             }
@@ -182,7 +176,7 @@ fun AdminDeliveryTrackingTab(
             Column(
               modifier = Modifier
                 .fillMaxWidth()
-                .background(CreamBackground, RoundedCornerShape(14.dp))
+                .background(AdminV2IceSurface, RoundedCornerShape(14.dp))
                 .padding(20.dp),
               horizontalAlignment = Alignment.CenterHorizontally,
               verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -229,7 +223,7 @@ fun AdminDeliveryTrackingTab(
 
                   // Track ring
                   drawArc(
-                    color = CreamSurface,
+                    color = Color(0xFFD9EEF9),
                     startAngle = 0f,
                     sweepAngle = 360f,
                     useCenter = false,
@@ -329,7 +323,7 @@ fun AdminDeliveryTrackingTab(
                 val dWidth = (deliveredCount / totalFloat) * size.width * chartProgress
 
                 drawRoundRect(
-                  color = CreamSurface,
+                  color = AdminV2IceSurface,
                   size = size,
                   cornerRadius = CornerRadius(12f, 12f)
                 )
@@ -398,7 +392,7 @@ fun AdminDeliveryTrackingTab(
         verticalAlignment = Alignment.CenterVertically
       ) {
         val filters = listOf(
-          Triple("ALL", "সকল ($totalTracked)", RoyalMaroon),
+          Triple("ALL", "সকল ($totalTracked)", AdminV2DeepOcean),
           Triple("PENDING", "Pending ($pendingCount)", PendingAmberDark),
           Triple("SHIPPED", "Shipped ($shippedCount)", ShippedBlueDark),
           Triple("DELIVERED", "Delivered ($deliveredCount)", DeliveredEmeraldDark)
@@ -407,8 +401,8 @@ fun AdminDeliveryTrackingTab(
           val isSelected = selectedFilter == key
           Surface(
             shape = RoundedCornerShape(18.dp),
-            color = if (isSelected) activeColor else CreamSurface,
-            border = BorderStroke(1.dp, if (isSelected) activeColor else BorderGold),
+            color = if (isSelected) activeColor else AdminV2IceSurface,
+            border = BorderStroke(1.dp, if (isSelected) activeColor else AdminCardBorderWarm),
             modifier = Modifier
               .minimumInteractiveComponentSize()
               .testTag("delivery_filter_$key")
@@ -418,7 +412,7 @@ fun AdminDeliveryTrackingTab(
               text = label,
               fontSize = 12.sp,
               fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-              color = if (isSelected) Color.White else DarkEspresso,
+              color = if (isSelected) Color.White else AdminInkPrimary,
               modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
             )
           }
@@ -429,30 +423,26 @@ fun AdminDeliveryTrackingTab(
     // 4. Order Delivery List
     if (displayedOrders.isEmpty()) {
       item {
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(16.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, BorderGold)
+        GlossyAdminCard(
+          cornerRadius = 16.dp,
+          contentPadding = 24.dp
         ) {
           Column(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(24.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp)
           ) {
             Icon(
               imageVector = Icons.Default.LocalShipping,
               contentDescription = "খালি তালিকা",
-              tint = AntiqueGoldDark,
+              tint = AdminV2CyanDeep,
               modifier = Modifier.size(32.dp)
             )
             Text(
               text = "এই ফিল্টারে কোনো অর্ডার পাওয়া যায়নি",
               fontSize = 13.sp,
               fontWeight = FontWeight.Bold,
-              color = DarkEspresso
+              color = AdminInkPrimary
             )
           }
         }
@@ -483,7 +473,7 @@ fun AdminDeliveryTrackingTab(
                   text = "অর্ডার #${order.id}",
                   fontSize = 14.sp,
                   fontWeight = FontWeight.Bold,
-                  color = RoyalMaroon
+                  color = AdminV2DeepOcean
                 )
                 Text(
                   text = order.date,
@@ -525,14 +515,14 @@ fun AdminDeliveryTrackingTab(
             if (order.trackingId.isNotBlank()) {
               Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = CreamSurface,
-                border = BorderStroke(1.dp, BorderGold)
+                color = AdminV2IceSurface,
+                border = BorderStroke(1.dp, AdminCardBorderWarm)
               ) {
                 Text(
                   text = "ট্র্যাকিং আইডি: ${order.trackingId}",
                   fontSize = 11.sp,
                   fontWeight = FontWeight.Bold,
-                  color = DarkEspresso,
+                  color = AdminInkPrimary,
                   modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
               }
@@ -547,7 +537,7 @@ fun AdminDeliveryTrackingTab(
                 text = "মোট: ৳${order.total}",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = RoyalMaroon,
+                color = AdminV2DeepOcean,
                 modifier = Modifier.weight(1f)
               )
 
@@ -614,10 +604,10 @@ fun AdminDeliveryTrackingTab(
               Button(
                 onClick = { onViewInvoice(order) },
                 colors = ButtonDefaults.buttonColors(
-                  containerColor = CreamSurface,
-                  contentColor = DarkEspresso
+                  containerColor = AdminV2IceSurface,
+                  contentColor = AdminV2DeepOcean
                 ),
-                border = BorderStroke(1.dp, BorderGold),
+                border = BorderStroke(1.dp, AdminCardBorderWarm),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                   .heightIn(min = 48.dp)
@@ -669,14 +659,14 @@ private fun DeliveryDistributionBarRow(
           text = "$label ($subLabel)",
           fontSize = 11.sp,
           fontWeight = FontWeight.Bold,
-          color = DarkEspresso
+          color = AdminInkPrimary
         )
       }
       Text(
         text = "$count টি ($pct%)",
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = DarkEspresso
+        color = AdminInkPrimary
       )
     }
     Canvas(
@@ -686,7 +676,7 @@ private fun DeliveryDistributionBarRow(
         .clip(RoundedCornerShape(6.dp))
     ) {
       drawRoundRect(
-        color = CreamSurface,
+        color = AdminV2IceSurface,
         size = size,
         cornerRadius = CornerRadius(8f, 8f)
       )

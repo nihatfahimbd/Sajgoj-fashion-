@@ -67,9 +67,6 @@ import com.example.data.model.Product
 import com.example.data.model.StoreConfig
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
-import com.example.ui.theme.BorderGold
-import com.example.ui.theme.NavyBlue
-import com.example.ui.theme.RoyalMaroon
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -115,12 +112,12 @@ fun HomePageSettingHub(
   val enabledCount = remember(homeSections) { homeSections.count { it.enabled } }
 
   Column(modifier = modifier.fillMaxSize()) {
-    // 1. Glossy Master Hub Header Card (Bright luminous surface + crisp dark ink text)
+    // 1. Glossy Master Hub Header Card (Frosted V2 White-Ice Glass + Crisp Deep Ocean Ink)
     GlossyAdminCard(
       cornerRadius = 20.dp,
-      accentBorderColor = Color(0xFFE9C9B1),
-      containerTintTop = Color.White,
-      containerTintBottom = Color(0xFFFFF5EE),
+      accentBorderColor = AdminCardBorderWarm,
+      containerTintTop = Color(0xFAFFFFFF),
+      containerTintBottom = Color(0xEDF1F9FE),
       elevation = 7.dp,
       contentPadding = 14.dp
     ) {
@@ -139,7 +136,7 @@ fun HomePageSettingHub(
               .size(44.dp)
               .shadow(4.dp, RoundedCornerShape(14.dp))
               .clip(RoundedCornerShape(14.dp))
-              .background(adminAccentGlossBrush())
+              .background(adminAccentGlossBrush(AdminV2DeepOcean, AdminV2CyanDeep))
               .border(1.dp, Color.White.copy(alpha = 0.65f), RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
           ) {
@@ -168,11 +165,11 @@ fun HomePageSettingHub(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Crisp Reset Pill Button (min 44dp touch target, clear dark ink on glossy pearl)
+        // Crisp Reset Pill Button (min 44dp touch target, clear ice-surface pill)
         Surface(
           shape = RoundedCornerShape(12.dp),
-          color = Color(0xFFFFF1F2),
-          border = BorderStroke(1.dp, Color(0xFFFDA4AF)),
+          color = AdminV2SkySoft,
+          border = BorderStroke(1.dp, AdminV2Cyan.copy(alpha = 0.45f)),
           shadowElevation = 2.dp,
           modifier = Modifier
             .heightIn(min = 42.dp)
@@ -188,14 +185,14 @@ fun HomePageSettingHub(
             Icon(
               imageVector = Icons.Default.Refresh,
               contentDescription = "ডিফল্ট রিসেট",
-              tint = RoyalMaroon,
+              tint = AdminV2CyanDeep,
               modifier = Modifier.size(15.dp)
             )
             Text(
               text = "রিসেট",
               fontSize = 11.5.sp,
               fontWeight = FontWeight.ExtraBold,
-              color = RoyalMaroon
+              color = AdminV2DeepOcean
             )
           }
         }
@@ -211,7 +208,7 @@ fun HomePageSettingHub(
       ) {
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = Color(0xFFECFDF5),
+          color = AdminV2EmeraldSoft,
           border = BorderStroke(1.dp, Color(0xFFA7F3D0))
         ) {
           Text(
@@ -224,14 +221,14 @@ fun HomePageSettingHub(
         }
         Surface(
           shape = RoundedCornerShape(10.dp),
-          color = Color(0xFFEFF6FF),
-          border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+          color = AdminV2SkySoft,
+          border = BorderStroke(1.dp, AdminCardBorderWarm)
         ) {
           Text(
             text = "🖼️ ${banners.count { it.isActive }} ব্যানার সক্রিয়",
             fontSize = 10.5.sp,
             fontWeight = FontWeight.Bold,
-            color = NavyBlue,
+            color = AdminV2CyanDeep,
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
           )
         }
@@ -300,9 +297,9 @@ fun HomePageSettingHub(
           item {
             GlossyAdminCard(
               cornerRadius = 18.dp,
-              accentBorderColor = Color(0xFFE2C3AA),
-              containerTintTop = Color.White,
-              containerTintBottom = Color(0xFFFFF8F2),
+              accentBorderColor = AdminCardBorderWarm,
+              containerTintTop = Color(0xFAFFFFFF),
+              containerTintBottom = Color(0xEDF1F9FE),
               elevation = 5.dp,
               contentPadding = 14.dp
             ) {
@@ -395,8 +392,8 @@ fun HomePageSettingHub(
                         val chosen = newCategory == cat.name
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else Color.White,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                          color = if (chosen) AdminV2DeepOcean else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                           modifier = Modifier
                             .heightIn(min = 38.dp)
                             .clickable {
@@ -444,8 +441,8 @@ fun HomePageSettingHub(
                         val chosen = newColumnsPerRow == cols
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else Color.White,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                          color = if (chosen) AdminV2DeepOcean else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                           modifier = Modifier
                             .heightIn(min = 36.dp)
                             .clickable { newColumnsPerRow = cols }
@@ -464,8 +461,8 @@ fun HomePageSettingHub(
                         val chosen = newDisplayStyle == styleKey
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) NavyBlue else Color.White,
-                          border = BorderStroke(1.dp, if (chosen) NavyBlue else Color(0xFFCBD5E1)),
+                          color = if (chosen) AdminV2CyanDeep else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                           modifier = Modifier
                             .heightIn(min = 36.dp)
                             .clickable { newDisplayStyle = styleKey }
@@ -484,8 +481,8 @@ fun HomePageSettingHub(
                         val chosen = newRowCount == r
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else Color.White,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                          color = if (chosen) AdminV2DeepOcean else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                           modifier = Modifier
                             .heightIn(min = 36.dp)
                             .clickable {
@@ -541,7 +538,7 @@ fun HomePageSettingHub(
                           creatorType = null
                         }
                       },
-                      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+                      colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
                       shape = RoundedCornerShape(12.dp),
                       modifier = Modifier
                         .weight(1f)
@@ -581,12 +578,12 @@ fun HomePageSettingHub(
             GlossyAdminCard(
               cornerRadius = 18.dp,
               accentBorderColor = when {
-                isExpanded -> RoyalMaroon
-                section.enabled -> Color(0xFFE3C8B2)
+                isExpanded -> AdminV2CyanDeep
+                section.enabled -> AdminCardBorderWarm
                 else -> Color(0xFFCBD5E1)
               },
-              containerTintTop = if (section.enabled) Color.White else Color(0xFFF8FAFC),
-              containerTintBottom = if (section.enabled) Color(0xFFFFFAF6) else Color(0xFFF1F5F9),
+              containerTintTop = if (section.enabled) Color(0xFAFFFFFF) else Color(0xFFF8FAFC),
+              containerTintBottom = if (section.enabled) Color(0xEDF1F9FE) else Color(0xFFF1F5F9),
               elevation = if (isExpanded) 8.dp else 4.dp,
               contentPadding = 13.dp,
               modifier = Modifier.testTag("home_setting_block_${section.id}")
@@ -658,8 +655,8 @@ fun HomePageSettingHub(
                 ) {
                   Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = if (index > 0) Color(0xFFFFF1F2) else Color(0xFFF1F5F9),
-                    border = BorderStroke(1.dp, if (index > 0) Color(0xFFFECDD3) else Color(0xFFE2E8F0))
+                    color = if (index > 0) AdminV2SkySoft else Color(0xFFF1F5F9),
+                    border = BorderStroke(1.dp, if (index > 0) AdminCardBorderWarm else Color(0xFFE2E8F0))
                   ) {
                     IconButton(
                       onClick = { onMoveSection(section.id, -1) },
@@ -671,7 +668,7 @@ fun HomePageSettingHub(
                       Icon(
                         imageVector = Icons.Default.ArrowUpward,
                         contentDescription = "উপরে নিন",
-                        tint = if (index > 0) RoyalMaroon else Color(0xFF94A3B8),
+                        tint = if (index > 0) AdminV2DeepOcean else Color(0xFF94A3B8),
                         modifier = Modifier.size(16.dp)
                       )
                     }
@@ -679,8 +676,8 @@ fun HomePageSettingHub(
 
                   Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = if (index < homeSections.lastIndex) Color(0xFFFFF1F2) else Color(0xFFF1F5F9),
-                    border = BorderStroke(1.dp, if (index < homeSections.lastIndex) Color(0xFFFECDD3) else Color(0xFFE2E8F0))
+                    color = if (index < homeSections.lastIndex) AdminV2SkySoft else Color(0xFFF1F5F9),
+                    border = BorderStroke(1.dp, if (index < homeSections.lastIndex) AdminCardBorderWarm else Color(0xFFE2E8F0))
                   ) {
                     IconButton(
                       onClick = { onMoveSection(section.id, 1) },
@@ -692,7 +689,7 @@ fun HomePageSettingHub(
                       Icon(
                         imageVector = Icons.Default.ArrowDownward,
                         contentDescription = "নিচে নিন",
-                        tint = if (index < homeSections.lastIndex) RoyalMaroon else Color(0xFF94A3B8),
+                        tint = if (index < homeSections.lastIndex) AdminV2DeepOcean else Color(0xFF94A3B8),
                         modifier = Modifier.size(16.dp)
                       )
                     }
@@ -723,8 +720,8 @@ fun HomePageSettingHub(
                 if (isLayoutConfigurable || section.type == "promo_banner") {
                   Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = if (isExpanded) RoyalMaroon else Color(0xFFFFF1F2),
-                    border = BorderStroke(1.dp, if (isExpanded) RoyalMaroon else Color(0xFFFDA4AF)),
+                    color = if (isExpanded) AdminV2DeepOcean else AdminV2SkySoft,
+                    border = BorderStroke(1.dp, if (isExpanded) AdminV2CyanDeep else AdminCardBorderWarm),
                     shadowElevation = 1.dp,
                     modifier = Modifier
                       .heightIn(min = 38.dp)
@@ -747,7 +744,7 @@ fun HomePageSettingHub(
                         },
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isExpanded) Color.White else RoyalMaroon
+                        color = if (isExpanded) Color.White else AdminV2DeepOcean
                       )
                     }
                   }
@@ -822,7 +819,7 @@ fun HomePageSettingHub(
                       colors = adminOutlinedTextFieldColors(),
                       modifier = Modifier.weight(1f)
                     )
-                    Button(
+                      Button(
                       onClick = {
                         if (editTitle.isNotBlank()) {
                           onUpdateSection(section.id) {
@@ -834,7 +831,7 @@ fun HomePageSettingHub(
                           }
                         }
                       },
-                      colors = ButtonDefaults.buttonColors(containerColor = NavyBlue, contentColor = Color.White),
+                      colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
                       shape = RoundedCornerShape(10.dp),
                       contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                       modifier = Modifier.heightIn(min = 48.dp)
@@ -864,8 +861,8 @@ fun HomePageSettingHub(
                         val chosen = section.categoryName == cat.name
                         Surface(
                           shape = RoundedCornerShape(10.dp),
-                          color = if (chosen) RoyalMaroon else Color.White,
-                          border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                          color = if (chosen) AdminV2DeepOcean else Color.White,
+                          border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                           modifier = Modifier.clickable {
                             onUpdateSection(section.id) {
                               it.copy(categoryName = cat.name, badge = cat.name)
@@ -887,8 +884,8 @@ fun HomePageSettingHub(
                   if (isLayoutConfigurable) {
                     Surface(
                       shape = RoundedCornerShape(14.dp),
-                      color = Color(0xFFF8FAFC),
-                      border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                      color = AdminV2IceSurface,
+                      border = BorderStroke(1.dp, AdminCardBorderWarm),
                       modifier = Modifier.fillMaxWidth()
                     ) {
                       Column(
@@ -908,14 +905,14 @@ fun HomePageSettingHub(
                           )
                           Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFFEFF6FF),
-                            border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                            color = AdminV2SkySoft,
+                            border = BorderStroke(1.dp, AdminCardBorderWarm)
                           ) {
                             Text(
                               text = layoutSummary,
                               fontSize = 10.sp,
                               fontWeight = FontWeight.Bold,
-                              color = NavyBlue,
+                              color = AdminV2CyanDeep,
                               modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                             )
                           }
@@ -939,8 +936,8 @@ fun HomePageSettingHub(
                             val chosen = gridCfg.cols == cols
                             Surface(
                               shape = RoundedCornerShape(8.dp),
-                              color = if (chosen) RoyalMaroon else Color.White,
-                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                              color = if (chosen) AdminV2DeepOcean else Color.White,
+                              border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                               modifier = Modifier
                                 .clickable {
                                   onUpdateSection(section.id) { sec ->
@@ -966,8 +963,8 @@ fun HomePageSettingHub(
                             val chosen = (if (gridCfg.isSlider) "slider" else "grid") == styleKey
                             Surface(
                               shape = RoundedCornerShape(8.dp),
-                              color = if (chosen) NavyBlue else Color.White,
-                              border = BorderStroke(1.dp, if (chosen) NavyBlue else Color(0xFFCBD5E1)),
+                              color = if (chosen) AdminV2CyanDeep else Color.White,
+                              border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                               modifier = Modifier
                                 .clickable {
                                   onUpdateSection(section.id) { sec ->
@@ -1015,8 +1012,8 @@ fun HomePageSettingHub(
                             val chosen = gridCfg.rows == r
                             Surface(
                               shape = RoundedCornerShape(8.dp),
-                              color = if (chosen) RoyalMaroon else Color.White,
-                              border = BorderStroke(1.dp, if (chosen) RoyalMaroon else Color(0xFFCBD5E1)),
+                              color = if (chosen) AdminV2DeepOcean else Color.White,
+                              border = BorderStroke(1.dp, if (chosen) AdminV2CyanDeep else AdminCardBorderWarm),
                               modifier = Modifier
                                 .clickable {
                                   onUpdateSection(section.id) { sec ->
@@ -1055,7 +1052,7 @@ fun HomePageSettingHub(
                         Icon(
                           imageVector = Icons.Default.Search,
                           contentDescription = "Search",
-                          tint = RoyalMaroon,
+                          tint = AdminV2CyanDeep,
                           modifier = Modifier.size(18.dp)
                         )
                       },
@@ -1091,10 +1088,10 @@ fun HomePageSettingHub(
                         }
                         Surface(
                           shape = RoundedCornerShape(12.dp),
-                          color = if (isSelected) Color(0xFFFFFBEB) else Color.White,
+                          color = if (isSelected) AdminV2IceSurface else Color.White,
                           border = BorderStroke(
                             1.dp,
-                            if (isSelected) Color(0xFFF59E0B) else Color(0xFFE2E8F0)
+                            if (isSelected) AdminV2CyanDeep else AdminCardBorderSoft
                           ),
                           shadowElevation = 1.dp,
                           modifier = Modifier
@@ -1142,7 +1139,7 @@ fun HomePageSettingHub(
 
                             Surface(
                               shape = RoundedCornerShape(9.dp),
-                              color = if (isSelected) AccentGreen else RoyalMaroon
+                              color = if (isSelected) AdminV2Emerald else AdminV2DeepOcean
                             ) {
                               Text(
                                 text = if (isSelected) "✓ যুক্ত" else "+ যোগ",
@@ -1190,7 +1187,7 @@ fun HomePageSettingHub(
               }
               Button(
                 onClick = onAddBannerClick,
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 modifier = Modifier.heightIn(min = 44.dp)
@@ -1211,7 +1208,7 @@ fun HomePageSettingHub(
             itemsIndexed(banners) { _, b ->
               GlossyAdminCard(
                 cornerRadius = 16.dp,
-                accentBorderColor = if (b.isActive) BorderGold else Color(0xFFCBD5E1),
+                accentBorderColor = if (b.isActive) AdminCardBorderWarm else Color(0xFFCBD5E1),
                 contentPadding = 11.dp
               ) {
                 Row(
@@ -1229,7 +1226,7 @@ fun HomePageSettingHub(
                   Column(modifier = Modifier.weight(1f)) {
                     Text(text = b.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary, maxLines = 1)
                     Text(text = b.subtitle, fontSize = 11.sp, color = AdminInkMuted, maxLines = 1)
-                    Text(text = "বাটন: ${b.buttonText}", fontSize = 10.5.sp, color = RoyalMaroon, fontWeight = FontWeight.Bold)
+                    Text(text = "বাটন: ${b.buttonText}", fontSize = 10.5.sp, color = AdminV2CyanDeep, fontWeight = FontWeight.Bold)
                   }
                   Switch(
                     checked = b.isActive,
@@ -1338,7 +1335,7 @@ fun HomePageSettingHub(
                     )
                   )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                   .fillMaxWidth()

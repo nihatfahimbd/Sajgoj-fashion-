@@ -60,15 +60,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.DarkEspresso
-import com.example.ui.theme.RoyalMaroon
 import com.example.util.ProductMediaHelper
 import com.example.util.ProductMediaKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val SellerOrange = Color(0xFFF97316)
+private val VideoAccentCyan = AdminV2CyanDeep
 
 @Composable
 fun ProductVideoFormSection(
@@ -140,13 +138,13 @@ fun ProductVideoFormSection(
           )
           Surface(
             shape = RoundedCornerShape(50),
-            color = SellerOrange.copy(alpha = 0.14f)
+            color = AdminV2SkySoft
           ) {
             Text(
               text = "প্রথমে ভিডিও, পরে ছবি",
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold,
-              color = Color(0xFFEA580C),
+              color = VideoAccentCyan,
               modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
             )
           }
@@ -159,7 +157,7 @@ fun ProductVideoFormSection(
           },
           colors = SwitchDefaults.colors(
             checkedThumbColor = Color.White,
-            checkedTrackColor = SellerOrange,
+            checkedTrackColor = VideoAccentCyan,
             uncheckedThumbColor = Color.White,
             uncheckedTrackColor = Color(0xFFCBD5E1)
           ),
@@ -201,7 +199,7 @@ fun ProductVideoFormSection(
                 onVideoChanged(true, id, if (videoType == id) videoUrl else "", if (videoType == id) videoThumbUrl else "")
               },
               colors = RadioButtonDefaults.colors(
-                selectedColor = SellerOrange,
+                selectedColor = VideoAccentCyan,
                 unselectedColor = Color(0xFF64748B)
               )
             )
@@ -256,7 +254,7 @@ fun ProductVideoFormSection(
               }
               if (isCopyingVideo) {
                 CircularProgressIndicator(
-                  color = SellerOrange,
+                  color = VideoAccentCyan,
                   strokeWidth = 2.5.dp,
                   modifier = Modifier.size(26.dp)
                 )
@@ -288,7 +286,7 @@ fun ProductVideoFormSection(
                   .width(120.dp)
                   .height(88.dp)
                   .clip(RoundedCornerShape(12.dp))
-                  .border(1.5.dp, SellerOrange, RoundedCornerShape(12.dp))
+                  .border(1.5.dp, VideoAccentCyan, RoundedCornerShape(12.dp))
                   .background(Color.Black)
               ) {
                 if (videoThumbUrl.isNotBlank()) {
@@ -411,7 +409,7 @@ fun ProductVideoFormSection(
                 Text(
                   text = "ID: ${parsedPreview.videoId}",
                   fontSize = 10.sp,
-                  color = DarkEspresso
+                  color = AdminInkSecondary
                 )
               }
               IconButton(onClick = { onVideoChanged(false, "youtube", "", "") }) {

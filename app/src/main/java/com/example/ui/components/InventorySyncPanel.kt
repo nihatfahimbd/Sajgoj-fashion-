@@ -64,11 +64,6 @@ import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
-import com.example.ui.theme.AntiqueGoldDark
-import com.example.ui.theme.BorderGold
-import com.example.ui.theme.CreamSurface
-import com.example.ui.theme.DarkEspresso
-import com.example.ui.theme.RoyalMaroon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -135,7 +130,7 @@ fun InventorySyncPanel(
                   text = "স্টোরফ্রন্ট ↔ POS রিয়েল-টাইম সিঙ্ক",
                   fontSize = 14.sp,
                   fontWeight = FontWeight.Bold,
-                  color = RoyalMaroon
+                  color = AdminInkPrimary
                 )
                 Text(
                   text = "স্ট্যাটাস: ${if (syncHealth.status == "CONNECTED") "ফায়ারস্টোর ও POS সক্রিয়" else "লোকাল ব্রিজ সক্রিয়"} • ${timeFormatter.format(Date(syncHealth.lastSyncTimestamp))}",
@@ -148,7 +143,7 @@ fun InventorySyncPanel(
 
             Button(
               onClick = onReconcileNow,
-              colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+              colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
               shape = RoundedCornerShape(14.dp),
               contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
               modifier = Modifier
@@ -183,7 +178,7 @@ fun InventorySyncPanel(
             SyncMetricChip(
               label = "সিঙ্ক ইভেন্ট",
               value = "${syncEvents.size}",
-              accent = RoyalMaroon,
+              accent = AdminV2CyanDeep,
               modifier = Modifier.weight(1f)
             )
           }
@@ -209,12 +204,12 @@ fun InventorySyncPanel(
       ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
           Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(imageVector = Icons.Default.PointOfSale, contentDescription = null, tint = RoyalMaroon, modifier = Modifier.size(18.dp))
+            Icon(imageVector = Icons.Default.PointOfSale, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(18.dp))
             Text(
               text = "কুইক POS কাউন্টার বিক্রয় (অটো-স্টক সিঙ্ক)",
               fontSize = 13.sp,
               fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
+              color = AdminInkPrimary
             )
           }
 
@@ -276,21 +271,21 @@ fun InventorySyncPanel(
 
               Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = CreamSurface,
-                border = BorderStroke(1.dp, BorderGold)
+                color = AdminV2IceSurface,
+                border = BorderStroke(1.dp, AdminCardBorderWarm)
               ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                   IconButton(
                     onClick = { if (saleQty > 1) saleQty-- },
                     modifier = Modifier.size(48.dp)
                   ) {
-                    Icon(imageVector = Icons.Default.Remove, contentDescription = "পরিমাণ কমান", tint = DarkEspresso)
+                    Icon(imageVector = Icons.Default.Remove, contentDescription = "পরিমাণ কমান", tint = AdminInkPrimary)
                   }
                   Text(
                     text = "$saleQty",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = RoyalMaroon
+                    color = AdminV2DeepOcean
                   )
                   IconButton(
                     onClick = {
@@ -299,7 +294,7 @@ fun InventorySyncPanel(
                     },
                     modifier = Modifier.size(48.dp)
                   ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "পরিমাণ বাড়ান", tint = DarkEspresso)
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "পরিমাণ বাড়ান", tint = AdminInkPrimary)
                   }
                 }
               }
@@ -313,8 +308,8 @@ fun InventorySyncPanel(
                 val active = paymentMethod == method
                 Surface(
                   shape = RoundedCornerShape(12.dp),
-                  color = if (active) RoyalMaroon else CreamSurface,
-                  border = BorderStroke(1.dp, if (active) RoyalMaroon else BorderGold),
+                  color = if (active) AdminV2DeepOcean else AdminV2IceSurface,
+                  border = BorderStroke(1.dp, if (active) AdminV2CyanDeep else AdminCardBorderWarm),
                   modifier = Modifier
                     .weight(1f)
                     .clickable { paymentMethod = method }
@@ -327,7 +322,7 @@ fun InventorySyncPanel(
                       text = method,
                       fontSize = 10.sp,
                       fontWeight = FontWeight.Bold,
-                      color = if (active) Color.White else DarkEspresso
+                      color = if (active) Color.White else AdminInkPrimary
                     )
                   }
                 }
@@ -379,7 +374,7 @@ fun InventorySyncPanel(
             text = "স্টোরফ্রন্ট বনাম POS লাইভ স্টক তুলনা",
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
-            color = RoyalMaroon
+            color = AdminInkPrimary
           )
           Spacer(modifier = Modifier.height(8.dp))
 
@@ -410,21 +405,21 @@ fun InventorySyncPanel(
                 )
               }
               Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(8.dp), color = CreamSurface) {
+                Surface(shape = RoundedCornerShape(8.dp), color = AdminV2IceSurface) {
                   Text(
                     text = "Web: ${product.stock}",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DarkEspresso,
+                    color = AdminInkPrimary,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                   )
                 }
-                Surface(shape = RoundedCornerShape(8.dp), color = CreamSurface) {
+                Surface(shape = RoundedCornerShape(8.dp), color = AdminV2IceSurface) {
                   Text(
                     text = "POS: $posStock",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DarkEspresso,
+                    color = AdminInkPrimary,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                   )
                 }
@@ -443,7 +438,7 @@ fun InventorySyncPanel(
               }
             }
             if (index < minOf(products.size, 12) - 1) {
-              HorizontalDivider(color = BorderGold.copy(alpha = 0.4f))
+              HorizontalDivider(color = AdminCardBorderSoft)
             }
           }
         }
@@ -456,7 +451,7 @@ fun InventorySyncPanel(
         text = "সাম্প্রতিক দ্বিমুখী সিঙ্ক অডিট লগ (${syncEvents.size})",
         fontSize = 13.sp,
         fontWeight = FontWeight.Bold,
-        color = RoyalMaroon
+        color = AdminInkPrimary
       )
     }
 
@@ -465,13 +460,13 @@ fun InventorySyncPanel(
         OutlinedButton(
           onClick = onReconcileNow,
           shape = RoundedCornerShape(16.dp),
-          border = BorderStroke(1.dp, BorderGold),
+          border = BorderStroke(1.dp, AdminCardBorderWarm),
           modifier = Modifier.fillMaxWidth()
         ) {
           Text(
             text = "এখনো কোনো সিঙ্ক ইভেন্ট নেই — অর্ডার, POS বিক্রয় বা রিটার্ন হলে এখানে দেখাবে",
             fontSize = 11.sp,
-            color = DarkEspresso
+            color = AdminInkSecondary
           )
         }
       }
@@ -488,7 +483,7 @@ fun InventorySyncPanel(
           ) {
             Column(modifier = Modifier.weight(1f)) {
               Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(6.dp), color = RoyalMaroon) {
+                Surface(shape = RoundedCornerShape(6.dp), color = AdminV2DeepOcean) {
                   Text(
                     text = ev.source,
                     fontSize = 9.sp,
@@ -543,8 +538,8 @@ private fun SyncMetricChip(
   Surface(
     modifier = modifier,
     shape = RoundedCornerShape(12.dp),
-    color = CreamSurface,
-    border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.7f))
+    color = AdminV2IceSurface,
+    border = BorderStroke(1.dp, AdminCardBorderWarm)
   ) {
     Column(
       modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
