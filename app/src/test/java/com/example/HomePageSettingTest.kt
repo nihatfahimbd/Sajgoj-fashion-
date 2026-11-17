@@ -232,4 +232,70 @@ class HomePageSettingTest {
     assertEquals(2, reels.rowCount)
     assertEquals(4, com.example.ui.components.resolveBlockGridConfig(reels).defaultLimit)
   }
+
+  @Test
+  fun paymentMethodToggles_andStoreDesignConfig_persistAcrossReload() {
+    val repo = StoreRepository(context)
+    val customDesign = com.example.data.model.StoreDesignConfig(
+      useCustomPageBg = true,
+      pageBgStart = "#0F172A",
+      pageBgEnd = "#1E293B",
+      cardPriceBg = "#FFF8F0",
+      cardRegularPriceColor = "#0F294A",
+      cardOfferPriceColor = "#DC2626",
+      cardBtnStyle = "rounded",
+      cardBtnBg = "#F59E0B",
+      cardWishlistIcon = "💖",
+      useCustomHeaderColors = true,
+      headerBg = "#111827"
+    )
+    repo.updateStoreConfig(
+      repo.storeConfig.value.copy(
+        bkashEnabled = false,
+        nagadEnabled = true,
+        rocketEnabled = false,
+        codEnabled = true,
+        visaEnabled = false,
+        design = customDesign
+      )
+    )
+
+    val reloaded = StoreRepository(context)
+    val cfg = reloaded.storeConfig.value
+    assertFalse(cfg.bkashEnabled)
+    assertTrue(cfg.nagadEnabled)
+    assertFalse(cfg.rocketEnabled)
+    assertTrue(cfg.codEnabled)
+    assertFalse(cfg.visaEnabled)
+
+    assertTrue(cfg.design.useCustomPageBg)
+    assertEquals("#0F172A", cfg.design.pageBgStart)
+    assertEquals("#FFF8F0", cfg.design.cardPriceBg)
+    assertEquals("#0F294A", cfg.design.cardRegularPriceColor)
+    assertEquals("#DC2626", cfg.design.cardOfferPriceColor)
+    assertEquals("rounded", cfg.design.cardBtnStyle)
+    assertEquals("#F59E0B", cfg.design.cardBtnBg)
+    assertEquals("💖", cfg.design.cardWishlistIcon)
+    assertTrue(cfg.design.useCustomHeaderColors)
+    assertEquals("#111827", cfg.design.headerBg)
+  }
+
+  @Test
+  fun builtInHomeSections_canBeRenamedEditedAndDeletedPersistentlyUntilReset() {
+    val repo = StoreRepository(context)
+    repo.updateHomeSection("hot_sale") {
+      it.copy(title = "ফ্ল্যাশ ধামাকা সেল", subtitle = "আজকের সেরা অফার", icon = "⚡")
+    }
+    repo.deleteHomeSection("best_deals")
+
+    val reloaded = StoreRepository(context)
+    val editedHotSale = reloaded.homeSections.value.first { it.id == "hot_sale" }
+    assertEquals("ফ্ল্যাশ ধামাকা সেল", editedHotSale.title)
+    assertEquals("আজকের সেরা অফার", editedHotSale.subtitle)
+    assertEquals("⚡", editedHotSale.icon)
+    assertTrue("Deleted built-in block should remain deleted after reload", reloaded.homeSections.value.none { it.id == "best_deals" })
+
+    reloaded.resetHomeSectionsToDefault()
+    assertTrue("Reset should restore built-in block", reloaded.homeSections.value.any { it.id == "best_deals" })
+  }
 }

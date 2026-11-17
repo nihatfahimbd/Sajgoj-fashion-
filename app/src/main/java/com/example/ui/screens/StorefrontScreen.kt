@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -65,6 +67,7 @@ import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
 import com.example.data.model.ReelItem
 import com.example.data.model.StoreConfig
+import com.example.data.model.StoreDesignConfig
 import com.example.ui.ImageSearchState
 import com.example.ui.components.AppImage
 import com.example.ui.components.BannerCarousel
@@ -80,10 +83,12 @@ import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
+import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.parseColorHex
 
 private val fallbackDefaultSections = listOf(
   HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", layout = "banner", displayStyle = "banner", columnsPerRow = 1, rowCount = 1, enabled = true),
@@ -131,6 +136,11 @@ fun StorefrontScreen(
   var collectionDialogSection by remember { mutableStateOf<HomeSectionConfig?>(null) }
   var activeReelForPlayback by remember { mutableStateOf<ReelItem?>(null) }
   var allProductsInlineCat by remember { mutableStateOf("All") }
+  var wishlistIds by remember { mutableStateOf(setOf<String>()) }
+  val design = config.design
+  val toggleWishlist: (String) -> Unit = { pid ->
+    wishlistIds = if (wishlistIds.contains(pid)) wishlistIds - pid else wishlistIds + pid
+  }
 
   val isFilteredMode = selectedCategory != "All" || searchQuery.isNotBlank() || imageSearchState != null
   val activeSections = remember(homeSections) {
@@ -259,7 +269,17 @@ fun StorefrontScreen(
     }
   }
 
-  Box(modifier = modifier.fillMaxSize()) {
+  val pageModifier = if (design.useCustomPageBg) {
+    val startCol = parseColorHex(design.pageBgStart, CreamBackground)
+    val endCol = parseColorHex(design.pageBgEnd, CreamSurface)
+    modifier
+      .fillMaxSize()
+      .background(Brush.verticalGradient(listOf(startCol, endCol)))
+  } else {
+    modifier.fillMaxSize()
+  }
+
+  Box(modifier = pageModifier) {
     LazyColumn(
       state = listState,
       contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 84.dp),
@@ -352,6 +372,9 @@ fun StorefrontScreen(
                   product = product,
                   onProductClick = onProductClick,
                   onAddToCart = onAddToCart,
+                  design = design,
+                  isWishlisted = wishlistIds.contains(product.id),
+                  onToggleWishlist = { toggleWishlist(product.id) },
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -433,7 +456,8 @@ fun StorefrontScreen(
                     }
                   },
                   onReelClick = { reel -> activeReelForPlayback = reel },
-                  onAddToCart = onAddToCart
+                  onAddToCart = onAddToCart,
+                  design = design
                 )
               }
             } else if (section.type == "combo_packs") {
@@ -468,7 +492,8 @@ fun StorefrontScreen(
                         reviewsCount = 24
                       )
                     )
-                  }
+                  },
+                  design = design
                 )
               }
             } else {
@@ -499,7 +524,10 @@ fun StorefrontScreen(
                   },
                   onOpenFullCollection = { collectionDialogSection = section },
                   onProductClick = onProductClick,
-                  onAddToCart = onAddToCart
+                  onAddToCart = onAddToCart,
+                  design = design,
+                  wishlistIds = wishlistIds,
+                  onToggleWishlist = toggleWishlist
                 )
               }
             }
@@ -568,7 +596,10 @@ fun StorefrontScreen(
         sectionProducts = modalProducts,
         onDismiss = { collectionDialogSection = null },
         onProductClick = onProductClick,
-        onAddToCart = onAddToCart
+        onAddToCart = onAddToCart,
+        design = design,
+        wishlistIds = wishlistIds,
+        onToggleWishlist = toggleWishlist
       )
     }
 
@@ -598,7 +629,10 @@ private fun StorefrontProductBlockCard(
   onToggleExpand: (Int) -> Unit,
   onOpenFullCollection: () -> Unit,
   onProductClick: (Product) -> Unit,
-  onAddToCart: (Product) -> Unit
+  onAddToCart: (Product) -> Unit,
+  design: StoreDesignConfig = StoreDesignConfig(),
+  wishlistIds: Set<String> = emptySet(),
+  onToggleWishlist: ((String) -> Unit)? = null
 ) {
   val cfg = remember(section) { resolveBlockGridConfig(section) }
   val defaultLimit = cfg.defaultLimit
@@ -615,11 +649,17 @@ private fun StorefrontProductBlockCard(
     "best_deals" -> "DEAL"
     else -> null
   }
+  val blockBg = if (design.useCustomBlockBg) parseColorHex(design.blockBgColor, Color.White) else Color.White
+  val blockBorder = if (design.useCustomBlockBg) parseColorHex(design.blockBorderColor, BorderGold) else BorderGold.copy(alpha = 0.7f)
+  val titleBg = parseColorHex(design.blockTitleBg, NavyBlue)
+  val titleText = parseColorHex(design.blockTitleText, Color.White)
+  val seeMoreBg = parseColorHex(design.seeMoreBg, NavyBlue)
+  val seeMoreText = parseColorHex(design.seeMoreText, Color.White)
 
   Surface(
     shape = RoundedCornerShape(16.dp),
-    color = Color.White,
-    border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.7f)),
+    color = blockBg,
+    border = BorderStroke(1.dp, blockBorder),
     shadowElevation = 1.dp,
     modifier = Modifier
       .fillMaxWidth()
@@ -631,7 +671,7 @@ private fun StorefrontProductBlockCard(
         .padding(horizontal = 8.dp, vertical = 8.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      // Unified Navy Blue Pill Title Header + Matching "আরো দেখুন ›" Action (No extra badge pills)
+      // Unified Pill Title Header + Matching "আরো দেখুন ›" Action
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -639,7 +679,7 @@ private fun StorefrontProductBlockCard(
       ) {
         Surface(
           shape = RoundedCornerShape(50),
-          color = NavyBlue,
+          color = titleBg,
           shadowElevation = 2.dp,
           modifier = Modifier.weight(1f, fill = false)
         ) {
@@ -648,12 +688,12 @@ private fun StorefrontProductBlockCard(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp)
           ) {
-            Text(text = section.icon.ifBlank { "✨" }, fontSize = 14.sp, color = Color.White)
+            Text(text = section.icon.ifBlank { "✨" }, fontSize = 14.sp, color = titleText)
             Text(
               text = section.title,
               fontSize = 14.sp,
               fontWeight = FontWeight.Black,
-              color = Color.White,
+              color = titleText,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
             )
@@ -688,7 +728,7 @@ private fun StorefrontProductBlockCard(
             }
             Surface(
               shape = RoundedCornerShape(50),
-              color = NavyBlue,
+              color = seeMoreBg,
               shadowElevation = 2.dp,
               modifier = Modifier
                 .clip(RoundedCornerShape(50))
@@ -699,7 +739,7 @@ private fun StorefrontProductBlockCard(
                 text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Black,
-                color = Color.White,
+                color = seeMoreText,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
               )
             }
@@ -803,6 +843,9 @@ private fun StorefrontProductBlockCard(
                 onProductClick = onProductClick,
                 onAddToCart = onAddToCart,
                 badgeText = cardBadge,
+                design = design,
+                isWishlisted = wishlistIds.contains(prod.id),
+                onToggleWishlist = onToggleWishlist?.let { toggle -> { toggle(prod.id) } },
                 modifier = Modifier.width(cardWidth)
               )
             }
@@ -825,6 +868,9 @@ private fun StorefrontProductBlockCard(
                   onProductClick = onProductClick,
                   onAddToCart = onAddToCart,
                   badgeText = cardBadge,
+                  design = design,
+                  isWishlisted = wishlistIds.contains(prod.id),
+                  onToggleWishlist = onToggleWishlist?.let { toggle -> { toggle(prod.id) } },
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -1377,9 +1423,10 @@ private fun StorefrontFooterCard(config: StoreConfig) {
 
     Spacer(modifier = Modifier.height(6.dp))
 
-    Row(
+    @OptIn(ExperimentalLayoutApi::class)
+    FlowRow(
       horizontalArrangement = Arrangement.spacedBy(6.dp),
-      verticalAlignment = Alignment.CenterVertically
+      verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
       if (config.bkashEnabled) {
         Box(
@@ -1387,6 +1434,7 @@ private fun StorefrontFooterCard(config: StoreConfig) {
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFE2136E))
             .padding(horizontal = 8.dp, vertical = 3.dp)
+            .testTag("footer_badge_bkash")
         ) {
           Text(text = "bKash", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
@@ -1397,8 +1445,20 @@ private fun StorefrontFooterCard(config: StoreConfig) {
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFF6921E))
             .padding(horizontal = 8.dp, vertical = 3.dp)
+            .testTag("footer_badge_nagad")
         ) {
           Text(text = "Nagad", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+      }
+      if (config.rocketEnabled) {
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF8C3494))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .testTag("footer_badge_rocket")
+        ) {
+          Text(text = "Rocket", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
       }
       if (config.codEnabled) {
@@ -1407,8 +1467,20 @@ private fun StorefrontFooterCard(config: StoreConfig) {
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White)
             .padding(horizontal = 8.dp, vertical = 3.dp)
+            .testTag("footer_badge_cod")
         ) {
           Text(text = "Cash on Delivery", color = DarkEspresso, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+      }
+      if (config.visaEnabled) {
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF1E3A8A))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .testTag("footer_badge_visa")
+        ) {
+          Text(text = "Visa / Mastercard", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
       }
     }

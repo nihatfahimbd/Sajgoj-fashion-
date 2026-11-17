@@ -80,6 +80,7 @@ import com.example.data.model.ComboPack
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
 import com.example.data.model.ReelItem
+import com.example.data.model.StoreDesignConfig
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
@@ -90,6 +91,7 @@ import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.ReelsRedBadge
 import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.parseColorHex
 
 data class BlockGridConfig(
   val cols: Int,
@@ -117,10 +119,14 @@ fun resolveBlockGridConfig(section: HomeSectionConfig): BlockGridConfig {
 
 fun resolveReelLinkedProduct(reel: ReelItem, products: List<Product>): Product {
   val found = products.find { it.id == reel.productId }
+  val selling = reel.price.takeIf { it > 0 } ?: 1490
+  val regular = ((selling * 1.2).toInt()).coerceAtLeast(selling + 200)
   return found ?: Product(
     id = reel.productId.ifBlank { reel.id },
     name = reel.title,
-    price = reel.price.takeIf { it > 0 } ?: 1490,
+    price = selling,
+    regularPrice = regular,
+    offerPrice = selling,
     stock = 12,
     category = "রিলস কালেকশন",
     imageUrl = reel.posterUrl,
@@ -140,6 +146,7 @@ fun StorefrontReelsBlockCard(
   onSeeMoreClick: () -> Unit,
   onReelClick: (ReelItem) -> Unit,
   onAddToCart: (Product) -> Unit,
+  design: StoreDesignConfig = StoreDesignConfig(),
   modifier: Modifier = Modifier
 ) {
   val activeReels = remember(reels) { reels.filter { it.active } }
@@ -149,11 +156,19 @@ fun StorefrontReelsBlockCard(
   val displayReels = remember(activeReels, isExpanded, defaultVisibleCount) {
     if (isExpanded) activeReels else activeReels.take(defaultVisibleCount)
   }
+  val blockBg = if (design.useCustomBlockBg) parseColorHex(design.blockBgColor, Color.White) else Color.White
+  val blockBorder = if (design.useCustomBlockBg) parseColorHex(design.blockBorderColor, BorderGold) else BorderGold.copy(alpha = 0.7f)
+  val titleBg = parseColorHex(design.blockTitleBg, NavyBlue)
+  val titleText = parseColorHex(design.blockTitleText, Color.White)
+  val seeMoreBg = parseColorHex(design.seeMoreBg, NavyBlue)
+  val seeMoreText = parseColorHex(design.seeMoreText, Color.White)
+  val captionBg = parseColorHex(design.reelsCaptionBg, ReelsRedBadge)
+  val captionText = parseColorHex(design.reelsCaptionText, Color.White)
 
   Surface(
     shape = RoundedCornerShape(16.dp),
-    color = Color.White,
-    border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.7f)),
+    color = blockBg,
+    border = BorderStroke(1.dp, blockBorder),
     shadowElevation = 1.dp,
     modifier = modifier
       .fillMaxWidth()
@@ -165,7 +180,7 @@ fun StorefrontReelsBlockCard(
         .padding(horizontal = 8.dp, vertical = 8.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      // Reels Header: Left Navy Pill ("🎬 Product Reels"), Center caption, Right Navy Pill ("আরো দেখুন ›")
+      // Reels Header: Left Pill ("🎬 Product Reels"), Center caption, Right Pill ("আরো দেখুন ›")
       val reelsHeaderTitle = section.title
         .takeIf { it.isNotBlank() && it != "রিলস ভিডিও শপ" && !it.contains("সাজগোজ রিলস") }
         ?: "Product Reels"
@@ -177,7 +192,7 @@ fun StorefrontReelsBlockCard(
       ) {
         Surface(
           shape = RoundedCornerShape(50),
-          color = NavyBlue,
+          color = titleBg,
           shadowElevation = 2.dp
         ) {
           Row(
@@ -185,12 +200,12 @@ fun StorefrontReelsBlockCard(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
           ) {
-            Text(text = section.icon.ifBlank { "🎬" }, fontSize = 13.sp, color = Color.White)
+            Text(text = section.icon.ifBlank { "🎬" }, fontSize = 13.sp, color = titleText)
             Text(
               text = reelsHeaderTitle,
               fontSize = 13.sp,
               fontWeight = FontWeight.Black,
-              color = Color.White,
+              color = titleText,
               maxLines = 1
             )
           }
@@ -198,16 +213,16 @@ fun StorefrontReelsBlockCard(
 
         Surface(
           shape = RoundedCornerShape(50),
-          color = ReelsRedBadge,
+          color = captionBg,
           border = BorderStroke(1.dp, CollectionRedBorder),
           shadowElevation = 2.dp,
           modifier = Modifier.weight(1f)
         ) {
           Text(
-            text = "পন্যের ভিডিও দেখে অর্ডার করুন",
+            text = design.reelsCaptionLabel.ifBlank { section.subtitle.ifBlank { "পন্যের ভিডিও দেখে অর্ডার করুন" } },
             fontSize = 9.sp,
             fontWeight = FontWeight.Black,
-            color = Color.White,
+            color = captionText,
             textAlign = TextAlign.Center,
             lineHeight = 11.sp,
             maxLines = 2,
@@ -219,7 +234,7 @@ fun StorefrontReelsBlockCard(
         if (activeReels.isNotEmpty()) {
           Surface(
             shape = RoundedCornerShape(50),
-            color = NavyBlue,
+            color = seeMoreBg,
             shadowElevation = 2.dp,
             modifier = Modifier
               .clip(RoundedCornerShape(50))
@@ -230,7 +245,7 @@ fun StorefrontReelsBlockCard(
               text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
               fontSize = 11.sp,
               fontWeight = FontWeight.Black,
-              color = Color.White,
+              color = seeMoreText,
               modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
             )
           }
@@ -259,6 +274,7 @@ fun StorefrontReelsBlockCard(
                 linkedProduct = linkedProduct,
                 onVideoClick = { onReelClick(reel) },
                 onAddToCart = { onAddToCart(linkedProduct) },
+                design = design,
                 modifier = Modifier.width(cardWidth)
               )
             }
@@ -282,6 +298,7 @@ fun StorefrontReelsBlockCard(
                   linkedProduct = linkedProduct,
                   onVideoClick = { onReelClick(reel) },
                   onAddToCart = { onAddToCart(linkedProduct) },
+                  design = design,
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -304,6 +321,7 @@ fun StorefrontComboBlockCard(
   onSeeMoreClick: () -> Unit,
   onAddComboToCart: (ComboPack) -> Unit,
   onComboClick: (ComboPack) -> Unit = onAddComboToCart,
+  design: StoreDesignConfig = StoreDesignConfig(),
   modifier: Modifier = Modifier
 ) {
   val activeCombos = remember(combos) { combos.filter { it.isActive } }
@@ -313,11 +331,17 @@ fun StorefrontComboBlockCard(
     else if (cfg.isSlider) activeCombos.take(maxOf(cfg.cols * 2, 6))
     else activeCombos.take(cfg.cols * cfg.rows)
   }
+  val blockBg = if (design.useCustomBlockBg) parseColorHex(design.blockBgColor, Color.White) else Color.White
+  val blockBorder = if (design.useCustomBlockBg) parseColorHex(design.blockBorderColor, BorderGold) else BorderGold.copy(alpha = 0.7f)
+  val titleBg = parseColorHex(design.blockTitleBg, NavyBlue)
+  val titleText = parseColorHex(design.blockTitleText, Color.White)
+  val seeMoreBg = parseColorHex(design.seeMoreBg, NavyBlue)
+  val seeMoreText = parseColorHex(design.seeMoreText, Color.White)
 
   Surface(
     shape = RoundedCornerShape(16.dp),
-    color = Color.White,
-    border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.7f)),
+    color = blockBg,
+    border = BorderStroke(1.dp, blockBorder),
     shadowElevation = 1.dp,
     modifier = modifier
       .fillMaxWidth()
@@ -336,7 +360,7 @@ fun StorefrontComboBlockCard(
       ) {
         Surface(
           shape = RoundedCornerShape(50),
-          color = NavyBlue,
+          color = titleBg,
           shadowElevation = 2.dp,
           modifier = Modifier.weight(1f, fill = false)
         ) {
@@ -345,12 +369,12 @@ fun StorefrontComboBlockCard(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp)
           ) {
-            Text(text = section.icon.ifBlank { "🎁" }, fontSize = 14.sp, color = Color.White)
+            Text(text = section.icon.ifBlank { "🎁" }, fontSize = 14.sp, color = titleText)
             Text(
               text = section.title.ifBlank { "কম্বো প্যাক" },
               fontSize = 14.sp,
               fontWeight = FontWeight.Black,
-              color = Color.White,
+              color = titleText,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
             )
@@ -362,7 +386,7 @@ fun StorefrontComboBlockCard(
         if (activeCombos.isNotEmpty()) {
           Surface(
             shape = RoundedCornerShape(50),
-            color = NavyBlue,
+            color = seeMoreBg,
             shadowElevation = 2.dp,
             modifier = Modifier
               .clip(RoundedCornerShape(50))
@@ -373,7 +397,7 @@ fun StorefrontComboBlockCard(
               text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
               fontSize = 11.5.sp,
               fontWeight = FontWeight.Black,
-              color = Color.White,
+              color = seeMoreText,
               modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
             )
           }
@@ -398,6 +422,7 @@ fun StorefrontComboBlockCard(
               CompactComboPackCard(
                 combo = combo,
                 onViewCombo = { onComboClick(combo) },
+                design = design,
                 modifier = Modifier.width(cardWidth)
               )
             }
@@ -417,6 +442,7 @@ fun StorefrontComboBlockCard(
                 CompactComboPackCard(
                   combo = combo,
                   onViewCombo = { onComboClick(combo) },
+                  design = design,
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -435,6 +461,7 @@ fun StorefrontComboBlockCard(
 private fun CompactComboPackCard(
   combo: ComboPack,
   onViewCombo: () -> Unit,
+  design: StoreDesignConfig = StoreDesignConfig(),
   modifier: Modifier = Modifier
 ) {
   Card(
@@ -442,8 +469,8 @@ private fun CompactComboPackCard(
       .clickable { onViewCombo() }
       .testTag("compact_combo_card_${combo.id}"),
     shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = NavyBlue),
-    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+    colors = CardDefaults.cardColors(containerColor = parseColorHex(design.cardBodyBg, NavyBlue)),
+    border = BorderStroke(1.dp, parseColorHex(design.cardBorderColor, Color.White).copy(alpha = 0.75f)),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column {
@@ -501,7 +528,8 @@ private fun CompactComboPackCard(
         regularPrice = combo.regularPrice,
         inStock = combo.stock > 0,
         buttonTestTag = "combo_add_to_cart_${combo.id}",
-        onActionClick = onViewCombo
+        onActionClick = onViewCombo,
+        design = design
       )
     }
   }
@@ -513,6 +541,7 @@ private fun CompactReelVideoCard(
   linkedProduct: Product,
   onVideoClick: () -> Unit,
   onAddToCart: () -> Unit,
+  design: StoreDesignConfig = StoreDesignConfig(),
   modifier: Modifier = Modifier
 ) {
   Card(
@@ -520,8 +549,8 @@ private fun CompactReelVideoCard(
       .clickable { onVideoClick() }
       .testTag("compact_reel_card_${reel.id}"),
     shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = NavyBlue),
-    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+    colors = CardDefaults.cardColors(containerColor = parseColorHex(design.cardBodyBg, NavyBlue)),
+    border = BorderStroke(1.dp, parseColorHex(design.cardBorderColor, Color.White).copy(alpha = 0.75f)),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column {
@@ -611,7 +640,8 @@ private fun CompactReelVideoCard(
         regularPrice = linkedProduct.regularPrice,
         inStock = linkedProduct.stock > 0,
         buttonTestTag = "reel_add_to_cart_${reel.id}",
-        onActionClick = onVideoClick
+        onActionClick = onVideoClick,
+        design = design
       )
     }
   }
@@ -1060,7 +1090,10 @@ fun FullSectionCollectionDialog(
   sectionProducts: List<Product>,
   onDismiss: () -> Unit,
   onProductClick: (Product) -> Unit,
-  onAddToCart: (Product) -> Unit
+  onAddToCart: (Product) -> Unit,
+  design: StoreDesignConfig = StoreDesignConfig(),
+  wishlistIds: Set<String> = emptySet(),
+  onToggleWishlist: ((String) -> Unit)? = null
 ) {
   BackHandler { onDismiss() }
 
@@ -1188,6 +1221,9 @@ fun FullSectionCollectionDialog(
                     onProductClick(it)
                   },
                   onAddToCart = onAddToCart,
+                  design = design,
+                  isWishlisted = wishlistIds.contains(prod.id),
+                  onToggleWishlist = onToggleWishlist?.let { toggle -> { toggle(prod.id) } },
                   modifier = Modifier.weight(1f)
                 )
               }

@@ -134,6 +134,20 @@
       color: #000000;
     }
 
+    .storefront-page-canvas {
+      background: linear-gradient(135deg, var(--sf-page-bg-start, #c7d2fe) 0%, var(--sf-page-bg-mid, #f5d0fe) 50%, var(--sf-page-bg-end, #bae6fd) 100%);
+      background-attachment: fixed;
+      color: #000000;
+    }
+
+    .storefront-block-card-custom {
+      background: var(--sf-block-bg, rgba(255, 255, 255, 0.72)) !important;
+      border: 1.5px solid var(--sf-block-border, rgba(255, 255, 255, 0.88)) !important;
+      backdrop-filter: blur(18px) saturate(145%);
+      -webkit-backdrop-filter: blur(18px) saturate(145%);
+      box-shadow: 0 14px 36px -12px rgba(15, 41, 74, 0.16);
+    }
+
     .liquid-glass-nav {
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(250, 232, 255, 0.56) 50%, rgba(224, 242, 254, 0.66) 100%);
       backdrop-filter: blur(22px) saturate(165%);
@@ -364,65 +378,60 @@
     /* STOREFRONT NAVY BLUE PILL HEADERS & "আরো দেখুন" BUTTONS   */
     /* ========================================================= */
     .navy-pill-badge {
-      background: linear-gradient(135deg, #0f294a 0%, #1e3a8a 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(135deg, var(--sf-block-title-bg, #0f294a) 0%, var(--sf-block-title-bg-end, #1e3a8a) 100%) !important;
+      color: var(--sf-block-title-text, #ffffff) !important;
       border: 1.5px solid rgba(255, 255, 255, 0.42) !important;
       box-shadow: 0 7px 16px -5px rgba(15, 41, 74, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     }
     .navy-pill-badge,
     .navy-pill-badge * {
-      color: #ffffff !important;
+      color: var(--sf-block-title-text, #ffffff) !important;
     }
     .red-pill-badge {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid #991b1b !important;
+      background: var(--sf-reels-cap-bg, #dc2626) !important;
+      color: var(--sf-reels-cap-text, #ffffff) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
       box-shadow: 0 5px 12px -4px rgba(220, 38, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     }
     .red-pill-badge,
     .red-pill-badge * {
-      color: #ffffff !important;
+      color: var(--sf-reels-cap-text, #ffffff) !important;
     }
     .navy-pill-action {
-      background: linear-gradient(135deg, #0f294a 0%, #1e3a8a 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(135deg, var(--sf-seemore-bg, #0f294a) 0%, var(--sf-seemore-bg-end, #1e3a8a) 100%) !important;
+      color: var(--sf-seemore-text, #ffffff) !important;
       border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
       box-shadow: 0 5px 12px -4px rgba(15, 41, 74, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
       transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease !important;
     }
     .navy-pill-action:hover {
-      background: linear-gradient(135deg, #0a1f3a 0%, #172554 100%) !important;
+      filter: brightness(1.08);
       transform: translateY(-1px);
       box-shadow: 0 8px 18px -5px rgba(15, 41, 74, 0.5) !important;
     }
     .navy-pill-action,
     .navy-pill-action * {
-      color: #ffffff !important;
+      color: var(--sf-seemore-text, #ffffff) !important;
     }
 
     /* ========================================================= */
-    /* HOME PRODUCT DISPLAY CARD: NAVY BODY + COLLECTION RED BOX */
+    /* HOME PRODUCT DISPLAY CARD: NAVY BODY + CREAM PRICE BOX    */
     /* Mobile-First Responsive Padding, Typography & Wrapping    */
     /* ========================================================= */
     .storefront-navy-card {
-      background: linear-gradient(175deg, #0f294a 0%, #172554 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid rgba(255, 255, 255, 0.72) !important;
+      background: linear-gradient(175deg, var(--sf-card-body-bg, #0f294a) 0%, var(--sf-card-body-bg-end, #172554) 100%) !important;
+      color: var(--sf-card-title-text, #ffffff);
+      border: 1.5px solid var(--sf-card-border, rgba(255, 255, 255, 0.72)) !important;
       border-radius: 16px;
       box-shadow: 0 12px 26px -8px rgba(15, 41, 74, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     }
     .storefront-navy-card-body {
-      background: linear-gradient(165deg, #0f294a 0%, #1e3a8a 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(165deg, var(--sf-card-body-bg, #0f294a) 0%, var(--sf-card-body-bg-end, #1e3a8a) 100%) !important;
       padding: 10px;
       gap: 6px;
       min-width: 0;
       width: 100%;
       box-sizing: border-box;
-    }
-    .storefront-navy-card-body,
-    .storefront-navy-card-body * {
-      color: #ffffff !important;
     }
     .storefront-card-meta-group {
       display: flex;
@@ -431,11 +440,11 @@
       min-width: 0;
       width: 100%;
     }
-    /* Same vivid red gradient + border style as "সকল কালেকশন" active pill */
+    /* Title box with customizable bg/text/border */
     .storefront-title-box {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid #991b1b !important;
+      background: linear-gradient(135deg, var(--sf-card-title-bg, #ef4444) 0%, var(--sf-card-title-bg-end, #dc2626) 100%) !important;
+      color: var(--sf-card-title-text, #ffffff) !important;
+      border: 1.5px solid var(--sf-card-title-border, #991b1b) !important;
       border-radius: 10px;
       padding: 5px 7px;
       font-size: 12px;
@@ -445,7 +454,7 @@
       overflow: hidden;
       overflow-wrap: anywhere;
       word-break: break-word;
-      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
     }
     .storefront-title-text {
       display: -webkit-box;
@@ -454,44 +463,47 @@
       overflow: hidden;
       min-height: 2.6em;
       line-height: inherit;
+      color: var(--sf-card-title-text, #ffffff) !important;
     }
+    /* CREAM PRICE BOX: Line 1 Navy Blue crossed-out regular price, Line 2 Red Offer Price */
     .storefront-price-box {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid #991b1b !important;
+      background: var(--sf-card-price-bg, #fff8f0) !important;
+      border: 1.5px solid var(--sf-card-price-border, #f3d5b5) !important;
       border-radius: 10px;
       padding: 4px 7px;
       display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 2px 5px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5px;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 3px 8px -3px rgba(15, 41, 74, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
     }
     .storefront-price-old {
-      color: rgba(255, 255, 255, 0.88) !important;
+      color: var(--sf-card-reg-price-color, #0f294a) !important;
       text-decoration: line-through !important;
       font-size: 11px;
       line-height: 1.15;
       font-weight: 700;
       white-space: nowrap;
-      flex-shrink: 0;
+      text-align: center;
+      display: block;
     }
     .storefront-price-current {
-      color: #ffffff !important;
+      color: var(--sf-card-offer-price-color, #dc2626) !important;
       font-size: 14px;
       line-height: 1.15;
       font-weight: 900;
       white-space: nowrap;
-      margin-left: auto;
+      text-align: center;
+      display: block;
+      margin-left: 0;
     }
-    /* Matching pill style next to "সকল কালেকশন" (high-contrast rose-red with crisp white text) */
     .storefront-view-btn {
-      background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(135deg, var(--sf-card-btn-bg, #fb7185) 0%, var(--sf-card-btn-bg-end, #e11d48) 100%) !important;
+      color: var(--sf-card-btn-text, #ffffff) !important;
       border: 1.5px solid rgba(255, 255, 255, 0.72) !important;
       font-size: 12px;
       line-height: 1.2;
@@ -499,12 +511,22 @@
       min-height: 30px;
       width: 100%;
       box-sizing: border-box;
-      box-shadow: 0 6px 14px -5px rgba(225, 29, 72, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+      box-shadow: 0 6px 14px -5px rgba(225, 29, 72, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
       transition: transform 0.16s ease, filter 0.16s ease !important;
     }
     .storefront-view-btn:hover {
       filter: brightness(1.06);
       transform: translateY(-1px);
+    }
+    .storefront-btn-pill { border-radius: 9999px !important; }
+    .storefront-btn-rounded { border-radius: 10px !important; }
+    .storefront-btn-square { border-radius: 4px !important; }
+    .storefront-btn-outline {
+      border-radius: 9999px !important;
+      background: rgba(255, 255, 255, 0.94) !important;
+      color: var(--sf-card-btn-bg-end, #e11d48) !important;
+      border: 2px solid var(--sf-card-btn-bg-end, #e11d48) !important;
+      box-shadow: none !important;
     }
 
     @media (max-width: 639px) {
@@ -530,16 +552,16 @@
         min-height: 2.56em;
       }
       .storefront-price-box {
-        padding: 3px 5px;
+        padding: 3.5px 5px;
         border-radius: 8px;
         border-width: 1px !important;
-        gap: 1px 4px;
+        gap: 1px;
       }
       .storefront-price-old {
-        font-size: 9px;
+        font-size: 9.5px;
       }
       .storefront-price-current {
-        font-size: 11.5px;
+        font-size: 12px;
       }
       .storefront-view-btn {
         font-size: 10px;
@@ -571,15 +593,15 @@
         min-height: 2.48em;
       }
       .storefront-price-box {
-        padding: 2.5px 4px;
+        padding: 3px 4px;
         border-radius: 7px;
-        gap: 1px 3px;
+        gap: 0.5px;
       }
       .storefront-price-old {
-        font-size: 8.25px;
+        font-size: 8.75px;
       }
       .storefront-price-current {
-        font-size: 10.5px;
+        font-size: 11px;
       }
       .storefront-view-btn {
         font-size: 9.5px;

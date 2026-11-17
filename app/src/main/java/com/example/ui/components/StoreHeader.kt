@@ -68,6 +68,7 @@ import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.parseColorHex
 
 @Composable
 fun StoreHeader(
@@ -89,24 +90,34 @@ fun StoreHeader(
   onClearAllSearch: () -> Unit = { onSearchChange("") }
 ) {
   var isCategoryMenuExpanded by remember { mutableStateOf(false) }
+  val d = config.design
+  val customHdr = d.useCustomHeaderColors
+  val headerSurfaceColor = if (customHdr) parseColorHex(d.headerBg, Color.White) else Color.White
+  val announcementBgColor = if (customHdr) parseColorHex(d.announcementBg, RoyalMaroon) else RoyalMaroon
+  val announcementText = if (customHdr) parseColorHex(d.announcementTextColor, CreamSurface) else CreamSurface
+  val brandTitleColor = if (customHdr) parseColorHex(d.headerTextColor, RoyalMaroon) else RoyalMaroon
+  val cartBtnBg = if (customHdr) parseColorHex(d.cartBg, RoyalMaroon) else RoyalMaroon
+  val cartBtnText = if (customHdr) parseColorHex(d.cartTextColor, Color.White) else Color.White
+  val cartBadgeBg = if (customHdr) parseColorHex(d.cartBadgeBg, AntiqueGold) else AntiqueGold
+  val cartBadgeText = if (customHdr) parseColorHex(d.cartBadgeText, DarkEspresso) else DarkEspresso
 
   Column(
     modifier = Modifier
       .fillMaxWidth()
-      .background(Color.White)
+      .background(headerSurfaceColor)
   ) {
     // 1. Announcement Bar
     if (config.isAnnouncementEnabled && config.announcementText.isNotBlank()) {
       Box(
         modifier = Modifier
           .fillMaxWidth()
-          .background(RoyalMaroon)
+          .background(announcementBgColor)
           .padding(vertical = 6.dp, horizontal = 12.dp),
         contentAlignment = Alignment.Center
       ) {
         Text(
           text = config.announcementText,
-          color = CreamSurface,
+          color = announcementText,
           fontSize = 12.sp,
           fontWeight = FontWeight.Medium,
           textAlign = TextAlign.Center,
@@ -143,7 +154,7 @@ fun StoreHeader(
         Column {
           Text(
             text = config.storeName,
-            color = RoyalMaroon,
+            color = brandTitleColor,
             fontWeight = FontWeight.Bold,
             fontSize = 17.sp,
             letterSpacing = 0.5.sp,
@@ -178,7 +189,7 @@ fun StoreHeader(
           Icon(
             imageVector = if (currentScreen == AppScreen.STOREFRONT) Icons.Default.AdminPanelSettings else Icons.Default.Storefront,
             contentDescription = "Switch Panel",
-            tint = RoyalMaroon
+            tint = brandTitleColor
           )
         }
 
@@ -188,8 +199,8 @@ fun StoreHeader(
             badge = {
               if (cartItemCount > 0) {
                 Badge(
-                  containerColor = AntiqueGold,
-                  contentColor = DarkEspresso,
+                  containerColor = cartBadgeBg,
+                  contentColor = cartBadgeText,
                   modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
                 ) {
                   Text(
@@ -203,7 +214,7 @@ fun StoreHeader(
           ) {
             Surface(
               shape = RoundedCornerShape(20.dp),
-              color = RoyalMaroon,
+              color = cartBtnBg,
               shadowElevation = 2.dp,
               modifier = Modifier
                 .clickable { onOpenCart() }
@@ -217,12 +228,12 @@ fun StoreHeader(
                 Icon(
                   imageVector = Icons.Default.ShoppingCart,
                   contentDescription = "Cart",
-                  tint = Color.White,
+                  tint = cartBtnText,
                   modifier = Modifier.size(18.dp)
                 )
                 Text(
                   text = "কার্ট",
-                  color = Color.White,
+                  color = cartBtnText,
                   fontSize = 13.sp,
                   fontWeight = FontWeight.Bold
                 )

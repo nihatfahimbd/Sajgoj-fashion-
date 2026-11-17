@@ -47,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -64,8 +65,10 @@ import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.StorefrontScreen
 import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamBackground
+import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.SajgojFashionTheme
+import com.example.ui.theme.parseColorHex
 import com.example.util.VisualImageSearchHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
@@ -205,14 +208,35 @@ class MainActivity : ComponentActivity() {
           }
         }
 
+        val customPageActive = currentScreen == AppScreen.STOREFRONT && storeConfig.design.useCustomPageBg
+        val scaffoldBg = if (customPageActive) {
+          parseColorHex(storeConfig.design.pageBgStart, CreamBackground)
+        } else {
+          CreamBackground
+        }
         Scaffold(
+          containerColor = scaffoldBg,
           modifier = Modifier
             .fillMaxSize()
-            .background(CreamBackground)
+            .background(scaffoldBg)
         ) { innerPadding ->
           Column(
             modifier = Modifier
               .fillMaxSize()
+              .then(
+                if (customPageActive) {
+                  Modifier.background(
+                    Brush.verticalGradient(
+                      listOf(
+                        parseColorHex(storeConfig.design.pageBgStart, CreamBackground),
+                        parseColorHex(storeConfig.design.pageBgEnd, CreamSurface)
+                      )
+                    )
+                  )
+                } else {
+                  Modifier
+                }
+              )
               .padding(innerPadding)
               .statusBarsPadding()
           ) {

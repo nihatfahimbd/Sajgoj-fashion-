@@ -88,7 +88,7 @@ fun HomePageSettingHub(
   onSaveStoreConfig: (StoreConfig) -> Unit,
   modifier: Modifier = Modifier
 ) {
-  var subTab by remember { mutableStateOf("BLOCKS") } // BLOCKS, BANNERS, HEADER
+  var subTab by remember { mutableStateOf("BLOCKS") } // BLOCKS, BANNERS, HEADER, DESIGN
   var expandedEditorSectionId by remember { mutableStateOf<String?>("best_deals") }
   var sectionProductQueries by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
   var creatorType by remember { mutableStateOf<String?>(null) } // category_products, promo_banner, custom_products
@@ -148,7 +148,8 @@ fun HomePageSettingHub(
       listOf(
         "BLOCKS" to "🧱 ব্লক ও প্রোডাক্ট (${homeSections.size})",
         "BANNERS" to "🖼️ হিরো ব্যানার (${banners.size})",
-        "HEADER" to "📢 হেডার ও নোটিশ"
+        "HEADER" to "📢 হেডার ও নোটিশ",
+        "DESIGN" to "🎨 ডিজাইন ও কালার স্টুডিও"
       ).forEach { (key, label) ->
         val selected = subTab == key
         Surface(
@@ -595,31 +596,42 @@ fun HomePageSettingHub(
                     )
                   }
 
-                  if (section.isCustom) {
-                    IconButton(
-                      onClick = { onDeleteSection(section.id) },
-                      modifier = Modifier.size(30.dp)
-                    ) {
-                      Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "ব্লক মুছুন",
-                        tint = AccentRed,
-                        modifier = Modifier.size(17.dp)
-                      )
-                    }
+                  IconButton(
+                    onClick = { onDeleteSection(section.id) },
+                    modifier = Modifier
+                      .size(32.dp)
+                      .testTag("delete_section_${section.id}")
+                  ) {
+                    Icon(
+                      imageVector = Icons.Default.Delete,
+                      contentDescription = "ব্লক মুছুন",
+                      tint = AccentRed,
+                      modifier = Modifier.size(17.dp)
+                    )
                   }
                 }
 
-                // Expanded Editor Panel: Block Title + Columns (2/3/4) & Rows (1-4) & Slider/Grid + Product Picker
+                // Expanded Editor Panel: Block Title/Subtitle/Icon + Columns (2/3/4) & Rows (1-4) & Slider/Grid + Product Picker
                 if (isExpanded) {
                   HorizontalDivider(color = BorderGold)
 
                   var editTitle by remember(section.id, section.title) { mutableStateOf(section.title) }
+                  var editSubtitle by remember(section.id, section.subtitle) { mutableStateOf(section.subtitle) }
+                  var editIcon by remember(section.id, section.icon) { mutableStateOf(section.icon) }
+
                   Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                   ) {
+                    OutlinedTextField(
+                      value = editIcon,
+                      onValueChange = { editIcon = it },
+                      label = { Text("আইকন", fontSize = 10.sp) },
+                      singleLine = true,
+                      shape = RoundedCornerShape(10.dp),
+                      modifier = Modifier.width(66.dp)
+                    )
                     OutlinedTextField(
                       value = editTitle,
                       onValueChange = { editTitle = it },
@@ -631,7 +643,13 @@ fun HomePageSettingHub(
                     Button(
                       onClick = {
                         if (editTitle.isNotBlank()) {
-                          onUpdateSection(section.id) { it.copy(title = editTitle.trim()) }
+                          onUpdateSection(section.id) {
+                            it.copy(
+                              title = editTitle.trim(),
+                              subtitle = editSubtitle.trim(),
+                              icon = editIcon.trim().ifBlank { it.icon }
+                            )
+                          }
                         }
                       },
                       colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
@@ -641,6 +659,15 @@ fun HomePageSettingHub(
                       Text("সেভ", fontSize = 10.5.sp)
                     }
                   }
+
+                  OutlinedTextField(
+                    value = editSubtitle,
+                    onValueChange = { editSubtitle = it },
+                    label = { Text("সাবটাইটেল / বিবরণ (ঐচ্ছিক)", fontSize = 10.sp) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                  )
 
                   if (section.type == "category_products") {
                     Row(
@@ -1105,6 +1132,20 @@ fun HomePageSettingHub(
               }
             }
           }
+        }
+      }
+
+      "DESIGN" -> {
+        Column(
+          modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+          verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+          StorefrontDesignStudioPanel(
+            config = storeConfig,
+            onSaveConfig = onSaveStoreConfig
+          )
         }
       }
     }

@@ -24,3 +24,15 @@ val SideRosePillStart = Color(0xFFFB7185)
 val SideRosePillEnd = Color(0xFFE11D48)
 val ReelsRedBadge = Color(0xFFDC2626)
 val SlateTextSecondary = Color(0xFF334155)
+val CreamPriceBorder = Color(0xFFF3D5B5)
+
+fun parseColorHex(hex: String?, fallback: Color): Color {
+  val trimmed = hex?.trim().orEmpty()
+  if (trimmed.isEmpty()) return fallback
+  return try {
+    val normalized = if (trimmed.startsWith("#")) trimmed else "#$trimmed"
+    Color(android.graphics.Color.parseColor(normalized))
+  } catch (_: Exception) {
+    fallback
+  }
+}

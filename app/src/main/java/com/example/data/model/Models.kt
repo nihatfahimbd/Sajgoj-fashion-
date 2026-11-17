@@ -131,6 +131,51 @@ data class BannerItem(
   val isActive: Boolean = true
 )
 
+data class StoreDesignConfig(
+  val useCustomPageBg: Boolean = false,
+  val pageBgStart: String = "#FFFBF7",
+  val pageBgEnd: String = "#F6EEE4",
+  val useCustomBlockBg: Boolean = false,
+  val blockBgColor: String = "#FFFFFF",
+  val blockBorderColor: String = "#E5C158",
+  val blockTitleBg: String = "#0F294A",
+  val blockTitleText: String = "#FFFFFF",
+  val seeMoreBg: String = "#0F294A",
+  val seeMoreText: String = "#FFFFFF",
+  val reelsCaptionBg: String = "#DC2626",
+  val reelsCaptionText: String = "#FFFFFF",
+  val reelsCaptionLabel: String = "পন্যের ভিডিও দেখে অর্ডার করুন",
+  val cardBodyBg: String = "#0F294A",
+  val cardBodyBgEnd: String = "#1E3A8A",
+  val cardBorderColor: String = "#FFFFFF",
+  val cardTitleBg: String = "#EF4444",
+  val cardTitleBgEnd: String = "#DC2626",
+  val cardTitleText: String = "#FFFFFF",
+  val cardPriceBg: String = "#FFF8F0",
+  val cardPriceBorder: String = "#F3D5B5",
+  val cardRegularPriceColor: String = "#0F294A",
+  val cardOfferPriceColor: String = "#DC2626",
+  val cardBtnStyle: String = "pill", // "pill", "rounded", "square", "outline"
+  val cardBtnBg: String = "#FB7185",
+  val cardBtnBgEnd: String = "#E11D48",
+  val cardBtnText: String = "#FFFFFF",
+  val cardActionLabel: String = "পন্যটি দেখুন",
+  val cardWishlistCircleBg: String = "#FFFFFF",
+  val cardWishlistActiveBg: String = "#E11D48",
+  val cardWishlistIcon: String = "❤️",
+  val useCustomHeaderColors: Boolean = false,
+  val announcementBg: String = "#7A1C2B",
+  val announcementTextColor: String = "#FFFBF7",
+  val headerBg: String = "#FFFFFF",
+  val headerTextColor: String = "#7A1C2B",
+  val cartBg: String = "#7A1C2B",
+  val cartTextColor: String = "#FFFFFF",
+  val cartBadgeBg: String = "#D4AF37",
+  val cartBadgeText: String = "#2A120E",
+  val wishlistBg: String = "#FCA5A5",
+  val wishlistTextColor: String = "#000000"
+)
+
 data class StoreConfig(
   val storeName: String = "SAJGOJ FASHION",
   val tagline: String = "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
@@ -144,7 +189,9 @@ data class StoreConfig(
   val nagadEnabled: Boolean = true,
   val rocketEnabled: Boolean = true,
   val codEnabled: Boolean = true,
-  val returnPolicyDays: Int = 7
+  val visaEnabled: Boolean = true,
+  val returnPolicyDays: Int = 7,
+  val design: StoreDesignConfig = StoreDesignConfig()
 )
 
 data class CourierConfig(

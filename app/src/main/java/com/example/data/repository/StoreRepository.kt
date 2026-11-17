@@ -22,6 +22,7 @@ import com.example.data.model.ReelItem
 import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
+import com.example.data.model.StoreDesignConfig
 import com.example.data.model.SyncHealthState
 import com.example.data.sync.InventorySyncService
 import com.example.data.sync.LocalInventoryStorageSync
@@ -623,7 +624,7 @@ class StoreRepository(private val context: Context) {
   private val _banners = MutableStateFlow<List<BannerItem>>(initialBanners)
   val banners: StateFlow<List<BannerItem>> = _banners.asStateFlow()
 
-  private val _storeConfig = MutableStateFlow(StoreConfig())
+  private val _storeConfig = MutableStateFlow(loadStoreConfig())
   val storeConfig: StateFlow<StoreConfig> = _storeConfig.asStateFlow()
 
   private val _courierConfig = MutableStateFlow(CourierConfig())
@@ -749,14 +750,26 @@ class StoreRepository(private val context: Context) {
               val colorsList = (doc.get("colors") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
               val sizesList = (doc.get("sizes") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
               val ageGroupsList = (doc.get("ageGroups") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+              val docId = doc.getString("id") ?: doc.id
+              val docSku = doc.getString("sku") ?: ""
+              val docPrice = (doc.getLong("price") ?: 0L).toInt()
+              val seedMatch = initialProducts.find { it.id == docId || (docSku.isNotBlank() && it.sku.equals(docSku, ignoreCase = true)) }
+              val parsedReg = (doc.getLong("regularPrice") ?: 0L).toInt()
+              val regularPriceVal = if (parsedReg > 0) parsedReg else (seedMatch?.regularPrice ?: 0)
+              val parsedOffer = (doc.getLong("offerPrice") ?: 0L).toInt()
+              val offerPriceVal = when {
+                parsedOffer > 0 -> parsedOffer
+                regularPriceVal > docPrice && docPrice > 0 -> docPrice
+                else -> (seedMatch?.offerPrice ?: 0)
+              }
               Product(
-                id = doc.getString("id") ?: doc.id,
+                id = docId,
                 name = doc.getString("name") ?: "",
-                price = (doc.getLong("price") ?: 0L).toInt(),
+                price = docPrice,
                 stock = (doc.getLong("stock") ?: 0L).toInt(),
                 category = doc.getString("category") ?: "শাড়ি",
                 imageUrl = doc.getString("imageUrl") ?: (doc.get("images") as? List<*>)?.firstOrNull()?.toString() ?: "",
-                sku = doc.getString("sku") ?: "",
+                sku = docSku,
                 description = doc.getString("description") ?: "",
                 rating = ratingVal,
                 reviewsCount = reviewsCountVal,
@@ -769,7 +782,9 @@ class StoreRepository(private val context: Context) {
                 isHotSale = doc.getBoolean("isHotSale") ?: false,
                 isBestDeal = doc.getBoolean("isBestDeal") ?: false,
                 isB2G1 = doc.getBoolean("isB2G1") ?: false,
-                createdAt = doc.getLong("createdAt") ?: 0L
+                createdAt = doc.getLong("createdAt") ?: 0L,
+                regularPrice = regularPriceVal,
+                offerPrice = offerPriceVal
               )
             } catch (e: Exception) {
               null
@@ -1405,7 +1420,9 @@ class StoreRepository(private val context: Context) {
           "isHotSale" to stamped.isHotSale,
           "isBestDeal" to stamped.isBestDeal,
           "isB2G1" to stamped.isB2G1,
-          "createdAt" to stamped.createdAt
+          "createdAt" to stamped.createdAt,
+          "regularPrice" to stamped.regularPrice,
+          "offerPrice" to stamped.offerPrice
         )
       )
     } catch (e: Exception) {}
@@ -1463,7 +1480,9 @@ class StoreRepository(private val context: Context) {
           "isHotSale" to stamped.isHotSale,
           "isBestDeal" to stamped.isBestDeal,
           "isB2G1" to stamped.isB2G1,
-          "createdAt" to stamped.createdAt
+          "createdAt" to stamped.createdAt,
+          "regularPrice" to stamped.regularPrice,
+          "offerPrice" to stamped.offerPrice
         ),
         SetOptions.merge()
       )
@@ -1519,8 +1538,152 @@ class StoreRepository(private val context: Context) {
   }
 
   // Store Configuration
+  private fun loadStoreConfig(): StoreConfig {
+    val raw = prefs.getString("sajgoj_store_config", null) ?: return StoreConfig()
+    return try {
+      val o = JSONObject(raw)
+      val dObj = o.optJSONObject("design")
+      val defDesign = StoreDesignConfig()
+      val design = if (dObj != null) {
+        StoreDesignConfig(
+          useCustomPageBg = dObj.optBoolean("useCustomPageBg", defDesign.useCustomPageBg),
+          pageBgStart = dObj.optString("pageBgStart", defDesign.pageBgStart),
+          pageBgEnd = dObj.optString("pageBgEnd", defDesign.pageBgEnd),
+          useCustomBlockBg = dObj.optBoolean("useCustomBlockBg", defDesign.useCustomBlockBg),
+          blockBgColor = dObj.optString("blockBgColor", defDesign.blockBgColor),
+          blockBorderColor = dObj.optString("blockBorderColor", defDesign.blockBorderColor),
+          blockTitleBg = dObj.optString("blockTitleBg", defDesign.blockTitleBg),
+          blockTitleText = dObj.optString("blockTitleText", defDesign.blockTitleText),
+          seeMoreBg = dObj.optString("seeMoreBg", defDesign.seeMoreBg),
+          seeMoreText = dObj.optString("seeMoreText", defDesign.seeMoreText),
+          reelsCaptionBg = dObj.optString("reelsCaptionBg", defDesign.reelsCaptionBg),
+          reelsCaptionText = dObj.optString("reelsCaptionText", defDesign.reelsCaptionText),
+          reelsCaptionLabel = dObj.optString("reelsCaptionLabel", defDesign.reelsCaptionLabel),
+          cardBodyBg = dObj.optString("cardBodyBg", defDesign.cardBodyBg),
+          cardBodyBgEnd = dObj.optString("cardBodyBgEnd", defDesign.cardBodyBgEnd),
+          cardBorderColor = dObj.optString("cardBorderColor", defDesign.cardBorderColor),
+          cardTitleBg = dObj.optString("cardTitleBg", defDesign.cardTitleBg),
+          cardTitleBgEnd = dObj.optString("cardTitleBgEnd", defDesign.cardTitleBgEnd),
+          cardTitleText = dObj.optString("cardTitleText", defDesign.cardTitleText),
+          cardPriceBg = dObj.optString("cardPriceBg", defDesign.cardPriceBg),
+          cardPriceBorder = dObj.optString("cardPriceBorder", defDesign.cardPriceBorder),
+          cardRegularPriceColor = dObj.optString("cardRegularPriceColor", defDesign.cardRegularPriceColor),
+          cardOfferPriceColor = dObj.optString("cardOfferPriceColor", defDesign.cardOfferPriceColor),
+          cardBtnStyle = dObj.optString("cardBtnStyle", defDesign.cardBtnStyle),
+          cardBtnBg = dObj.optString("cardBtnBg", defDesign.cardBtnBg),
+          cardBtnBgEnd = dObj.optString("cardBtnBgEnd", defDesign.cardBtnBgEnd),
+          cardBtnText = dObj.optString("cardBtnText", defDesign.cardBtnText),
+          cardActionLabel = dObj.optString("cardActionLabel", defDesign.cardActionLabel),
+          cardWishlistCircleBg = dObj.optString("cardWishlistCircleBg", defDesign.cardWishlistCircleBg),
+          cardWishlistActiveBg = dObj.optString("cardWishlistActiveBg", defDesign.cardWishlistActiveBg),
+          cardWishlistIcon = dObj.optString("cardWishlistIcon", defDesign.cardWishlistIcon),
+          useCustomHeaderColors = dObj.optBoolean("useCustomHeaderColors", defDesign.useCustomHeaderColors),
+          announcementBg = dObj.optString("announcementBg", defDesign.announcementBg),
+          announcementTextColor = dObj.optString("announcementTextColor", defDesign.announcementTextColor),
+          headerBg = dObj.optString("headerBg", defDesign.headerBg),
+          headerTextColor = dObj.optString("headerTextColor", defDesign.headerTextColor),
+          cartBg = dObj.optString("cartBg", defDesign.cartBg),
+          cartTextColor = dObj.optString("cartTextColor", defDesign.cartTextColor),
+          cartBadgeBg = dObj.optString("cartBadgeBg", defDesign.cartBadgeBg),
+          cartBadgeText = dObj.optString("cartBadgeText", defDesign.cartBadgeText),
+          wishlistBg = dObj.optString("wishlistBg", defDesign.wishlistBg),
+          wishlistTextColor = dObj.optString("wishlistTextColor", defDesign.wishlistTextColor)
+        )
+      } else {
+        defDesign
+      }
+      val defCfg = StoreConfig()
+      StoreConfig(
+        storeName = o.optString("storeName", defCfg.storeName),
+        tagline = o.optString("tagline", defCfg.tagline),
+        announcementText = o.optString("announcementText", defCfg.announcementText),
+        isAnnouncementEnabled = o.optBoolean("isAnnouncementEnabled", defCfg.isAnnouncementEnabled),
+        phone = o.optString("phone", defCfg.phone),
+        whatsapp = o.optString("whatsapp", defCfg.whatsapp),
+        email = o.optString("email", defCfg.email),
+        address = o.optString("address", defCfg.address),
+        bkashEnabled = o.optBoolean("bkashEnabled", defCfg.bkashEnabled),
+        nagadEnabled = o.optBoolean("nagadEnabled", defCfg.nagadEnabled),
+        rocketEnabled = o.optBoolean("rocketEnabled", defCfg.rocketEnabled),
+        codEnabled = o.optBoolean("codEnabled", defCfg.codEnabled),
+        visaEnabled = o.optBoolean("visaEnabled", defCfg.visaEnabled),
+        returnPolicyDays = o.optInt("returnPolicyDays", defCfg.returnPolicyDays),
+        design = design
+      )
+    } catch (_: Exception) {
+      StoreConfig()
+    }
+  }
+
+  private fun saveStoreConfigToPrefs(config: StoreConfig) {
+    val d = config.design
+    val dObj = JSONObject().apply {
+      put("useCustomPageBg", d.useCustomPageBg)
+      put("pageBgStart", d.pageBgStart)
+      put("pageBgEnd", d.pageBgEnd)
+      put("useCustomBlockBg", d.useCustomBlockBg)
+      put("blockBgColor", d.blockBgColor)
+      put("blockBorderColor", d.blockBorderColor)
+      put("blockTitleBg", d.blockTitleBg)
+      put("blockTitleText", d.blockTitleText)
+      put("seeMoreBg", d.seeMoreBg)
+      put("seeMoreText", d.seeMoreText)
+      put("reelsCaptionBg", d.reelsCaptionBg)
+      put("reelsCaptionText", d.reelsCaptionText)
+      put("reelsCaptionLabel", d.reelsCaptionLabel)
+      put("cardBodyBg", d.cardBodyBg)
+      put("cardBodyBgEnd", d.cardBodyBgEnd)
+      put("cardBorderColor", d.cardBorderColor)
+      put("cardTitleBg", d.cardTitleBg)
+      put("cardTitleBgEnd", d.cardTitleBgEnd)
+      put("cardTitleText", d.cardTitleText)
+      put("cardPriceBg", d.cardPriceBg)
+      put("cardPriceBorder", d.cardPriceBorder)
+      put("cardRegularPriceColor", d.cardRegularPriceColor)
+      put("cardOfferPriceColor", d.cardOfferPriceColor)
+      put("cardBtnStyle", d.cardBtnStyle)
+      put("cardBtnBg", d.cardBtnBg)
+      put("cardBtnBgEnd", d.cardBtnBgEnd)
+      put("cardBtnText", d.cardBtnText)
+      put("cardActionLabel", d.cardActionLabel)
+      put("cardWishlistCircleBg", d.cardWishlistCircleBg)
+      put("cardWishlistActiveBg", d.cardWishlistActiveBg)
+      put("cardWishlistIcon", d.cardWishlistIcon)
+      put("useCustomHeaderColors", d.useCustomHeaderColors)
+      put("announcementBg", d.announcementBg)
+      put("announcementTextColor", d.announcementTextColor)
+      put("headerBg", d.headerBg)
+      put("headerTextColor", d.headerTextColor)
+      put("cartBg", d.cartBg)
+      put("cartTextColor", d.cartTextColor)
+      put("cartBadgeBg", d.cartBadgeBg)
+      put("cartBadgeText", d.cartBadgeText)
+      put("wishlistBg", d.wishlistBg)
+      put("wishlistTextColor", d.wishlistTextColor)
+    }
+    val root = JSONObject().apply {
+      put("storeName", config.storeName)
+      put("tagline", config.tagline)
+      put("announcementText", config.announcementText)
+      put("isAnnouncementEnabled", config.isAnnouncementEnabled)
+      put("phone", config.phone)
+      put("whatsapp", config.whatsapp)
+      put("email", config.email)
+      put("address", config.address)
+      put("bkashEnabled", config.bkashEnabled)
+      put("nagadEnabled", config.nagadEnabled)
+      put("rocketEnabled", config.rocketEnabled)
+      put("codEnabled", config.codEnabled)
+      put("visaEnabled", config.visaEnabled)
+      put("returnPolicyDays", config.returnPolicyDays)
+      put("design", dObj)
+    }
+    prefs.edit().putString("sajgoj_store_config", root.toString()).apply()
+  }
+
   fun updateStoreConfig(config: StoreConfig) {
     _storeConfig.value = config
+    saveStoreConfigToPrefs(config)
   }
 
   fun updateCourierConfig(config: CourierConfig) {
@@ -1691,6 +1854,7 @@ class StoreRepository(private val context: Context) {
 
   private fun loadHomeSections(): List<HomeSectionConfig> {
     val raw = prefs.getString("sajgoj_home_sections", null) ?: return initialHomeSections
+    val isCustomized = prefs.getBoolean("sajgoj_home_sections_customized", false)
     return try {
       val arr = JSONArray(raw)
       val list = buildList {
@@ -1744,7 +1908,9 @@ class StoreRepository(private val context: Context) {
           )
         }
       }
-      if (list.isNotEmpty()) {
+      if (isCustomized) {
+        list
+      } else if (list.isNotEmpty()) {
         val copy = list.toMutableList()
         if (copy.none { it.type == "combo_packs" }) {
           initialHomeSections.find { it.type == "combo_packs" }?.let { comboSec ->
@@ -1773,7 +1939,7 @@ class StoreRepository(private val context: Context) {
     }
   }
 
-  fun saveHomeSections(sections: List<HomeSectionConfig>) {
+  private fun persistHomeSectionsInternal(sections: List<HomeSectionConfig>, markCustomized: Boolean) {
     val normalized = sections.map { normalizeSectionConfig(it) }
     _homeSections.value = normalized
     val arr = JSONArray()
@@ -1801,7 +1967,14 @@ class StoreRepository(private val context: Context) {
         }
       )
     }
-    prefs.edit().putString("sajgoj_home_sections", arr.toString()).apply()
+    prefs.edit()
+      .putString("sajgoj_home_sections", arr.toString())
+      .putBoolean("sajgoj_home_sections_customized", markCustomized)
+      .apply()
+  }
+
+  fun saveHomeSections(sections: List<HomeSectionConfig>) {
+    persistHomeSectionsInternal(sections, markCustomized = true)
   }
 
   fun toggleHomeSection(sectionId: String) {
@@ -1858,7 +2031,7 @@ class StoreRepository(private val context: Context) {
   }
 
   fun resetHomeSectionsToDefault() {
-    saveHomeSections(initialHomeSections)
+    persistHomeSectionsInternal(initialHomeSections, markCustomized = false)
   }
 
   fun likeReel(reelId: String) {

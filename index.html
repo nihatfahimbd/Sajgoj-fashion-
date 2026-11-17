@@ -134,6 +134,20 @@
       color: #000000;
     }
 
+    .storefront-page-canvas {
+      background: linear-gradient(135deg, var(--sf-page-bg-start, #c7d2fe) 0%, var(--sf-page-bg-mid, #f5d0fe) 50%, var(--sf-page-bg-end, #bae6fd) 100%);
+      background-attachment: fixed;
+      color: #000000;
+    }
+
+    .storefront-block-card-custom {
+      background: var(--sf-block-bg, rgba(255, 255, 255, 0.72)) !important;
+      border: 1.5px solid var(--sf-block-border, rgba(255, 255, 255, 0.88)) !important;
+      backdrop-filter: blur(18px) saturate(145%);
+      -webkit-backdrop-filter: blur(18px) saturate(145%);
+      box-shadow: 0 14px 36px -12px rgba(15, 41, 74, 0.16);
+    }
+
     .liquid-glass-nav {
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(250, 232, 255, 0.56) 50%, rgba(224, 242, 254, 0.66) 100%);
       backdrop-filter: blur(22px) saturate(165%);
@@ -364,65 +378,60 @@
     /* STOREFRONT NAVY BLUE PILL HEADERS & "আরো দেখুন" BUTTONS   */
     /* ========================================================= */
     .navy-pill-badge {
-      background: linear-gradient(135deg, #0f294a 0%, #1e3a8a 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(135deg, var(--sf-block-title-bg, #0f294a) 0%, var(--sf-block-title-bg-end, #1e3a8a) 100%) !important;
+      color: var(--sf-block-title-text, #ffffff) !important;
       border: 1.5px solid rgba(255, 255, 255, 0.42) !important;
       box-shadow: 0 7px 16px -5px rgba(15, 41, 74, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     }
     .navy-pill-badge,
     .navy-pill-badge * {
-      color: #ffffff !important;
+      color: var(--sf-block-title-text, #ffffff) !important;
     }
     .red-pill-badge {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid #991b1b !important;
+      background: var(--sf-reels-cap-bg, #dc2626) !important;
+      color: var(--sf-reels-cap-text, #ffffff) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
       box-shadow: 0 5px 12px -4px rgba(220, 38, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     }
     .red-pill-badge,
     .red-pill-badge * {
-      color: #ffffff !important;
+      color: var(--sf-reels-cap-text, #ffffff) !important;
     }
     .navy-pill-action {
-      background: linear-gradient(135deg, #0f294a 0%, #1e3a8a 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(135deg, var(--sf-seemore-bg, #0f294a) 0%, var(--sf-seemore-bg-end, #1e3a8a) 100%) !important;
+      color: var(--sf-seemore-text, #ffffff) !important;
       border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
       box-shadow: 0 5px 12px -4px rgba(15, 41, 74, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
       transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease !important;
     }
     .navy-pill-action:hover {
-      background: linear-gradient(135deg, #0a1f3a 0%, #172554 100%) !important;
+      filter: brightness(1.08);
       transform: translateY(-1px);
       box-shadow: 0 8px 18px -5px rgba(15, 41, 74, 0.5) !important;
     }
     .navy-pill-action,
     .navy-pill-action * {
-      color: #ffffff !important;
+      color: var(--sf-seemore-text, #ffffff) !important;
     }
 
     /* ========================================================= */
-    /* HOME PRODUCT DISPLAY CARD: NAVY BODY + COLLECTION RED BOX */
+    /* HOME PRODUCT DISPLAY CARD: NAVY BODY + CREAM PRICE BOX    */
     /* Mobile-First Responsive Padding, Typography & Wrapping    */
     /* ========================================================= */
     .storefront-navy-card {
-      background: linear-gradient(175deg, #0f294a 0%, #172554 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid rgba(255, 255, 255, 0.72) !important;
+      background: linear-gradient(175deg, var(--sf-card-body-bg, #0f294a) 0%, var(--sf-card-body-bg-end, #172554) 100%) !important;
+      color: var(--sf-card-title-text, #ffffff);
+      border: 1.5px solid var(--sf-card-border, rgba(255, 255, 255, 0.72)) !important;
       border-radius: 16px;
       box-shadow: 0 12px 26px -8px rgba(15, 41, 74, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
     }
     .storefront-navy-card-body {
-      background: linear-gradient(165deg, #0f294a 0%, #1e3a8a 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(165deg, var(--sf-card-body-bg, #0f294a) 0%, var(--sf-card-body-bg-end, #1e3a8a) 100%) !important;
       padding: 10px;
       gap: 6px;
       min-width: 0;
       width: 100%;
       box-sizing: border-box;
-    }
-    .storefront-navy-card-body,
-    .storefront-navy-card-body * {
-      color: #ffffff !important;
     }
     .storefront-card-meta-group {
       display: flex;
@@ -431,11 +440,11 @@
       min-width: 0;
       width: 100%;
     }
-    /* Same vivid red gradient + border style as "সকল কালেকশন" active pill */
+    /* Title box with customizable bg/text/border */
     .storefront-title-box {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid #991b1b !important;
+      background: linear-gradient(135deg, var(--sf-card-title-bg, #ef4444) 0%, var(--sf-card-title-bg-end, #dc2626) 100%) !important;
+      color: var(--sf-card-title-text, #ffffff) !important;
+      border: 1.5px solid var(--sf-card-title-border, #991b1b) !important;
       border-radius: 10px;
       padding: 5px 7px;
       font-size: 12px;
@@ -445,7 +454,7 @@
       overflow: hidden;
       overflow-wrap: anywhere;
       word-break: break-word;
-      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
     }
     .storefront-title-text {
       display: -webkit-box;
@@ -454,44 +463,47 @@
       overflow: hidden;
       min-height: 2.6em;
       line-height: inherit;
+      color: var(--sf-card-title-text, #ffffff) !important;
     }
+    /* CREAM PRICE BOX: Line 1 Navy Blue crossed-out regular price, Line 2 Red Offer Price */
     .storefront-price-box {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-      color: #ffffff !important;
-      border: 1.5px solid #991b1b !important;
+      background: var(--sf-card-price-bg, #fff8f0) !important;
+      border: 1.5px solid var(--sf-card-price-border, #f3d5b5) !important;
       border-radius: 10px;
       padding: 4px 7px;
       display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 2px 5px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5px;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 3px 8px -3px rgba(15, 41, 74, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
     }
     .storefront-price-old {
-      color: rgba(255, 255, 255, 0.88) !important;
+      color: var(--sf-card-reg-price-color, #0f294a) !important;
       text-decoration: line-through !important;
       font-size: 11px;
       line-height: 1.15;
       font-weight: 700;
       white-space: nowrap;
-      flex-shrink: 0;
+      text-align: center;
+      display: block;
     }
     .storefront-price-current {
-      color: #ffffff !important;
+      color: var(--sf-card-offer-price-color, #dc2626) !important;
       font-size: 14px;
       line-height: 1.15;
       font-weight: 900;
       white-space: nowrap;
-      margin-left: auto;
+      text-align: center;
+      display: block;
+      margin-left: 0;
     }
-    /* Matching pill style next to "সকল কালেকশন" (high-contrast rose-red with crisp white text) */
     .storefront-view-btn {
-      background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%) !important;
-      color: #ffffff !important;
+      background: linear-gradient(135deg, var(--sf-card-btn-bg, #fb7185) 0%, var(--sf-card-btn-bg-end, #e11d48) 100%) !important;
+      color: var(--sf-card-btn-text, #ffffff) !important;
       border: 1.5px solid rgba(255, 255, 255, 0.72) !important;
       font-size: 12px;
       line-height: 1.2;
@@ -499,12 +511,22 @@
       min-height: 30px;
       width: 100%;
       box-sizing: border-box;
-      box-shadow: 0 6px 14px -5px rgba(225, 29, 72, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+      box-shadow: 0 6px 14px -5px rgba(225, 29, 72, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
       transition: transform 0.16s ease, filter 0.16s ease !important;
     }
     .storefront-view-btn:hover {
       filter: brightness(1.06);
       transform: translateY(-1px);
+    }
+    .storefront-btn-pill { border-radius: 9999px !important; }
+    .storefront-btn-rounded { border-radius: 10px !important; }
+    .storefront-btn-square { border-radius: 4px !important; }
+    .storefront-btn-outline {
+      border-radius: 9999px !important;
+      background: rgba(255, 255, 255, 0.94) !important;
+      color: var(--sf-card-btn-bg-end, #e11d48) !important;
+      border: 2px solid var(--sf-card-btn-bg-end, #e11d48) !important;
+      box-shadow: none !important;
     }
 
     @media (max-width: 639px) {
@@ -530,16 +552,16 @@
         min-height: 2.56em;
       }
       .storefront-price-box {
-        padding: 3px 5px;
+        padding: 3.5px 5px;
         border-radius: 8px;
         border-width: 1px !important;
-        gap: 1px 4px;
+        gap: 1px;
       }
       .storefront-price-old {
-        font-size: 9px;
+        font-size: 9.5px;
       }
       .storefront-price-current {
-        font-size: 11.5px;
+        font-size: 12px;
       }
       .storefront-view-btn {
         font-size: 10px;
@@ -571,15 +593,15 @@
         min-height: 2.48em;
       }
       .storefront-price-box {
-        padding: 2.5px 4px;
+        padding: 3px 4px;
         border-radius: 7px;
-        gap: 1px 3px;
+        gap: 0.5px;
       }
       .storefront-price-old {
-        font-size: 8.25px;
+        font-size: 8.75px;
       }
       .storefront-price-current {
-        font-size: 10.5px;
+        font-size: 11px;
       }
       .storefront-view-btn {
         font-size: 9.5px;
@@ -806,6 +828,28 @@
       { id: "p11", name: "রয়েল ব্রাইডাল পার্ল ও কুন্দন সেট (Full Set)", price: 3850, regularPrice: 4600, offerPrice: 3850, stock: 7, category: "ব্রাইডাল সেট", images: [imgChoker], sku: "SAJ-BR11", description: "সীতাহার, চোকার, ঝুমকা ও টিকলিসহ সম্পূর্ণ রয়্যাল ব্রাইডাল জুয়েলারি সেট।", rating: 5.0, reviewsCount: 27, sourceUrl: "", bogo: true, bogoText: "১টি কিনলে ১টি ফ্রি", colors: ["গোল্ডেন ও মুক্তা", "রুবি গোল্ড"], sizes: ["Free Size"], isHotSale: false, isBestDeal: true, createdAt: 1729500011000 },
       { id: "p12", name: "ডিজাইনার লং কটন থ্রি-পিস কালেকশন", price: 1890, regularPrice: 2350, offerPrice: 1890, stock: 18, category: "জামা / কামিজ", images: [imgKurti], sku: "SAJ-KM12", description: "পিওর কটন কাপড়ের ওপর নিখুঁত কাজের প্রিমিয়াম থ্রি-পিস ও ওড়না সেট।", rating: 4.8, reviewsCount: 16, sourceUrl: "", colors: ["মেরুন", "নীল", "জলপাই"], sizes: ["৩৮", "৪০", "৪২", "৪৪"], isHotSale: true, isBestDeal: true, createdAt: 1729500012000 }
     ];
+
+    const normalizeProductsList = (rawList) => {
+      const seedById = Object.fromEntries(initialProducts.map(sp => [sp.id, sp]));
+      return (Array.isArray(rawList) ? rawList : []).map(p => {
+        const seed = seedById[p.id];
+        const numericPrice = Number(p.price || seed?.price || 0);
+        let numericReg = Number(p.regularPrice || 0);
+        if (numericReg <= numericPrice && seed && Number(seed.regularPrice || 0) > numericPrice) {
+          numericReg = Number(seed.regularPrice);
+        } else if (numericReg <= 0 && numericPrice > 0 && seed?.regularPrice) {
+          numericReg = Number(seed.regularPrice);
+        }
+        const numericOffer = Number(p.offerPrice || (seed?.offerPrice && numericPrice === Number(seed.price) ? seed.offerPrice : numericPrice) || 0);
+        return {
+          ...p,
+          regularPrice: numericReg,
+          offerPrice: numericOffer,
+          colors: (p.colors || []).map(cleanVariation).filter(Boolean),
+          sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
+        };
+      });
+    };
 
     const initialCategories = [
       // 1. PARENT CATEGORIES (প্যারেন্ট ক্যাটাগরি - শীর্ষ পর্যায়)
@@ -1128,8 +1172,18 @@
       { id: "category_pills", type: "category_pills", title: "ক্যাটাগরি ফিল্টার পিলস", subtitle: "ক্যাটাগরি অনুযায়ী ব্রাউজ বাটন", icon: "📂", enabled: true, layout: "pills", productIds: [] }
     ];
 
+    const isHomeSectionsCustomized = () => {
+      try {
+        return localStorage.getItem("sajgoj_store_home_sections_customized") === "1";
+      } catch (e) {
+        return false;
+      }
+    };
+
     const normalizeHomeSectionsList = (rawList) => {
-      if (!Array.isArray(rawList) || rawList.length === 0) return initialHomeSections;
+      if (!Array.isArray(rawList)) return initialHomeSections;
+      if (rawList.length === 0) return isHomeSectionsCustomized() ? [] : initialHomeSections;
+      const customized = isHomeSectionsCustomized();
       const list = rawList.map(s => {
         const legacyLayout = s.layout || "slider3";
         const derivedCols = Number(s.columnsPerRow) || (legacyLayout === "grid2" ? 2 : legacyLayout === "grid4" ? 4 : 3);
@@ -1139,25 +1193,27 @@
         return {
           ...s,
           title: isLegacyReelsTitle ? "Product Reels" : s.title,
-          subtitle: s.type === "reels_showcase" ? "পন্যের ভিডিও দেখে অর্ডার করুন" : s.subtitle,
+          subtitle: (!customized && s.type === "reels_showcase") ? "পন্যের ভিডিও দেখে অর্ডার করুন" : s.subtitle,
           columnsPerRow: Math.min(4, Math.max(2, derivedCols)),
           rowCount: Math.min(6, Math.max(1, derivedRows)),
           displayStyle: derivedStyle
         };
       });
-      const ensureSection = (type, afterId) => {
-        if (!list.some(s => s.type === type)) {
-          const def = initialHomeSections.find(s => s.type === type);
-          if (def) {
-            const idx = list.findIndex(s => s.id === afterId);
-            if (idx >= 0) list.splice(idx + 1, 0, def);
-            else list.push(def);
+      if (!customized) {
+        const ensureSection = (type, afterId) => {
+          if (!list.some(s => s.type === type)) {
+            const def = initialHomeSections.find(s => s.type === type);
+            if (def) {
+              const idx = list.findIndex(s => s.id === afterId);
+              if (idx >= 0) list.splice(idx + 1, 0, def);
+              else list.push(def);
+            }
           }
-        }
-      };
-      ensureSection("reels_showcase", "best_deals");
-      ensureSection("combo_packs", "reels_showcase");
-      ensureSection("b2g1_offers", "combo_packs");
+        };
+        ensureSection("reels_showcase", "best_deals");
+        ensureSection("combo_packs", "reels_showcase");
+        ensureSection("b2g1_offers", "combo_packs");
+      }
       return list;
     };
 
@@ -1334,6 +1390,64 @@
         showCategories: true, 
         sticky: true 
       },
+      design: {
+        useCustomPageBg: false,
+        pageBgStart: "#c7d2fe",
+        pageBgMid: "#f5d0fe",
+        pageBgEnd: "#bae6fd",
+        useCustomBlockBg: false,
+        blockBgColor: "#ffffff",
+        blockBorderColor: "#ffffff",
+        blockTitleBg: "#0f294a",
+        blockTitleBgEnd: "#1e3a8a",
+        blockTitleText: "#ffffff",
+        seeMoreBg: "#0f294a",
+        seeMoreBgEnd: "#1e3a8a",
+        seeMoreText: "#ffffff",
+        reelsCaptionBg: "#dc2626",
+        reelsCaptionText: "#ffffff",
+        reelsCaptionLabel: "পন্যের ভিডিও দেখে অর্ডার করুন",
+        cardBodyBg: "#0f294a",
+        cardBodyBgEnd: "#1e3a8a",
+        cardBorderColor: "#ffffff",
+        cardTitleBg: "#ef4444",
+        cardTitleBgEnd: "#dc2626",
+        cardTitleText: "#ffffff",
+        cardTitleBorder: "#991b1b",
+        cardPriceBg: "#fff8f0",
+        cardPriceBorder: "#f3d5b5",
+        cardRegularPriceColor: "#0f294a",
+        cardOfferPriceColor: "#dc2626",
+        cardBtnBg: "#fb7185",
+        cardBtnBgEnd: "#e11d48",
+        cardBtnText: "#ffffff",
+        cardBtnStyle: "pill",
+        cardActionLabel: "পন্যটি দেখুন",
+        cardWishlistCircleBg: "#ffffff",
+        cardWishlistActiveBg: "#e11d48",
+        cardWishlistIcon: "❤️",
+        cardWishlistEmptyIcon: "🤍",
+        useCustomHeaderColors: false,
+        announcementBg: "#ef4444",
+        announcementTextColor: "#000000",
+        headerBg: "#ffffff",
+        headerTextColor: "#000000",
+        searchBg: "#ffffff",
+        searchBorder: "#ffffff",
+        searchTextColor: "#000000",
+        cartIcon: "🛒",
+        cartBg: "#0f172a",
+        cartTextColor: "#ffffff",
+        cartBadgeBg: "#ef4444",
+        cartBadgeText: "#000000",
+        wishlistIcon: "❤️",
+        wishlistBg: "#fca5a5",
+        wishlistTextColor: "#000000",
+        b2g1Bg: "#f87171",
+        b2g1TextColor: "#000000",
+        b2g1BtnBg: "#0b0f19",
+        b2g1BtnText: "#ffffff"
+      },
       footer: {
         about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
         email: "support@sajgoj.com",
@@ -1350,6 +1464,21 @@
         visa: true,
         copyright: "© 2026 SAJGOJ FASHION. All Rights Reserved."
       }
+    };
+
+    const mergeStoreConfig = (baseCfg, incomingCfg) => {
+      const b = baseCfg || initialStoreConfig;
+      const r = incomingCfg || {};
+      return {
+        ...initialStoreConfig,
+        ...b,
+        ...r,
+        announcement: { ...initialStoreConfig.announcement, ...(b.announcement || {}), ...(r.announcement || {}) },
+        b2g1: { ...initialStoreConfig.b2g1, ...(b.b2g1 || {}), ...(r.b2g1 || {}) },
+        header: { ...initialStoreConfig.header, ...(b.header || {}), ...(r.header || {}) },
+        design: { ...initialStoreConfig.design, ...(b.design || {}), ...(r.design || {}) },
+        footer: { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) }
+      };
     };
 
     const initialCourierConfig = {
@@ -1716,20 +1845,7 @@
       // Main Reactive States
       const [products, setProducts] = useState(() => {
         const stored = getStored("products", initialProducts);
-        const seedById = Object.fromEntries(initialProducts.map(sp => [sp.id, sp]));
-        const normalized = (stored || []).map(p => {
-          const seed = seedById[p.id];
-          const fallbackRegular = (!p.regularPrice && seed && Number(p.price) === Number(seed.price)) ? seed.regularPrice : (Number(p.regularPrice) || 0);
-          const fallbackOffer = (!p.offerPrice && seed && Number(p.price) === Number(seed.price)) ? seed.offerPrice : (Number(p.offerPrice) || 0);
-          return {
-            ...p,
-            regularPrice: fallbackRegular,
-            offerPrice: fallbackOffer,
-            colors: (p.colors || []).map(cleanVariation).filter(Boolean),
-            sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
-          };
-        });
-        return mergeWithPosLocalStorage(normalized);
+        return mergeWithPosLocalStorage(normalizeProductsList(stored));
       });
       const [combos, setCombos] = useState(() => getStored("combos", initialCombos));
       const [reviews, setReviews] = useState(() => getStored("reviews", initialReviews));
@@ -1908,7 +2024,7 @@
         bannerLinkUrl: "",
         productIds: []
       });
-      const [config, setConfig] = useState(() => getStored("config", initialStoreConfig));
+      const [config, setConfig] = useState(() => mergeStoreConfig(initialStoreConfig, getStored("config", initialStoreConfig)));
       const [courier, setCourier] = useState(() => getStored("courier", initialCourierConfig));
       const [pixel, setPixel] = useState(() => getStored("pixel", initialPixelConfig));
       const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
@@ -2049,12 +2165,12 @@
             try {
               const val = await idbStore.get(k);
               if (val && isMounted) {
-                if (k === "config") setConfig(prev => ({ ...prev, ...val }));
+                if (k === "config") setConfig(prev => mergeStoreConfig(prev, val));
                 else if (k === "banners") setBanners(val);
                 else if (k === "home_sections" && Array.isArray(val) && val.length > 0) {
                   setHomeSections(normalizeHomeSectionsList(val));
                 }
-                else if (k === "products") setProducts(mergeWithPosLocalStorage(val));
+                else if (k === "products") setProducts(mergeWithPosLocalStorage(normalizeProductsList(val)));
                 else if (k === "combos") setCombos(val);
                 else if (k === "categories") setCategories(val);
                 else if (k === "orders") setOrders(val);
@@ -2200,8 +2316,9 @@
           if (!snapshot.empty) {
             const list = [];
             snapshot.forEach(doc => list.push(doc.data()));
-            setProducts(list);
-            setStored("products", list);
+            const normalized = normalizeProductsList(list);
+            setProducts(normalized);
+            setStored("products", normalized);
             setCloudSyncStatus("connected");
             setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
           } else {
@@ -2295,21 +2412,15 @@
             const remoteData = doc.data() || {};
             setConfig(prev => {
               const prevCfg = prev || initialStoreConfig;
+              const merged = mergeStoreConfig(prevCfg, remoteData);
               return {
-                ...initialStoreConfig,
-                ...prevCfg,
-                ...remoteData,
-                // Preserve local uploaded logo/favicon if remote document has empty string
+                ...merged,
                 logo: (remoteData.logo && remoteData.logo.trim()) ? remoteData.logo : (prevCfg.logo || ""),
                 favicon: (remoteData.favicon && remoteData.favicon.trim()) ? remoteData.favicon : (prevCfg.favicon || ""),
-                primaryColor: remoteData.primaryColor || prevCfg.primaryColor || initialStoreConfig.primaryColor,
-                announcement: { ...initialStoreConfig.announcement, ...(prevCfg.announcement || {}), ...(remoteData?.announcement || {}) },
-                b2g1: { ...initialStoreConfig.b2g1, ...(prevCfg.b2g1 || {}), ...(remoteData?.b2g1 || {}) },
-                header: { ...initialStoreConfig.header, ...(prevCfg.header || {}), ...(remoteData?.header || {}) },
-                footer: { ...initialStoreConfig.footer, ...(prevCfg.footer || {}), ...(remoteData?.footer || {}) }
+                primaryColor: remoteData.primaryColor || prevCfg.primaryColor || initialStoreConfig.primaryColor
               };
             });
-            setStored("config", { ...getStored("config", initialStoreConfig), ...remoteData });
+            setStored("config", mergeStoreConfig(getStored("config", initialStoreConfig), remoteData));
           } else {
             const currentConfig = getStored("config", initialStoreConfig);
             firestoreDb.collection("config").doc("store").set(currentConfig);
@@ -9440,6 +9551,7 @@
 
       // Home Page Sections Management Helpers
       const saveHomeSections = (nextList) => {
+        try { localStorage.setItem("sajgoj_store_home_sections_customized", "1"); } catch (e) {}
         setHomeSections(nextList);
         setStored("home_sections", nextList);
         syncDocToCloud("config", "home_sections", { sections: nextList, updatedAt: Date.now() });
@@ -9573,8 +9685,504 @@
       };
 
       const resetHomeSectionsToDefault = () => {
-        saveHomeSections(initialHomeSections);
+        try { localStorage.removeItem("sajgoj_store_home_sections_customized"); } catch (e) {}
+        setHomeSections(initialHomeSections);
+        setStored("home_sections", initialHomeSections);
+        syncDocToCloud("config", "home_sections", { sections: initialHomeSections, updatedAt: Date.now() });
         notify("হোম পেজ ব্লক লেআউট ডিফল্ট অবস্থায় রিসেট হয়েছে! ✅");
+      };
+
+      const updateFooterPaymentToggle = async (methodKey, enabledVal) => {
+        const nextConfig = mergeStoreConfig(config, {
+          footer: { ...(config?.footer || {}), [methodKey]: enabledVal }
+        });
+        setConfig(nextConfig);
+        setStored("config", nextConfig);
+        await syncDocToCloud("config", "store", nextConfig);
+        const labels = {
+          bkash: "bKash",
+          nagad: "Nagad",
+          rocket: "Rocket",
+          cod: "Cash on Delivery (COD)",
+          visa: "Visa / Mastercard"
+        };
+        notify(`${labels[methodKey] || methodKey} ফুটারে ${enabledVal ? "চালু (ON)" : "বন্ধ (OFF)"} করা হয়েছে! ✅`);
+      };
+
+      const updateDesignField = (patch) => {
+        setConfig(prev => {
+          const next = mergeStoreConfig(prev, {
+            design: { ...(prev?.design || {}), ...patch }
+          });
+          setStored("config", next);
+          return next;
+        });
+      };
+
+      const saveDesignToCloud = async (targetCfg) => {
+        const cfgToSave = targetCfg || config;
+        setStored("config", cfgToSave);
+        await syncDocToCloud("config", "store", cfgToSave);
+        notify("স্টোরফ্রন্ট ডিজাইন ও কালার সেটিংস সফলভাবে সেভ ও লাইভ সিঙ্ক হয়েছে! 🎨✅");
+      };
+
+      const applyDesignPreset = async (presetName, patch) => {
+        const nextCfg = mergeStoreConfig(config, {
+          design: { ...(config?.design || {}), ...patch }
+        });
+        setConfig(nextCfg);
+        setStored("config", nextCfg);
+        await syncDocToCloud("config", "store", nextCfg);
+        notify(`"${presetName}" থিম প্রিসেট সফলভাবে প্রয়োগ হয়েছে! 🎨`);
+      };
+
+      const resetStorefrontDesign = async () => {
+        const nextCfg = mergeStoreConfig(config, {
+          design: { ...initialStoreConfig.design }
+        });
+        setConfig(nextCfg);
+        setStored("config", nextCfg);
+        await syncDocToCloud("config", "store", nextCfg);
+        notify("স্টোরফ্রন্ট ডিজাইন ও কালার ডিফল্ট অবস্থায় রিসেট হয়েছে! ↺");
+      };
+
+      const renderPaymentMethodsToggleCard = () => {
+        const ftr = config?.footer || initialStoreConfig.footer;
+        const methods = [
+          { key: "bkash", label: "bKash", sub: "মোবাইল পেমেন্ট ব্যাজ", bg: "#e2136e" },
+          { key: "nagad", label: "Nagad", sub: "ডিজিটাল ওয়ালেট ব্যাজ", bg: "#f7941d" },
+          { key: "rocket", label: "Rocket", sub: "ডাচ-বাংলা মোবাইল ব্যাংকিং", bg: "#8c3494" },
+          { key: "cod", label: "Cash on Delivery", sub: "ডেলিভারির সময় নগদ পেমেন্ট", bg: "#047857" },
+          { key: "visa", label: "Visa / Mastercard", sub: "কার্ড পেমেন্ট ব্যাজ", bg: "#1e3a8a" }
+        ];
+        return (
+          <div className="text-white p-5 bg-[#14070a]/85 rounded-3xl border border-emerald-500/35 space-y-4 shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="font-black text-sm sm:text-base text-emerald-300 flex items-center gap-2">
+                  <span>💳</span>
+                  <span>পেমেন্ট মেথড কন্ট্রোল (Storefront Footer)</span>
+                </h4>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  এখান থেকে যেকোনো পেমেন্ট মেথড ON/OFF করলে সাথে সাথে স্টোরফ্রন্টের ফুটারে আপডেট হবে এবং স্থায়ীভাবে সেভ থাকবে।
+                </p>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 self-start sm:self-center">
+                তাৎক্ষণিক ফুটার সিঙ্ক ⚡
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {methods.map((m) => {
+                const isOn = m.key === "visa" ? ftr[m.key] !== false : Boolean(ftr[m.key]);
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => updateFooterPaymentToggle(m.key, !isOn)}
+                    className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+                      isOn
+                        ? "bg-black/60 border-emerald-500/50 shadow-sm"
+                        : "bg-black/35 border-red-900/35 opacity-75"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <span
+                        className="inline-block px-2.5 py-0.5 rounded text-[11px] font-black text-white shadow-xs"
+                        style={{ backgroundColor: m.bg }}
+                      >
+                        {m.label}
+                      </span>
+                      <p className="text-[10px] text-slate-300 mt-1 truncate">{m.sub}</p>
+                    </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-black shrink-0 ${
+                        isOn ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-200"
+                      }`}
+                    >
+                      {isOn ? "ON" : "OFF"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      };
+
+      const renderColorInput = (label, value, onChangeFn) => (
+        <label className="flex items-center justify-between gap-2 bg-black/45 px-3 py-2 rounded-2xl border border-red-900/35 text-xs">
+          <span className="font-semibold text-rose-100 truncate">{label}</span>
+          <span className="flex items-center gap-1.5 shrink-0">
+            <span className="font-mono text-[10px] text-slate-300 uppercase">{value}</span>
+            <input
+              type="color"
+              value={/^#[0-9a-fA-F]{6}$/.test(value || "") ? value : "#ffffff"}
+              onChange={(e) => onChangeFn(e.target.value)}
+              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent border border-white/25 p-0"
+            />
+          </span>
+        </label>
+      );
+
+      const renderStorefrontDesignStudioPanel = () => {
+        const d = { ...initialStoreConfig.design, ...(config?.design || {}) };
+        const presets = [
+          {
+            name: "ডিফল্ট নেভি + ক্রিম প্রাইস",
+            swatch: ["#0f294a", "#ef4444", "#fff8f0"],
+            patch: { ...initialStoreConfig.design }
+          },
+          {
+            name: "রয়েল গোল্ড ও মেরুন",
+            swatch: ["#7f1d1d", "#d97706", "#fff8f0"],
+            patch: {
+              useCustomPageBg: true,
+              pageBgStart: "#fff1f2",
+              pageBgMid: "#fef3c7",
+              pageBgEnd: "#ffe4e6",
+              useCustomBlockBg: true,
+              blockBgColor: "#fffaf5",
+              blockBorderColor: "#fde68a",
+              blockTitleBg: "#7f1d1d",
+              blockTitleBgEnd: "#991b1b",
+              blockTitleText: "#ffffff",
+              seeMoreBg: "#7f1d1d",
+              seeMoreBgEnd: "#b45309",
+              seeMoreText: "#ffffff",
+              cardBodyBg: "#7f1d1d",
+              cardBodyBgEnd: "#450a0a",
+              cardTitleBg: "#b45309",
+              cardTitleBgEnd: "#d97706",
+              cardTitleText: "#ffffff",
+              cardPriceBg: "#fff8f0",
+              cardRegularPriceColor: "#0f294a",
+              cardOfferPriceColor: "#dc2626",
+              cardBtnBg: "#f59e0b",
+              cardBtnBgEnd: "#b45309",
+              cardBtnText: "#ffffff"
+            }
+          },
+          {
+            name: "মিডনাইট ডার্ক লাক্সারি",
+            swatch: ["#0f172a", "#ec4899", "#fff8f0"],
+            patch: {
+              useCustomPageBg: true,
+              pageBgStart: "#0f172a",
+              pageBgMid: "#1e1b4b",
+              pageBgEnd: "#090d16",
+              useCustomBlockBg: true,
+              blockBgColor: "#111827",
+              blockBorderColor: "#334155",
+              blockTitleBg: "#be185d",
+              blockTitleBgEnd: "#9d174d",
+              blockTitleText: "#ffffff",
+              seeMoreBg: "#1e293b",
+              seeMoreBgEnd: "#334155",
+              seeMoreText: "#f8fafc",
+              cardBodyBg: "#0b1120",
+              cardBodyBgEnd: "#1e293b",
+              cardTitleBg: "#be185d",
+              cardTitleBgEnd: "#db2777",
+              cardTitleText: "#ffffff",
+              cardPriceBg: "#fff8f0",
+              cardRegularPriceColor: "#0f294a",
+              cardOfferPriceColor: "#dc2626",
+              cardBtnBg: "#ec4899",
+              cardBtnBgEnd: "#be185d",
+              cardBtnText: "#ffffff"
+            }
+          },
+          {
+            name: "এমেরাল্ড ও রোজ",
+            swatch: ["#064e3b", "#e11d48", "#fff8f0"],
+            patch: {
+              useCustomPageBg: true,
+              pageBgStart: "#d1fae5",
+              pageBgMid: "#fce7f3",
+              pageBgEnd: "#cffafe",
+              useCustomBlockBg: true,
+              blockBgColor: "#f8fffc",
+              blockBorderColor: "#a7f3d0",
+              blockTitleBg: "#064e3b",
+              blockTitleBgEnd: "#047857",
+              blockTitleText: "#ffffff",
+              seeMoreBg: "#064e3b",
+              seeMoreBgEnd: "#059669",
+              seeMoreText: "#ffffff",
+              cardBodyBg: "#064e3b",
+              cardBodyBgEnd: "#065f46",
+              cardTitleBg: "#e11d48",
+              cardTitleBgEnd: "#be123c",
+              cardTitleText: "#ffffff",
+              cardPriceBg: "#fff8f0",
+              cardRegularPriceColor: "#0f294a",
+              cardOfferPriceColor: "#dc2626",
+              cardBtnBg: "#fb7185",
+              cardBtnBgEnd: "#e11d48",
+              cardBtnText: "#ffffff"
+            }
+          }
+        ];
+
+        const btnShapePreviewClass =
+          d.cardBtnStyle === "rounded"
+            ? "rounded-xl"
+            : d.cardBtnStyle === "square"
+            ? "rounded-sm"
+            : d.cardBtnStyle === "outline"
+            ? "rounded-full border-2"
+            : "rounded-full";
+
+        return (
+          <div className="text-white p-5 sm:p-6 bg-[#14070a]/85 rounded-3xl border border-amber-500/35 space-y-6 shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="font-black text-base sm:text-lg text-amber-300 flex items-center gap-2">
+                  <span>🎨</span>
+                  <span>স্টোরফ্রন্ট ডিজাইন ও কালার মাস্টার স্টুডিও</span>
+                </h4>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  কোনো কোড ছাড়াই পুরো ওয়েবসাইটের ব্যাকগ্রাউন্ড, প্রোডাক্ট ব্লক, কার্ড, ক্রিম প্রাইস বক্স, বাটন স্টাইল, কার্ট ও উইশলিস্ট নিজের মতো সাজান।
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={resetStorefrontDesign}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-black/50 border border-red-900/50 text-rose-200 hover:bg-red-950/60 cursor-pointer"
+                >
+                  ↺ ডিফল্ট রিসেট
+                </button>
+                <button
+                  type="button"
+                  onClick={() => saveDesignToCloud(config)}
+                  className="px-5 py-2 rounded-full text-xs font-black bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white shadow cursor-pointer hover:brightness-110"
+                >
+                  💾 ডিজাইন সেভ ও লাইভ করুন
+                </button>
+              </div>
+            </div>
+
+            {/* 1. One-Click Presets */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-rose-200">⚡ এক ক্লিকে রেডিমেড ডিজাইন প্রিসেট:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {presets.map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => applyDesignPreset(p.name, p.patch)}
+                    className="p-3 rounded-2xl bg-black/50 border border-red-900/40 hover:border-amber-400/70 transition text-left space-y-2 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {p.swatch.map((hex, i) => (
+                        <span key={i} className="w-5 h-5 rounded-full border border-white/30" style={{ backgroundColor: hex }}></span>
+                      ))}
+                    </div>
+                    <p className="text-xs font-black text-white">{p.name}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Live Card Preview */}
+            <div className="p-4 rounded-2xl bg-black/45 border border-red-900/40 flex flex-col sm:flex-row items-center gap-5">
+              <div className="w-44 shrink-0 rounded-2xl overflow-hidden shadow-lg border-2" style={{ borderColor: d.cardBorderColor }}>
+                <div className="h-24 bg-[#f5eee6] relative flex items-center justify-center text-slate-700 font-bold text-xs">
+                  <span>প্রোডাক্ট প্রিভিউ</span>
+                  <span
+                    className="absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow"
+                    style={{ backgroundColor: d.cardWishlistCircleBg }}
+                  >
+                    {d.cardWishlistEmptyIcon || "🤍"}
+                  </span>
+                </div>
+                <div
+                  className="p-2.5 space-y-2 text-center"
+                  style={{ background: `linear-gradient(160deg, ${d.cardBodyBg}, ${d.cardBodyBgEnd})` }}
+                >
+                  <div
+                    className="px-2 py-1 rounded-full text-[11px] font-extrabold truncate border"
+                    style={{
+                      background: `linear-gradient(135deg, ${d.cardTitleBg}, ${d.cardTitleBgEnd})`,
+                      color: d.cardTitleText,
+                      borderColor: d.cardTitleBorder
+                    }}
+                  >
+                    কাতান ডিজাইনার শাড়ি
+                  </div>
+                  <div
+                    className="rounded-xl py-1 px-2 border flex flex-col items-center justify-center leading-tight"
+                    style={{ backgroundColor: d.cardPriceBg, borderColor: d.cardPriceBorder }}
+                  >
+                    <span className="text-[10px] font-bold line-through" style={{ color: d.cardRegularPriceColor }}>৳4,200</span>
+                    <span className="text-xs font-black" style={{ color: d.cardOfferPriceColor }}>৳3,500</span>
+                  </div>
+                  <div
+                    className={`py-1.5 px-3 text-[11px] font-black text-center ${btnShapePreviewClass}`}
+                    style={
+                      d.cardBtnStyle === "outline"
+                        ? { backgroundColor: "transparent", borderColor: d.cardBtnBg, color: d.cardBtnBg }
+                        : { background: `linear-gradient(135deg, ${d.cardBtnBg}, ${d.cardBtnBgEnd})`, color: d.cardBtnText }
+                    }
+                  >
+                    {d.cardActionLabel || "পন্যটি দেখুন"}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5 text-xs text-slate-200">
+                <p className="font-black text-amber-300 text-sm">👁️ লাইভ প্রোডাক্ট কার্ড ও প্রাইস বক্স প্রিভিউ</p>
+                <p>উপরে ক্রিম ব্যাকগ্রাউন্ডের ভেতর প্রথমে <span className="font-bold text-blue-300">নেভি ব্লু ক্রস মূল্য</span> এবং নিচে <span className="font-bold text-red-400">লাল অফার মূল্য</span> দেখা যাচ্ছে। নিচের কালার পিকার পরিবর্তন করলেই এখানে এবং সরাসরি ওয়েবসাইটে লাইভ পরিবর্তন দেখতে পাবেন।</p>
+              </div>
+            </div>
+
+            {/* 2. Page & Block Backgrounds */}
+            <div className="p-4 rounded-2xl bg-black/40 border border-red-900/35 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h5 className="font-black text-xs sm:text-sm text-rose-200">১. ওয়েবসাইট পেজ ও প্রোডাক্ট ব্লক ব্যাকগ্রাউন্ড</h5>
+                <div className="flex items-center gap-4 text-xs">
+                  <label className="flex items-center gap-1.5 cursor-pointer font-bold">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(d.useCustomPageBg)}
+                      onChange={(e) => updateDesignField({ useCustomPageBg: e.target.checked })}
+                      className="accent-amber-400"
+                    />
+                    কাস্টম পেজ ব্যাকগ্রাউন্ড
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer font-bold">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(d.useCustomBlockBg)}
+                      onChange={(e) => updateDesignField({ useCustomBlockBg: e.target.checked })}
+                      className="accent-amber-400"
+                    />
+                    কাস্টম ব্লক ব্যাকগ্রাউন্ড
+                  </label>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {renderColorInput("পেজ গ্রেডিয়েন্ট শুরু", d.pageBgStart, (v) => updateDesignField({ useCustomPageBg: true, pageBgStart: v }))}
+                {renderColorInput("পেজ গ্রেডিয়েন্ট মধ্য", d.pageBgMid, (v) => updateDesignField({ useCustomPageBg: true, pageBgMid: v }))}
+                {renderColorInput("পেজ গ্রেডিয়েন্ট শেষ", d.pageBgEnd, (v) => updateDesignField({ useCustomPageBg: true, pageBgEnd: v }))}
+                {renderColorInput("ব্লক কার্ড ব্যাকগ্রাউন্ড", d.blockBgColor, (v) => updateDesignField({ useCustomBlockBg: true, blockBgColor: v }))}
+                {renderColorInput("ব্লক বর্ডার কালার", d.blockBorderColor, (v) => updateDesignField({ useCustomBlockBg: true, blockBorderColor: v }))}
+                {renderColorInput("ব্লক টাইটেল ব্যাকগ্রাউন্ড", d.blockTitleBg, (v) => updateDesignField({ blockTitleBg: v }))}
+                {renderColorInput("ব্লক টাইটেল শেষ কালার", d.blockTitleBgEnd, (v) => updateDesignField({ blockTitleBgEnd: v }))}
+                {renderColorInput("ব্লক টাইটেল টেক্সট", d.blockTitleText, (v) => updateDesignField({ blockTitleText: v }))}
+                {renderColorInput("'আরো দেখুন' ব্যাকগ্রাউন্ড", d.seeMoreBg, (v) => updateDesignField({ seeMoreBg: v }))}
+                {renderColorInput("'আরো দেখুন' শেষ কালার", d.seeMoreBgEnd, (v) => updateDesignField({ seeMoreBgEnd: v }))}
+                {renderColorInput("'আরো দেখুন' টেক্সট", d.seeMoreText, (v) => updateDesignField({ seeMoreText: v }))}
+                {renderColorInput("রিলস ক্যাপশন ব্যাকগ্রাউন্ড", d.reelsCaptionBg, (v) => updateDesignField({ reelsCaptionBg: v }))}
+                {renderColorInput("রিলস ক্যাপশন টেক্সট", d.reelsCaptionText, (v) => updateDesignField({ reelsCaptionText: v }))}
+                <div className="sm:col-span-2 lg:col-span-1 flex items-center gap-2 bg-black/45 px-3 py-1.5 rounded-2xl border border-red-900/35">
+                  <span className="text-[11px] font-semibold text-rose-100 shrink-0">রিলস ক্যাপশন:</span>
+                  <input
+                    type="text"
+                    value={d.reelsCaptionLabel || ""}
+                    onChange={(e) => updateDesignField({ reelsCaptionLabel: e.target.value })}
+                    className="flex-1 bg-transparent text-white text-xs outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Product Card, Title Pill, Cream Price Box & Action Buttons */}
+            <div className="p-4 rounded-2xl bg-black/40 border border-red-900/35 space-y-3">
+              <h5 className="font-black text-xs sm:text-sm text-rose-200">২. প্রোডাক্ট কার্ড, ক্রিম প্রাইস বক্স, বাটন স্টাইল ও উইশলিস্ট</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {renderColorInput("কার্ড নিচের ব্যাকগ্রাউন্ড ১", d.cardBodyBg, (v) => updateDesignField({ cardBodyBg: v }))}
+                {renderColorInput("কার্ড নিচের ব্যাকগ্রাউন্ড ২", d.cardBodyBgEnd, (v) => updateDesignField({ cardBodyBgEnd: v }))}
+                {renderColorInput("কার্ড বর্ডার কালার", d.cardBorderColor, (v) => updateDesignField({ cardBorderColor: v }))}
+                {renderColorInput("টাইটেল পিল ব্যাকগ্রাউন্ড ১", d.cardTitleBg, (v) => updateDesignField({ cardTitleBg: v }))}
+                {renderColorInput("টাইটেল পিল ব্যাকগ্রাউন্ড ২", d.cardTitleBgEnd, (v) => updateDesignField({ cardTitleBgEnd: v }))}
+                {renderColorInput("টাইটেল টেক্সট কালার", d.cardTitleText, (v) => updateDesignField({ cardTitleText: v }))}
+                {renderColorInput("প্রাইস বক্স ব্যাকগ্রাউন্ড (Cream)", d.cardPriceBg, (v) => updateDesignField({ cardPriceBg: v }))}
+                {renderColorInput("প্রাইস বক্স বর্ডার", d.cardPriceBorder, (v) => updateDesignField({ cardPriceBorder: v }))}
+                {renderColorInput("বিক্রয় মূল্য (Crossed Navy)", d.cardRegularPriceColor, (v) => updateDesignField({ cardRegularPriceColor: v }))}
+                {renderColorInput("অফার মূল্য (Red Offer)", d.cardOfferPriceColor, (v) => updateDesignField({ cardOfferPriceColor: v }))}
+                {renderColorInput("বাটন ব্যাকগ্রাউন্ড ১", d.cardBtnBg, (v) => updateDesignField({ cardBtnBg: v }))}
+                {renderColorInput("বাটন ব্যাকগ্রাউন্ড ২", d.cardBtnBgEnd, (v) => updateDesignField({ cardBtnBgEnd: v }))}
+                {renderColorInput("বাটন টেক্সট কালার", d.cardBtnText, (v) => updateDesignField({ cardBtnText: v }))}
+                {renderColorInput("উইশলিস্ট সার্কেল (Normal)", d.cardWishlistCircleBg, (v) => updateDesignField({ cardWishlistCircleBg: v }))}
+                {renderColorInput("উইশলিস্ট সার্কেল (Active)", d.cardWishlistActiveBg, (v) => updateDesignField({ cardWishlistActiveBg: v }))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+                <div className="bg-black/45 p-2.5 rounded-2xl border border-red-900/35">
+                  <label className="text-[11px] font-bold text-rose-200 block mb-1">কার্ড বাটন শেপ / স্টাইল</label>
+                  <select
+                    value={d.cardBtnStyle || "pill"}
+                    onChange={(e) => updateDesignField({ cardBtnStyle: e.target.value })}
+                    className="w-full bg-black/60 border border-red-900/45 text-white rounded-full px-3 py-1.5 text-xs outline-none"
+                  >
+                    <option value="pill">Pill (সম্পূর্ণ গোল)</option>
+                    <option value="rounded">Rounded (হালকা গোল)</option>
+                    <option value="square">Square (চারকোনা)</option>
+                    <option value="outline">Outline (বর্ডার স্টাইল)</option>
+                  </select>
+                </div>
+                <div className="bg-black/45 p-2.5 rounded-2xl border border-red-900/35">
+                  <label className="text-[11px] font-bold text-rose-200 block mb-1">কার্ড বাটনের লেখা</label>
+                  <input
+                    type="text"
+                    value={d.cardActionLabel || ""}
+                    onChange={(e) => updateDesignField({ cardActionLabel: e.target.value })}
+                    className="w-full bg-black/60 border border-red-900/45 text-white rounded-full px-3 py-1.5 text-xs outline-none"
+                  />
+                </div>
+                <div className="bg-black/45 p-2.5 rounded-2xl border border-red-900/35">
+                  <label className="text-[11px] font-bold text-rose-200 block mb-1">উইশলিস্ট (পছন্দ করা)</label>
+                  <input
+                    type="text"
+                    value={d.cardWishlistIcon || "❤️"}
+                    onChange={(e) => updateDesignField({ cardWishlistIcon: e.target.value })}
+                    className="w-full bg-black/60 border border-red-900/45 text-white rounded-full px-3 py-1.5 text-xs text-center outline-none"
+                  />
+                </div>
+                <div className="bg-black/45 p-2.5 rounded-2xl border border-red-900/35">
+                  <label className="text-[11px] font-bold text-rose-200 block mb-1">উইশলিস্ট (খালি)</label>
+                  <input
+                    type="text"
+                    value={d.cardWishlistEmptyIcon || "🤍"}
+                    onChange={(e) => updateDesignField({ cardWishlistEmptyIcon: e.target.value })}
+                    className="w-full bg-black/60 border border-red-900/45 text-white rounded-full px-3 py-1.5 text-xs text-center outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Topbar, Cart & Wishlist Buttons + B2G1 Strip */}
+            <div className="p-4 rounded-2xl bg-black/40 border border-red-900/35 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h5 className="font-black text-xs sm:text-sm text-rose-200">৩. টপ বার, কার্ট, উইশলিস্ট বাটন ও Buy 2 Get 1 স্ট্রিপ</h5>
+                <label className="flex items-center gap-1.5 text-xs font-bold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(d.useCustomHeaderColors)}
+                    onChange={(e) => updateDesignField({ useCustomHeaderColors: e.target.checked })}
+                    className="accent-amber-400"
+                  />
+                  কাস্টম হেডার/বাটন কালার চালু রাখুন
+                </label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {renderColorInput("নোটিশ বার ব্যাকগ্রাউন্ড", d.announcementBg, (v) => updateDesignField({ useCustomHeaderColors: true, announcementBg: v }))}
+                {renderColorInput("নোটিশ বার টেক্সট", d.announcementTextColor, (v) => updateDesignField({ useCustomHeaderColors: true, announcementTextColor: v }))}
+                {renderColorInput("হেডার ব্যাকগ্রাউন্ড", d.headerBg, (v) => updateDesignField({ useCustomHeaderColors: true, headerBg: v }))}
+                {renderColorInput("হেডার টেক্সট কালার", d.headerTextColor, (v) => updateDesignField({ useCustomHeaderColors: true, headerTextColor: v }))}
+                {renderColorInput("কার্ট বাটন ব্যাকগ্রাউন্ড", d.cartBg, (v) => updateDesignField({ useCustomHeaderColors: true, cartBg: v }))}
+                {renderColorInput("কার্ট বাটন টেক্সট", d.cartTextColor, (v) => updateDesignField({ useCustomHeaderColors: true, cartTextColor: v }))}
+                {renderColorInput("কার্ট ব্যাজ ব্যাকগ্রাউন্ড", d.cartBadgeBg, (v) => updateDesignField({ useCustomHeaderColors: true, cartBadgeBg: v }))}
+                {renderColorInput("কার্ট ব্যাজ টেক্সট", d.cartBadgeText, (v) => updateDesignField({ useCustomHeaderColors: true, cartBadgeText: v }))}
+                {renderColorInput("উইশলিস্ট বাটন ব্যাকগ্রাউন্ড", d.wishlistBg, (v) => updateDesignField({ useCustomHeaderColors: true, wishlistBg: v }))}
+                {renderColorInput("উইশলিস্ট বাটন টেক্সট", d.wishlistTextColor, (v) => updateDesignField({ useCustomHeaderColors: true, wishlistTextColor: v }))}
+                {renderColorInput("B2G1 স্ট্রিপ ব্যাকগ্রাউন্ড", d.b2g1Bg, (v) => updateDesignField({ b2g1Bg: v }))}
+                {renderColorInput("B2G1 স্ট্রিপ টেক্সট", d.b2g1TextColor, (v) => updateDesignField({ b2g1TextColor: v }))}
+              </div>
+            </div>
+          </div>
+        );
       };
 
       // Admin Modals & Forms
@@ -11368,13 +11976,42 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         notify(`ব্র্যান্ড কালার (${newColor}) সফলভাবে আপডেট ও ক্লাউডে সেভ হয়েছে! 🎨`);
       };
 
-      // Realtime CSS Variables Sync across Document
+      // Realtime CSS Variables Sync across Document & Storefront Design Tokens
       useEffect(() => {
         const primary = config.primaryColor || "#ef4444";
-        document.documentElement.style.setProperty('--primary-color', primary);
-        document.documentElement.style.setProperty('--maroon', primary);
-        document.documentElement.style.setProperty('--primary-hover', darkenHex(primary, 15));
-      }, [config.primaryColor]);
+        const d = { ...initialStoreConfig.design, ...(config?.design || {}) };
+        const root = document.documentElement.style;
+        root.setProperty('--primary-color', primary);
+        root.setProperty('--maroon', primary);
+        root.setProperty('--primary-hover', darkenHex(primary, 15));
+        root.setProperty('--sf-page-bg-start', d.pageBgStart || "#c7d2fe");
+        root.setProperty('--sf-page-bg-mid', d.pageBgMid || "#f5d0fe");
+        root.setProperty('--sf-page-bg-end', d.pageBgEnd || "#bae6fd");
+        root.setProperty('--sf-block-bg', d.blockBgColor || "rgba(255, 255, 255, 0.72)");
+        root.setProperty('--sf-block-border', d.blockBorderColor || "rgba(255, 255, 255, 0.88)");
+        root.setProperty('--sf-block-title-bg', d.blockTitleBg || "#0f294a");
+        root.setProperty('--sf-block-title-bg-end', d.blockTitleBgEnd || "#1e3a8a");
+        root.setProperty('--sf-block-title-text', d.blockTitleText || "#ffffff");
+        root.setProperty('--sf-seemore-bg', d.seeMoreBg || "#0f294a");
+        root.setProperty('--sf-seemore-bg-end', d.seeMoreBgEnd || "#1e3a8a");
+        root.setProperty('--sf-seemore-text', d.seeMoreText || "#ffffff");
+        root.setProperty('--sf-reels-cap-bg', d.reelsCaptionBg || "#dc2626");
+        root.setProperty('--sf-reels-cap-text', d.reelsCaptionText || "#ffffff");
+        root.setProperty('--sf-card-body-bg', d.cardBodyBg || "#0f294a");
+        root.setProperty('--sf-card-body-bg-end', d.cardBodyBgEnd || "#1e3a8a");
+        root.setProperty('--sf-card-border', d.cardBorderColor || "rgba(255, 255, 255, 0.72)");
+        root.setProperty('--sf-card-title-bg', d.cardTitleBg || "#ef4444");
+        root.setProperty('--sf-card-title-bg-end', d.cardTitleBgEnd || "#dc2626");
+        root.setProperty('--sf-card-title-text', d.cardTitleText || "#ffffff");
+        root.setProperty('--sf-card-title-border', d.cardTitleBorder || "#991b1b");
+        root.setProperty('--sf-card-price-bg', d.cardPriceBg || "#fff8f0");
+        root.setProperty('--sf-card-price-border', d.cardPriceBorder || "#f3d5b5");
+        root.setProperty('--sf-card-reg-price-color', d.cardRegularPriceColor || "#0f294a");
+        root.setProperty('--sf-card-offer-price-color', d.cardOfferPriceColor || "#dc2626");
+        root.setProperty('--sf-card-btn-bg', d.cardBtnBg || "#fb7185");
+        root.setProperty('--sf-card-btn-bg-end', d.cardBtnBgEnd || "#e11d48");
+        root.setProperty('--sf-card-btn-text', d.cardBtnText || "#ffffff");
+      }, [config.primaryColor, config.design]);
 
       // Dynamic Open Graph & Twitter Card Meta Tags Synchronization in Document Head
       useEffect(() => {
@@ -11505,8 +12142,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         { id: "SEOSettings", label: "SEO Settings", icon: "🔍" }
       ];
 
+      const sfDesign = { ...initialStoreConfig.design, ...(config?.design || {}) };
+      const sfBtnShapeClass =
+        sfDesign.cardBtnStyle === "rounded"
+          ? "storefront-btn-rounded"
+          : sfDesign.cardBtnStyle === "square"
+          ? "storefront-btn-square"
+          : sfDesign.cardBtnStyle === "outline"
+          ? "storefront-btn-outline"
+          : "storefront-btn-pill";
+
       return (
-        <div className="min-h-screen flex flex-col liquid-glass-canvas text-[#000000]">
+        <div
+          className={`min-h-screen flex flex-col ${activeTab === "Storefront" && sfDesign.useCustomPageBg ? "storefront-page-canvas" : "liquid-glass-canvas"} text-[#000000]`}
+        >
           {/* Offline Mode Indicator Bar */}
           {!isOnline && (
             <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center text-xs py-2 px-4 font-bold tracking-wide shadow-md flex items-center justify-center gap-2 sticky top-0 z-50">
@@ -11517,14 +12166,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
           {/* Top Announcement Bar (Storefront only) */}
           {activeTab === "Storefront" && config?.announcement?.enabled && config?.announcement?.text && (
-            <div className="bg-gradient-to-r from-[#ff5252] via-[#ef4444] to-[#f87171] text-[#000000] text-center text-xs sm:text-sm py-2 px-4 font-extrabold tracking-wide shadow-sm flex items-center justify-center gap-2 border-b border-white/60">
+            <div
+              className="bg-gradient-to-r from-[#ff5252] via-[#ef4444] to-[#f87171] text-[#000000] text-center text-xs sm:text-sm py-2 px-4 font-extrabold tracking-wide shadow-sm flex items-center justify-center gap-2 border-b border-white/60"
+              style={sfDesign.useCustomHeaderColors ? { background: sfDesign.announcementBg, color: sfDesign.announcementTextColor } : undefined}
+            >
               <span>{config.announcement.text}</span>
             </div>
           )}
 
           {/* Main Top Header (Liquid Glass Nav - Storefront only) */}
           {activeTab === "Storefront" && (
-            <header className={`liquid-glass-nav sm:mx-4 sm:mt-2 sm:rounded-3xl transition-all duration-200 ${config?.header?.sticky ? 'sticky top-0 sm:top-2 z-30' : ''}`}>
+            <header
+              className={`liquid-glass-nav sm:mx-4 sm:mt-2 sm:rounded-3xl transition-all duration-200 ${config?.header?.sticky ? 'sticky top-0 sm:top-2 z-30' : ''}`}
+              style={sfDesign.useCustomHeaderColors ? { background: sfDesign.headerBg, color: sfDesign.headerTextColor } : undefined}
+            >
             <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
               
               {/* Logo & Store Title: Strictly 1 line for Store Name & 1 line for Tagline */}
@@ -11537,10 +12192,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h1 className="text-sm xs:text-base sm:text-xl lg:text-2xl font-black tracking-tight text-[#000000] leading-tight whitespace-nowrap uppercase">
+                  <h1
+                    className="text-sm xs:text-base sm:text-xl lg:text-2xl font-black tracking-tight text-[#000000] leading-tight whitespace-nowrap uppercase"
+                    style={sfDesign.useCustomHeaderColors ? { color: sfDesign.headerTextColor } : undefined}
+                  >
                     {config.storeName || "SAJGOJ FASHION"}
                   </h1>
-                  <p className="text-[10px] sm:text-xs text-slate-900 font-bold leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] xs:max-w-[220px] sm:max-w-none">
+                  <p
+                    className="text-[10px] sm:text-xs text-slate-900 font-bold leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] xs:max-w-[220px] sm:max-w-none"
+                    style={sfDesign.useCustomHeaderColors ? { color: sfDesign.headerTextColor, opacity: 0.82 } : undefined}
+                  >
                     {config.tagline || "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ"}
                   </p>
                 </div>
@@ -11728,10 +12389,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <button 
                       type="button"
                       onClick={() => setIsWishlistOpen(true)}
-                      className="relative red-black-tab px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-1 text-xs sm:text-sm transition active:scale-95 shrink-0 cursor-pointer"
+                      className={`relative ${sfDesign.useCustomHeaderColors ? "" : "red-black-tab"} px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-1 text-xs sm:text-sm font-black transition active:scale-95 shrink-0 cursor-pointer border border-white/50 shadow-sm`}
+                      style={sfDesign.useCustomHeaderColors ? { background: sfDesign.wishlistBg, color: sfDesign.wishlistTextColor } : undefined}
                       title="পছন্দের তালিকা (Wishlist) - পরে কেনার জন্য"
                     >
-                      <span className="text-xs sm:text-sm">❤️</span>
+                      <span className="text-xs sm:text-sm">{sfDesign.wishlistIcon || "❤️"}</span>
                       <span className="hidden sm:inline">পছন্দ</span>
                       {wishlist.length > 0 && (
                         <span className="cta-dark-pill text-[9px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-black animate-pulse">
@@ -11741,18 +12403,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </button>
 
                     {/* Cart Button */}
-                    <button 
-                      onClick={() => setIsCartOpen(true)}
-                      className="relative cta-dark-pill px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold transition shrink-0 whitespace-nowrap cursor-pointer"
-                    >
-                      <span>🛒</span>
-                      <span className="hidden xs:inline">কার্ট</span>
-                      {cart.length > 0 && (
-                        <span className="bg-[#ef4444] text-[#000000] text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.2 rounded-full font-black border border-white/60">
-                          {cart.reduce((sum, i) => sum + i.qty, 0)}
-                        </span>
-                      )}
-                    </button>
+                    {config?.header?.showCart !== false && (
+                      <button 
+                        onClick={() => setIsCartOpen(true)}
+                        className={`relative ${sfDesign.useCustomHeaderColors ? "" : "cta-dark-pill"} px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold transition shrink-0 whitespace-nowrap cursor-pointer border border-white/40 shadow-sm`}
+                        style={sfDesign.useCustomHeaderColors ? { background: sfDesign.cartBg, color: sfDesign.cartTextColor } : undefined}
+                      >
+                        <span>{sfDesign.cartIcon || "🛒"}</span>
+                        <span className="hidden xs:inline">কার্ট</span>
+                        {cart.length > 0 && (
+                          <span
+                            className="bg-[#ef4444] text-[#000000] text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.2 rounded-full font-black border border-white/60"
+                            style={sfDesign.useCustomHeaderColors ? { background: sfDesign.cartBadgeBg, color: sfDesign.cartBadgeText } : undefined}
+                          >
+                            {cart.reduce((sum, i) => sum + i.qty, 0)}
+                          </span>
+                        )}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <button 
@@ -11771,14 +12439,17 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
           {/* Buy 2 Get 1 Free Promo Strip (Storefront only) */}
           {activeTab === "Storefront" && config?.b2g1?.enabled && (
-            <div className="red-black-bottom-card py-2.5 px-4 sm:mx-4 sm:mt-2 sm:rounded-2xl">
+            <div
+              className={`${sfDesign.useCustomHeaderColors ? "" : "red-black-bottom-card"} py-2.5 px-4 sm:mx-4 sm:mt-2 sm:rounded-2xl border border-white/60 shadow-sm`}
+              style={sfDesign.useCustomHeaderColors ? { background: sfDesign.b2g1Bg, color: sfDesign.b2g1TextColor } : undefined}
+            >
               <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2 overflow-hidden">
                   <span className="text-base sm:text-lg animate-bounce flex-shrink-0">🎁</span>
-                  <span className="font-black whitespace-nowrap text-[#000000]">{config.b2g1.title || "Buy 2 Get 1 Free"}:</span>
-                  <span className="truncate text-[#000000] font-semibold">{config.b2g1.subtitle || "যেকোনো ২টি পণ্য কার্টে নিলেই ১টি উপহার সম্পূর্ণ ফ্রি!"}</span>
+                  <span className="font-black whitespace-nowrap" style={sfDesign.useCustomHeaderColors ? { color: sfDesign.b2g1TextColor } : undefined}>{config.b2g1.title || "Buy 2 Get 1 Free"}:</span>
+                  <span className="truncate font-semibold" style={sfDesign.useCustomHeaderColors ? { color: sfDesign.b2g1TextColor } : undefined}>{config.b2g1.subtitle || "যেকোনো ২টি পণ্য কার্টে নিলেই ১টি উপহার সম্পূর্ণ ফ্রি!"}</span>
                   {products.find(p => p.id === (config.b2g1.freeProductId || "p4")) && (
-                    <span className="hidden md:inline-block bg-white/60 border border-white px-2.5 py-0.5 rounded-full font-black text-[11px] text-[#000000] whitespace-nowrap">
+                    <span className="hidden md:inline-block bg-white/75 border border-white px-2.5 py-0.5 rounded-full font-black text-[11px] text-[#000000] whitespace-nowrap">
                       উপহার: {products.find(p => p.id === (config.b2g1.freeProductId || "p4")).name} (০ ৳)
                     </span>
                   )}
@@ -11788,7 +12459,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     const el = document.getElementById("products-section");
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="cta-dark-pill text-[11px] font-black px-3.5 py-1.5 rounded-full transition whitespace-nowrap flex-shrink-0 cursor-pointer"
+                  className={`${sfDesign.useCustomHeaderColors ? "" : "cta-dark-pill"} text-[11px] font-black px-3.5 py-1.5 rounded-full transition whitespace-nowrap flex-shrink-0 cursor-pointer border border-white/30`}
+                  style={sfDesign.useCustomHeaderColors ? { background: sfDesign.b2g1BtnBg, color: sfDesign.b2g1BtnText } : undefined}
                 >
                   অফার দেখুন →
                 </button>
@@ -11990,12 +12662,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               e.stopPropagation();
                               toggleWishlist(p);
                             }}
-                            className={`absolute top-1.5 left-1.5 z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition shadow-sm active:scale-90 ${
-                              isWishlisted ? "bg-rose-600 keep-white-text" : "bg-white/95 text-[#000000] hover:bg-white"
-                            }`}
+                            style={{ backgroundColor: isWishlisted ? (sfDesign.cardWishlistActiveBg || "#e11d48") : (sfDesign.cardWishlistCircleBg || "#ffffff") }}
+                            className="absolute top-1.5 left-1.5 z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition shadow-sm active:scale-90 border border-white/70"
                             title={isWishlisted ? "পছন্দের তালিকা থেকে বাদ দিন" : "পছন্দের তালিকায় সেভ করুন"}
                           >
-                            <span className="text-[11px] sm:text-xs">{isWishlisted ? "❤️" : "🤍"}</span>
+                            <span className="text-[11px] sm:text-xs">{isWishlisted ? (sfDesign.cardWishlistIcon || "❤️") : (sfDesign.cardWishlistEmptyIcon || "🤍")}</span>
                           </button>
 
                           {p.stock > 0 && p.stock <= 5 && (
@@ -12027,7 +12698,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               onClick={openProductDetail}
                               className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
                             >
-                              <span className="storefront-title-text text-white">{p.name}</span>
+                              <span className="storefront-title-text">{p.name}</span>
                             </h4>
 
                             <div className="storefront-price-box">
@@ -12045,9 +12716,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <button
                             type="button"
                             onClick={openProductDetail}
-                            className="storefront-view-btn rounded-full font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95"
+                            className={`storefront-view-btn ${sfBtnShapeClass} font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95`}
                           >
-                            {p.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
+                            {p.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
                           </button>
                         </div>
                       </div>
@@ -12401,7 +13072,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <section
                         key={sec.id}
                         id={sec.type === "all_products" ? "products-section" : `home-block-${sec.id}`}
-                        className="liquid-glass-surface rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0"
+                        className={`${sfDesign.useCustomBlockBg ? "storefront-block-card-custom" : "liquid-glass-surface"} rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0`}
                       >
                         {/* Unified Navy Blue Circle-Pill Header + Matching "আরো দেখুন ›" */}
                         <div className="flex items-center justify-between gap-2 min-w-0">
@@ -12597,7 +13268,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   onClick={openComboDetail}
                                   className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
                                 >
-                                  <span className="storefront-title-text text-white">{combo.title}</span>
+                                  <span className="storefront-title-text">{combo.title}</span>
                                 </h4>
 
                                 <div className="storefront-price-box">
@@ -12615,9 +13286,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <button
                                 type="button"
                                 onClick={openComboDetail}
-                                className="storefront-view-btn rounded-full font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95"
+                                className={`storefront-view-btn ${sfBtnShapeClass} font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95`}
                               >
-                                {combo.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
+                                {combo.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
                               </button>
                             </div>
                           </div>
@@ -12628,7 +13299,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     return (
                       <section
                         id="combo-pack-showcase"
-                        className="liquid-glass-surface rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0"
+                        className={`${sfDesign.useCustomBlockBg ? "storefront-block-card-custom" : "liquid-glass-surface"} rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0`}
                       >
                         <div className="flex items-center justify-between gap-2 min-w-0">
                           <div className="navy-pill-badge inline-flex items-center gap-1.5 px-3.5 sm:px-4.5 py-1.5 rounded-full min-w-0 max-w-[66%]">
@@ -12743,7 +13414,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             <div className="storefront-navy-card-body flex-1 flex flex-col justify-between overflow-hidden">
                               <div className="storefront-card-meta-group">
                                 <h4 className="storefront-title-box font-black">
-                                  <span className="storefront-title-text text-white">{effectiveProduct.name}</span>
+                                  <span className="storefront-title-text">{effectiveProduct.name}</span>
                                 </h4>
 
                                 <div className="storefront-price-box">
@@ -12764,9 +13435,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   e.stopPropagation();
                                   openOriginalReelModal();
                                 }}
-                                className="storefront-view-btn rounded-full font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95"
+                                className={`storefront-view-btn ${sfBtnShapeClass} font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95`}
                               >
-                                {effectiveProduct.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
+                                {effectiveProduct.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
                               </button>
                             </div>
                           </div>
@@ -12777,7 +13448,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     return (
                       <section
                         id="reels-showcase-section"
-                        className="liquid-glass-surface rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0"
+                        className={`${sfDesign.useCustomBlockBg ? "storefront-block-card-custom" : "liquid-glass-surface"} rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 scroll-mt-24 w-full min-w-0`}
                       >
                         <div className="flex items-center justify-between gap-1 sm:gap-2 min-w-0">
                           <div className="navy-pill-badge inline-flex items-center gap-1 px-2.5 sm:px-4 py-1.5 rounded-full shrink-0">
@@ -12788,8 +13459,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </div>
 
                           <div className="red-pill-badge flex-1 min-w-0 rounded-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-center">
-                            <p className="text-center text-[8.5px] sm:text-xs font-black text-white leading-tight truncate">
-                              পন্যের ভিডিও দেখে অর্ডার করুন
+                            <p className="text-center text-[8.5px] sm:text-xs font-black leading-tight truncate">
+                              {sfDesign.reelsCaptionLabel || sec?.subtitle || "পন্যের ভিডিও দেখে অর্ডার করুন"}
                             </p>
                           </div>
 
@@ -13125,6 +13796,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {config.footer.nagad && <span className="bg-[#f7941d] keep-white-text px-2.5 py-1 rounded">Nagad</span>}
                       {config.footer.rocket && <span className="bg-[#8c3494] keep-white-text px-2.5 py-1 rounded">Rocket</span>}
                       {config.footer.cod && <span className="bg-emerald-700 keep-white-text px-2.5 py-1 rounded">Cash on Delivery</span>}
+                      {config.footer.visa && <span className="bg-[#1e3a8a] keep-white-text px-2.5 py-1 rounded">Visa / Mastercard</span>}
                     </div>
                     <div className="mt-4 flex gap-3 text-sm font-bold text-[#000000]">
                       {config.footer.fb && <a href={config.footer.fb} target="_blank" className="hover:underline">🌐 Facebook</a>}
@@ -19524,6 +20196,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <div className="flex items-center gap-2 overflow-x-auto pb-1">
                     {[
                       { id: "blocks", label: `🧩 ব্লক লেআউট ও প্রোডাক্ট (${homeSections.length})` },
+                      { id: "design", label: "🎨 ডিজাইন ও কালার মাস্টার স্টুডিও" },
                       { id: "banners", label: `🖼️ হিরো ব্যানার ও বিজ্ঞাপন (${banners.length})` },
                       { id: "header_elements", label: "📢 হেডার, নোটিশ ও হোম এলিমেন্ট" }
                     ].map(tab => (
@@ -19907,20 +20580,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   <span>{isEnabled ? "ON" : "OFF"}</span>
                                 </button>
 
-                                {sec.isCustom && (
-                                  <button
-                                    type="button"
-                                    onClick={() => deleteHomeSection(sec.id)}
-                                    className="px-2.5 py-1.5 rounded-full text-xs bg-red-950/70 text-rose-300 border border-red-800/50 hover:bg-red-700 hover:text-white"
-                                    title="কাস্টম ব্লক ডিলিট"
-                                  >
-                                    🗑️
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => deleteHomeSection(sec.id)}
+                                  className="px-2.5 py-1.5 rounded-full text-xs bg-red-950/70 text-rose-300 border border-red-800/50 hover:bg-red-700 hover:text-white cursor-pointer"
+                                  title="ব্লক ডিলিট করুন"
+                                >
+                                  🗑️
+                                </button>
                               </div>
                             </div>
 
-                            {/* Expanded Editor: Title + Columns (2/3/4) + Rows (1/2/3/4) + Mode + Product Picker */}
+                            {/* Expanded Editor: Title + Subtitle + Icon + Columns (2/3/4) + Rows (1/2/3/4) + Mode + Product Picker */}
                             {isPickerOpen && (
                               <div className="p-4 pt-3 border-t border-red-900/35 bg-[#14070a]/80 space-y-4 animate-fadeIn">
                                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -19931,6 +20602,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                       value={sec.title || ""}
                                       onChange={(e) => updateHomeSectionField(sec.id, { title: e.target.value })}
                                       className="w-full bg-black/55 border border-red-900/50 text-white rounded-full px-3.5 py-1.5 text-xs mt-1 outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[11px] font-bold text-rose-200">সাব-টাইটেল (বিবরণ)</label>
+                                    <input
+                                      type="text"
+                                      value={sec.subtitle || ""}
+                                      onChange={(e) => updateHomeSectionField(sec.id, { subtitle: e.target.value })}
+                                      className="w-full bg-black/55 border border-red-900/50 text-white rounded-full px-3.5 py-1.5 text-xs mt-1 outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[11px] font-bold text-rose-200">আইকন (Emoji)</label>
+                                    <input
+                                      type="text"
+                                      value={sec.icon || ""}
+                                      onChange={(e) => updateHomeSectionField(sec.id, { icon: e.target.value })}
+                                      className="w-full bg-black/55 border border-red-900/50 text-white rounded-full px-3.5 py-1.5 text-xs mt-1 text-center outline-none"
                                     />
                                   </div>
                                   {isGridConfigurable && (
@@ -20328,6 +21017,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   </div>
                 )}
+
+                {/* SUB-TAB 4: DESIGN & COLOR MASTER STUDIO */}
+                {homeSettingSubTab === "design" && renderStorefrontDesignStudioPanel()}
               </div>
             )}
 
@@ -20785,22 +21477,32 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <p className="text-xs font-bold text-rose-200 mb-2">ফুটার পেমেন্ট ব্যাজ টগল:</p>
                       <div className="flex flex-wrap gap-4 text-xs text-slate-200">
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.bkash} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, bkash: e.target.checked } })} className="accent-red-500" /> bKash
+                          <input type="checkbox" checked={config.footer.bkash} onChange={(e) => updateFooterPaymentToggle("bkash", e.target.checked)} className="accent-red-500" /> bKash
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.nagad} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, nagad: e.target.checked } })} className="accent-red-500" /> Nagad
+                          <input type="checkbox" checked={config.footer.nagad} onChange={(e) => updateFooterPaymentToggle("nagad", e.target.checked)} className="accent-red-500" /> Nagad
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.rocket} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, rocket: e.target.checked } })} className="accent-red-500" /> Rocket
+                          <input type="checkbox" checked={config.footer.rocket} onChange={(e) => updateFooterPaymentToggle("rocket", e.target.checked)} className="accent-red-500" /> Rocket
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.cod} onChange={(e) => setConfig({ ...config, footer: { ...config.footer, cod: e.target.checked } })} className="accent-red-500" /> Cash on Delivery
+                          <input type="checkbox" checked={config.footer.cod} onChange={(e) => updateFooterPaymentToggle("cod", e.target.checked)} className="accent-red-500" /> Cash on Delivery
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={config.footer.visa !== false} onChange={(e) => updateFooterPaymentToggle("visa", e.target.checked)} className="accent-red-500" /> Visa / Mastercard
                         </label>
                       </div>
                     </div>
                   </div>
 
                     </>
+                  )}
+
+                  {(activeTab === "General" || activeTab === "Settings") && (
+                    <div className="space-y-6">
+                      {renderPaymentMethodsToggleCard()}
+                      {renderStorefrontDesignStudioPanel()}
+                    </div>
                   )}
 
                   {/* Unified Save Settings Button */}
@@ -28437,7 +29139,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     onClick={openModalProduct}
                                     className="storefront-title-box font-black cursor-pointer"
                                   >
-                                    <span className="storefront-title-text text-white">{p.name}</span>
+                                    <span className="storefront-title-text">{p.name}</span>
                                   </h4>
                                   <div className="storefront-price-box">
                                     {hasDiscount && (
@@ -28453,9 +29155,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 <button
                                   type="button"
                                   onClick={openModalProduct}
-                                  className="storefront-view-btn rounded-full font-black whitespace-nowrap cursor-pointer text-center active:scale-95"
+                                  className={`storefront-view-btn ${sfBtnShapeClass} font-black whitespace-nowrap cursor-pointer text-center active:scale-95`}
                                 >
-                                  {p.stock > 0 ? "পন্যটি দেখুন" : "স্টক আউট"}
+                                  {p.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
                                 </button>
                               </div>
                             </div>

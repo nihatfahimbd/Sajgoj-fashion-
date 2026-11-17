@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
@@ -34,30 +35,38 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Product
+import com.example.data.model.StoreDesignConfig
 import com.example.ui.theme.AccentRed
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CollectionRedBorder
 import com.example.ui.theme.CollectionRedEnd
 import com.example.ui.theme.CollectionRedStart
+import com.example.ui.theme.CreamPriceBorder
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.NavyBlueCardEnd
+import com.example.ui.theme.ReelsRedBadge
 import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.SideRosePillEnd
 import com.example.ui.theme.SideRosePillStart
+import com.example.ui.theme.parseColorHex
 
 @Composable
 fun ProductCard(
   product: Product,
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
+  design: StoreDesignConfig = StoreDesignConfig(),
+  isWishlisted: Boolean = false,
+  onToggleWishlist: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   Card(
@@ -217,30 +226,33 @@ fun ProductCard(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
-          Column {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
+          Column(
+            modifier = Modifier
+              .clip(RoundedCornerShape(8.dp))
+              .background(parseColorHex(design.cardPriceBg, CreamSurface))
+              .border(1.dp, parseColorHex(design.cardPriceBorder, CreamPriceBorder), RoundedCornerShape(8.dp))
+              .padding(horizontal = 8.dp, vertical = 3.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+          ) {
+            if (product.regularPrice > product.price) {
               Text(
-                text = "${product.price} ৳",
-                color = RoyalMaroon,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
+                text = "৳${product.regularPrice}",
+                color = parseColorHex(design.cardRegularPriceColor, NavyBlue),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                textDecoration = TextDecoration.LineThrough
               )
-              if (product.regularPrice > product.price) {
-                Text(
-                  text = "${product.regularPrice} ৳",
-                  color = Color.Gray,
-                  fontSize = 10.sp,
-                  textDecoration = TextDecoration.LineThrough
-                )
-              }
             }
+            Text(
+              text = "৳${product.price}",
+              color = parseColorHex(design.cardOfferPriceColor, ReelsRedBadge),
+              fontSize = 14.sp,
+              fontWeight = FontWeight.Black
+            )
             Text(
               text = product.sku,
               color = Color.Gray,
-              fontSize = 9.sp
+              fontSize = 8.5.sp
             )
           }
 
@@ -291,28 +303,47 @@ fun StorefrontCardLowerNavyBody(
   inStock: Boolean,
   buttonTestTag: String,
   onActionClick: () -> Unit,
+  design: StoreDesignConfig = StoreDesignConfig(),
   modifier: Modifier = Modifier
 ) {
   val hasDiscount = regularPrice > sellingPrice && sellingPrice > 0
+  val bodyStart = parseColorHex(design.cardBodyBg, NavyBlue)
+  val bodyEnd = parseColorHex(design.cardBodyBgEnd, NavyBlueCardEnd)
+  val titleBg = parseColorHex(design.cardTitleBg, CollectionRedStart)
+  val titleEnd = parseColorHex(design.cardTitleBgEnd, CollectionRedEnd)
+  val titleText = parseColorHex(design.cardTitleText, Color.White)
+  val priceBg = parseColorHex(design.cardPriceBg, CreamSurface)
+  val priceBorder = parseColorHex(design.cardPriceBorder, CreamPriceBorder)
+  val regularPriceColor = parseColorHex(design.cardRegularPriceColor, NavyBlue)
+  val offerPriceColor = parseColorHex(design.cardOfferPriceColor, ReelsRedBadge)
+  val btnBg = parseColorHex(design.cardBtnBg, SideRosePillStart)
+  val btnEnd = parseColorHex(design.cardBtnBgEnd, SideRosePillEnd)
+  val btnText = parseColorHex(design.cardBtnText, Color.White)
+  val btnShape = when (design.cardBtnStyle) {
+    "rounded" -> RoundedCornerShape(10.dp)
+    "square" -> RoundedCornerShape(4.dp)
+    else -> RoundedCornerShape(50)
+  }
+
   Column(
     modifier = modifier
       .fillMaxWidth()
-      .background(Brush.verticalGradient(listOf(NavyBlue, NavyBlueCardEnd)))
+      .background(Brush.verticalGradient(listOf(bodyStart, bodyEnd)))
       .padding(horizontal = 6.dp, vertical = 6.dp),
     verticalArrangement = Arrangement.spacedBy(4.dp)
   ) {
-    // 1. Vivid Red "সকল কালেকশন" Style Title Box with White Text
+    // 1. Title Box
     Box(
       modifier = Modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(8.dp))
-        .background(Brush.horizontalGradient(listOf(CollectionRedStart, CollectionRedEnd)))
-        .border(1.dp, CollectionRedBorder, RoundedCornerShape(8.dp))
+        .background(Brush.horizontalGradient(listOf(titleBg, titleEnd)))
+        .border(1.dp, CollectionRedBorder.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
         .padding(horizontal = 6.dp, vertical = 4.dp)
     ) {
       Text(
         text = title,
-        color = Color.White,
+        color = titleText,
         fontSize = 10.sp,
         fontWeight = FontWeight.Bold,
         maxLines = 2,
@@ -324,53 +355,63 @@ fun StorefrontCardLowerNavyBody(
       )
     }
 
-    // 2. Tight Brand-Style Dual Price Box right under Title ("সকল কালেকশন" Red Style + White Text)
-    Row(
+    // 2. Cream Price Box: Top Line Navy Blue Crossed Regular Price + Bottom Line Red Bold Offer Price
+    Column(
       modifier = Modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(8.dp))
-        .background(Brush.horizontalGradient(listOf(CollectionRedStart, CollectionRedEnd)))
-        .border(1.dp, CollectionRedBorder, RoundedCornerShape(8.dp))
-        .padding(horizontal = 6.dp, vertical = 3.dp),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.SpaceBetween
+        .background(priceBg)
+        .border(1.dp, priceBorder, RoundedCornerShape(8.dp))
+        .padding(horizontal = 6.dp, vertical = 3.dp)
+        .testTag("${buttonTestTag}_price_box"),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center
     ) {
       if (hasDiscount) {
         Text(
           text = "৳$regularPrice",
-          color = Color.White.copy(alpha = 0.86f),
+          color = regularPriceColor,
           fontSize = 8.5.sp,
           fontWeight = FontWeight.Bold,
           textDecoration = TextDecoration.LineThrough,
+          textAlign = TextAlign.Center,
           maxLines = 1
         )
-      } else {
-        Spacer(modifier = Modifier.width(1.dp))
       }
       Text(
         text = "৳$sellingPrice",
-        color = Color.White,
+        color = offerPriceColor,
         fontSize = 11.5.sp,
         fontWeight = FontWeight.Black,
+        textAlign = TextAlign.Center,
         maxLines = 1
       )
     }
 
-    // 3. Rose-Red "পন্যটি দেখুন" Pill Button with White Text
+    // 3. Action Button (supports pill / rounded / square / outline)
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .clip(RoundedCornerShape(50))
-        .background(Brush.horizontalGradient(listOf(SideRosePillStart, SideRosePillEnd)))
-        .border(1.dp, Color.White.copy(alpha = 0.72f), RoundedCornerShape(50))
+        .clip(btnShape)
+        .then(
+          if (design.cardBtnStyle == "outline") {
+            Modifier
+              .background(Color.Transparent)
+              .border(1.5.dp, btnBg, btnShape)
+          } else {
+            Modifier
+              .background(Brush.horizontalGradient(listOf(btnBg, btnEnd)))
+              .border(1.dp, Color.White.copy(alpha = 0.72f), btnShape)
+          }
+        )
         .clickable { onActionClick() }
         .padding(vertical = 5.dp)
         .testTag(buttonTestTag),
       contentAlignment = Alignment.Center
     ) {
       Text(
-        text = if (inStock) "পন্যটি দেখুন" else "স্টক আউট",
-        color = Color.White,
+        text = if (inStock) design.cardActionLabel.ifBlank { "পন্যটি দেখুন" } else "স্টক আউট",
+        color = if (design.cardBtnStyle == "outline") btnBg else btnText,
         fontSize = 9.5.sp,
         fontWeight = FontWeight.Black,
         maxLines = 1
@@ -385,6 +426,9 @@ fun CompactProductCard(
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
   badgeText: String? = null,
+  design: StoreDesignConfig = StoreDesignConfig(),
+  isWishlisted: Boolean = false,
+  onToggleWishlist: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   Card(
@@ -392,8 +436,8 @@ fun CompactProductCard(
       .clickable { onProductClick(product) }
       .testTag("compact_product_card_${product.id}"),
     shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = NavyBlue),
-    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.75f)),
+    colors = CardDefaults.cardColors(containerColor = parseColorHex(design.cardBodyBg, NavyBlue)),
+    border = BorderStroke(1.dp, parseColorHex(design.cardBorderColor, Color.White).copy(alpha = 0.75f)),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column {
@@ -461,6 +505,29 @@ fun CompactProductCard(
             )
           }
         }
+
+        if (onToggleWishlist != null) {
+          Box(
+            modifier = Modifier
+              .padding(4.dp)
+              .align(Alignment.TopEnd)
+              .size(24.dp)
+              .clip(CircleShape)
+              .background(
+                if (isWishlisted) parseColorHex(design.cardWishlistActiveBg, ReelsRedBadge)
+                else parseColorHex(design.cardWishlistCircleBg, Color.White).copy(alpha = 0.92f)
+              )
+              .border(1.dp, BorderGold.copy(alpha = 0.5f), CircleShape)
+              .clickable { onToggleWishlist() }
+              .testTag("wishlist_btn_${product.id}"),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = if (isWishlisted) design.cardWishlistIcon.ifBlank { "❤️" } else "🤍",
+              fontSize = 10.sp
+            )
+          }
+        }
       }
 
       StorefrontCardLowerNavyBody(
@@ -469,7 +536,8 @@ fun CompactProductCard(
         regularPrice = product.regularPrice,
         inStock = product.stock > 0,
         buttonTestTag = "compact_add_to_cart_${product.id}",
-        onActionClick = { onProductClick(product) }
+        onActionClick = { onProductClick(product) },
+        design = design
       )
     }
   }

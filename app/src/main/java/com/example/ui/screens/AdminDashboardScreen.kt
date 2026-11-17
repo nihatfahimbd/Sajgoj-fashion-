@@ -95,9 +95,11 @@ import com.example.ui.components.AppImage
 import com.example.ui.components.DailyRevenueTrendChartCard
 import com.example.ui.components.HomePageSettingHub
 import com.example.ui.components.InventorySyncPanel
+import com.example.ui.components.PaymentMethodsToggleSection
 import com.example.ui.components.ReturnExchangeDialog
 import com.example.ui.components.ReturnSlipDialog
 import com.example.ui.components.ShippingLabelPrintFormat
+import com.example.ui.components.StorefrontDesignStudioPanel
 import com.example.ui.components.printShippingLabels
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
@@ -3241,6 +3243,18 @@ fun AdminSettingsTab(
         }
       }
     }
+
+    // Payment Methods Toggle Control Section (Footer Badges)
+    PaymentMethodsToggleSection(
+      config = config,
+      onSaveConfig = onSaveConfig
+    )
+
+    // Storefront Design & Color Studio
+    StorefrontDesignStudioPanel(
+      config = config,
+      onSaveConfig = onSaveConfig
+    )
 
     // Pixel Card
     Card(
