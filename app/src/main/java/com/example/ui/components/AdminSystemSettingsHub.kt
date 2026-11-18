@@ -5,16 +5,15 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -112,65 +110,14 @@ fun AdminSystemSettingsHub(
   }
 
   Column(modifier = modifier.fillMaxSize()) {
-    // 1. Clean White Dynamic Hero Card
-    Surface(
-      shape = RoundedCornerShape(20.dp),
-      color = Color.White,
-      border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
-      shadowElevation = 4.dp,
-      modifier = Modifier
-        .fillMaxWidth()
-        .testTag("system_settings_hero_card")
-    ) {
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-      ) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(11.dp)
-        ) {
-          Box(
-            modifier = Modifier
-              .size(44.dp)
-              .shadow(3.dp, RoundedCornerShape(14.dp))
-              .clip(RoundedCornerShape(14.dp))
-              .background(
-                Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep))
-              ),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.Outlined.Settings,
-              contentDescription = null,
-              tint = Color.White,
-              modifier = Modifier.size(22.dp)
-            )
-          }
-
-          Column(modifier = Modifier.weight(1f)) {
-            Text(
-              text = "সিস্টেম সেটিংস ও কনফিগারেশন",
-              fontSize = 16.sp,
-              fontWeight = FontWeight.Black,
-              color = AdminInkPrimary,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis
-            )
-            Text(
-              text = "স্টোর প্রোফাইল, পেমেন্ট গেটওয়ে, পিক্সেল ও ডাটা ব্যাকআপ",
-              fontSize = 11.5.sp,
-              fontWeight = FontWeight.Medium,
-              color = AdminInkMuted,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis
-            )
-          }
-        }
-
+    // 1. Vibrant Bright Azure-Cobalt Hero Card with Crisp White Text
+    AdminVibrantHeroCard(
+      title = "সিস্টেম ও ইন্টিগ্রেশন",
+      subtitle = "স্টোর প্রোফাইল, পেমেন্ট গেটওয়ে, পিক্সেল ও ডাটা ব্যাকআপ",
+      icon = Icons.Outlined.Settings,
+      brush = adminIndigoSkyBrush(),
+      modifier = Modifier.testTag("system_settings_hero_card"),
+      bottomContent = {
         Row(
           modifier = Modifier
             .fillMaxWidth()
@@ -178,46 +125,38 @@ fun AdminSystemSettingsHub(
           horizontalArrangement = Arrangement.spacedBy(8.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          SettingsTelemetryChip(
-            dotColor = AdminV2Emerald,
-            label = "স্টোর লাইভ",
-            bgColor = Color(0xFFECFDF5),
-            borderColor = Color(0xFFA7F3D0),
-            textColor = Color(0xFF065F46)
+          AdminHeroGlassChip(
+            text = "স্টোর লাইভ",
+            dotColor = Color(0xFF6EE7B7)
           )
-          SettingsTelemetryChip(
-            dotColor = AdminV2CyanDeep,
-            label = "$activePayments/5 পেমেন্ট চালু",
-            bgColor = Color(0xFFF0F9FF),
-            borderColor = Color(0xFFBAE6FD),
-            textColor = AdminV2CyanDeep
+          AdminHeroGlassChip(
+            text = "$activePayments/5 পেমেন্ট চালু",
+            dotColor = Color(0xFFBAE6FD)
           )
-          SettingsTelemetryChip(
-            dotColor = if (pixelConfig.isEnabled) AdminV2Emerald else Color(0xFF94A3B8),
-            label = if (pixelConfig.isEnabled) "Meta Pixel সক্রিয়" else "Pixel বন্ধ",
-            bgColor = if (pixelConfig.isEnabled) Color(0xFFECFDF5) else Color(0xFFF8FAFC),
-            borderColor = if (pixelConfig.isEnabled) Color(0xFFA7F3D0) else Color(0xFFE2E8F0),
-            textColor = if (pixelConfig.isEnabled) Color(0xFF065F46) else AdminInkMuted
+          AdminHeroGlassChip(
+            text = if (pixelConfig.isEnabled) "Meta Pixel সক্রিয়" else "Pixel বন্ধ",
+            dotColor = if (pixelConfig.isEnabled) Color(0xFF6EE7B7) else Color(0xFFFDE68A)
           )
         }
       }
-    }
+    )
 
     Spacer(modifier = Modifier.height(10.dp))
 
-    // 2. Clean Segmented Tab Track
+    // 2. Crisp Snow-White Sub-Tab Track with Bright Gradient Active Pill
     Surface(
       shape = RoundedCornerShape(16.dp),
-      color = Color(0xFFEAF4FB),
-      border = BorderStroke(1.dp, Color(0xFFD0E5F4)),
+      color = Color.White,
+      border = BorderStroke(1.2.dp, Color(0xFFBAE6FD)),
+      shadowElevation = 3.dp,
       modifier = Modifier.fillMaxWidth()
     ) {
       Row(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(4.dp)
+          .padding(5.dp)
           .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
         SettingsSubTabPill(
@@ -335,8 +274,8 @@ private fun GeneralStoreSettingsSection(
       title = "ব্র্যান্ড ও অ্যানাউন্সমেন্ট",
       subtitle = "স্টোরের নাম, স্লোগান ও টপ নোটিশ বার",
       icon = Icons.Outlined.Store,
-      iconTint = AdminV2CyanDeep,
-      iconBg = Color(0xFFE0F2FE)
+      headerBrush = adminRoyalGlossBrush(),
+      accentBorderColor = Color(0xFFBAE6FD)
     ) {
       OutlinedTextField(
         value = storeName,
@@ -368,7 +307,7 @@ private fun GeneralStoreSettingsSection(
       Surface(
         shape = RoundedCornerShape(12.dp),
         color = if (isAnnouncementEnabled) Color(0xFFF0F9FF) else Color(0xFFF8FAFC),
-        border = BorderStroke(1.dp, if (isAnnouncementEnabled) Color(0xFFBAE6FD) else Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, if (isAnnouncementEnabled) Color(0xFF7DD3FC) else Color(0xFFE2E8F0)),
         modifier = Modifier.fillMaxWidth()
       ) {
         Row(
@@ -383,12 +322,20 @@ private fun GeneralStoreSettingsSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.weight(1f)
           ) {
-            Icon(
-              imageVector = Icons.Outlined.Campaign,
-              contentDescription = null,
-              tint = if (isAnnouncementEnabled) AdminV2CyanDeep else AdminInkMuted,
-              modifier = Modifier.size(18.dp)
-            )
+            Box(
+              modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isAnnouncementEnabled) Color(0xFFE0F2FE) else Color(0xFFF1F5F9)),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Outlined.Campaign,
+                contentDescription = null,
+                tint = if (isAnnouncementEnabled) AdminV2CyanDeep else AdminInkMuted,
+                modifier = Modifier.size(17.dp)
+              )
+            }
             Column {
               Text(
                 text = "অ্যানাউন্সমেন্ট বার চালু",
@@ -433,8 +380,8 @@ private fun GeneralStoreSettingsSection(
       title = "যোগাযোগ ও শোরুম তথ্য",
       subtitle = "কাস্টমার হেল্পলাইন, WhatsApp ও ইনভয়েস ঠিকানা",
       icon = Icons.Outlined.Call,
-      iconTint = AdminV2Emerald,
-      iconBg = Color(0xFFECFDF5)
+      headerBrush = adminEmeraldTealBrush(),
+      accentBorderColor = Color(0xFFA7F3D0)
     ) {
       OutlinedTextField(
         value = phone,
@@ -492,8 +439,11 @@ private fun GeneralStoreSettingsSection(
       )
     }
 
-    // Unified Save CTA
-    Button(
+    // Unified Vibrant Gradient Save CTA with White Text
+    GlossyGradientButton(
+      text = if (savedSuccess) "স্টোর সেটিংস সংরক্ষিত হয়েছে" else "স্টোর সেটিংস সেভ করুন",
+      icon = if (savedSuccess) Icons.Default.Check else Icons.Outlined.Storefront,
+      brush = if (savedSuccess) adminEmeraldTealBrush() else adminIndigoSkyBrush(),
       onClick = {
         onSaveConfig(
           config.copy(
@@ -509,26 +459,10 @@ private fun GeneralStoreSettingsSection(
         )
         savedSuccess = true
       },
-      colors = ButtonDefaults.buttonColors(
-        containerColor = if (savedSuccess) AdminV2Emerald else AdminV2CyanDeep,
-        contentColor = Color.White
-      ),
-      shape = RoundedCornerShape(14.dp),
       modifier = Modifier
         .fillMaxWidth()
-        .height(50.dp)
         .testTag("save_general_store_settings_btn")
-    ) {
-      if (savedSuccess) {
-        Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(6.dp))
-      }
-      Text(
-        text = if (savedSuccess) "স্টোর সেটিংস সংরক্ষিত হয়েছে" else "স্টোর সেটিংস সেভ করুন",
-        fontSize = 13.5.sp,
-        fontWeight = FontWeight.Bold
-      )
-    }
+    )
 
     Spacer(modifier = Modifier.height(14.dp))
   }
@@ -567,20 +501,20 @@ private fun PaymentAndPixelSettingsSection(
       title = "Meta / Facebook Pixel ট্র্যাকিং",
       subtitle = "ইভেন্ট কনভার্সন ও এডস ট্র্যাকিং কনফিগারেশন",
       icon = Icons.Outlined.Analytics,
-      iconTint = AdminV2CyanDeep,
-      iconBg = Color(0xFFE0F2FE),
+      headerBrush = adminVioletCyanBrush(),
+      accentBorderColor = Color(0xFFBAE6FD),
       trailingBadge = {
         Surface(
           shape = RoundedCornerShape(50),
-          color = if (isPixelEnabled) Color(0xFFECFDF5) else Color(0xFFF1F5F9),
-          border = BorderStroke(1.dp, if (isPixelEnabled) Color(0xFFA7F3D0) else Color(0xFFE2E8F0))
+          color = Color.White.copy(alpha = 0.22f),
+          border = BorderStroke(1.dp, Color.White.copy(alpha = 0.55f))
         ) {
           Text(
             text = if (isPixelEnabled) "Connected" else "Paused",
             fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isPixelEnabled) Color(0xFF065F46) else AdminInkMuted,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+            fontWeight = FontWeight.ExtraBold,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
           )
         }
       }
@@ -588,7 +522,7 @@ private fun PaymentAndPixelSettingsSection(
       Surface(
         shape = RoundedCornerShape(12.dp),
         color = if (isPixelEnabled) Color(0xFFF0F9FF) else Color(0xFFF8FAFC),
-        border = BorderStroke(1.dp, if (isPixelEnabled) Color(0xFFBAE6FD) else Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, if (isPixelEnabled) Color(0xFF7DD3FC) else Color(0xFFE2E8F0)),
         modifier = Modifier.fillMaxWidth()
       ) {
         Row(
@@ -628,30 +562,18 @@ private fun PaymentAndPixelSettingsSection(
           .testTag("settings_pixel_id_input")
       )
 
-      Button(
+      GlossyGradientButton(
+        text = if (pixelSaved) "পিক্সেল সেটিংস সেভ হয়েছে" else "পিক্সেল কনফিগারেশন সেভ করুন",
+        icon = if (pixelSaved) Icons.Default.Check else Icons.Outlined.Analytics,
+        brush = if (pixelSaved) adminEmeraldTealBrush() else adminIndigoSkyBrush(),
         onClick = {
           onSavePixel(pixelConfig.copy(isEnabled = isPixelEnabled, pixelId = pixelId.trim()))
           pixelSaved = true
         },
-        colors = ButtonDefaults.buttonColors(
-          containerColor = if (pixelSaved) AdminV2Emerald else AdminV2CyanDeep,
-          contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(14.dp),
         modifier = Modifier
           .fillMaxWidth()
-          .height(48.dp)
           .testTag("save_pixel_settings_btn")
-      ) {
-        if (pixelSaved) {
-          Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(17.dp))
-          Spacer(modifier = Modifier.width(6.dp))
-        }
-        Text(
-          text = if (pixelSaved) "পিক্সেল সেটিংস সেভ হয়েছে" else "পিক্সেল কনফিগারেশন সেভ করুন",
-          fontWeight = FontWeight.Bold
-        )
-      }
+      )
     }
 
     Spacer(modifier = Modifier.height(14.dp))
@@ -682,7 +604,7 @@ private fun SystemBackupAndResetSection(
       .verticalScroll(rememberScrollState()),
     verticalArrangement = Arrangement.spacedBy(12.dp)
   ) {
-    // 1. Live Snapshot Metric Tiles
+    // 1. Live Luminous Metric Tiles
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -692,6 +614,9 @@ private fun SystemBackupAndResetSection(
         label = "মোট ক্যাটালগ পণ্য",
         value = "$productsCount টি",
         accentColor = AdminV2CyanDeep,
+        iconBrush = adminRoyalGlossBrush(),
+        cardBg = Color(0xFFF0F9FF),
+        borderColor = Color(0xFFBAE6FD),
         modifier = Modifier.weight(1f)
       )
       BackupStatCard(
@@ -699,19 +624,25 @@ private fun SystemBackupAndResetSection(
         label = "মোট সংরক্ষিত অর্ডার",
         value = "$ordersCount টি",
         accentColor = AdminV2Emerald,
+        iconBrush = adminEmeraldTealBrush(),
+        cardBg = Color(0xFFECFDF5),
+        borderColor = Color(0xFFA7F3D0),
         modifier = Modifier.weight(1f)
       )
     }
 
-    // 2. Clean Export Backup Card
+    // 2. Export Backup Card
     SettingsSectionCard(
       title = "ক্লিপবোর্ড ডাটা ব্যাকআপ",
       subtitle = "আপনার ক্যাটালগ ও অর্ডারের সামারি JSON আকারে এক্সপোর্ট করুন",
       icon = Icons.Outlined.CloudDone,
-      iconTint = AdminV2CyanDeep,
-      iconBg = Color(0xFFE0F2FE)
+      headerBrush = adminRoyalGlossBrush(),
+      accentBorderColor = Color(0xFFBAE6FD)
     ) {
-      Button(
+      GlossyGradientButton(
+        text = if (copiedRecently) "ক্লিপবোর্ডে কপি হয়েছে" else "JSON ব্যাকআপ কপি করুন",
+        icon = if (copiedRecently) Icons.Default.Check else Icons.Default.ContentCopy,
+        brush = if (copiedRecently) adminEmeraldTealBrush() else adminIndigoSkyBrush(),
         onClick = {
           val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
           val clip = ClipData.newPlainText(
@@ -722,137 +653,82 @@ private fun SystemBackupAndResetSection(
           copiedRecently = true
           onShowToast("ব্যাকআপ ডেটা সফলভাবে ক্লিপবোর্ডে কপি হয়েছে!")
         },
-        colors = ButtonDefaults.buttonColors(
-          containerColor = if (copiedRecently) AdminV2Emerald else AdminV2CyanDeep,
-          contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(14.dp),
         modifier = Modifier
           .fillMaxWidth()
-          .height(48.dp)
           .testTag("copy_json_backup_btn")
-      ) {
-        Icon(
-          imageVector = if (copiedRecently) Icons.Default.Check else Icons.Default.ContentCopy,
-          contentDescription = null,
-          modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-          text = if (copiedRecently) "ক্লিপবোর্ডে কপি হয়েছে" else "JSON ব্যাকআপ কপি করুন",
-          fontSize = 12.5.sp,
-          fontWeight = FontWeight.Bold
-        )
-      }
+      )
     }
 
-    // 3. Two-Step Danger Zone Card
-    Surface(
-      shape = RoundedCornerShape(18.dp),
-      color = Color(0xFFFFFBFB),
-      border = BorderStroke(1.dp, Color(0xFFFECACA)),
-      shadowElevation = 2.dp,
-      modifier = Modifier.fillMaxWidth()
+    // 3. Bright Two-Step Danger Zone Card
+    SettingsSectionCard(
+      title = "ফ্যাক্টরি রিসেট (Danger Zone)",
+      subtitle = "কাস্টম পরিবর্তন মুছে প্রাথমিক ক্যাটালগ ও ডিফল্ট অর্ডারে ফিরে যান",
+      icon = Icons.Outlined.WarningAmber,
+      headerBrush = Brush.horizontalGradient(listOf(Color(0xFFDC2626), Color(0xFFF97316))),
+      accentBorderColor = Color(0xFFFECACA),
+      bodyTint = Color(0xFFFFFAFA)
     ) {
-      Column(
-        modifier = Modifier.padding(15.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-      ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-          Box(
+      AnimatedContent(
+        targetState = confirmResetExpanded,
+        label = "reset_confirm_toggle"
+      ) { confirming ->
+        if (!confirming) {
+          OutlinedButton(
+            onClick = { confirmResetExpanded = true },
+            border = BorderStroke(1.2.dp, AccentRed.copy(alpha = 0.65f)),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier
-              .size(36.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .background(Color(0xFFFEE2E2)),
-            contentAlignment = Alignment.Center
+              .fillMaxWidth()
+              .height(48.dp)
+              .testTag("trigger_reset_defaults_btn")
           ) {
             Icon(
-              imageVector = Icons.Outlined.WarningAmber,
+              imageVector = Icons.Outlined.RestorePage,
               contentDescription = null,
               tint = AccentRed,
-              modifier = Modifier.size(20.dp)
+              modifier = Modifier.size(18.dp)
             )
-          }
-          Column(modifier = Modifier.weight(1f)) {
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "ফ্যাক্টরি রিসেট (Danger Zone)",
-              fontSize = 13.5.sp,
-              fontWeight = FontWeight.ExtraBold,
+              text = "ডিফল্ট ক্যাটালগ রিস্টোর করুন",
+              fontSize = 12.5.sp,
+              fontWeight = FontWeight.Bold,
               color = AccentRed
             )
-            Text(
-              text = "কাস্টম পরিবর্তন মুছে প্রাথমিক ক্যাটালগ ও ডিফল্ট অর্ডারে ফিরে যান।",
-              fontSize = 11.sp,
-              color = AdminInkSecondary
-            )
           }
-        }
-
-        AnimatedContent(
-          targetState = confirmResetExpanded,
-          label = "reset_confirm_toggle"
-        ) { confirming ->
-          if (!confirming) {
-            OutlinedButton(
-              onClick = { confirmResetExpanded = true },
-              border = BorderStroke(1.dp, AccentRed.copy(alpha = 0.55f)),
-              shape = RoundedCornerShape(12.dp),
-              modifier = Modifier
-                .fillMaxWidth()
-                .height(46.dp)
-                .testTag("trigger_reset_defaults_btn")
+        } else {
+          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+              text = "আপনি কি নিশ্চিত? লোকাল ও কাস্টম সেটিংস ডিফল্টে ফিরে যাবে।",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = AccentRed
+            )
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-              Icon(
-                imageVector = Icons.Outlined.RestorePage,
-                contentDescription = null,
-                tint = AccentRed,
-                modifier = Modifier.size(17.dp)
-              )
-              Spacer(modifier = Modifier.width(6.dp))
-              Text(
-                text = "ডিফল্ট ক্যাটালগ রিস্টোর করুন",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentRed
-              )
-            }
-          } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-              Text(
-                text = "আপনি কি নিশ্চিত? লোকাল ও কাস্টম সেটিংস ডিফল্টে ফিরে যাবে।",
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentRed
-              )
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              Button(
+                onClick = {
+                  confirmResetExpanded = false
+                  onReset()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = AccentRed, contentColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .height(48.dp)
+                  .testTag("confirm_reset_defaults_btn")
               ) {
-                Button(
-                  onClick = {
-                    confirmResetExpanded = false
-                    onReset()
-                  },
-                  colors = ButtonDefaults.buttonColors(containerColor = AccentRed, contentColor = Color.White),
-                  shape = RoundedCornerShape(12.dp),
-                  modifier = Modifier
-                    .weight(1f)
-                    .height(46.dp)
-                    .testTag("confirm_reset_defaults_btn")
-                ) {
-                  Text("হ্যাঁ, রিস্টোর করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                OutlinedButton(
-                  onClick = { confirmResetExpanded = false },
-                  border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
-                  shape = RoundedCornerShape(12.dp),
-                  modifier = Modifier.height(46.dp)
-                ) {
-                  Text("বাতিল", fontSize = 12.sp, color = AdminInkPrimary, fontWeight = FontWeight.Bold)
-                }
+                Text("হ্যাঁ, রিস্টোর করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+              }
+              OutlinedButton(
+                onClick = { confirmResetExpanded = false },
+                border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(48.dp)
+              ) {
+                Text("বাতিল", fontSize = 12.sp, color = AdminInkPrimary, fontWeight = FontWeight.Bold)
               }
             }
           }
@@ -865,41 +741,6 @@ private fun SystemBackupAndResetSection(
 }
 
 @Composable
-private fun SettingsTelemetryChip(
-  dotColor: Color,
-  label: String,
-  bgColor: Color,
-  borderColor: Color,
-  textColor: Color
-) {
-  Surface(
-    shape = RoundedCornerShape(50),
-    color = bgColor,
-    border = BorderStroke(1.dp, borderColor)
-  ) {
-    Row(
-      modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-      Box(
-        modifier = Modifier
-          .size(6.dp)
-          .clip(CircleShape)
-          .background(dotColor)
-      )
-      Text(
-        text = label,
-        fontSize = 10.5.sp,
-        fontWeight = FontWeight.Bold,
-        color = textColor,
-        maxLines = 1
-      )
-    }
-  }
-}
-
-@Composable
 private fun SettingsSubTabPill(
   label: String,
   icon: ImageVector,
@@ -907,41 +748,48 @@ private fun SettingsSubTabPill(
   onClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  val bg by animateColorAsState(
-    targetValue = if (selected) Color.White else Color.Transparent,
-    animationSpec = tween(180, easing = FastOutSlowInEasing),
-    label = "settings_tab_bg"
-  )
-  val contentColor by animateColorAsState(
-    targetValue = if (selected) AdminV2CyanDeep else AdminInkSecondary,
-    label = "settings_tab_ink"
-  )
-  Surface(
-    shape = RoundedCornerShape(12.dp),
-    color = bg,
-    shadowElevation = if (selected) 2.dp else 0.dp,
-    border = if (selected) BorderStroke(1.dp, Color(0xFFBAE6FD)) else null,
+  val shape = RoundedCornerShape(12.dp)
+  Box(
     modifier = modifier
-      .heightIn(min = 40.dp)
-      .clip(RoundedCornerShape(12.dp))
+      .heightIn(min = 42.dp)
+      .then(
+        if (selected) {
+          Modifier.shadow(4.dp, shape, spotColor = AdminV2CyanDeep.copy(alpha = 0.25f))
+        } else {
+          Modifier
+        }
+      )
+      .clip(shape)
+      .then(
+        if (selected) {
+          Modifier
+            .background(adminRoyalGlossBrush())
+            .border(1.dp, Color(0xFF7DD3FC).copy(alpha = 0.7f), shape)
+        } else {
+          Modifier
+            .background(Color(0xFFF4FAFF))
+            .border(1.dp, Color(0xFFD6E8F5), shape)
+        }
+      )
       .clickable(onClick = onClick)
+      .padding(horizontal = 12.dp, vertical = 8.dp),
+    contentAlignment = Alignment.Center
   ) {
     Row(
-      modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
       Icon(
         imageVector = icon,
         contentDescription = null,
-        tint = if (selected) AdminV2CyanDeep else AdminInkMuted,
-        modifier = Modifier.size(15.dp)
+        tint = if (selected) Color.White else AdminV2CyanDeep,
+        modifier = Modifier.size(16.dp)
       )
       Text(
         text = label,
         fontSize = 11.5.sp,
-        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
-        color = contentColor,
+        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
+        color = if (selected) Color.White else AdminInkPrimary,
         maxLines = 1
       )
     }
@@ -953,64 +801,82 @@ private fun SettingsSectionCard(
   title: String,
   subtitle: String,
   icon: ImageVector,
-  iconTint: Color,
-  iconBg: Color,
+  headerBrush: Brush = adminRoyalGlossBrush(),
+  accentBorderColor: Color = Color(0xFFBAE6FD),
+  bodyTint: Color = Color.White,
   trailingBadge: (@Composable () -> Unit)? = null,
   content: @Composable () -> Unit
 ) {
+  val shape = RoundedCornerShape(18.dp)
   Surface(
-    shape = RoundedCornerShape(18.dp),
-    color = Color.White,
-    border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
-    shadowElevation = 3.dp,
+    shape = shape,
+    color = bodyTint,
+    border = BorderStroke(1.2.dp, accentBorderColor),
+    shadowElevation = 4.dp,
     modifier = Modifier.fillMaxWidth()
   ) {
-    Column(
-      modifier = Modifier.padding(15.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Column(modifier = Modifier.fillMaxWidth()) {
+      // Vibrant Bright Gradient Card Header Band with White Text
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .background(headerBrush)
+          .padding(horizontal = 14.dp, vertical = 11.dp)
       ) {
         Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(10.dp),
-          modifier = Modifier.weight(1f)
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
         ) {
-          Box(
-            modifier = Modifier
-              .size(36.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .background(iconBg),
-            contentAlignment = Alignment.Center
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.weight(1f)
           ) {
-            Icon(
-              imageVector = icon,
-              contentDescription = null,
-              tint = iconTint,
-              modifier = Modifier.size(19.dp)
-            )
+            Box(
+              modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.White.copy(alpha = 0.22f))
+                .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(19.dp)
+              )
+            }
+            Column {
+              Text(
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.White
+              )
+              Text(
+                text = subtitle,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.90f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
           }
-          Column {
-            Text(
-              text = title,
-              fontSize = 13.5.sp,
-              fontWeight = FontWeight.ExtraBold,
-              color = AdminInkPrimary
-            )
-            Text(
-              text = subtitle,
-              fontSize = 10.5.sp,
-              color = AdminInkMuted
-            )
-          }
+          trailingBadge?.invoke()
         }
-        trailingBadge?.invoke()
       }
 
-      content()
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        content()
+      }
     }
   }
 }
@@ -1021,13 +887,16 @@ private fun BackupStatCard(
   label: String,
   value: String,
   accentColor: Color,
+  iconBrush: Brush,
+  cardBg: Color,
+  borderColor: Color,
   modifier: Modifier = Modifier
 ) {
   Surface(
     shape = RoundedCornerShape(16.dp),
-    color = Color.White,
-    border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
-    shadowElevation = 2.dp,
+    color = cardBg,
+    border = BorderStroke(1.2.dp, borderColor),
+    shadowElevation = 3.dp,
     modifier = modifier
   ) {
     Row(
@@ -1037,29 +906,30 @@ private fun BackupStatCard(
     ) {
       Box(
         modifier = Modifier
-          .size(36.dp)
-          .clip(RoundedCornerShape(10.dp))
-          .background(accentColor.copy(alpha = 0.12f)),
+          .size(38.dp)
+          .clip(RoundedCornerShape(11.dp))
+          .background(iconBrush),
         contentAlignment = Alignment.Center
       ) {
         Icon(
           imageVector = icon,
           contentDescription = null,
-          tint = accentColor,
-          modifier = Modifier.size(18.dp)
+          tint = Color.White,
+          modifier = Modifier.size(19.dp)
         )
       }
       Column {
         Text(
           text = value,
-          fontSize = 16.sp,
+          fontSize = 16.5.sp,
           fontWeight = FontWeight.Black,
-          color = AdminInkPrimary
+          color = accentColor
         )
         Text(
           text = label,
           fontSize = 10.5.sp,
-          color = AdminInkMuted,
+          fontWeight = FontWeight.SemiBold,
+          color = AdminInkPrimary,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis
         )

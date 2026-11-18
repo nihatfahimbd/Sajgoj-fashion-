@@ -103,10 +103,164 @@ fun adminRoyalGlossBrush(): Brush = Brush.linearGradient(
   )
 )
 
+fun adminIndigoSkyBrush(): Brush = Brush.linearGradient(
+  colors = listOf(
+    Color(0xFF2563EB),
+    Color(0xFF0284C7),
+    Color(0xFF06B6D4)
+  )
+)
+
+fun adminEmeraldTealBrush(): Brush = Brush.linearGradient(
+  colors = listOf(
+    Color(0xFF059669),
+    Color(0xFF10B981),
+    Color(0xFF0D9488)
+  )
+)
+
+fun adminVioletCyanBrush(): Brush = Brush.linearGradient(
+  colors = listOf(
+    Color(0xFF4F46E5),
+    Color(0xFF2563EB),
+    Color(0xFF0EA5E9)
+  )
+)
+
+fun adminWarmCoralAmberBrush(): Brush = Brush.linearGradient(
+  colors = listOf(
+    Color(0xFFEA580C),
+    Color(0xFFF59E0B)
+  )
+)
+
 fun adminAccentGlossBrush(
   start: Color = AdminV2CyanDeep,
   end: Color = AdminV2Cyan
 ): Brush = Brush.horizontalGradient(listOf(start, end))
+
+@Composable
+fun AdminVibrantHeroCard(
+  title: String,
+  subtitle: String,
+  icon: ImageVector,
+  modifier: Modifier = Modifier,
+  brush: Brush = adminIndigoSkyBrush(),
+  trailingContent: (@Composable () -> Unit)? = null,
+  bottomContent: (@Composable () -> Unit)? = null
+) {
+  val shape = RoundedCornerShape(22.dp)
+  Box(
+    modifier = modifier
+      .fillMaxWidth()
+      .shadow(
+        elevation = 8.dp,
+        shape = shape,
+        ambientColor = AdminV2CyanDeep.copy(alpha = 0.22f),
+        spotColor = AdminV2Cyan.copy(alpha = 0.30f)
+      )
+      .clip(shape)
+      .background(brush)
+      .border(1.2.dp, Color.White.copy(alpha = 0.48f), shape)
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          modifier = Modifier.weight(1f),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+          Box(
+            modifier = Modifier
+              .size(46.dp)
+              .clip(RoundedCornerShape(14.dp))
+              .background(Color.White.copy(alpha = 0.22f))
+              .border(1.dp, Color.White.copy(alpha = 0.55f), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = icon,
+              contentDescription = null,
+              tint = Color.White,
+              modifier = Modifier.size(23.dp)
+            )
+          }
+
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = title,
+              fontSize = 16.5.sp,
+              fontWeight = FontWeight.Black,
+              color = Color.White,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+            Text(
+              text = subtitle,
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Medium,
+              color = Color.White.copy(alpha = 0.90f),
+              maxLines = 2,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+        }
+
+        if (trailingContent != null) {
+          Spacer(modifier = Modifier.size(8.dp))
+          trailingContent()
+        }
+      }
+
+      if (bottomContent != null) {
+        bottomContent()
+      }
+    }
+  }
+}
+
+@Composable
+fun AdminHeroGlassChip(
+  text: String,
+  dotColor: Color = Color(0xFF6EE7B7),
+  modifier: Modifier = Modifier
+) {
+  Surface(
+    shape = RoundedCornerShape(50),
+    color = Color.White.copy(alpha = 0.20f),
+    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.45f)),
+    modifier = modifier
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+      Box(
+        modifier = Modifier
+          .size(7.dp)
+          .clip(CircleShape)
+          .background(dotColor)
+      )
+      Text(
+        text = text,
+        fontSize = 10.5.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color.White,
+        maxLines = 1
+      )
+    }
+  }
+}
 
 @Composable
 fun adminOutlinedTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
@@ -117,11 +271,11 @@ fun adminOutlinedTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.
   unfocusedContainerColor = Color.White,
   disabledContainerColor = Color(0xFFF4F9FD),
   focusedBorderColor = AdminV2CyanDeep,
-  unfocusedBorderColor = Color(0xFFBFD9EA),
+  unfocusedBorderColor = Color(0xFFBAE6FD),
   focusedLabelColor = AdminV2CyanDeep,
   unfocusedLabelColor = AdminInkSecondary,
-  focusedPlaceholderColor = Color(0xFF6B8294),
-  unfocusedPlaceholderColor = Color(0xFF6B8294),
+  focusedPlaceholderColor = Color(0xFF64748B),
+  unfocusedPlaceholderColor = Color(0xFF64748B),
   focusedLeadingIconColor = AdminV2CyanDeep,
   unfocusedLeadingIconColor = AdminInkSecondary,
   focusedTrailingIconColor = AdminV2CyanDeep,
@@ -134,9 +288,9 @@ fun GlossyAdminCard(
   modifier: Modifier = Modifier,
   cornerRadius: Dp = 20.dp,
   accentBorderColor: Color = AdminCardBorderWarm,
-  containerTintTop: Color = Color(0xFAFFFFFF),
-  containerTintBottom: Color = Color(0xEDF1F9FE),
-  elevation: Dp = 6.dp,
+  containerTintTop: Color = Color.White,
+  containerTintBottom: Color = Color(0xFFF6FBFF),
+  elevation: Dp = 5.dp,
   contentPadding: Dp = 15.dp,
   content: @Composable ColumnScope.() -> Unit
 ) {
@@ -147,8 +301,8 @@ fun GlossyAdminCard(
       .shadow(
         elevation = elevation,
         shape = shape,
-        ambientColor = Color(0xFF0C2D40).copy(alpha = 0.14f),
-        spotColor = AdminV2CyanDeep.copy(alpha = 0.16f)
+        ambientColor = AdminV2CyanDeep.copy(alpha = 0.12f),
+        spotColor = AdminV2Cyan.copy(alpha = 0.18f)
       )
       .clip(shape)
       .background(
@@ -162,7 +316,7 @@ fun GlossyAdminCard(
           colors = listOf(
             Color.White,
             accentBorderColor,
-            accentBorderColor.copy(alpha = 0.72f)
+            accentBorderColor.copy(alpha = 0.80f)
           )
         ),
         shape = shape
@@ -172,13 +326,13 @@ fun GlossyAdminCard(
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .height(2.dp)
+        .height(2.5.dp)
         .background(
           Brush.horizontalGradient(
             listOf(
-              Color.White.copy(alpha = 0.45f),
-              Color.White,
-              Color.White.copy(alpha = 0.45f)
+              Color.White.copy(alpha = 0.65f),
+              Color(0xFFE0F2FE),
+              Color.White.copy(alpha = 0.65f)
             )
           )
         )
@@ -216,15 +370,15 @@ fun GlossySegmentPill(
         if (selected) {
           Modifier
             .background(selectedBrush)
-            .border(1.dp, Color(0xFF7DD3FC).copy(alpha = 0.55f), shape)
+            .border(1.dp, Color(0xFF7DD3FC).copy(alpha = 0.75f), shape)
         } else {
           Modifier
             .background(
               Brush.verticalGradient(
-                listOf(Color.White.copy(alpha = 0.94f), Color(0xFFF1F8FC))
+                listOf(Color.White, Color(0xFFF4FAFF))
               )
             )
-            .border(1.dp, Color(0xFFC5DFEE), shape)
+            .border(1.dp, Color(0xFFBAE6FD), shape)
         }
       )
       .clickable(onClick = onClick)
@@ -246,7 +400,7 @@ fun GlossySegmentPill(
       if (!badgeText.isNullOrBlank()) {
         Surface(
           shape = RoundedCornerShape(8.dp),
-          color = if (selected) Color.White.copy(alpha = 0.22f) else AdminV2SkySoft
+          color = if (selected) Color.White.copy(alpha = 0.25f) else AdminV2SkySoft
         ) {
           Text(
             text = badgeText,
@@ -294,6 +448,57 @@ fun GlossyActionPillButton(
       maxLines = 1,
       overflow = TextOverflow.Ellipsis
     )
+  }
+}
+
+@Composable
+fun GlossyGradientButton(
+  text: String,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+  icon: ImageVector? = null,
+  brush: Brush = adminIndigoSkyBrush(),
+  cornerRadius: Dp = 14.dp,
+  textColor: Color = Color.White
+) {
+  val shape = RoundedCornerShape(cornerRadius)
+  Box(
+    modifier = modifier
+      .heightIn(min = 48.dp)
+      .shadow(
+        elevation = 5.dp,
+        shape = shape,
+        ambientColor = AdminV2CyanDeep.copy(alpha = 0.18f),
+        spotColor = AdminV2CyanDeep.copy(alpha = 0.28f)
+      )
+      .clip(shape)
+      .background(brush)
+      .border(1.dp, Color.White.copy(alpha = 0.45f), shape)
+      .clickable(onClick = onClick)
+      .padding(horizontal = 14.dp, vertical = 10.dp),
+    contentAlignment = Alignment.Center
+  ) {
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+      if (icon != null) {
+        Icon(
+          imageVector = icon,
+          contentDescription = null,
+          tint = textColor,
+          modifier = Modifier.size(18.dp)
+        )
+      }
+      Text(
+        text = text,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.ExtraBold,
+        color = textColor,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+    }
   }
 }
 

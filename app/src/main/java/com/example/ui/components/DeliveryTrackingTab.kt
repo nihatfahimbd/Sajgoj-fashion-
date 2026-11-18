@@ -127,50 +127,66 @@ fun AdminDeliveryTrackingTab(
     verticalArrangement = Arrangement.spacedBy(12.dp),
     contentPadding = PaddingValues(bottom = 24.dp)
   ) {
-    // 1. Hero Summary Chart Card
+    // 1. Hero Summary Chart Card with Bright Azure Gradient Header Band
     item {
-      GlossyAdminCard(
-        modifier = Modifier.testTag("delivery_summary_chart_card"),
-        cornerRadius = 18.dp,
-        contentPadding = 16.dp
+      Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
+        border = BorderStroke(1.2.dp, Color(0xFFBAE6FD)),
+        shadowElevation = 5.dp,
+        modifier = Modifier
+          .fillMaxWidth()
+          .testTag("delivery_summary_chart_card")
       ) {
-        Column(
-          modifier = Modifier.fillMaxWidth(),
-          verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(modifier = Modifier.fillMaxWidth()) {
+          Box(
+            modifier = Modifier
+              .fillMaxWidth()
+              .background(adminRoyalGlossBrush())
+              .padding(horizontal = 15.dp, vertical = 12.dp)
           ) {
-            Column(modifier = Modifier.weight(1f)) {
-              Text(
-                text = "ডেলিভারি ট্র্যাকিং ওভারভিউ",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Black,
-                color = AdminInkPrimary
-              )
-              Text(
-                text = "Pending, Shipped ও Delivered অর্ডারের ডিস্ট্রিবিউশন",
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = AdminInkMuted
-              )
-            }
-            Surface(
-              shape = RoundedCornerShape(12.dp),
-              color = AdminV2SkySoft,
-              border = BorderStroke(1.dp, AdminV2Cyan.copy(alpha = 0.45f))
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
             ) {
-              Text(
-                text = "মোট $totalTracked টি",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminV2CyanDeep,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-              )
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = "ডেলিভারি ট্র্যাকিং ওভারভিউ",
+                  fontSize = 15.sp,
+                  fontWeight = FontWeight.Black,
+                  color = Color.White
+                )
+                Text(
+                  text = "Pending, Shipped ও Delivered অর্ডারের ডিস্ট্রিবিউশন",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Medium,
+                  color = Color.White.copy(alpha = 0.90f)
+                )
+              }
+              Spacer(modifier = Modifier.width(8.dp))
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White.copy(alpha = 0.22f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.55f))
+              ) {
+                Text(
+                  text = "মোট $totalTracked টি",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.ExtraBold,
+                  color = Color.White,
+                  modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                )
+              }
             }
           }
+
+          Column(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(15.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+          ) {
 
           if (totalTracked == 0) {
             Column(
@@ -343,6 +359,7 @@ fun AdminDeliveryTrackingTab(
             }
           }
         }
+        }
       }
     }
 
@@ -382,7 +399,7 @@ fun AdminDeliveryTrackingTab(
       }
     }
 
-    // 3. Filter Chips
+    // 3. Bright Filter Chips
     item {
       Row(
         modifier = Modifier
@@ -401,17 +418,19 @@ fun AdminDeliveryTrackingTab(
           val isSelected = selectedFilter == key
           Surface(
             shape = RoundedCornerShape(18.dp),
-            color = if (isSelected) activeColor else AdminV2IceSurface,
-            border = BorderStroke(1.dp, if (isSelected) activeColor else AdminCardBorderWarm),
+            color = if (isSelected) activeColor else Color.White,
+            border = BorderStroke(1.2.dp, if (isSelected) activeColor else Color(0xFFBAE6FD)),
+            shadowElevation = if (isSelected) 3.dp else 1.dp,
             modifier = Modifier
               .minimumInteractiveComponentSize()
+              .clip(RoundedCornerShape(18.dp))
               .testTag("delivery_filter_$key")
               .clickable { selectedFilter = key }
           ) {
             Text(
               text = label,
               fontSize = 12.sp,
-              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+              fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
               color = if (isSelected) Color.White else AdminInkPrimary,
               modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
             )
@@ -701,49 +720,51 @@ private fun DeliveryKpiCard(
   icon: androidx.compose.ui.graphics.vector.ImageVector,
   modifier: Modifier = Modifier
 ) {
-  GlossyAdminCard(
+  Surface(
     modifier = modifier,
-    cornerRadius = 14.dp,
-    accentBorderColor = accent.copy(alpha = 0.35f),
-    contentPadding = 10.dp
+    shape = RoundedCornerShape(16.dp),
+    color = bg.copy(alpha = 0.55f),
+    border = BorderStroke(1.2.dp, accent.copy(alpha = 0.35f)),
+    shadowElevation = 2.dp
   ) {
     Column(
-      verticalArrangement = Arrangement.spacedBy(4.dp)
+      modifier = Modifier.padding(10.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
       Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = bg
+        shape = RoundedCornerShape(9.dp),
+        color = accent
       ) {
         Row(
-          modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+          modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
           Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = accent,
+            tint = Color.White,
             modifier = Modifier.size(13.dp)
           )
           Text(
             text = title,
             fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = accent
+            fontWeight = FontWeight.ExtraBold,
+            color = Color.White
           )
         }
       }
       Text(
         text = "$count টি",
-        fontSize = 17.sp,
-        fontWeight = FontWeight.ExtraBold,
+        fontSize = 17.5.sp,
+        fontWeight = FontWeight.Black,
         color = AdminInkPrimary
       )
       Text(
         text = "৳$amount",
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = AdminInkSecondary,
+        color = accent,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )

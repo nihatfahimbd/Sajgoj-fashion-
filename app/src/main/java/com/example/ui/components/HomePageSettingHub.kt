@@ -106,6 +106,7 @@ import com.example.data.model.Product
 import com.example.data.model.StoreConfig
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
+import com.example.ui.theme.parseColorHex
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -153,149 +154,85 @@ fun HomePageSettingHub(
   val activeBannerCount = remember(banners) { banners.count { it.isActive } }
 
   Column(modifier = modifier.fillMaxSize()) {
-    // 1. Clean White Dynamic Hero Header Card
-    Surface(
-      shape = RoundedCornerShape(20.dp),
-      color = Color.White,
-      border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
-      shadowElevation = 4.dp,
-      modifier = Modifier.fillMaxWidth()
-    ) {
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-      ) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
+    // 1. Vibrant Cobalt-Sky Gradient Hero Card with Crisp White Text
+    AdminVibrantHeroCard(
+      title = "হোম পেজ বিল্ডার",
+      subtitle = "সেকশন অর্ডার, গ্রিড লেআউট, ব্যানার ও লাইভ থিম",
+      icon = Icons.Outlined.DashboardCustomize,
+      brush = adminIndigoSkyBrush(),
+      trailingContent = {
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color.White.copy(alpha = 0.22f),
+          border = BorderStroke(1.dp, Color.White.copy(alpha = 0.55f)),
+          modifier = Modifier
+            .heightIn(min = 42.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onResetSectionsToDefault)
+            .testTag("reset_home_layout_btn")
         ) {
           Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(11.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
           ) {
-            Box(
-              modifier = Modifier
-                .size(44.dp)
-                .shadow(3.dp, RoundedCornerShape(14.dp))
-                .clip(RoundedCornerShape(14.dp))
-                .background(
-                  Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep))
-                ),
-              contentAlignment = Alignment.Center
-            ) {
-              Icon(
-                imageVector = Icons.Outlined.DashboardCustomize,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp)
-              )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-              Text(
-                text = "হোম পেজ বিল্ডার",
-                fontSize = 16.5.sp,
-                fontWeight = FontWeight.Black,
-                color = AdminInkPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-              )
-              Text(
-                text = "সেকশন অর্ডার, গ্রিড লেআউট, ব্যানার ও লাইভ থিম",
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = AdminInkMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.width(8.dp))
-
-          Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFF0F9FF),
-            border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
-            modifier = Modifier
-              .heightIn(min = 42.dp)
-              .clip(RoundedCornerShape(12.dp))
-              .clickable(onClick = onResetSectionsToDefault)
-              .testTag("reset_home_layout_btn")
-          ) {
-            Row(
-              modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-              Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "ডিফল্ট রিসেট",
-                tint = AdminV2CyanDeep,
-                modifier = Modifier.size(16.dp)
-              )
-              Text(
-                text = "রিসেট",
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminV2CyanDeep
-              )
-            }
+            Icon(
+              imageVector = Icons.Default.Refresh,
+              contentDescription = "ডিফল্ট রিসেট",
+              tint = Color.White,
+              modifier = Modifier.size(16.dp)
+            )
+            Text(
+              text = "রিসেট",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = Color.White
+            )
           }
         }
-
-        // Sleek Live Telemetry Chips
+      },
+      bottomContent = {
         Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
           horizontalArrangement = Arrangement.spacedBy(8.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          HomeStatusChip(
-            dotColor = AdminV2Emerald,
+          AdminHeroGlassChip(
             text = "$enabledCount/${homeSections.size} সেকশন চালু",
-            bgColor = Color(0xFFECFDF5),
-            borderColor = Color(0xFFA7F3D0),
-            textColor = Color(0xFF065F46)
+            dotColor = Color(0xFF6EE7B7)
           )
-          HomeStatusChip(
-            dotColor = AdminV2CyanDeep,
+          AdminHeroGlassChip(
             text = "$activeBannerCount ব্যানার লাইভ",
-            bgColor = Color(0xFFF0F9FF),
-            borderColor = Color(0xFFBAE6FD),
-            textColor = AdminV2CyanDeep
+            dotColor = Color(0xFFBAE6FD)
           )
           if (storeConfig.isAnnouncementEnabled) {
-            HomeStatusChip(
-              dotColor = AdminV2Amber,
+            AdminHeroGlassChip(
               text = "নোটিশ চালু",
-              bgColor = Color(0xFFFFFBEB),
-              borderColor = Color(0xFFFDE68A),
-              textColor = Color(0xFF92400E)
+              dotColor = Color(0xFFFDE68A)
             )
           }
         }
       }
-    }
+    )
 
     Spacer(modifier = Modifier.height(10.dp))
 
-    // 2. Single-Row Sleek Segmented Tab Track (No clipping, crisp M3 icons)
+    // 2. Crisp Snow-White Segmented Tab Track with Bright Gradient Active Pill
     Surface(
       shape = RoundedCornerShape(16.dp),
-      color = Color(0xFFEAF4FB),
-      border = BorderStroke(1.dp, Color(0xFFD0E5F4)),
+      color = Color.White,
+      border = BorderStroke(1.2.dp, Color(0xFFBAE6FD)),
+      shadowElevation = 3.dp,
       modifier = Modifier.fillMaxWidth()
     ) {
       Row(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(4.dp)
+          .padding(5.dp)
           .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
         HomeSubTabPill(
@@ -703,14 +640,15 @@ fun HomePageSettingHub(
                             .size(40.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                              if (section.enabled) Color(0xFFEBF6FD) else Color(0xFFF1F5F9)
+                              if (section.enabled) adminRoyalGlossBrush()
+                              else Brush.linearGradient(listOf(Color(0xFF94A3B8), Color(0xFFCBD5E1)))
                             ),
                           contentAlignment = Alignment.Center
                         ) {
                           Icon(
                             imageVector = sectionVectorIcon(section.type),
                             contentDescription = null,
-                            tint = if (section.enabled) AdminV2CyanDeep else AdminInkMuted,
+                            tint = Color.White,
                             modifier = Modifier.size(20.dp)
                           )
                         }
@@ -722,17 +660,13 @@ fun HomePageSettingHub(
                           ) {
                             Surface(
                               shape = RoundedCornerShape(7.dp),
-                              color = if (section.enabled) Color(0xFFE0F2FE) else Color(0xFFF1F5F9),
-                              border = BorderStroke(
-                                1.dp,
-                                if (section.enabled) Color(0xFFBAE6FD) else Color(0xFFE2E8F0)
-                              )
+                              color = if (section.enabled) AdminV2CyanDeep else Color(0xFF94A3B8)
                             ) {
                               Text(
                                 text = (index + 1).toString().padStart(2, '0'),
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Black,
-                                color = if (section.enabled) AdminV2CyanDeep else AdminInkMuted,
+                                color = Color.White,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                               )
                             }
@@ -1289,12 +1223,13 @@ fun HomePageSettingHub(
 
         "BANNERS" -> {
           Column(modifier = Modifier.fillMaxSize()) {
-            Surface(
-              shape = RoundedCornerShape(18.dp),
-              color = Color.White,
-              border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
-              shadowElevation = 2.dp,
-              modifier = Modifier.fillMaxWidth()
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .shadow(4.dp, RoundedCornerShape(18.dp), spotColor = AdminV2CyanDeep.copy(alpha = 0.25f))
+                .clip(RoundedCornerShape(18.dp))
+                .background(adminRoyalGlossBrush())
+                .border(1.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(18.dp))
             ) {
               Row(
                 modifier = Modifier
@@ -1306,26 +1241,34 @@ fun HomePageSettingHub(
                 Column(modifier = Modifier.weight(1f)) {
                   Text(
                     text = "হিরো ব্যানার স্লাইডার (${banners.size})",
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AdminInkPrimary
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
                   )
                   Text(
                     text = "স্টোরফ্রন্টের শীর্ষ ব্যানার চালু/বন্ধ ও নতুন ব্যানার যোগ করুন",
                     fontSize = 11.sp,
-                    color = AdminInkMuted
+                    color = Color.White.copy(alpha = 0.90f)
                   )
                 }
-                Button(
-                  onClick = onAddBannerClick,
-                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
                   shape = RoundedCornerShape(12.dp),
-                  contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                  modifier = Modifier.heightIn(min = 44.dp)
+                  color = Color.White,
+                  shadowElevation = 2.dp,
+                  modifier = Modifier
+                    .heightIn(min = 44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(onClick = onAddBannerClick)
                 ) {
-                  Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                  Spacer(modifier = Modifier.width(4.dp))
-                  Text("নতুন ব্যানার", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                  Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                  ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(16.dp))
+                    Text("নতুন ব্যানার", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = AdminV2CyanDeep)
+                  }
                 }
               }
             }
@@ -1442,12 +1385,27 @@ fun HomePageSettingHub(
               .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
           ) {
-            // Live Mini Storefront Header Preview
+            // Bright Live Mini Storefront Header Preview
+            val previewAnnBg = if (storeConfig.design.useCustomHeaderColors) {
+              parseColorHex(storeConfig.design.announcementBg, AdminV2CyanDeep)
+            } else {
+              AdminV2CyanDeep
+            }
+            val previewAnnTxt = if (storeConfig.design.useCustomHeaderColors) {
+              parseColorHex(storeConfig.design.announcementTextColor, Color.White)
+            } else {
+              Color.White
+            }
+            val previewCartBg = if (storeConfig.design.useCustomHeaderColors) {
+              parseColorHex(storeConfig.design.cartBg, AdminV2CyanDeep)
+            } else {
+              AdminV2CyanDeep
+            }
             Surface(
               shape = RoundedCornerShape(18.dp),
               color = Color.White,
-              border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
-              shadowElevation = 2.dp,
+              border = BorderStroke(1.2.dp, Color(0xFFBAE6FD)),
+              shadowElevation = 3.dp,
               modifier = Modifier.fillMaxWidth()
             ) {
               Column(
@@ -1456,13 +1414,13 @@ fun HomePageSettingHub(
               ) {
                 Text(
                   text = "লাইভ হেডার প্রিভিউ",
-                  fontSize = 11.5.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = AdminInkMuted
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.ExtraBold,
+                  color = AdminV2CyanDeep
                 )
                 Surface(
                   shape = RoundedCornerShape(12.dp),
-                  border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                  border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
                   modifier = Modifier.fillMaxWidth()
                 ) {
                   Column {
@@ -1470,15 +1428,19 @@ fun HomePageSettingHub(
                       Box(
                         modifier = Modifier
                           .fillMaxWidth()
-                          .background(Color(0xFF0F294A))
-                          .padding(horizontal = 10.dp, vertical = 5.dp),
+                          .background(
+                            Brush.horizontalGradient(
+                              listOf(previewAnnBg, AdminV2Cyan)
+                            )
+                          )
+                          .padding(horizontal = 10.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
                       ) {
                         Text(
                           text = announcementText.ifBlank { "ঈদ স্পেশাল অফার চলছে!" },
-                          fontSize = 10.sp,
+                          fontSize = 10.5.sp,
                           fontWeight = FontWeight.Bold,
-                          color = Color(0xFFFDE68A),
+                          color = previewAnnTxt,
                           maxLines = 1,
                           overflow = TextOverflow.Ellipsis
                         )
@@ -1487,7 +1449,7 @@ fun HomePageSettingHub(
                     Row(
                       modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFFFFBF5))
+                        .background(Color.White)
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                       verticalAlignment = Alignment.CenterVertically,
                       horizontalArrangement = Arrangement.SpaceBetween
@@ -1497,26 +1459,27 @@ fun HomePageSettingHub(
                           text = storeName.ifBlank { "SAJGOJ FASHION" },
                           fontSize = 13.5.sp,
                           fontWeight = FontWeight.Black,
-                          color = Color(0xFF7A1C2B),
+                          color = AdminInkPrimary,
                           maxLines = 1
                         )
                         Text(
                           text = tagline.ifBlank { "রয়েল বুটিক ও জুয়েলারি কালেকশন" },
                           fontSize = 10.sp,
-                          color = Color(0xFF6B4F4B),
+                          color = AdminV2CyanDeep,
+                          fontWeight = FontWeight.SemiBold,
                           maxLines = 1
                         )
                       }
                       Surface(
                         shape = RoundedCornerShape(50),
-                        color = Color(0xFF7A1C2B)
+                        color = previewCartBg
                       ) {
                         Text(
                           text = "কার্ট (0)",
                           fontSize = 10.sp,
                           fontWeight = FontWeight.Bold,
                           color = Color.White,
-                          modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                          modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         )
                       }
                     }
@@ -1600,7 +1563,10 @@ fun HomePageSettingHub(
                   modifier = Modifier.fillMaxWidth()
                 )
 
-                Button(
+                GlossyGradientButton(
+                  text = if (headerSavedBanner) "হেডার সেটিংস সেভ হয়েছে" else "হেডার সেটিংস সেভ করুন",
+                  icon = if (headerSavedBanner) Icons.Default.Check else Icons.Outlined.Storefront,
+                  brush = if (headerSavedBanner) adminEmeraldTealBrush() else adminIndigoSkyBrush(),
                   onClick = {
                     onSaveStoreConfig(
                       storeConfig.copy(
@@ -1612,24 +1578,8 @@ fun HomePageSettingHub(
                     )
                     headerSavedBanner = true
                   },
-                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
-                  shape = RoundedCornerShape(14.dp),
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                ) {
-                  Icon(
-                    imageVector = if (headerSavedBanner) Icons.Default.Check else Icons.Outlined.Storefront,
-                    contentDescription = null,
-                    modifier = Modifier.size(17.dp)
-                  )
-                  Spacer(modifier = Modifier.width(6.dp))
-                  Text(
-                    text = if (headerSavedBanner) "হেডার সেটিংস সেভ হয়েছে" else "হেডার সেটিংস সেভ করুন",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                  )
-                }
+                  modifier = Modifier.fillMaxWidth()
+                )
               }
             }
           }
@@ -1696,41 +1646,48 @@ private fun HomeSubTabPill(
   onClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  val bg by animateColorAsState(
-    targetValue = if (selected) Color.White else Color.Transparent,
-    animationSpec = tween(180, easing = FastOutSlowInEasing),
-    label = "subtab_bg"
-  )
-  val contentColor by animateColorAsState(
-    targetValue = if (selected) AdminV2CyanDeep else AdminInkSecondary,
-    label = "subtab_ink"
-  )
-  Surface(
-    shape = RoundedCornerShape(12.dp),
-    color = bg,
-    shadowElevation = if (selected) 2.dp else 0.dp,
-    border = if (selected) BorderStroke(1.dp, Color(0xFFBAE6FD)) else null,
+  val shape = RoundedCornerShape(12.dp)
+  Box(
     modifier = modifier
-      .heightIn(min = 40.dp)
-      .clip(RoundedCornerShape(12.dp))
+      .heightIn(min = 42.dp)
+      .then(
+        if (selected) {
+          Modifier.shadow(4.dp, shape, spotColor = AdminV2CyanDeep.copy(alpha = 0.25f))
+        } else {
+          Modifier
+        }
+      )
+      .clip(shape)
+      .then(
+        if (selected) {
+          Modifier
+            .background(adminRoyalGlossBrush())
+            .border(1.dp, Color(0xFF7DD3FC).copy(alpha = 0.7f), shape)
+        } else {
+          Modifier
+            .background(Color(0xFFF4FAFF))
+            .border(1.dp, Color(0xFFD6E8F5), shape)
+        }
+      )
       .clickable(onClick = onClick)
+      .padding(horizontal = 12.dp, vertical = 8.dp),
+    contentAlignment = Alignment.Center
   ) {
     Row(
-      modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
       Icon(
         imageVector = icon,
         contentDescription = null,
-        tint = if (selected) AdminV2CyanDeep else AdminInkMuted,
-        modifier = Modifier.size(15.dp)
+        tint = if (selected) Color.White else AdminV2CyanDeep,
+        modifier = Modifier.size(16.dp)
       )
       Text(
         text = label,
         fontSize = 11.5.sp,
-        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
-        color = contentColor,
+        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
+        color = if (selected) Color.White else AdminInkPrimary,
         maxLines = 1
       )
     }
@@ -1749,13 +1706,14 @@ private fun CreatorQuickTile(
 ) {
   Surface(
     shape = RoundedCornerShape(14.dp),
-    color = if (selected) accentColor.copy(alpha = 0.12f) else Color(0xFFF7FBFE),
+    color = if (selected) accentColor.copy(alpha = 0.14f) else Color(0xFFF7FBFE),
     border = BorderStroke(
-      width = if (selected) 1.5.dp else 1.dp,
-      color = if (selected) accentColor else Color(0xFFD6E8F5)
+      width = if (selected) 1.6.dp else 1.dp,
+      color = if (selected) accentColor else Color(0xFFBAE6FD)
     ),
+    shadowElevation = if (selected) 3.dp else 1.dp,
     modifier = modifier
-      .heightIn(min = 74.dp)
+      .heightIn(min = 76.dp)
       .clip(RoundedCornerShape(14.dp))
       .clickable(onClick = onClick)
   ) {
@@ -1766,16 +1724,16 @@ private fun CreatorQuickTile(
     ) {
       Box(
         modifier = Modifier
-          .size(30.dp)
+          .size(32.dp)
           .clip(CircleShape)
-          .background(accentColor.copy(alpha = 0.15f)),
+          .background(accentColor),
         contentAlignment = Alignment.Center
       ) {
         Icon(
           imageVector = icon,
           contentDescription = null,
-          tint = accentColor,
-          modifier = Modifier.size(16.dp)
+          tint = Color.White,
+          modifier = Modifier.size(17.dp)
         )
       }
       Text(

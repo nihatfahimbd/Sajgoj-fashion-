@@ -1,6 +1,5 @@
 package com.example.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -8,17 +7,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-  primary = AntiqueGold,
-  onPrimary = DarkEspresso,
-  primaryContainer = RoyalMaroonDark,
-  onPrimaryContainer = CreamSurface,
-  secondary = AntiqueGoldDark,
-  onSecondary = Color.White,
-  background = Color(0xFF1A110F),
-  surface = Color(0xFF261916),
-  onBackground = CreamBackground,
-  onSurface = CreamBackground,
-  outline = AntiqueGoldDark
+  primary = RoyalMaroon,
+  onPrimary = Color.White,
+  primaryContainer = CreamSurface,
+  onPrimaryContainer = RoyalMaroon,
+  secondary = AntiqueGold,
+  onSecondary = DarkEspresso,
+  background = CreamBackground,
+  surface = Color.White,
+  onBackground = DarkEspresso,
+  onSurface = DarkEspresso,
+  outline = BorderGold
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -39,7 +38,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun SajgojFashionTheme(
-  darkTheme: Boolean = isSystemInDarkTheme(),
+  darkTheme: Boolean = false,
   content: @Composable () -> Unit,
 ) {
   val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
