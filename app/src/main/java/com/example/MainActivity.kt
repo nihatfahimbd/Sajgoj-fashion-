@@ -115,6 +115,7 @@ class MainActivity : ComponentActivity() {
         val syncErrorLogs by viewModel.syncErrorLogs.collectAsStateWithLifecycle()
         val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
         val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+        val sortOption by viewModel.sortOption.collectAsStateWithLifecycle()
         val imageSearchState by viewModel.imageSearchState.collectAsStateWithLifecycle()
         val homeScrollTrigger by viewModel.homeScrollTrigger.collectAsStateWithLifecycle()
 
@@ -313,7 +314,9 @@ class MainActivity : ComponentActivity() {
                     cartItemCount = cartItems.sumOf { it.quantity },
                     selectedCategory = selectedCategory,
                     searchQuery = searchQuery,
+                    sortOption = sortOption,
                     onCategorySelected = { viewModel.setSelectedCategory(it) },
+                    onSortOptionSelected = { viewModel.setSortOption(it) },
                     onResetFilters = { viewModel.resetHomeFilters() },
                     imageSearchState = imageSearchState,
                     onClearImageSearch = { viewModel.clearImageSearch() },

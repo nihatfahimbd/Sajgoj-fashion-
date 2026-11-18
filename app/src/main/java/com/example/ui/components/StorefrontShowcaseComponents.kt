@@ -8,7 +8,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -27,7 +26,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -81,6 +79,8 @@ import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
 import com.example.data.model.ReelItem
 import com.example.data.model.StoreDesignConfig
+import com.example.ui.ProductSortOption
+import com.example.ui.sortStorefrontProducts
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
@@ -1098,14 +1098,9 @@ fun FullSectionCollectionDialog(
 ) {
   BackHandler { onDismiss() }
 
-  var sortBy by remember(section.id) { mutableStateOf("featured") }
-  val sortedProducts = remember(sectionProducts, sortBy) {
-    when (sortBy) {
-      "price_asc" -> sectionProducts.sortedBy { it.price }
-      "price_desc" -> sectionProducts.sortedByDescending { it.price }
-      "rating" -> sectionProducts.sortedByDescending { it.rating }
-      else -> sectionProducts
-    }
+  var sortOption by remember(section.id) { mutableStateOf(ProductSortOption.DEFAULT) }
+  val sortedProducts = remember(sectionProducts, sortOption) {
+    sortStorefrontProducts(sectionProducts, sortOption)
   }
 
   Dialog(
@@ -1168,38 +1163,26 @@ fun FullSectionCollectionDialog(
           }
         }
 
-        // Sort Filter Strip
+        // Sort Dropdown Row
         Row(
           modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-          horizontalArrangement = Arrangement.spacedBy(6.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
         ) {
-          val sortOptions = listOf(
-            "featured" to "জনপ্রিয়",
-            "price_asc" to "কম দাম ৳",
-            "price_desc" to "বেশি দাম ৳",
-            "rating" to "টপ রেটিং ★"
+          Text(
+            text = "সাজানোর ধরন নির্বাচন করুন",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkEspresso
           )
-          sortOptions.forEach { (key, label) ->
-            val selected = sortBy == key
-            Surface(
-              shape = RoundedCornerShape(14.dp),
-              color = if (selected) RoyalMaroon else CreamSurface,
-              border = BorderStroke(1.dp, if (selected) RoyalMaroon else BorderGold),
-              modifier = Modifier.clickable { sortBy = key }
-            ) {
-              Text(
-                text = label,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (selected) Color.White else DarkEspresso,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-              )
-            }
-          }
+          ProductSortDropdown(
+            selectedOption = sortOption,
+            onOptionSelected = { sortOption = it },
+            testTagPrefix = "collection_sort_${section.id}"
+          )
         }
 
         HorizontalDivider(color = BorderGold.copy(alpha = 0.5f))

@@ -64,6 +64,36 @@ enum class AppScreen {
   ADMIN_PANEL
 }
 
+enum class ProductSortOption(val label: String, val subtitleBn: String) {
+  DEFAULT("Default (Featured)", "জনপ্রিয় / ডিফল্ট"),
+  PRICE_LOW_TO_HIGH("Price: Low to High", "কম দাম থেকে বেশি"),
+  PRICE_HIGH_TO_LOW("Price: High to Low", "বেশি দাম থেকে কম"),
+  NEWEST_ARRIVALS("Newest Arrivals", "সর্বশেষ নতুন পণ্য")
+}
+
+fun sortStorefrontProducts(
+  products: List<Product>,
+  sortOption: ProductSortOption
+): List<Product> {
+  return when (sortOption) {
+    ProductSortOption.PRICE_LOW_TO_HIGH -> products.sortedWith(
+      compareBy<Product> { it.price }
+        .thenByDescending { it.createdAt }
+        .thenBy { it.id }
+    )
+    ProductSortOption.PRICE_HIGH_TO_LOW -> products.sortedWith(
+      compareByDescending<Product> { it.price }
+        .thenByDescending { it.createdAt }
+        .thenBy { it.id }
+    )
+    ProductSortOption.NEWEST_ARRIVALS -> products.sortedWith(
+      compareByDescending<Product> { it.createdAt }
+        .thenBy { it.id }
+    )
+    ProductSortOption.DEFAULT -> products
+  }
+}
+
 enum class AdminTab(val title: String, val icon: String) {
   DASHBOARD("ড্যাশবোর্ড", "📊"),
   HOME_PAGE_SETTING("Home Page Setting", "🏠"),
@@ -110,6 +140,9 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   private val _selectedCategory = MutableStateFlow("All")
   val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+
+  private val _sortOption = MutableStateFlow(ProductSortOption.DEFAULT)
+  val sortOption: StateFlow<ProductSortOption> = _sortOption.asStateFlow()
 
   private val _imageSearchState = MutableStateFlow<ImageSearchState?>(null)
   val imageSearchState: StateFlow<ImageSearchState?> = _imageSearchState.asStateFlow()
@@ -166,13 +199,14 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
-  // Filtered Products (supports bilingual voice/text search, category filter, and visual image search)
+  // Filtered Products (supports bilingual voice/text search, category filter, visual image search, and sorting)
   val filteredProducts: StateFlow<List<Product>> = combine(
     repository.products,
     _searchQuery,
     _selectedCategory,
-    _imageSearchState
-  ) { productList, query, cat, imgState ->
+    _imageSearchState,
+    _sortOption
+  ) { productList, query, cat, imgState, sort ->
     val trimmed = query.trim().lowercase()
     val expandedTerms = if (trimmed.isNotEmpty()) VisualImageSearchHelper.expandSearchAliases(trimmed) else emptyList()
 
@@ -188,10 +222,10 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       matchesSearch && matchesCategory && matchesImage
     }
 
-    if (imgState != null) {
-      filtered.sortedByDescending { imgState.scores[it.id] ?: 0 }
-    } else {
-      filtered
+    when {
+      sort != ProductSortOption.DEFAULT -> sortStorefrontProducts(filtered, sort)
+      imgState != null -> filtered.sortedByDescending { imgState.scores[it.id] ?: 0 }
+      else -> filtered
     }
   }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
@@ -209,6 +243,10 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   fun setSelectedCategory(category: String) {
     _selectedCategory.value = category
+  }
+
+  fun setSortOption(option: ProductSortOption) {
+    _sortOption.value = option
   }
 
   fun applyImageSearch(uriString: String, fileName: String, analysis: VisualSearchAnalysis) {
@@ -233,6 +271,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun resetHomeFilters() {
     _searchQuery.value = ""
     _selectedCategory.value = "All"
+    _sortOption.value = ProductSortOption.DEFAULT
     _imageSearchState.value = null
     _currentScreen.value = AppScreen.STOREFRONT
     _homeScrollTrigger.value = _homeScrollTrigger.value + 1

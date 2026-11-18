@@ -70,17 +70,20 @@ import com.example.data.model.ReelItem
 import com.example.data.model.StoreConfig
 import com.example.data.model.StoreDesignConfig
 import com.example.ui.ImageSearchState
+import com.example.ui.ProductSortOption
 import com.example.ui.components.AppImage
 import com.example.ui.components.BannerCarousel
 import com.example.ui.components.CompactProductCard
 import com.example.ui.components.FullSectionCollectionDialog
 import com.example.ui.components.ProductCard
 import com.example.ui.components.ProductMediaViewerDialog
+import com.example.ui.components.ProductSortDropdown
 import com.example.ui.components.ReelVideoPlayerDialog
 import com.example.ui.components.StorefrontComboBlockCard
 import com.example.ui.components.StorefrontReelsBlockCard
 import com.example.ui.components.VoucherCenterDialog
 import com.example.ui.components.resolveBlockGridConfig
+import com.example.ui.sortStorefrontProducts
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
@@ -117,7 +120,9 @@ fun StorefrontScreen(
   cartItemCount: Int = 0,
   selectedCategory: String = "All",
   searchQuery: String = "",
+  sortOption: ProductSortOption = ProductSortOption.DEFAULT,
   onCategorySelected: (String) -> Unit = {},
+  onSortOptionSelected: (ProductSortOption) -> Unit = {},
   onResetFilters: () -> Unit = {},
   imageSearchState: ImageSearchState? = null,
   onClearImageSearch: () -> Unit = {},
@@ -146,7 +151,13 @@ fun StorefrontScreen(
     wishlistIds = if (wishlistIds.contains(pid)) wishlistIds - pid else wishlistIds + pid
   }
 
-  val isFilteredMode = selectedCategory != "All" || searchQuery.isNotBlank() || imageSearchState != null
+  val isFilteredMode = selectedCategory != "All" ||
+    searchQuery.isNotBlank() ||
+    imageSearchState != null ||
+    sortOption != ProductSortOption.DEFAULT
+  val sortedDisplayProducts = remember(products, sortOption) {
+    sortStorefrontProducts(products, sortOption)
+  }
   val activeSections = remember(homeSections) {
     (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).filter { it.enabled }
   }
@@ -315,58 +326,70 @@ fun StorefrontScreen(
         }
 
         item {
-          Row(
+          Column(
             modifier = Modifier
               .fillMaxWidth()
               .padding(vertical = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            Column(modifier = Modifier.weight(1f)) {
-              Text(
-                text = when {
-                  imageSearchState != null -> "🖼️ ছবির সাথে মিল পাওয়া পণ্য"
-                  searchQuery.isNotBlank() -> "🔍 \"$searchQuery\" এর ফলাফল"
-                  else -> "🏷️ $selectedCategory কালেকশন"
-                },
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = RoyalMaroon,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-              )
-              Text(
-                text = "মোট ${products.size} টি প্রিমিয়াম পণ্য পাওয়া গেছে",
-                fontSize = 11.sp,
-                color = AntiqueGoldDark
-              )
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = when {
+                    imageSearchState != null -> "🖼️ ছবির সাথে মিল পাওয়া পণ্য"
+                    searchQuery.isNotBlank() -> "🔍 \"$searchQuery\" এর ফলাফল"
+                    selectedCategory != "All" -> "🏷️ $selectedCategory কালেকশন"
+                    else -> "✨ ${sortOption.label}"
+                  },
+                  fontSize = 16.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                  text = "মোট ${sortedDisplayProducts.size} টি প্রিমিয়াম পণ্য পাওয়া গেছে",
+                  fontSize = 11.sp,
+                  color = AntiqueGoldDark
+                )
+              }
+
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = CreamSurface,
+                border = BorderStroke(1.dp, BorderGold),
+                modifier = Modifier
+                  .clickable { onResetFilters() }
+                  .testTag("reset_filter_pill")
+              ) {
+                Text(
+                  text = "✕ সব দেখুন",
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = RoyalMaroon,
+                  modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+              }
             }
 
-            Surface(
-              shape = RoundedCornerShape(12.dp),
-              color = CreamSurface,
-              border = BorderStroke(1.dp, BorderGold),
-              modifier = Modifier
-                .clickable { onResetFilters() }
-                .testTag("reset_filter_pill")
-            ) {
-              Text(
-                text = "✕ সব দেখুন",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = RoyalMaroon,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-              )
-            }
+            StorefrontCatalogSortBar(
+              productCount = sortedDisplayProducts.size,
+              sortOption = sortOption,
+              onSortOptionSelected = onSortOptionSelected
+            )
           }
         }
 
-        if (products.isEmpty()) {
+        if (sortedDisplayProducts.isEmpty()) {
           item {
             EmptySearchResultBox()
           }
         } else {
-          items(products.chunked(2)) { rowItems ->
+          items(sortedDisplayProducts.chunked(2)) { rowItems ->
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -391,9 +414,21 @@ fun StorefrontScreen(
         }
       } else {
         // Modular Admin-Controlled Storefront Sections
+        var sortBarInserted = false
         groupedBlocks.forEach { blockGroup ->
           val isHeroStack = blockGroup.size > 1 ||
             blockGroup.first().type in setOf("top_banner", "voucher_strip", "category_slider")
+
+          if (!isHeroStack && !sortBarInserted) {
+            sortBarInserted = true
+            item(key = "storefront_sort_bar") {
+              StorefrontCatalogSortBar(
+                productCount = products.size,
+                sortOption = sortOption,
+                onSortOptionSelected = onSortOptionSelected
+              )
+            }
+          }
 
           if (isHeroStack) {
             item(key = "hero_${blockGroup.joinToString("_") { it.id }}") {
@@ -428,6 +463,16 @@ fun StorefrontScreen(
                     }
                   }
                 }
+              }
+            }
+            if (!sortBarInserted) {
+              sortBarInserted = true
+              item(key = "storefront_sort_bar") {
+                StorefrontCatalogSortBar(
+                  productCount = products.size,
+                  sortOption = sortOption,
+                  onSortOptionSelected = onSortOptionSelected
+                )
               }
             }
           } else {
@@ -1538,3 +1583,54 @@ private fun StorefrontFooterCard(config: StoreConfig) {
     )
   }
 }
+
+@Composable
+private fun StorefrontCatalogSortBar(
+  productCount: Int,
+  sortOption: ProductSortOption,
+  onSortOptionSelected: (ProductSortOption) -> Unit
+) {
+  Surface(
+    shape = RoundedCornerShape(14.dp),
+    color = Color.White,
+    border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.75f)),
+    shadowElevation = 1.dp,
+    modifier = Modifier
+      .fillMaxWidth()
+      .testTag("storefront_sort_bar")
+  ) {
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 10.dp, vertical = 6.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = "🛍️ সকল পণ্য সাজান",
+          fontSize = 12.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = RoyalMaroon,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
+        )
+        Text(
+          text = "$productCount টি প্রিমিয়াম কালেকশন",
+          fontSize = 10.5.sp,
+          color = AntiqueGoldDark,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
+        )
+      }
+
+      Spacer(modifier = Modifier.width(8.dp))
+
+      ProductSortDropdown(
+        selectedOption = sortOption,
+        onOptionSelected = onSortOptionSelected
+      )
+    }
+  }
+}
+
