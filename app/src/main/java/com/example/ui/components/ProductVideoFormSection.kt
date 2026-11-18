@@ -451,7 +451,7 @@ fun ProductVideoFormSection(
                   text = "📘 ফেইসবুক রীলস লিংক সংযুক্ত",
                   fontSize = 12.sp,
                   fontWeight = FontWeight.Bold,
-                  color = Color(0xFF1E40AF)
+                  color = AdminV2CyanDeep
                 )
                 Text(
                   text = videoUrl,

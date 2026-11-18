@@ -139,7 +139,7 @@ fun AdminSystemSettingsHub(
               .shadow(3.dp, RoundedCornerShape(14.dp))
               .clip(RoundedCornerShape(14.dp))
               .background(
-                Brush.linearGradient(listOf(AdminV2DeepOcean, AdminV2CyanDeep))
+                Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep))
               ),
             contentAlignment = Alignment.Center
           ) {
@@ -190,7 +190,7 @@ fun AdminSystemSettingsHub(
             label = "$activePayments/5 পেমেন্ট চালু",
             bgColor = Color(0xFFF0F9FF),
             borderColor = Color(0xFFBAE6FD),
-            textColor = AdminV2DeepOcean
+            textColor = AdminV2CyanDeep
           )
           SettingsTelemetryChip(
             dotColor = if (pixelConfig.isEnabled) AdminV2Emerald else Color(0xFF94A3B8),
@@ -510,7 +510,7 @@ private fun GeneralStoreSettingsSection(
         savedSuccess = true
       },
       colors = ButtonDefaults.buttonColors(
-        containerColor = if (savedSuccess) AdminV2Emerald else AdminV2DeepOcean,
+        containerColor = if (savedSuccess) AdminV2Emerald else AdminV2CyanDeep,
         contentColor = Color.White
       ),
       shape = RoundedCornerShape(14.dp),
@@ -567,7 +567,7 @@ private fun PaymentAndPixelSettingsSection(
       title = "Meta / Facebook Pixel ট্র্যাকিং",
       subtitle = "ইভেন্ট কনভার্সন ও এডস ট্র্যাকিং কনফিগারেশন",
       icon = Icons.Outlined.Analytics,
-      iconTint = AdminV2OceanMid,
+      iconTint = AdminV2CyanDeep,
       iconBg = Color(0xFFE0F2FE),
       trailingBadge = {
         Surface(
@@ -634,7 +634,7 @@ private fun PaymentAndPixelSettingsSection(
           pixelSaved = true
         },
         colors = ButtonDefaults.buttonColors(
-          containerColor = if (pixelSaved) AdminV2Emerald else AdminV2DeepOcean,
+          containerColor = if (pixelSaved) AdminV2Emerald else AdminV2CyanDeep,
           contentColor = Color.White
         ),
         shape = RoundedCornerShape(14.dp),
@@ -723,7 +723,7 @@ private fun SystemBackupAndResetSection(
           onShowToast("ব্যাকআপ ডেটা সফলভাবে ক্লিপবোর্ডে কপি হয়েছে!")
         },
         colors = ButtonDefaults.buttonColors(
-          containerColor = if (copiedRecently) AdminV2Emerald else AdminV2DeepOcean,
+          containerColor = if (copiedRecently) AdminV2Emerald else AdminV2CyanDeep,
           contentColor = Color.White
         ),
         shape = RoundedCornerShape(14.dp),
@@ -913,7 +913,7 @@ private fun SettingsSubTabPill(
     label = "settings_tab_bg"
   )
   val contentColor by animateColorAsState(
-    targetValue = if (selected) AdminV2DeepOcean else AdminInkSecondary,
+    targetValue = if (selected) AdminV2CyanDeep else AdminInkSecondary,
     label = "settings_tab_ink"
   )
   Surface(

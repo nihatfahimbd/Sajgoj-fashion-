@@ -143,7 +143,7 @@ fun InventorySyncPanel(
 
             Button(
               onClick = onReconcileNow,
-              colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+              colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
               shape = RoundedCornerShape(14.dp),
               contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
               modifier = Modifier
@@ -232,7 +232,8 @@ fun InventorySyncPanel(
               )
               ExposedDropdownMenu(
                 expanded = productDropdownExpanded,
-                onDismissRequest = { productDropdownExpanded = false }
+                onDismissRequest = { productDropdownExpanded = false },
+                containerColor = Color.White
               ) {
                 products.forEach { prod ->
                   DropdownMenuItem(
@@ -285,7 +286,7 @@ fun InventorySyncPanel(
                     text = "$saleQty",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AdminV2DeepOcean
+                    color = AdminV2CyanDeep
                   )
                   IconButton(
                     onClick = {
@@ -308,7 +309,7 @@ fun InventorySyncPanel(
                 val active = paymentMethod == method
                 Surface(
                   shape = RoundedCornerShape(12.dp),
-                  color = if (active) AdminV2DeepOcean else AdminV2IceSurface,
+                  color = if (active) AdminV2CyanDeep else Color.White,
                   border = BorderStroke(1.dp, if (active) AdminV2CyanDeep else AdminCardBorderWarm),
                   modifier = Modifier
                     .weight(1f)
@@ -483,7 +484,7 @@ fun InventorySyncPanel(
           ) {
             Column(modifier = Modifier.weight(1f)) {
               Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(6.dp), color = AdminV2DeepOcean) {
+                Surface(shape = RoundedCornerShape(6.dp), color = AdminV2CyanDeep) {
                   Text(
                     text = ev.source,
                     fontSize = 9.sp,

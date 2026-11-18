@@ -331,7 +331,7 @@ fun InvoiceDialog(
                   onDismiss()
                   onOpenShippingLabel(order)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                 shape = RoundedCornerShape(18.dp),
                 modifier = Modifier
                   .weight(1f)

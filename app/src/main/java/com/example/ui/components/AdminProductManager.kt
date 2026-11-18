@@ -868,12 +868,14 @@ fun ProductFormDialog(
         .testTag("product_form_dialog")
     ) {
       Column(modifier = Modifier.fillMaxWidth()) {
-        // 1. Sticky Modal Header
+        // 1. Sticky Bright Glossy Modal Header
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .background(
+              Brush.horizontalGradient(listOf(AdminV2CyanDeep, AdminV2Cyan))
+            )
+            .padding(horizontal = 16.dp, vertical = 14.dp),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
@@ -884,29 +886,30 @@ fun ProductFormDialog(
           ) {
             Box(
               modifier = Modifier
-                .size(42.dp)
+                .size(44.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .background(Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep))),
+                .background(Color.White.copy(alpha = 0.24f))
+                .border(1.dp, Color.White.copy(alpha = 0.55f), RoundedCornerShape(13.dp)),
               contentAlignment = Alignment.Center
             ) {
               Icon(
                 imageVector = Icons.Outlined.Inventory2,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(21.dp)
+                modifier = Modifier.size(22.dp)
               )
             }
             Column {
               Text(
-                text = if (product != null) "পণ্য এডিট করুন" else "নতুন পণ্য যোগ করুন",
-                fontSize = 16.sp,
+                text = if (product != null) "পণ্য এডিট করুন" else "নতুন প্রোডাক্ট যুক্ত করুন",
+                fontSize = 16.5.sp,
                 fontWeight = FontWeight.Black,
-                color = AdminInkPrimary
+                color = Color.White
               )
               Text(
                 text = "দাম, ছবি, ভিডিও, ভ্যারিয়েন্ট ও হোম ডিসপ্লে সেটআপ",
                 fontSize = 11.sp,
-                color = AdminInkMuted,
+                color = Color.White.copy(alpha = 0.92f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
               )
@@ -918,11 +921,12 @@ fun ProductFormDialog(
             modifier = Modifier
               .size(48.dp)
               .clip(CircleShape)
+              .background(Color.White.copy(alpha = 0.22f))
           ) {
             Icon(
               imageVector = Icons.Default.Close,
               contentDescription = "বন্ধ করুন",
-              tint = AdminInkPrimary,
+              tint = Color.White,
               modifier = Modifier.size(20.dp)
             )
           }
@@ -1035,7 +1039,8 @@ fun ProductFormDialog(
                 )
                 ExposedDropdownMenu(
                   expanded = isCategoryDropdownExpanded,
-                  onDismissRequest = { isCategoryDropdownExpanded = false }
+                  onDismissRequest = { isCategoryDropdownExpanded = false },
+                  containerColor = Color.White
                 ) {
                   categories.forEach { cat ->
                     DropdownMenuItem(
@@ -1442,12 +1447,16 @@ fun ProductFormDialog(
           OutlinedButton(
             onClick = onDismiss,
             shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, Color(0xFFBFD9EA)),
+            border = BorderStroke(1.dp, AdminV2CyanDeep.copy(alpha = 0.45f)),
+            colors = ButtonDefaults.outlinedButtonColors(
+              containerColor = Color(0xFFF0F9FF),
+              contentColor = AdminV2CyanDeep
+            ),
             modifier = Modifier
               .weight(1f)
               .height(48.dp)
           ) {
-            Text("বাতিল", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+            Text("বাতিল", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
           }
 
           Button(

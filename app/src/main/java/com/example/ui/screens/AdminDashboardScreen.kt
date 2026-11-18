@@ -132,12 +132,10 @@ import com.example.ui.components.AdminV2AmberSoft
 import com.example.ui.components.AdminV2BentoStatCard
 import com.example.ui.components.AdminV2Cyan
 import com.example.ui.components.AdminV2CyanDeep
-import com.example.ui.components.AdminV2DeepOcean
 import com.example.ui.components.AdminV2Emerald
 import com.example.ui.components.AdminV2EmeraldSoft
 import com.example.ui.components.AdminV2FulfillmentRingCard
 import com.example.ui.components.AdminV2IceSurface
-import com.example.ui.components.AdminV2OceanMid
 import com.example.ui.components.AdminV2Rose
 import com.example.ui.components.AdminV2SidebarContent
 import com.example.ui.components.AdminV2SkySoft
@@ -324,7 +322,7 @@ fun AdminDashboardScreen(
 
           Button(
             onClick = { onLogin(loginPasswordInput) },
-            colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+            colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
               .fillMaxWidth()
@@ -347,13 +345,13 @@ fun AdminDashboardScreen(
               .testTag("admin_google_signin_button")
           ) {
             if (isAuthBusy) {
-              CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp), color = AdminV2DeepOcean)
+              CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp), color = AdminV2CyanDeep)
               Spacer(modifier = Modifier.width(8.dp))
-              Text("সাইন-ইন হচ্ছে...", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+              Text("সাইন-ইন হচ্ছে...", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
             } else {
               Icon(imageVector = Icons.Default.VerifiedUser, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(17.dp))
               Spacer(modifier = Modifier.width(6.dp))
-              Text("Google দিয়ে অ্যাডমিন সাইন-ইন ($BOOTSTRAPPED_ADMIN_EMAIL)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean, maxLines = 1, overflow = TextOverflow.Ellipsis)
+              Text("Google দিয়ে অ্যাডমিন সাইন-ইন ($BOOTSTRAPPED_ADMIN_EMAIL)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
           }
 
@@ -763,7 +761,7 @@ fun AdminOverviewTab(
         }
         Button(
           onClick = onAddProductClick,
-          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+          colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
           shape = RoundedCornerShape(50),
           contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
           modifier = Modifier.heightIn(min = 48.dp)
@@ -920,7 +918,7 @@ fun AdminOverviewTab(
               text = if (authUser != null) "সাইন-আউট" else "Google লগইন",
               fontSize = 11.sp,
               fontWeight = FontWeight.Bold,
-              color = AdminV2DeepOcean
+              color = AdminV2CyanDeep
             )
           }
         }
@@ -975,7 +973,7 @@ fun AdminOverviewTab(
             Button(
               onClick = onGenerateAiInsights,
               enabled = aiInsightsState !is AiTaskState.Loading,
-              colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+              colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
               shape = RoundedCornerShape(12.dp),
               contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
               modifier = Modifier
@@ -1004,7 +1002,7 @@ fun AdminOverviewTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
               ) {
-                CircularProgressIndicator(strokeWidth = 2.dp, color = AdminV2DeepOcean, modifier = Modifier.size(18.dp))
+                CircularProgressIndicator(strokeWidth = 2.dp, color = AdminV2CyanDeep, modifier = Modifier.size(18.dp))
                 Text(
                   text = "স্টোরের ডাটা বিশ্লেষণ করে ইনসাইট তৈরি হচ্ছে...",
                   fontSize = 12.sp,
@@ -1084,7 +1082,7 @@ fun AdminOverviewTab(
                 modifier = Modifier
                   .size(40.dp)
                   .clip(RoundedCornerShape(12.dp))
-                  .background(adminAccentGlossBrush(AdminV2DeepOcean, AdminV2CyanDeep)),
+                  .background(adminAccentGlossBrush(AdminV2Cyan, AdminV2CyanDeep)),
                 contentAlignment = Alignment.Center
               ) {
                 Text(text = "👗", fontSize = 19.sp)
@@ -1209,7 +1207,7 @@ fun AdminOverviewTab(
             Text(text = "⚙️", fontSize = 20.sp)
             Text(text = "৪. সেটিংস হাব", fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = AdminInkPrimary)
             Text(text = "শপ ইনফো, পেমেন্ট, কুরিয়ার ও ব্যাকআপ", fontSize = 10.5.sp, color = AdminInkMuted)
-            Text(text = "কনফিগ করুন →", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = AdminV2OceanMid)
+            Text(text = "কনফিগ করুন →", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
           }
         }
       }
@@ -1708,39 +1706,127 @@ fun AdminOrdersHub(
   val shippedOrders = remember(orders) { orders.filter { it.status.equals("Shipped", ignoreCase = true) } }
 
   Column(modifier = Modifier.fillMaxSize()) {
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
+    // Bright Luminous White Hero Card for Orders & Courier Hub
+    Surface(
+      shape = RoundedCornerShape(20.dp),
+      color = Color.White,
+      border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
+      shadowElevation = 4.dp,
+      modifier = Modifier.fillMaxWidth()
     ) {
-      Column {
-        Text(
-          text = "অর্ডার ও কুরিয়ার হাব",
-          fontSize = 16.sp,
-          fontWeight = FontWeight.Black,
-          color = AdminInkPrimary
-        )
-        Text(
-          text = "মোট অর্ডার: ${orders.size} • পেন্ডিং অনুমোদন: ${pendingOrders.size}",
-          fontSize = 11.5.sp,
-          fontWeight = FontWeight.SemiBold,
-          color = AdminInkSecondary
-        )
-      }
-
-      if (pendingOrders.isNotEmpty()) {
-        Surface(
-          shape = RoundedCornerShape(12.dp),
-          color = Color(0xFFFEF2F2),
-          border = BorderStroke(1.dp, Color(0xFFFECACA))
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
         ) {
-          Text(
-            text = "🔔 ${pendingOrders.size} টি নতুন",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = AccentRed,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-          )
+          Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+          ) {
+            Box(
+              modifier = Modifier
+                .size(44.dp)
+                .shadow(3.dp, RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(14.dp))
+                .background(adminRoyalGlossBrush()),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Default.LocalShipping,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(22.dp)
+              )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = "অর্ডার ও কুরিয়ার হাব",
+                fontSize = 16.5.sp,
+                fontWeight = FontWeight.Black,
+                color = AdminInkPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+              Text(
+                text = "অর্ডার অনুমোদন, কুরিয়ার বুকিং ও ডেলিভারি ট্র্যাকিং",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = AdminInkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+
+          if (pendingOrders.isNotEmpty()) {
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = AdminV2Rose
+            ) {
+              Text(
+                text = "🔔 ${pendingOrders.size} টি নতুন",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+              )
+            }
+          }
+        }
+
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Surface(
+            shape = RoundedCornerShape(50),
+            color = AdminV2SkySoft,
+            border = BorderStroke(1.dp, Color(0xFFBAE6FD))
+          ) {
+            Text(
+              text = "মোট অর্ডার: ${orders.size}",
+              fontSize = 10.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = AdminV2CyanDeep,
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+          }
+          Surface(
+            shape = RoundedCornerShape(50),
+            color = AdminV2AmberSoft,
+            border = BorderStroke(1.dp, Color(0xFFFDE68A))
+          ) {
+            Text(
+              text = "পেন্ডিং: ${pendingOrders.size}",
+              fontSize = 10.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color(0xFF92400E),
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+          }
+          Surface(
+            shape = RoundedCornerShape(50),
+            color = AdminV2EmeraldSoft,
+            border = BorderStroke(1.dp, Color(0xFFA7F3D0))
+          ) {
+            Text(
+              text = "Shipped: ${shippedOrders.size}",
+              fontSize = 10.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color(0xFF065F46),
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+          }
         }
       }
     }
@@ -1821,7 +1907,7 @@ fun AdminOrdersHub(
               Spacer(modifier = Modifier.height(12.dp))
               Button(
                 onClick = { selectedOrderSubTab = "ALL_ORDERS" },
-                colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
                 shape = RoundedCornerShape(12.dp)
               ) {
                 Text("📋 সকল অর্ডার দেখুন (${orders.size})", fontSize = 12.sp)
@@ -1895,7 +1981,7 @@ fun AdminOrdersHub(
 
                   Text(text = "গ্রাহক: ${order.customerName} • 📞 ${order.phone}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
                   Text(text = "ঠিকানা: ${order.address}", fontSize = 11.sp, color = AdminInkMuted)
-                  Text(text = "পেমেন্ট মেথড: ${order.paymentMethod} • সর্বমোট: ৳${order.total}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+                  Text(text = "পেমেন্ট মেথড: ${order.paymentMethod} • সর্বমোট: ৳${order.total}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
 
                   Spacer(modifier = Modifier.height(6.dp))
                   Column(
@@ -1965,7 +2051,7 @@ fun AdminOrdersHub(
                   Spacer(modifier = Modifier.height(6.dp))
                   Button(
                     onClick = { onViewInvoice(order) },
-                    colors = ButtonDefaults.buttonColors(containerColor = AdminV2IceSurface, contentColor = AdminV2DeepOcean),
+                    colors = ButtonDefaults.buttonColors(containerColor = AdminV2IceSurface, contentColor = AdminV2CyanDeep),
                     border = BorderStroke(1.dp, AdminCardBorderWarm),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth(),
@@ -2044,9 +2130,9 @@ fun AdminShippingLabelsTab(
   Column(modifier = Modifier.fillMaxSize()) {
     Card(
       modifier = Modifier.fillMaxWidth(),
-      shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
-      border = BorderStroke(1.dp, Color(0xFF93C5FD))
+      shape = RoundedCornerShape(18.dp),
+      colors = CardDefaults.cardColors(containerColor = Color.White),
+      border = BorderStroke(1.dp, Color(0xFFBAE6FD))
     ) {
       Column(
         modifier = Modifier.padding(14.dp),
@@ -2060,14 +2146,14 @@ fun AdminShippingLabelsTab(
           Column(modifier = Modifier.weight(1f)) {
             Text(
               text = "🏷️ পার্সেল শিপিং লেবেল ডেস্ক (${shippedOrders.size})",
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Bold,
-              color = Color(0xFF1E3A8A)
+              fontSize = 14.5.sp,
+              fontWeight = FontWeight.Black,
+              color = AdminInkPrimary
             )
             Text(
               text = "Shipped স্ট্যাটাসের অর্ডারগুলোর QR কোডসহ পার্সেল স্টিকার প্রিন্ট করুন",
               fontSize = 11.sp,
-              color = Color(0xFF1E40AF)
+              color = AdminInkMuted
             )
           }
         }
@@ -2083,7 +2169,7 @@ fun AdminShippingLabelsTab(
                 onShowToast = onShowToast
               )
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF)),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
               .fillMaxWidth()
@@ -2128,7 +2214,7 @@ fun AdminShippingLabelsTab(
           )
           Button(
             onClick = onGoToAllOrders,
-            colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+            colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.heightIn(min = 48.dp)
           ) {
@@ -2170,13 +2256,13 @@ fun AdminShippingLabelsTab(
                 }
                 Surface(
                   shape = RoundedCornerShape(8.dp),
-                  color = Color(0xFFDBEAFE)
+                  color = Color(0xFFE0F2FE)
                 ) {
                   Text(
                     text = "🚚 Shipped",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E40AF),
+                    color = AdminV2CyanDeep,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                   )
                 }
@@ -2207,11 +2293,11 @@ fun AdminShippingLabelsTab(
                   text = "COD/মোট: ৳${order.total} (${order.items.sumOf { it.quantity }} পিস)",
                   fontSize = 12.sp,
                   fontWeight = FontWeight.Bold,
-                  color = AdminV2DeepOcean
+                  color = AdminInkPrimary
                 )
                 Button(
                   onClick = { onOpenShippingLabel(order) },
-                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF)),
+                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
                   shape = RoundedCornerShape(12.dp),
                   modifier = Modifier
                     .heightIn(min = 48.dp)
@@ -2406,8 +2492,8 @@ fun AdminOrdersTab(
         val isSelected = selectedStatusFilter == statusKey
         Surface(
           shape = RoundedCornerShape(20.dp),
-          color = if (isSelected) AdminV2DeepOcean else Color.White,
-          border = BorderStroke(1.dp, if (isSelected) AdminV2DeepOcean else AdminCardBorderWarm),
+          color = if (isSelected) AdminV2CyanDeep else Color.White,
+          border = BorderStroke(1.dp, if (isSelected) AdminV2CyanDeep else AdminCardBorderWarm),
           modifier = Modifier.clickable { selectedStatusFilter = statusKey }
         ) {
           Row(
@@ -2474,7 +2560,7 @@ fun AdminOrdersTab(
               phoneSearchQuery = ""
             },
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White)
+            colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White)
           ) {
             Text("ফিল্টার রিসেট করুন", fontSize = 12.sp)
           }
@@ -2516,13 +2602,14 @@ fun AdminOrdersTab(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                   ) {
-                    Text(text = order.status, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+                    Text(text = order.status, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
                   }
                 }
                 ExposedDropdownMenu(
                   expanded = isDropdownExpanded,
-                  onDismissRequest = { isDropdownExpanded = false }
+                  onDismissRequest = { isDropdownExpanded = false },
+                  containerColor = Color.White
                 ) {
                   statuses.forEach { st ->
                     DropdownMenuItem(
@@ -2542,7 +2629,7 @@ fun AdminOrdersTab(
             Text(text = "গ্রাহক: ${order.customerName} (${order.phone})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
             Text(text = "ঠিকানা: ${order.address}, ${order.thana}, ${order.district}", fontSize = 11.sp, color = AdminInkSecondary)
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-              Text(text = "অর্ডারকৃত পণ্যসমূহ (${order.items.size}):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+              Text(text = "অর্ডারকৃত পণ্যসমূহ (${order.items.size}):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
               order.items.forEach { itm ->
                 val v = listOfNotNull(
                   if (itm.color.isNotBlank()) "রং: ${itm.color}" else null,
@@ -2568,7 +2655,7 @@ fun AdminOrdersTab(
                 text = "মোট: ${order.total} ৳ (${order.paymentMethod})",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = AdminV2DeepOcean
+                color = AdminInkPrimary
               )
 
               if (order.trackingId.isNotBlank()) {
@@ -2590,7 +2677,7 @@ fun AdminOrdersTab(
             ) {
               Button(
                 onClick = { onViewInvoice(order) },
-                colors = ButtonDefaults.buttonColors(containerColor = AdminV2IceSurface, contentColor = AdminV2DeepOcean),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminV2IceSurface, contentColor = AdminV2CyanDeep),
                 border = BorderStroke(1.dp, AdminCardBorderWarm),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
@@ -2604,7 +2691,7 @@ fun AdminOrdersTab(
 
               Button(
                 onClick = { onDispatchCourier(order.id, "Steadfast") },
-                colors = ButtonDefaults.buttonColors(containerColor = AdminV2OceanMid),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                   .weight(1f)
@@ -2617,7 +2704,7 @@ fun AdminOrdersTab(
 
               Button(
                 onClick = { onOpenReturn(order) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100), contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580C), contentColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                   .weight(1f)
@@ -2630,7 +2717,7 @@ fun AdminOrdersTab(
             if (order.status.equals("Shipped", ignoreCase = true)) {
               Button(
                 onClick = { onOpenShippingLabel(order) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E40AF), contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                   .fillMaxWidth()
@@ -2863,7 +2950,7 @@ fun AdminReturnsTab(
 
                 Button(
                   onClick = { onViewReturnSlip(ret) },
-                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2IceSurface, contentColor = AdminV2DeepOcean),
+                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2IceSurface, contentColor = AdminV2CyanDeep),
                   border = BorderStroke(1.dp, AdminCardBorderWarm),
                   shape = RoundedCornerShape(10.dp),
                   contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
@@ -2896,7 +2983,7 @@ fun AdminCouponsTab(
       Text(text = "কুপন কোড ও অফার (${coupons.size})", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
       Button(
         onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+        colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
         shape = RoundedCornerShape(14.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
       ) {
@@ -3034,7 +3121,7 @@ fun AdminCourierTab(
 
         Button(
           onClick = { onTest("Pathao API সংযোগ সফল! ✅") },
-          colors = ButtonDefaults.buttonColors(containerColor = AdminV2OceanMid, contentColor = Color.White),
+          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9), contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {
@@ -3047,7 +3134,7 @@ fun AdminCourierTab(
       onClick = {
         onSave(config.copy(steadfastApiKey = steadfastKey, steadfastSecret = steadfastSec, pathaoClientId = pathaoId, pathaoClientSecret = pathaoSec))
       },
-      colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+      colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
       shape = RoundedCornerShape(18.dp),
       modifier = Modifier
         .fillMaxWidth()
@@ -3074,7 +3161,7 @@ fun AdminBannersTab(
       Text(text = "হোম ব্যানার ব্যবস্থাপনা (${banners.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
       Button(
         onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+        colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
         shape = RoundedCornerShape(14.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
       ) {
@@ -3157,7 +3244,7 @@ fun CouponFormDialog(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Text(text = "নতুন কুপন কোড তৈরি করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminV2DeepOcean)
+        Text(text = "নতুন কুপন কোড তৈরি করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
 
         OutlinedTextField(
           value = code,
@@ -3219,7 +3306,7 @@ fun CouponFormDialog(
               )
             }
           },
-          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+          colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier.fillMaxWidth()
         ) {

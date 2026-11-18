@@ -258,7 +258,8 @@ fun ReturnExchangeDialog(
 
           ExposedDropdownMenu(
             expanded = isOrderDropdownExpanded,
-            onDismissRequest = { isOrderDropdownExpanded = false }
+            onDismissRequest = { isOrderDropdownExpanded = false },
+            containerColor = Color.White
           ) {
             orders.forEach { ord ->
               DropdownMenuItem(

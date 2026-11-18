@@ -194,7 +194,7 @@ fun PosSyncDiagnosticCard(
       ) {
         Button(
           onClick = onRunDiagnosticSync,
-          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+          colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
           shape = RoundedCornerShape(12.dp),
           contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
           modifier = Modifier

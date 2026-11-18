@@ -89,6 +89,33 @@ private data class DesignPreset(
 
 private val designPresets = listOf(
   DesignPreset(
+    id = "sky_white_gloss",
+    label = "গ্লসি স্কাই + হোয়াইট",
+    design = StoreDesignConfig(
+      useCustomPageBg = true,
+      pageBgStart = "#F0F9FF",
+      pageBgEnd = "#FFFFFF",
+      useCustomBlockBg = true,
+      blockBgColor = "#FFFFFF",
+      blockBorderColor = "#BAE6FD",
+      blockTitleBg = "#0284C7",
+      blockTitleText = "#FFFFFF",
+      seeMoreBg = "#0EA5E9",
+      seeMoreText = "#FFFFFF",
+      cardBodyBg = "#0284C7",
+      cardBodyBgEnd = "#0EA5E9",
+      cardTitleBg = "#2563EB",
+      cardTitleBgEnd = "#3B82F6",
+      cardPriceBg = "#FFFFFF",
+      cardPriceBorder = "#BAE6FD",
+      cardRegularPriceColor = "#475569",
+      cardOfferPriceColor = "#0284C7",
+      cardBtnStyle = "pill",
+      cardBtnBg = "#10B981",
+      cardBtnBgEnd = "#059669"
+    )
+  ),
+  DesignPreset(
     id = "default_navy_cream",
     label = "ডিফল্ট নেভি + ক্রিম",
     design = StoreDesignConfig()

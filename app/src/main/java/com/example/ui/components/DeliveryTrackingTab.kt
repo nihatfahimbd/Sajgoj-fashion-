@@ -71,8 +71,8 @@ private val PendingAmberDark = Color(0xFF92400E)
 private val PendingAmberBg = Color(0xFFFEF3C7)
 
 private val ShippedBlue = Color(0xFF2563EB)
-private val ShippedBlueDark = Color(0xFF1E40AF)
-private val ShippedBlueBg = Color(0xFFDBEAFE)
+private val ShippedBlueDark = Color(0xFF0284C7)
+private val ShippedBlueBg = Color(0xFFE0F2FE)
 
 private val DeliveredEmerald = Color(0xFF16A34A)
 private val DeliveredEmeraldDark = Color(0xFF166534)
@@ -392,10 +392,10 @@ fun AdminDeliveryTrackingTab(
         verticalAlignment = Alignment.CenterVertically
       ) {
         val filters = listOf(
-          Triple("ALL", "সকল ($totalTracked)", AdminV2DeepOcean),
-          Triple("PENDING", "Pending ($pendingCount)", PendingAmberDark),
-          Triple("SHIPPED", "Shipped ($shippedCount)", ShippedBlueDark),
-          Triple("DELIVERED", "Delivered ($deliveredCount)", DeliveredEmeraldDark)
+          Triple("ALL", "সকল ($totalTracked)", AdminV2CyanDeep),
+          Triple("PENDING", "Pending ($pendingCount)", PendingAmber),
+          Triple("SHIPPED", "Shipped ($shippedCount)", ShippedBlue),
+          Triple("DELIVERED", "Delivered ($deliveredCount)", DeliveredEmerald)
         )
         filters.forEach { (key, label, activeColor) ->
           val isSelected = selectedFilter == key
@@ -473,7 +473,7 @@ fun AdminDeliveryTrackingTab(
                   text = "অর্ডার #${order.id}",
                   fontSize = 14.sp,
                   fontWeight = FontWeight.Bold,
-                  color = AdminV2DeepOcean
+                  color = AdminV2CyanDeep
                 )
                 Text(
                   text = order.date,
@@ -537,7 +537,7 @@ fun AdminDeliveryTrackingTab(
                 text = "মোট: ৳${order.total}",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = AdminV2DeepOcean,
+                color = AdminInkPrimary,
                 modifier = Modifier.weight(1f)
               )
 
@@ -605,7 +605,7 @@ fun AdminDeliveryTrackingTab(
                 onClick = { onViewInvoice(order) },
                 colors = ButtonDefaults.buttonColors(
                   containerColor = AdminV2IceSurface,
-                  contentColor = AdminV2DeepOcean
+                  contentColor = AdminV2CyanDeep
                 ),
                 border = BorderStroke(1.dp, AdminCardBorderWarm),
                 shape = RoundedCornerShape(10.dp),

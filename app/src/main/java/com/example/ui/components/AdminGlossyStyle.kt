@@ -89,23 +89,23 @@ fun adminCanvasBrush(): Brush = Brush.verticalGradient(
 
 fun adminSidebarBrush(): Brush = Brush.verticalGradient(
   colors = listOf(
-    Color(0xFF102C3B),
-    Color(0xFF174056),
-    Color(0xFF0F2A39)
+    Color.White,
+    Color(0xFFF3FAFF),
+    Color(0xFFE6F4FD)
   )
 )
 
 fun adminRoyalGlossBrush(): Brush = Brush.linearGradient(
   colors = listOf(
-    Color(0xFF102E3E),
-    Color(0xFF1A4B63),
-    Color(0xFF236482)
+    Color(0xFF0284C7),
+    Color(0xFF0EA5E9),
+    Color(0xFF38BDF8)
   )
 )
 
 fun adminAccentGlossBrush(
-  start: Color = AdminV2DeepOcean,
-  end: Color = AdminV2CyanDeep
+  start: Color = AdminV2CyanDeep,
+  end: Color = AdminV2Cyan
 ): Brush = Brush.horizontalGradient(listOf(start, end))
 
 @Composable
@@ -114,18 +114,18 @@ fun adminOutlinedTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.
   unfocusedTextColor = AdminInkPrimary,
   disabledTextColor = AdminInkMuted,
   focusedContainerColor = Color.White,
-  unfocusedContainerColor = Color(0xFFF8FCFF),
-  disabledContainerColor = Color(0xFFF1F5F9),
+  unfocusedContainerColor = Color.White,
+  disabledContainerColor = Color(0xFFF4F9FD),
   focusedBorderColor = AdminV2CyanDeep,
   unfocusedBorderColor = Color(0xFFBFD9EA),
   focusedLabelColor = AdminV2CyanDeep,
-  unfocusedLabelColor = AdminInkMuted,
+  unfocusedLabelColor = AdminInkSecondary,
   focusedPlaceholderColor = Color(0xFF6B8294),
   unfocusedPlaceholderColor = Color(0xFF6B8294),
   focusedLeadingIconColor = AdminV2CyanDeep,
-  unfocusedLeadingIconColor = AdminInkMuted,
+  unfocusedLeadingIconColor = AdminInkSecondary,
   focusedTrailingIconColor = AdminV2CyanDeep,
-  unfocusedTrailingIconColor = AdminInkMuted,
+  unfocusedTrailingIconColor = AdminInkSecondary,
   cursorColor = AdminV2CyanDeep
 )
 

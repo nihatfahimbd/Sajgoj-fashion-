@@ -102,13 +102,13 @@ fun AdminV2SidebarContent(
     ) {
       Box(
         modifier = Modifier
-          .size(38.dp)
-          .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = AdminV2Cyan.copy(alpha = 0.4f))
+          .size(40.dp)
+          .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = AdminV2Cyan.copy(alpha = 0.35f))
           .clip(RoundedCornerShape(12.dp))
           .background(
             Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep))
           )
-          .border(1.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
+          .border(1.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
       ) {
         Text(
@@ -121,37 +121,37 @@ fun AdminV2SidebarContent(
       Column(modifier = Modifier.weight(1f)) {
         Text(
           text = "SAJGOJ FASHION",
-          fontSize = 13.sp,
+          fontSize = 13.5.sp,
           fontWeight = FontWeight.Black,
-          color = Color.White,
+          color = AdminInkPrimary,
           letterSpacing = 0.6.sp,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis
         )
         Text(
           text = "অ্যাডমিন প্যানেল V2",
-          fontSize = 10.sp,
-          fontWeight = FontWeight.SemiBold,
-          color = Color(0xFF93C5FD)
+          fontSize = 10.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = AdminV2CyanDeep
         )
       }
     }
 
     Spacer(modifier = Modifier.height(14.dp))
-    HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
+    HorizontalDivider(color = AdminCardBorderSoft)
     Spacer(modifier = Modifier.height(12.dp))
 
     Column(
       modifier = Modifier
         .weight(1f)
         .verticalScroll(rememberScrollState()),
-      verticalArrangement = Arrangement.spacedBy(4.dp)
+      verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
       Text(
         text = "OVERVIEW",
         fontSize = 10.sp,
         fontWeight = FontWeight.ExtraBold,
-        color = Color(0xFF7DD3FC).copy(alpha = 0.78f),
+        color = AdminV2CyanDeep,
         letterSpacing = 1.sp,
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
       )
@@ -171,7 +171,7 @@ fun AdminV2SidebarContent(
         text = "MANAGEMENT",
         fontSize = 10.sp,
         fontWeight = FontWeight.ExtraBold,
-        color = Color(0xFF7DD3FC).copy(alpha = 0.78f),
+        color = AdminV2CyanDeep,
         letterSpacing = 1.sp,
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
       )
@@ -191,14 +191,15 @@ fun AdminV2SidebarContent(
       }
     }
 
-    HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
+    HorizontalDivider(color = AdminCardBorderSoft)
     Spacer(modifier = Modifier.height(10.dp))
 
-    // Admin Profile Pill + Logout
+    // Admin Profile Pill + Logout on Bright White Surface
     Surface(
       shape = RoundedCornerShape(14.dp),
-      color = Color.White.copy(alpha = 0.08f),
-      border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+      color = Color.White,
+      border = BorderStroke(1.dp, AdminCardBorderWarm),
+      shadowElevation = 2.dp,
       modifier = Modifier.fillMaxWidth()
     ) {
       Row(
@@ -210,10 +211,9 @@ fun AdminV2SidebarContent(
       ) {
         Box(
           modifier = Modifier
-            .size(32.dp)
+            .size(34.dp)
             .clip(CircleShape)
-            .background(AdminV2Cyan.copy(alpha = 0.28f))
-            .border(1.dp, Color(0xFF7DD3FC).copy(alpha = 0.55f), CircleShape),
+            .background(Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep))),
           contentAlignment = Alignment.Center
         ) {
           Text(
@@ -228,25 +228,28 @@ fun AdminV2SidebarContent(
             text = "Store Owner",
             fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = AdminInkPrimary,
             maxLines = 1
           )
           Text(
             text = "nihatfahimbd@gmail.com",
             fontSize = 9.5.sp,
-            color = Color.White.copy(alpha = 0.72f),
+            color = AdminInkMuted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
           )
         }
         IconButton(
           onClick = onLogout,
-          modifier = Modifier.size(36.dp)
+          modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color(0xFFFEF2F2))
         ) {
           Icon(
             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
             contentDescription = "লগআউট",
-            tint = Color(0xFFFCA5A5),
+            tint = AdminV2Rose,
             modifier = Modifier.size(18.dp)
           )
         }
@@ -267,6 +270,13 @@ private fun AdminV2SidebarNavItem(
     modifier = Modifier
       .fillMaxWidth()
       .heightIn(min = 48.dp)
+      .then(
+        if (selected) {
+          Modifier.shadow(4.dp, shape, spotColor = AdminV2CyanDeep.copy(alpha = 0.25f))
+        } else {
+          Modifier
+        }
+      )
       .clip(shape)
       .then(
         if (selected) {
@@ -274,14 +284,16 @@ private fun AdminV2SidebarNavItem(
             .background(
               Brush.horizontalGradient(
                 listOf(
-                  Color(0xFF1E5B78),
-                  Color(0xFF174A63)
+                  AdminV2CyanDeep,
+                  AdminV2Cyan
                 )
               )
             )
-            .border(1.dp, Color(0xFF7DD3FC).copy(alpha = 0.45f), shape)
+            .border(1.dp, Color.White.copy(alpha = 0.55f), shape)
         } else {
-          Modifier.background(Color.Transparent)
+          Modifier
+            .background(Color.White.copy(alpha = 0.72f))
+            .border(1.dp, AdminCardBorderSoft, shape)
         }
       )
       .clickable(onClick = onClick)
@@ -293,14 +305,14 @@ private fun AdminV2SidebarNavItem(
     Icon(
       imageVector = adminTabIcon(tab),
       contentDescription = tab.title,
-      tint = if (selected) Color(0xFF7DD3FC) else Color.White.copy(alpha = 0.75f),
+      tint = if (selected) Color.White else AdminV2CyanDeep,
       modifier = Modifier.size(18.dp)
     )
     Text(
       text = tab.title,
       fontSize = 12.5.sp,
-      fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
-      color = if (selected) Color.White else Color.White.copy(alpha = 0.84f),
+      fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+      color = if (selected) Color.White else AdminInkPrimary,
       maxLines = 1,
       overflow = TextOverflow.Ellipsis,
       modifier = Modifier.weight(1f)
@@ -308,13 +320,17 @@ private fun AdminV2SidebarNavItem(
     if (badgeCount != null) {
       Surface(
         shape = RoundedCornerShape(8.dp),
-        color = if (tab == AdminTab.ORDERS) Color(0xFFDC2626) else Color.White.copy(alpha = 0.16f)
+        color = when {
+          tab == AdminTab.ORDERS -> AdminV2Rose
+          selected -> Color.White.copy(alpha = 0.24f)
+          else -> AdminV2SkySoft
+        }
       ) {
         Text(
           text = badgeCount.toString(),
           fontSize = 10.sp,
           fontWeight = FontWeight.ExtraBold,
-          color = Color.White,
+          color = if (tab == AdminTab.ORDERS || selected) Color.White else AdminV2CyanDeep,
           modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
       }
@@ -336,7 +352,7 @@ fun AdminV2TopBar(
     modifier = modifier
       .fillMaxWidth()
       .background(adminRoyalGlossBrush())
-      .padding(horizontal = 12.dp, vertical = 9.dp)
+      .padding(horizontal = 12.dp, vertical = 10.dp)
   ) {
     Row(
       modifier = Modifier.fillMaxWidth(),
@@ -345,43 +361,43 @@ fun AdminV2TopBar(
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
         modifier = Modifier.weight(1f)
       ) {
         if (showMenuButton) {
           IconButton(
             onClick = onOpenDrawer,
             modifier = Modifier
-              .size(42.dp)
-              .clip(RoundedCornerShape(12.dp))
-              .background(Color.White.copy(alpha = 0.14f))
-              .border(1.dp, Color.White.copy(alpha = 0.28f), RoundedCornerShape(12.dp))
+              .size(48.dp)
+              .clip(RoundedCornerShape(13.dp))
+              .background(Color.White.copy(alpha = 0.24f))
+              .border(1.dp, Color.White.copy(alpha = 0.55f), RoundedCornerShape(13.dp))
               .testTag("admin_drawer_toggle")
           ) {
             Icon(
               imageVector = Icons.Default.Menu,
               contentDescription = "মেনু খুলুন",
               tint = Color.White,
-              modifier = Modifier.size(20.dp)
+              modifier = Modifier.size(21.dp)
             )
           }
         } else {
           Box(
             modifier = Modifier
-              .size(38.dp)
+              .size(40.dp)
               .clip(RoundedCornerShape(12.dp))
-              .background(Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep)))
-              .border(1.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
+              .background(Color.White.copy(alpha = 0.25f))
+              .border(1.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
           ) {
-            Text(text = "S", fontSize = 17.sp, fontWeight = FontWeight.Black, color = Color.White)
+            Text(text = "S", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
           }
         }
 
         Column(modifier = Modifier.weight(1f)) {
           Text(
             text = "সাজগোজ অ্যাডমিন কন্ট্রোল",
-            fontSize = 14.5.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Black,
             color = Color.White,
             maxLines = 1,
@@ -390,8 +406,8 @@ fun AdminV2TopBar(
           Text(
             text = "$productsCount পণ্য • $ordersCount অর্ডার • $activeBlocksCount ব্লক সক্রিয়",
             fontSize = 10.5.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFFBAE6FD),
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White.copy(alpha = 0.92f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
           )
@@ -399,16 +415,16 @@ fun AdminV2TopBar(
       }
 
       Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = Color.White.copy(alpha = 0.14f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+        shape = RoundedCornerShape(13.dp),
+        color = Color.White.copy(alpha = 0.24f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.55f)),
         modifier = Modifier
-          .heightIn(min = 40.dp)
-          .clip(RoundedCornerShape(12.dp))
+          .heightIn(min = 48.dp)
+          .clip(RoundedCornerShape(13.dp))
           .clickable(onClick = onLogout)
       ) {
         Row(
-          modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+          modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
@@ -416,12 +432,12 @@ fun AdminV2TopBar(
             imageVector = Icons.Default.PowerSettingsNew,
             contentDescription = "Logout",
             tint = Color.White,
-            modifier = Modifier.size(15.dp)
+            modifier = Modifier.size(16.dp)
           )
           Text(
             text = "লগআউট",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.ExtraBold,
             color = Color.White
           )
         }

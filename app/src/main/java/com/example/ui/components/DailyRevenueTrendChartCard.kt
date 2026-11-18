@@ -234,7 +234,7 @@ fun DailyRevenueTrendChartCard(
           val isSelected = idx == selectedIndex
           Surface(
             shape = RoundedCornerShape(10.dp),
-            color = if (isSelected) AdminV2DeepOcean else AdminV2IceSurface,
+            color = if (isSelected) AdminV2CyanDeep else AdminV2IceSurface,
             border = BorderStroke(1.dp, if (isSelected) AdminV2CyanDeep else AdminCardBorderSoft),
             modifier = Modifier
               .weight(1f)
