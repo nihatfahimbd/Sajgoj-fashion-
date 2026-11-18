@@ -76,7 +76,6 @@ import com.example.ui.components.BannerCarousel
 import com.example.ui.components.CompactProductCard
 import com.example.ui.components.FullSectionCollectionDialog
 import com.example.ui.components.ProductCard
-import com.example.ui.components.ProductMediaViewerDialog
 import com.example.ui.components.ProductSortDropdown
 import com.example.ui.components.ReelVideoPlayerDialog
 import com.example.ui.components.StorefrontComboBlockCard
@@ -145,7 +144,6 @@ fun StorefrontScreen(
   var activeReelForPlayback by remember { mutableStateOf<ReelItem?>(null) }
   var allProductsInlineCat by remember { mutableStateOf("All") }
   var wishlistIds by remember { mutableStateOf(setOf<String>()) }
-  var mediaViewerProduct by remember { mutableStateOf<Product?>(null) }
   val design = config.design
   val toggleWishlist: (String) -> Unit = { pid ->
     wishlistIds = if (wishlistIds.contains(pid)) wishlistIds - pid else wishlistIds + pid
@@ -402,7 +400,7 @@ fun StorefrontScreen(
                   design = design,
                   isWishlisted = wishlistIds.contains(product.id),
                   onToggleWishlist = { toggleWishlist(product.id) },
-                  onMediaClick = { mediaViewerProduct = it },
+                  onMediaClick = onProductClick,
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -578,7 +576,7 @@ fun StorefrontScreen(
                   design = design,
                   wishlistIds = wishlistIds,
                   onToggleWishlist = toggleWishlist,
-                  onMediaClick = { mediaViewerProduct = it }
+                  onMediaClick = onProductClick
                 )
               }
             }
@@ -673,7 +671,10 @@ fun StorefrontScreen(
         design = design,
         wishlistIds = wishlistIds,
         onToggleWishlist = toggleWishlist,
-        onMediaClick = { mediaViewerProduct = it }
+        onMediaClick = {
+          collectionDialogSection = null
+          onProductClick(it)
+        }
       )
     }
 
@@ -686,16 +687,6 @@ fun StorefrontScreen(
         onLikeReel = onLikeReel,
         onAddToCart = onAddToCart,
         onProductClick = onProductClick
-      )
-    }
-
-    if (mediaViewerProduct != null) {
-      ProductMediaViewerDialog(
-        product = mediaViewerProduct!!,
-        initialIndex = 0,
-        onDismiss = { mediaViewerProduct = null },
-        onOpenProductDetail = onProductClick,
-        onAddToCart = onAddToCart
       )
     }
   }

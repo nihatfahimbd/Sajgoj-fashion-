@@ -146,4 +146,47 @@ class ProductSortingTest {
     composeTestRule.onNodeWithTag("product_card_p_cheap_newest").assertIsDisplayed()
     composeTestRule.onNodeWithTag("product_card_p_expensive_mid").assertIsDisplayed()
   }
+
+  @Test
+  fun storefrontHome_tappingProductImageOpensProductDetailsDirectly() {
+    val clickedProducts = mutableListOf<String>()
+
+    composeTestRule.setContent {
+      StorefrontScreen(
+        products = sampleProducts,
+        banners = emptyList(),
+        config = StoreConfig(),
+        homeSections = listOf(
+          HomeSectionConfig(
+            id = "all_products",
+            type = "all_products",
+            title = "সব প্রোডাক্ট",
+            layout = "grid3x3",
+            columnsPerRow = 3,
+            rowCount = 3,
+            displayStyle = "grid",
+            enabled = true,
+            maxItems = 9
+          )
+        ),
+        onProductClick = { clickedProducts.add(it.id) },
+        onAddToCart = {},
+        onBannerClick = {}
+      )
+    }
+
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag("storefront_grid")
+      .performScrollToNode(hasTestTag("compact_card_media_p_mid_old"))
+
+    // Tapping the product image directly opens full product details
+    composeTestRule.onNodeWithTag("compact_card_media_p_mid_old").performClick()
+    composeTestRule.waitForIdle()
+
+    // Tapping "পন্যটি দেখুন" button opens the exact same product details
+    composeTestRule.onNodeWithTag("compact_add_to_cart_p_mid_old").performClick()
+    composeTestRule.waitForIdle()
+
+    assertEquals(listOf("p_mid_old", "p_mid_old"), clickedProducts)
+  }
 }
