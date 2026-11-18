@@ -183,7 +183,7 @@ fun HomePageSettingHub(
                 .shadow(3.dp, RoundedCornerShape(14.dp))
                 .clip(RoundedCornerShape(14.dp))
                 .background(
-                  Brush.linearGradient(listOf(AdminV2DeepOcean, AdminV2CyanDeep))
+                  Brush.linearGradient(listOf(AdminV2Cyan, AdminV2CyanDeep))
                 ),
               contentAlignment = Alignment.Center
             ) {
@@ -219,8 +219,8 @@ fun HomePageSettingHub(
 
           Surface(
             shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFF1F8FE),
-            border = BorderStroke(1.dp, Color(0xFFBAE0F5)),
+            color = Color(0xFFF0F9FF),
+            border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
             modifier = Modifier
               .heightIn(min = 42.dp)
               .clip(RoundedCornerShape(12.dp))
@@ -242,7 +242,7 @@ fun HomePageSettingHub(
                 text = "রিসেট",
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = AdminV2DeepOcean
+                color = AdminV2CyanDeep
               )
             }
           }
@@ -266,7 +266,7 @@ fun HomePageSettingHub(
             text = "$activeBannerCount ব্যানার লাইভ",
             bgColor = Color(0xFFF0F9FF),
             borderColor = Color(0xFFBAE6FD),
-            textColor = AdminV2DeepOcean
+            textColor = AdminV2CyanDeep
           )
           if (storeConfig.isAnnouncementEnabled) {
             HomeStatusChip(
@@ -607,7 +607,7 @@ fun HomePageSettingHub(
                               creatorType = null
                             }
                           },
-                          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+                          colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
                           shape = RoundedCornerShape(12.dp),
                           modifier = Modifier
                             .weight(1f)
@@ -654,7 +654,7 @@ fun HomePageSettingHub(
                 label = "block_border_color"
               )
               val cardBg by animateColorAsState(
-                targetValue = if (section.enabled) Color.White else Color(0xFFF8FAFC),
+                targetValue = if (section.enabled) Color.White else Color(0xFFFAFBFD),
                 label = "block_bg_color"
               )
 
@@ -721,14 +721,18 @@ fun HomePageSettingHub(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                           ) {
                             Surface(
-                              shape = RoundedCornerShape(6.dp),
-                              color = if (section.enabled) AdminV2DeepOcean else Color(0xFF94A3B8)
+                              shape = RoundedCornerShape(7.dp),
+                              color = if (section.enabled) Color(0xFFE0F2FE) else Color(0xFFF1F5F9),
+                              border = BorderStroke(
+                                1.dp,
+                                if (section.enabled) Color(0xFFBAE6FD) else Color(0xFFE2E8F0)
+                              )
                             ) {
                               Text(
                                 text = (index + 1).toString().padStart(2, '0'),
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Black,
-                                color = Color.White,
+                                color = if (section.enabled) AdminV2CyanDeep else AdminInkMuted,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                               )
                             }
@@ -736,7 +740,7 @@ fun HomePageSettingHub(
                               text = section.title,
                               fontSize = 13.5.sp,
                               fontWeight = FontWeight.ExtraBold,
-                              color = if (section.enabled) AdminInkPrimary else AdminInkMuted,
+                              color = if (section.enabled) AdminInkPrimary else AdminInkSecondary,
                               maxLines = 1,
                               overflow = TextOverflow.Ellipsis
                             )
@@ -810,7 +814,7 @@ fun HomePageSettingHub(
                               Icon(
                                 imageVector = Icons.Default.ArrowUpward,
                                 contentDescription = "উপরে নিন",
-                                tint = if (index > 0) AdminV2DeepOcean else Color(0xFFCBD5E1),
+                                tint = if (index > 0) AdminV2CyanDeep else Color(0xFFCBD5E1),
                                 modifier = Modifier.size(16.dp)
                               )
                             }
@@ -830,7 +834,7 @@ fun HomePageSettingHub(
                               Icon(
                                 imageVector = Icons.Default.ArrowDownward,
                                 contentDescription = "নিচে নিন",
-                                tint = if (index < homeSections.lastIndex) AdminV2DeepOcean else Color(0xFFCBD5E1),
+                                tint = if (index < homeSections.lastIndex) AdminV2CyanDeep else Color(0xFFCBD5E1),
                                 modifier = Modifier.size(16.dp)
                               )
                             }
@@ -840,10 +844,10 @@ fun HomePageSettingHub(
                         if (isLayoutConfigurable || section.type == "promo_banner") {
                           Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (isExpanded) AdminV2DeepOcean else Color(0xFFF0F9FF),
+                            color = if (isExpanded) AdminV2CyanDeep else Color(0xFFF0F9FF),
                             border = BorderStroke(
                               1.dp,
-                              if (isExpanded) AdminV2DeepOcean else Color(0xFFBAE6FD)
+                              if (isExpanded) AdminV2CyanDeep else Color(0xFFBAE6FD)
                             ),
                             modifier = Modifier
                               .heightIn(min = 38.dp)
@@ -873,7 +877,7 @@ fun HomePageSettingHub(
                                 },
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isExpanded) Color.White else AdminV2DeepOcean
+                                color = if (isExpanded) Color.White else AdminInkPrimary
                               )
                               Icon(
                                 imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -975,7 +979,7 @@ fun HomePageSettingHub(
                                 }
                               }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+                            colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
                             shape = RoundedCornerShape(10.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                             modifier = Modifier.heightIn(min = 48.dp)
@@ -1258,13 +1262,14 @@ fun HomePageSettingHub(
 
                                   Surface(
                                     shape = RoundedCornerShape(9.dp),
-                                    color = if (isSelected) AdminV2Emerald else AdminV2DeepOcean
+                                    color = if (isSelected) AdminV2Emerald else Color(0xFFE0F2FE),
+                                    border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFBAE6FD))
                                   ) {
                                     Text(
                                       text = if (isSelected) "✓ যুক্ত" else "+ যোগ",
                                       fontSize = 10.5.sp,
                                       fontWeight = FontWeight.Bold,
-                                      color = Color.White,
+                                      color = if (isSelected) Color.White else AdminV2CyanDeep,
                                       modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                     )
                                   }
@@ -1313,7 +1318,7 @@ fun HomePageSettingHub(
                 }
                 Button(
                   onClick = onAddBannerClick,
-                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
                   shape = RoundedCornerShape(12.dp),
                   contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                   modifier = Modifier.heightIn(min = 44.dp)
@@ -1607,7 +1612,7 @@ fun HomePageSettingHub(
                     )
                     headerSavedBanner = true
                   },
-                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+                  colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
                   shape = RoundedCornerShape(14.dp),
                   modifier = Modifier
                     .fillMaxWidth()
@@ -1697,7 +1702,7 @@ private fun HomeSubTabPill(
     label = "subtab_bg"
   )
   val contentColor by animateColorAsState(
-    targetValue = if (selected) AdminV2DeepOcean else AdminInkSecondary,
+    targetValue = if (selected) AdminV2CyanDeep else AdminInkSecondary,
     label = "subtab_ink"
   )
   Surface(
@@ -1798,12 +1803,12 @@ private fun ChoiceChipPill(
   selected: Boolean,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
-  accentColor: Color = AdminV2DeepOcean
+  accentColor: Color = AdminV2CyanDeep
 ) {
   Surface(
     shape = RoundedCornerShape(10.dp),
     color = if (selected) accentColor else Color.White,
-    border = BorderStroke(1.dp, if (selected) accentColor else Color(0xFFCBD5E1)),
+    border = BorderStroke(1.dp, if (selected) accentColor else Color(0xFFD0E5F4)),
     modifier = modifier
       .heightIn(min = 36.dp)
       .clip(RoundedCornerShape(10.dp))

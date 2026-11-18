@@ -59,18 +59,18 @@ val AdminV2Rose = Color(0xFFDC2626)
 
 // High-Contrast Ink Palette on Frosted White-Ice Glass
 val AdminInkPrimary = Color(0xFF0F2430)
-val AdminInkSecondary = Color(0xFF334E5E)
-val AdminInkMuted = Color(0xFF5D7485)
+val AdminInkSecondary = Color(0xFF2D495A)
+val AdminInkMuted = Color(0xFF4B6476)
 
-// Canvas & Glass Gradient Tokens
-val AdminGlossCanvasTop = Color(0xFFCDE6F2)
-val AdminGlossCanvasMid = Color(0xFFE6F3FA)
-val AdminGlossCanvasBot = Color(0xFFD3EBF5)
+// Canvas & Glass Gradient Tokens — Airy Luminous Sky-White
+val AdminGlossCanvasTop = Color(0xFFE8F5FC)
+val AdminGlossCanvasMid = Color(0xFFF5FAFE)
+val AdminGlossCanvasBot = Color(0xFFE4F2FA)
 
-val AdminRoyalGradStart = AdminV2DeepOcean
-val AdminRoyalGradEnd = AdminV2CyanDeep
-val AdminNavyGradStart = AdminV2OceanMid
-val AdminNavyGradEnd = AdminV2Cyan
+val AdminRoyalGradStart = AdminV2CyanDeep
+val AdminRoyalGradEnd = AdminV2Cyan
+val AdminNavyGradStart = AdminV2CyanDeep
+val AdminNavyGradEnd = Color(0xFF38BDF8)
 val AdminEmeraldGradStart = Color(0xFF047857)
 val AdminEmeraldGradEnd = Color(0xFF10B981)
 val AdminAmberGradStart = Color(0xFFB45309)
@@ -198,7 +198,7 @@ fun GlossySegmentPill(
   selected: Boolean,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
-  selectedBrush: Brush = adminAccentGlossBrush(AdminV2DeepOcean, AdminV2OceanLight),
+  selectedBrush: Brush = adminAccentGlossBrush(AdminV2CyanDeep, AdminV2Cyan),
   badgeText: String? = null
 ) {
   val shape = RoundedCornerShape(14.dp)
@@ -206,10 +206,10 @@ fun GlossySegmentPill(
     modifier = modifier
       .heightIn(min = 44.dp)
       .shadow(
-        elevation = if (selected) 5.dp else 1.5.dp,
+        elevation = if (selected) 4.dp else 1.dp,
         shape = shape,
-        ambientColor = Color(0xFF0F294A).copy(alpha = 0.10f),
-        spotColor = AdminV2CyanDeep.copy(alpha = 0.22f)
+        ambientColor = AdminV2CyanDeep.copy(alpha = 0.12f),
+        spotColor = AdminV2Cyan.copy(alpha = 0.24f)
       )
       .clip(shape)
       .then(
@@ -266,9 +266,9 @@ fun GlossyActionPillButton(
   text: String,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
-  brush: Brush = adminAccentGlossBrush(AdminV2DeepOcean, AdminV2CyanDeep),
+  brush: Brush = adminAccentGlossBrush(AdminV2CyanDeep, AdminV2Cyan),
   textColor: Color = Color.White,
-  borderColor: Color = Color.White.copy(alpha = 0.45f)
+  borderColor: Color = Color.White.copy(alpha = 0.55f)
 ) {
   val shape = RoundedCornerShape(50)
   Box(
@@ -277,7 +277,7 @@ fun GlossyActionPillButton(
       .shadow(
         elevation = 4.dp,
         shape = shape,
-        spotColor = AdminV2DeepOcean.copy(alpha = 0.28f)
+        spotColor = AdminV2CyanDeep.copy(alpha = 0.25f)
       )
       .clip(shape)
       .background(brush)

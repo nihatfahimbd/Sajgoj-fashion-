@@ -222,6 +222,25 @@ object ProductMediaHelper {
     }
   }
 
+  fun copyPickedImageToInternalStorage(context: Context, uri: Uri): String? {
+    return try {
+      val imageDir = File(context.filesDir, "product_images").apply { mkdirs() }
+      val displayName = queryDisplayName(context, uri).ifBlank { "product_image.jpg" }
+      val ext = displayName.substringAfterLast('.', "jpg")
+        .lowercase()
+        .takeIf { it in setOf("jpg", "jpeg", "png", "webp") } ?: "jpg"
+      val destFile = File(imageDir, "pi_${System.currentTimeMillis()}.$ext")
+      context.contentResolver.openInputStream(uri)?.use { input ->
+        FileOutputStream(destFile).use { output ->
+          input.copyTo(output)
+        }
+      } ?: return null
+      Uri.fromFile(destFile).toString()
+    } catch (_: Exception) {
+      null
+    }
+  }
+
   private fun queryDisplayName(context: Context, uri: Uri): String {
     return try {
       context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->

@@ -1693,7 +1693,12 @@ class StoreRepository(private val context: Context) {
 
   // Category CRUD
   fun addCategory(category: Category) {
-    _categories.value = _categories.value + category
+    val existingIndex = _categories.value.indexOfFirst { it.id == category.id }
+    _categories.value = if (existingIndex >= 0) {
+      _categories.value.toMutableList().apply { set(existingIndex, category) }
+    } else {
+      _categories.value + category
+    }
   }
 
   fun deleteCategory(categoryId: String) {

@@ -293,7 +293,7 @@ fun PaymentMethodsToggleSection(
       PaymentMethodToggleRow(
         label = "Cash on Delivery",
         subtitle = "হাতে পেয়ে মূল্য পরিশোধ (COD)",
-        badgeColor = DarkEspresso,
+        badgeColor = Color(0xFF0D9488),
         checked = config.codEnabled,
         testTag = "payment_toggle_cod",
         onToggle = { enabled -> onSaveConfig(config.copy(codEnabled = enabled)) }
@@ -301,7 +301,7 @@ fun PaymentMethodsToggleSection(
       PaymentMethodToggleRow(
         label = "Visa / Mastercard",
         subtitle = "কার্ড পেমেন্ট সাপোর্ট ব্যাজ",
-        badgeColor = NavyBlue,
+        badgeColor = Color(0xFF2563EB),
         checked = config.visaEnabled,
         testTag = "payment_toggle_visa",
         onToggle = { enabled -> onSaveConfig(config.copy(visaEnabled = enabled)) }
@@ -474,7 +474,7 @@ fun StorefrontDesignStudioPanel(
             modifier = Modifier.size(14.dp)
           )
           Spacer(modifier = Modifier.width(4.dp))
-          Text(text = "রিসেট", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+          Text(text = "রিসেট", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
         }
       }
 
@@ -710,8 +710,8 @@ fun StorefrontDesignStudioPanel(
             val selected = draft.cardBtnStyle == styleKey
             Surface(
               shape = RoundedCornerShape(10.dp),
-              color = if (selected) AdminV2DeepOcean else Color.White,
-              border = BorderStroke(1.dp, if (selected) AdminV2CyanDeep else Color(0xFFCBD5E1)),
+              color = if (selected) AdminV2CyanDeep else Color.White,
+              border = BorderStroke(1.dp, if (selected) AdminV2CyanDeep else Color(0xFFD0E5F4)),
               modifier = Modifier
                 .heightIn(min = 36.dp)
                 .clickable { draft = draft.copy(cardBtnStyle = styleKey) }
@@ -837,7 +837,7 @@ fun StorefrontDesignStudioPanel(
           onSaveConfig(config.copy(design = draft))
           savedSuccess = true
         },
-        colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+        colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
         shape = RoundedCornerShape(14.dp),
         modifier = Modifier
           .fillMaxWidth()

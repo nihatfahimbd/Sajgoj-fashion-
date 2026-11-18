@@ -114,6 +114,7 @@ import com.example.ui.components.AdminAmberGradEnd
 import com.example.ui.components.AdminAmberGradStart
 import com.example.ui.components.AdminCardBorderSoft
 import com.example.ui.components.AdminCardBorderWarm
+import com.example.ui.components.AdminCategoriesTab
 import com.example.ui.components.AdminDeliveryTrackingTab
 import com.example.ui.components.AdminEmeraldGradEnd
 import com.example.ui.components.AdminEmeraldGradStart
@@ -121,8 +122,11 @@ import com.example.ui.components.AdminInkMuted
 import com.example.ui.components.AdminInkPrimary
 import com.example.ui.components.AdminInkSecondary
 import com.example.ui.components.AdminNavyGradStart
+import com.example.ui.components.AdminProductsTab
 import com.example.ui.components.AdminRoyalGradEnd
 import com.example.ui.components.AdminRoyalGradStart
+import com.example.ui.components.CategoryFormDialog
+import com.example.ui.components.ProductFormDialog
 import com.example.ui.components.AdminV2Amber
 import com.example.ui.components.AdminV2AmberSoft
 import com.example.ui.components.AdminV2BentoStatCard
@@ -230,6 +234,7 @@ fun AdminDashboardScreen(
   var showProductDialog by remember { mutableStateOf(false) }
   var editingProduct by remember { mutableStateOf<Product?>(null) }
   var showCategoryDialog by remember { mutableStateOf(false) }
+  var editingCategory by remember { mutableStateOf<Category?>(null) }
   var showCouponDialog by remember { mutableStateOf(false) }
   var showBannerDialog by remember { mutableStateOf(false) }
   var showReturnDialog by remember { mutableStateOf(false) }
@@ -496,7 +501,15 @@ fun AdminDashboardScreen(
               showProductDialog = true
             },
             onDeleteClick = onDeleteProduct,
-            onAddCategory = { showCategoryDialog = true },
+            onAddCategory = {
+              editingCategory = null
+              showCategoryDialog = true
+            },
+            onEditCategory = { cat ->
+              editingCategory = cat
+              showCategoryDialog = true
+            },
+            onToggleCategorySlider = { updated -> onAddCategory(updated) },
             onDeleteCategory = onDeleteCategory
           )
         }
@@ -621,13 +634,19 @@ fun AdminDashboardScreen(
     )
   }
 
-  // Category Add Dialog
+  // Category Add / Edit Dialog
   if (showCategoryDialog) {
     CategoryFormDialog(
-      onDismiss = { showCategoryDialog = false },
+      category = editingCategory,
+      categories = categories,
+      onDismiss = {
+        showCategoryDialog = false
+        editingCategory = null
+      },
       onSave = { c ->
         onAddCategory(c)
         showCategoryDialog = false
+        editingCategory = null
       }
     )
   }
@@ -1273,11 +1292,11 @@ fun AdminProductsHub(
   onEditClick: (Product) -> Unit,
   onDeleteClick: (String) -> Unit,
   onAddCategory: () -> Unit,
+  onEditCategory: (Category) -> Unit = {},
+  onToggleCategorySlider: (Category) -> Unit = {},
   onDeleteCategory: (String) -> Unit
 ) {
   var selectedSubTab by remember { mutableStateOf("LIST") }
-  var selectedCategoryFilter by remember { mutableStateOf("All") }
-  var productSearchQuery by remember { mutableStateOf("") }
 
   val totalStockUnits = remember(products) { products.sumOf { it.stock } }
   val totalStockValuation = remember(products) { products.sumOf { it.price * it.stock } }
@@ -1307,7 +1326,7 @@ fun AdminProductsHub(
 
       Button(
         onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+        colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
         shape = RoundedCornerShape(14.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         modifier = Modifier.heightIn(min = 44.dp)
@@ -1349,67 +1368,9 @@ fun AdminProductsHub(
 
     when (selectedSubTab) {
       "LIST" -> {
-        OutlinedTextField(
-          value = productSearchQuery,
-          onValueChange = { productSearchQuery = it },
-          modifier = Modifier.fillMaxWidth(),
-          placeholder = { Text("নাম বা SKU দিয়ে খুঁজুন...", fontSize = 12.sp) },
-          leadingIcon = {
-            Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(17.dp))
-          },
-          trailingIcon = {
-            if (productSearchQuery.isNotEmpty()) {
-              IconButton(onClick = { productSearchQuery = "" }, modifier = Modifier.size(28.dp)) {
-                Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = AdminInkMuted, modifier = Modifier.size(15.dp))
-              }
-            }
-          },
-          singleLine = true,
-          shape = RoundedCornerShape(12.dp),
-          colors = adminOutlinedTextFieldColors()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-          horizontalArrangement = Arrangement.spacedBy(6.dp),
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          val catNames = listOf("All") + categories.map { it.name }.distinct()
-          catNames.forEach { cat ->
-            val isCatSelected = selectedCategoryFilter == cat
-            val count = if (cat == "All") products.size else products.count { it.category == cat }
-            Surface(
-              shape = RoundedCornerShape(14.dp),
-              color = if (isCatSelected) AdminV2DeepOcean else Color.White,
-              border = BorderStroke(1.dp, if (isCatSelected) AdminV2DeepOcean else AdminCardBorderSoft),
-              modifier = Modifier.clickable { selectedCategoryFilter = cat }
-            ) {
-              Text(
-                text = if (cat == "All") "সকল পণ্য ($count)" else "$cat ($count)",
-                fontSize = 11.sp,
-                fontWeight = if (isCatSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isCatSelected) Color.White else AdminInkPrimary,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-              )
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val filteredProducts = products.filter { p ->
-          val matchesCat = selectedCategoryFilter == "All" || p.category == selectedCategoryFilter
-          val q = productSearchQuery.trim().lowercase()
-          val matchesQ = q.isEmpty() || p.name.lowercase().contains(q) || p.sku.lowercase().contains(q)
-          matchesCat && matchesQ
-        }
-
         AdminProductsTab(
-          products = filteredProducts,
+          products = products,
+          categories = categories,
           onAddClick = onAddClick,
           onEditClick = onEditClick,
           onDeleteClick = onDeleteClick
@@ -1511,7 +1472,7 @@ fun AdminProductsHub(
                 ) {
                   Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(text = "🏷️", fontSize = 14.sp)
-                    Text(text = catName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+                    Text(text = catName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
                     Surface(
                       shape = RoundedCornerShape(10.dp),
                       color = AdminV2IceSurface,
@@ -1642,7 +1603,7 @@ fun AdminProductsHub(
                 Column {
                   Text(text = "পণ্য এক্সচেঞ্জ রিপোর্ট", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = AdminInkMuted)
                   val exchangeCount = returns.count { it.exchangeItems.isNotEmpty() }
-                  Text(text = "$exchangeCount টি এক্সচেঞ্জ", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminV2DeepOcean)
+                  Text(text = "$exchangeCount টি এক্সচেঞ্জ", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminV2CyanDeep)
                   val diffSum = returns.sumOf { it.priceDifference }
                   Text(text = "নিষ্পত্তি: ৳$diffSum", fontSize = 10.sp, color = AdminInkSecondary)
                 }
@@ -1717,7 +1678,9 @@ fun AdminProductsHub(
           categories = categories,
           products = products,
           onAddClick = onAddCategory,
-          onDeleteCategory = onDeleteCategory
+          onDeleteCategory = onDeleteCategory,
+          onEditCategory = onEditCategory,
+          onToggleSlider = onToggleCategorySlider
         )
       }
     }
@@ -2359,152 +2322,6 @@ fun AdminSettingsHub(
   )
 }
 
-@Composable
-fun AdminProductsTab(
-  products: List<Product>,
-  onAddClick: () -> Unit,
-  onEditClick: (Product) -> Unit,
-  onDeleteClick: (String) -> Unit
-) {
-  Column(modifier = Modifier.fillMaxSize()) {
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      Text(text = "সকল পণ্য তালিকা (${products.size})", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
-      Button(
-        onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
-        shape = RoundedCornerShape(14.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-      ) {
-        Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(text = "পণ্য যোগ", fontSize = 11.sp)
-      }
-    }
-
-    Spacer(modifier = Modifier.height(10.dp))
-
-    LazyColumn(
-      verticalArrangement = Arrangement.spacedBy(8.dp),
-      modifier = Modifier.fillMaxSize()
-    ) {
-      items(products, key = { it.id }) { product ->
-        GlossyAdminCard(
-          cornerRadius = 16.dp,
-          contentPadding = 10.dp
-        ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            AppImage(
-              model = product.imageUrl,
-              contentDescription = product.name,
-              modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(8.dp))
-            )
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-              Text(
-                text = product.name,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminInkPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-              )
-              Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-              ) {
-                Text(text = "${product.price} ৳", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
-                Text(text = "স্টক: ${product.stock}", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (product.stock <= 5) AccentRed else AdminInkMuted)
-                Text(text = product.category, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = AdminInkSecondary)
-              }
-
-              // Badges for colors, sizes, age groups
-              val hasVariants = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
-              if (hasVariants) {
-                Row(
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                  horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                  if (product.colors.isNotEmpty()) {
-                    Surface(
-                      shape = RoundedCornerShape(4.dp),
-                      color = AdminV2SkySoft,
-                      border = BorderStroke(0.5.dp, AdminCardBorderWarm)
-                    ) {
-                      Text(
-                        text = "🎨 ${product.colors.size} রং",
-                        fontSize = 9.sp,
-                        color = AdminV2CyanDeep,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                      )
-                    }
-                  }
-
-                  if (product.sizes.isNotEmpty()) {
-                    Surface(
-                      shape = RoundedCornerShape(4.dp),
-                      color = AdminV2IceSurface,
-                      border = BorderStroke(0.5.dp, AdminCardBorderSoft)
-                    ) {
-                      Text(
-                        text = "📏 ${product.sizes.joinToString("/")}",
-                        fontSize = 9.sp,
-                        color = AdminInkPrimary,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                      )
-                    }
-                  }
-
-                  if (product.ageGroups.isNotEmpty()) {
-                    Surface(
-                      shape = RoundedCornerShape(4.dp),
-                      color = AdminV2AmberSoft,
-                      border = BorderStroke(0.5.dp, Color(0xFFFDE68A))
-                    ) {
-                      Text(
-                        text = "👶 ${product.ageGroups.firstOrNull()}...",
-                        fontSize = 9.sp,
-                        color = AdminV2Amber,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                      )
-                    }
-                  }
-                }
-              }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-              IconButton(onClick = { onEditClick(product) }, modifier = Modifier.size(32.dp)) {
-                Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = AdminV2OceanMid, modifier = Modifier.size(16.dp))
-              }
-              IconButton(onClick = { onDeleteClick(product.id) }, modifier = Modifier.size(32.dp)) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = AccentRed, modifier = Modifier.size(16.dp))
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminOrdersTab(
@@ -3063,68 +2880,6 @@ fun AdminReturnsTab(
   }
 }
 
-
-@Composable
-fun AdminCategoriesTab(
-  categories: List<Category>,
-  products: List<Product>,
-  onAddClick: () -> Unit,
-  onDeleteCategory: (String) -> Unit
-) {
-  Column(modifier = Modifier.fillMaxSize()) {
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      Text(text = "ক্যাটাগরি তালিকা (${categories.size})", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
-      Button(
-        onClick = onAddClick,
-        colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-      ) {
-        Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(text = "ক্যাটাগরি যোগ", fontSize = 11.sp)
-      }
-    }
-
-    Spacer(modifier = Modifier.height(10.dp))
-
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-      items(categories, key = { it.id }) { cat ->
-        GlossyAdminCard(
-          cornerRadius = 14.dp,
-          contentPadding = 12.dp
-        ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-          ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-              Text(text = cat.icon, fontSize = 24.sp)
-              Column {
-                Text(text = cat.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
-                Text(
-                  text = "${products.count { it.category == cat.name }} টি পণ্য সংযুক্ত",
-                  fontSize = 11.sp,
-                  color = AdminInkMuted
-                )
-              }
-            }
-
-            IconButton(onClick = { onDeleteCategory(cat.id) }, modifier = Modifier.size(36.dp)) {
-              Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = AccentRed, modifier = Modifier.size(18.dp))
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 @Composable
 fun AdminCouponsTab(
   coupons: List<Coupon>,
@@ -3377,1010 +3132,6 @@ fun AdminBannersTab(
 // System Settings & Backup UI moved to modular AdminSystemSettingsHub.kt
 
 // ----------------- FORM DIALOGS -----------------
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProductFormDialog(
-  product: Product?,
-  categories: List<Category>,
-  onDismiss: () -> Unit,
-  onSave: (Product) -> Unit
-) {
-  var name by remember { mutableStateOf(product?.name ?: "") }
-  var priceStr by remember {
-    mutableStateOf(
-      if (product != null) {
-        (if (product.regularPrice > product.price) product.regularPrice else product.price).toString()
-      } else {
-        "1000"
-      }
-    )
-  }
-  var offerPriceStr by remember {
-    mutableStateOf(
-      if (product != null) {
-        val basePrice = if (product.regularPrice > 0) product.regularPrice else product.price
-        when {
-          product.offerPrice > 0 && product.offerPrice < basePrice -> product.offerPrice.toString()
-          product.regularPrice > product.price -> product.price.toString()
-          else -> ""
-        }
-      } else {
-        ""
-      }
-    )
-  }
-  var stockStr by remember { mutableStateOf(product?.stock?.toString() ?: "10") }
-  var category by remember { mutableStateOf(product?.category ?: categories.firstOrNull()?.name ?: "শাড়ি") }
-  var isCategoryDropdownExpanded by remember { mutableStateOf(false) }
-  var sku by remember { mutableStateOf(product?.sku ?: "SAJ-${(100..999).random()}") }
-  var description by remember { mutableStateOf(product?.description ?: "") }
-  var imageUrl by remember { mutableStateOf(product?.imageUrl ?: "res://banner_eid_special_1792530116809") }
-  var videoEnabled by remember { mutableStateOf(product?.videoEnabled ?: false) }
-  var videoType by remember { mutableStateOf(product?.videoType ?: "upload") }
-  var videoUrl by remember { mutableStateOf(product?.videoUrl ?: "") }
-  var videoThumbUrl by remember { mutableStateOf(product?.videoThumbUrl ?: "") }
-
-  // Variants lists
-  var colors by remember { mutableStateOf(product?.colors ?: emptyList()) }
-  var customColorInput by remember { mutableStateOf("") }
-
-  var sizes by remember { mutableStateOf(product?.sizes ?: emptyList()) }
-  var customSizeInput by remember { mutableStateOf("") }
-
-  var ageGroups by remember { mutableStateOf(product?.ageGroups ?: emptyList()) }
-  var customAgeInput by remember { mutableStateOf("") }
-
-  var isHotSale by remember { mutableStateOf(product?.isHotSale ?: false) }
-  var isBestDeal by remember { mutableStateOf(product?.isBestDeal ?: false) }
-  var isB2G1 by remember { mutableStateOf(product?.isB2G1 ?: false) }
-
-  var formError by remember { mutableStateOf<String?>(null) }
-  var isGeneratingAiDesc by remember { mutableStateOf(false) }
-  var aiDescError by remember { mutableStateOf<String?>(null) }
-  val formScope = rememberCoroutineScope()
-
-  // Preset options for quick clicks
-  val presetColors = listOf("লাল", "মেরুন", "কালো", "সবুজ", "নীল", "গোল্ডেন", "গোলাপী", "সাদা", "হলুদ", "পার্পল", "অরেঞ্জ", "অফ হোয়াইট", "রয়েল ব্লু")
-  val presetSizes = listOf("Free Size", "XS", "S", "M", "L", "XL", "XXL", "3XL", "20", "22", "24", "26", "28", "30", "32", "34", "36", "38")
-  val presetAges = listOf("০-৬ মাস", "৬-১২ মাস", "১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৪-৫ বছর", "৫-৬ বছর", "৭-৮ বছর", "৯-১০ বছর", "১১-১২ বছর")
-
-  val presetImages = listOf(
-    "res://banner_eid_special_1792530116809" to "পোশাক / শাড়ি",
-    "res://banner_jewelry_royal_1792530130914" to "জুয়েলারি",
-    "res://ic_app_icon_1792530102214" to "ব্র্যান্ড লোগো"
-  )
-
-  Dialog(onDismissRequest = onDismiss) {
-    Surface(
-      shape = RoundedCornerShape(24.dp),
-      color = Color.White,
-      border = BorderStroke(1.5.dp, AdminCardBorderWarm),
-      shadowElevation = 10.dp,
-      modifier = Modifier
-        .fillMaxWidth(0.96f)
-        .padding(vertical = 16.dp)
-        .testTag("product_form_dialog")
-    ) {
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(18.dp)
-          .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-      ) {
-        // Dialog Title
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Column(modifier = Modifier.weight(1f)) {
-            Text(
-              text = if (product != null) "পণ্য এডিট করুন" else "নতুন পণ্য যোগ করুন",
-              fontSize = 17.sp,
-              fontWeight = FontWeight.Black,
-              color = AdminV2DeepOcean
-            )
-            Text(
-              text = "পণ্যের বিবরণ, কালার, সাইজ ও বাচ্চার বয়স সেট করুন",
-              fontSize = 11.sp,
-              color = AdminInkMuted
-            )
-          }
-
-          IconButton(
-            onClick = onDismiss,
-            modifier = Modifier
-              .size(34.dp)
-              .clip(CircleShape)
-              .background(Color(0xFFF1F5F9))
-          ) {
-            Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = AdminInkPrimary, modifier = Modifier.size(16.dp))
-          }
-        }
-
-        HorizontalDivider(color = AdminCardBorderSoft)
-
-        // 1. Basic Product Info
-        OutlinedTextField(
-          value = name,
-          onValueChange = { 
-            name = it
-            formError = null 
-          },
-          label = { Text("পণ্যের নাম *") },
-          placeholder = { Text("যেমন: বাচ্চাদের ডিজাইনার ফ্রক বা কাতান শাড়ি") },
-          singleLine = true,
-          shape = RoundedCornerShape(12.dp),
-          colors = adminOutlinedTextFieldColors(),
-          modifier = Modifier.fillMaxWidth()
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          OutlinedTextField(
-            value = priceStr,
-            onValueChange = { priceStr = it },
-            label = { Text("বিক্রয় মূল্য (৳) *") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = adminOutlinedTextFieldColors(),
-            modifier = Modifier.weight(1f)
-          )
-
-          OutlinedTextField(
-            value = offerPriceStr,
-            onValueChange = { offerPriceStr = it },
-            label = { Text("অফার প্রাইস (৳)") },
-            placeholder = { Text("ঐচ্ছিক") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = adminOutlinedTextFieldColors(),
-            modifier = Modifier
-              .weight(1f)
-              .testTag("product_form_offer_price_input")
-          )
-        }
-
-        OutlinedTextField(
-          value = stockStr,
-          onValueChange = { stockStr = it },
-          label = { Text("স্টক সংখ্যা *") },
-          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-          singleLine = true,
-          shape = RoundedCornerShape(12.dp),
-          colors = adminOutlinedTextFieldColors(),
-          modifier = Modifier.fillMaxWidth()
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          // Category selector with dropdown
-          ExposedDropdownMenuBox(
-            expanded = isCategoryDropdownExpanded,
-            onExpandedChange = { isCategoryDropdownExpanded = !isCategoryDropdownExpanded },
-            modifier = Modifier.weight(1f)
-          ) {
-            OutlinedTextField(
-              value = category,
-              onValueChange = { category = it },
-              label = { Text("ক্যাটাগরি") },
-              trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryDropdownExpanded) },
-              singleLine = true,
-              shape = RoundedCornerShape(12.dp),
-              colors = adminOutlinedTextFieldColors(),
-              modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-              expanded = isCategoryDropdownExpanded,
-              onDismissRequest = { isCategoryDropdownExpanded = false }
-            ) {
-              categories.forEach { cat ->
-                DropdownMenuItem(
-                  text = { Text("${cat.icon} ${cat.name}", fontSize = 12.sp) },
-                  onClick = {
-                    category = cat.name
-                    isCategoryDropdownExpanded = false
-                  }
-                )
-              }
-            }
-          }
-
-          OutlinedTextField(
-            value = sku,
-            onValueChange = { sku = it },
-            label = { Text("SKU কোড") },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = adminOutlinedTextFieldColors(),
-            modifier = Modifier.weight(1f)
-          )
-        }
-
-        // Image Selection
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-          Text(text = "পণ্যের ছবি নির্বাচন বা ইউআরএল:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AdminInkPrimary)
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            presetImages.forEach { (url, label) ->
-              val isChosen = imageUrl == url
-              Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = if (isChosen) AdminV2DeepOcean else AdminV2IceSurface,
-                border = BorderStroke(1.dp, if (isChosen) AdminV2DeepOcean else AdminCardBorderWarm),
-                modifier = Modifier
-                  .weight(1f)
-                  .clickable { imageUrl = url }
-              ) {
-                Box(
-                  modifier = Modifier.padding(vertical = 8.dp),
-                  contentAlignment = Alignment.Center
-                ) {
-                  Text(
-                    text = label,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isChosen) Color.White else AdminInkPrimary
-                  )
-                }
-              }
-            }
-          }
-
-          OutlinedTextField(
-            value = imageUrl,
-            onValueChange = { imageUrl = it },
-            label = { Text("অথবা সরাসরি ছবির লিঙ্ক (Image URL)") },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = adminOutlinedTextFieldColors(),
-            modifier = Modifier.fillMaxWidth()
-          )
-        }
-
-        ProductVideoFormSection(
-          videoEnabled = videoEnabled,
-          videoType = videoType,
-          videoUrl = videoUrl,
-          videoThumbUrl = videoThumbUrl,
-          onVideoChanged = { enabled, type, url, thumb ->
-            videoEnabled = enabled
-            videoType = type
-            videoUrl = url
-            videoThumbUrl = thumb
-          }
-        )
-
-        // ==========================================
-        // 2. COLOR MANAGEMENT SECTION
-        // ==========================================
-        Card(
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = AdminV2IceSurface),
-          border = BorderStroke(1.dp, AdminCardBorderWarm),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "🎨 কালার বা রঙের অপশন (${colors.size})",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminV2DeepOcean
-              )
-              if (colors.isNotEmpty()) {
-                Text(
-                  text = "ক্লিয়ার",
-                  fontSize = 11.sp,
-                  color = AccentRed,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.clickable { colors = emptyList() }
-                )
-              }
-            }
-
-            // Current added colors chips with remove 'x'
-            if (colors.isEmpty()) {
-              Text(
-                text = "কোনো নির্দিষ্ট কালার যুক্ত করা হয়নি। নিচে ক্লিক করে বা লিখে যোগ করুন।",
-                fontSize = 11.sp,
-                color = AdminInkMuted
-              )
-            } else {
-              Row(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-              ) {
-                colors.forEach { col ->
-                  Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = AdminV2CyanDeep,
-                    border = BorderStroke(1.dp, AdminV2CyanDeep)
-                  ) {
-                    Row(
-                      modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                      Text(text = col, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                      Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Remove",
-                        tint = Color.White,
-                        modifier = Modifier
-                          .size(14.dp)
-                          .clickable { colors = colors.filterNot { it == col } }
-                      )
-                    }
-                  }
-                }
-              }
-            }
-
-            // Custom color text input + Add button
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(6.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              OutlinedTextField(
-                value = customColorInput,
-                onValueChange = { customColorInput = it },
-                placeholder = { Text("নতুন কালার লিখুন (যেমন: টিয়া সবুজ)", fontSize = 11.sp) },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = adminOutlinedTextFieldColors(),
-                modifier = Modifier
-                  .weight(1f)
-                  .heightIn(min = 48.dp)
-              )
-
-              Button(
-                onClick = {
-                  val trimmed = customColorInput.trim()
-                  if (trimmed.isNotBlank() && !colors.contains(trimmed)) {
-                    colors = colors + trimmed
-                    customColorInput = ""
-                  }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.heightIn(min = 48.dp)
-              ) {
-                Text("+ কালার যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-              }
-            }
-
-            // Quick preset chips
-            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = AdminInkPrimary, fontWeight = FontWeight.Medium)
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-              horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-              presetColors.forEach { col ->
-                val alreadyAdded = colors.contains(col)
-                Surface(
-                  shape = RoundedCornerShape(12.dp),
-                  color = if (alreadyAdded) AdminV2SkySoft else Color.White,
-                  border = BorderStroke(1.dp, if (alreadyAdded) AdminV2CyanDeep else AdminCardBorderWarm),
-                  modifier = Modifier.clickable {
-                    colors = if (alreadyAdded) colors.filterNot { it == col } else colors + col
-                  }
-                ) {
-                  Text(
-                    text = if (alreadyAdded) "✓ $col" else "+ $col",
-                    fontSize = 11.sp,
-                    fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
-                    color = if (alreadyAdded) AdminV2CyanDeep else AdminInkPrimary,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                  )
-                }
-              }
-            }
-          }
-        }
-
-        // ==========================================
-        // 3. SIZE MANAGEMENT SECTION
-        // ==========================================
-        Card(
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = AdminV2IceSurface),
-          border = BorderStroke(1.dp, AdminCardBorderWarm),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "📏 সাইজের অপশন (${sizes.size})",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminV2DeepOcean
-              )
-              if (sizes.isNotEmpty()) {
-                Text(
-                  text = "ক্লিয়ার",
-                  fontSize = 11.sp,
-                  color = AccentRed,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.clickable { sizes = emptyList() }
-                )
-              }
-            }
-
-            // Current added sizes
-            if (sizes.isEmpty()) {
-              Text(
-                text = "কোনো সাইজ নির্ধারণ করা হয়নি। নিচে ক্লিক করে বা লিখে যোগ করুন।",
-                fontSize = 11.sp,
-                color = AdminInkMuted
-              )
-            } else {
-              Row(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-              ) {
-                sizes.forEach { sz ->
-                  Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = AdminNavyGradStart,
-                    border = BorderStroke(1.dp, AdminNavyGradStart)
-                  ) {
-                    Row(
-                      modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                      Text(text = sz, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                      Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Remove",
-                        tint = Color.White,
-                        modifier = Modifier
-                          .size(14.dp)
-                          .clickable { sizes = sizes.filterNot { it == sz } }
-                      )
-                    }
-                  }
-                }
-              }
-            }
-
-            // Custom size input + Add button
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(6.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              OutlinedTextField(
-                value = customSizeInput,
-                onValueChange = { customSizeInput = it },
-                placeholder = { Text("নতুন সাইজ লিখুন (যেমন: 40 বা 38 Semi-Stitch)", fontSize = 11.sp) },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = adminOutlinedTextFieldColors(),
-                modifier = Modifier
-                  .weight(1f)
-                  .heightIn(min = 48.dp)
-              )
-
-              Button(
-                onClick = {
-                  val trimmed = customSizeInput.trim()
-                  if (trimmed.isNotBlank() && !sizes.contains(trimmed)) {
-                    sizes = sizes + trimmed
-                    customSizeInput = ""
-                  }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = AdminNavyGradStart, contentColor = Color.White),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.heightIn(min = 48.dp)
-              ) {
-                Text("+ সাইজ যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-              }
-            }
-
-            // Quick preset chips
-            Text(text = "দ্রুত যুক্ত করুন:", fontSize = 10.sp, color = AdminInkPrimary, fontWeight = FontWeight.Medium)
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-              horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-              presetSizes.forEach { sz ->
-                val alreadyAdded = sizes.contains(sz)
-                Surface(
-                  shape = RoundedCornerShape(12.dp),
-                  color = if (alreadyAdded) AdminV2SkySoft else Color.White,
-                  border = BorderStroke(1.dp, if (alreadyAdded) AdminNavyGradStart else AdminCardBorderWarm),
-                  modifier = Modifier.clickable {
-                    sizes = if (alreadyAdded) sizes.filterNot { it == sz } else sizes + sz
-                  }
-                ) {
-                  Text(
-                    text = if (alreadyAdded) "✓ $sz" else "+ $sz",
-                    fontSize = 11.sp,
-                    fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
-                    color = if (alreadyAdded) AdminNavyGradStart else AdminInkPrimary,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                  )
-                }
-              }
-            }
-          }
-        }
-
-        // ==========================================
-        // 4. KIDS AGE MANAGEMENT SECTION
-        // ==========================================
-        Card(
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = AdminV2IceSurface),
-          border = BorderStroke(1.dp, AdminCardBorderWarm),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(text = "👶", fontSize = 14.sp)
-                Text(
-                  text = "বাচ্চাদের বয়সের মাপ (Kids Age) (${ageGroups.size})",
-                  fontSize = 13.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = AdminV2DeepOcean
-                )
-              }
-              if (ageGroups.isNotEmpty()) {
-                Text(
-                  text = "ক্লিয়ার",
-                  fontSize = 11.sp,
-                  color = AccentRed,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.clickable { ageGroups = emptyList() }
-                )
-              }
-            }
-
-            Text(
-              text = "বাচ্চাদের পোশাকের ক্ষেত্রে ক্রেতাদের বয়সের মাপ সিলেক্ট করার সুযোগ দিন।",
-              fontSize = 11.sp,
-              color = AdminInkSecondary
-            )
-
-            // Current added age groups
-            if (ageGroups.isEmpty()) {
-              Text(
-                text = "কোনো বয়স গ্রুপ যুক্ত করা হয়নি। নিচের বয়সগুলো ক্লিক করুন বা নতুন বয়স লিখুন।",
-                fontSize = 11.sp,
-                color = AdminInkMuted
-              )
-            } else {
-              Row(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-              ) {
-                ageGroups.forEach { age ->
-                  Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = AdminAmberGradStart,
-                    border = BorderStroke(1.dp, AdminAmberGradStart)
-                  ) {
-                    Row(
-                      modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                      Text(text = age, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                      Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Remove",
-                        tint = Color.White,
-                        modifier = Modifier
-                          .size(14.dp)
-                          .clickable { ageGroups = ageGroups.filterNot { it == age } }
-                      )
-                    }
-                  }
-                }
-              }
-            }
-
-            // Custom age input + Add button
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(6.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              OutlinedTextField(
-                value = customAgeInput,
-                onValueChange = { customAgeInput = it },
-                placeholder = { Text("নতুন বাচ্চার বয়স লিখুন (যেমন: নবজাতক বা ৭-৯ মাস)", fontSize = 11.sp) },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = adminOutlinedTextFieldColors(),
-                modifier = Modifier
-                  .weight(1f)
-                  .heightIn(min = 48.dp)
-              )
-
-              Button(
-                onClick = {
-                  val trimmed = customAgeInput.trim()
-                  if (trimmed.isNotBlank() && !ageGroups.contains(trimmed)) {
-                    ageGroups = ageGroups + trimmed
-                    customAgeInput = ""
-                  }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = AdminAmberGradStart, contentColor = Color.White),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.heightIn(min = 48.dp)
-              ) {
-                Text("+ বয়স যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-              }
-            }
-
-            // Quick preset age chips
-            Text(text = "দ্রুত বয়সের মাপ যুক্ত করুন:", fontSize = 10.sp, color = AdminInkPrimary, fontWeight = FontWeight.Medium)
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-              horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-              presetAges.forEach { age ->
-                val alreadyAdded = ageGroups.contains(age)
-                Surface(
-                  shape = RoundedCornerShape(12.dp),
-                  color = if (alreadyAdded) AdminV2AmberSoft else Color.White,
-                  border = BorderStroke(1.dp, if (alreadyAdded) AdminAmberGradStart else AdminCardBorderWarm),
-                  modifier = Modifier.clickable {
-                    ageGroups = if (alreadyAdded) ageGroups.filterNot { it == age } else ageGroups + age
-                  }
-                ) {
-                  Text(
-                    text = if (alreadyAdded) "✓ $age" else "+ $age",
-                    fontSize = 11.sp,
-                    fontWeight = if (alreadyAdded) FontWeight.Bold else FontWeight.Normal,
-                    color = if (alreadyAdded) AdminAmberGradStart else AdminInkPrimary,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                  )
-                }
-              }
-            }
-          }
-        }
-
-        // Description field + Gemini AI copywriter trigger
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Text(
-              text = "পণ্যের বিবরণ (AI সহায়তা):",
-              fontSize = 12.sp,
-              fontWeight = FontWeight.Bold,
-              color = AdminInkPrimary
-            )
-            OutlinedButton(
-              onClick = {
-                if (name.isBlank()) {
-                  aiDescError = "আগে পণ্যের নাম লিখুন।"
-                  return@OutlinedButton
-                }
-                aiDescError = null
-                isGeneratingAiDesc = true
-                formScope.launch {
-                  val effectivePrice = offerPriceStr.toIntOrNull() ?: priceStr.toIntOrNull() ?: 0
-                  val res = SajgojAiService.generateProductDescription(
-                    productName = name.trim(),
-                    category = category.trim(),
-                    price = effectivePrice,
-                    colors = colors,
-                    sizes = sizes,
-                    ageGroups = ageGroups
-                  )
-                  isGeneratingAiDesc = false
-                  res.onSuccess { generated ->
-                    description = generated
-                  }.onFailure { err ->
-                    aiDescError = err.localizedMessage ?: "AI বিবরণ তৈরি করতে পারেনি।"
-                  }
-                }
-              },
-              enabled = !isGeneratingAiDesc,
-              border = BorderStroke(1.dp, AdminV2CyanDeep),
-              shape = RoundedCornerShape(10.dp),
-              contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-              modifier = Modifier
-                .heightIn(min = 36.dp)
-                .testTag("product_form_ai_desc_button")
-            ) {
-              if (isGeneratingAiDesc) {
-                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(13.dp), color = AdminV2DeepOcean)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("তৈরি হচ্ছে...", fontSize = 11.sp, color = AdminV2DeepOcean)
-              } else {
-                Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("✨ AI দিয়ে বিবরণ লিখুন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
-              }
-            }
-          }
-
-          if (aiDescError != null) {
-            Text(
-              text = aiDescError!!,
-              fontSize = 11.sp,
-              color = Color(0xFFDC2626),
-              fontWeight = FontWeight.SemiBold
-            )
-          }
-
-          OutlinedTextField(
-            value = description,
-            onValueChange = { description = it },
-            label = { Text("পণ্যের বিস্তারিত বিবরণ") },
-            placeholder = { Text("কাপড়ের কোয়ালিটি, ফেব্রিক ও স্পেসিফিকেশন লিখুন") },
-            minLines = 2,
-            shape = RoundedCornerShape(12.dp),
-            colors = adminOutlinedTextFieldColors(),
-            modifier = Modifier.fillMaxWidth()
-          )
-        }
-
-        // Home Page Block Display Placement Checkboxes / Switches
-        Card(
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = AdminV2IceSurface),
-          border = BorderStroke(1.dp, AdminCardBorderWarm),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-          ) {
-            Text(
-              text = "🏠 হোম পেজ ডিসপ্লে ব্লক সিলেকশন",
-              fontSize = 12.5.sp,
-              fontWeight = FontWeight.Bold,
-              color = AdminV2DeepOcean
-            )
-            Text(
-              text = "নতুন আপলোড করলে অটোমেটিক \"নতুন প্রোডাক্ট\" ব্লকে প্রথমে যুক্ত হবে।",
-              fontSize = 10.sp,
-              color = AdminInkMuted
-            )
-
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "🔥 Hot Sale ব্লকে যুক্ত করুন",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminInkPrimary
-              )
-              Switch(
-                checked = isHotSale,
-                onCheckedChange = { isHotSale = it },
-                modifier = Modifier.testTag("product_form_hot_sale_switch")
-              )
-            }
-
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "⭐ সেরা ডিল ব্লকে যুক্ত করুন",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminInkPrimary
-              )
-              Switch(
-                checked = isBestDeal,
-                onCheckedChange = { isBestDeal = it },
-                modifier = Modifier.testTag("product_form_best_deal_switch")
-              )
-            }
-
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "🎁 Buy 2 Get 1 অফারে যুক্ত করুন",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = AdminInkPrimary
-              )
-              Switch(
-                checked = isB2G1,
-                onCheckedChange = { isB2G1 = it },
-                modifier = Modifier.testTag("product_form_b2g1_switch")
-              )
-            }
-          }
-        }
-
-        if (formError != null) {
-          Text(
-            text = formError!!,
-            color = Color.Red,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-          )
-        }
-
-        // Save Button
-        Button(
-          onClick = {
-            if (name.isBlank()) {
-              formError = "অনুগ্রহ করে পণ্যের নাম লিখুন!"
-              return@Button
-            }
-            val regularInput = priceStr.toIntOrNull()
-            if (regularInput == null || regularInput <= 0) {
-              formError = "সঠিক বিক্রয় মূল্য (৳) প্রদান করুন!"
-              return@Button
-            }
-            val offerInput = offerPriceStr.toIntOrNull() ?: 0
-            val hasValidOffer = offerInput in 1 until regularInput
-            val effectivePrice = if (hasValidOffer) offerInput else regularInput
-            val stock = stockStr.toIntOrNull() ?: 1
-
-            val cleanVideoUrl = videoUrl.trim()
-            val finalVideoEnabled = videoEnabled && cleanVideoUrl.isNotBlank()
-            val parsedVideo = com.example.util.ProductMediaHelper.parseVideoSource(cleanVideoUrl, videoType)
-            val resolvedThumb = if (finalVideoEnabled) {
-              videoThumbUrl.trim().ifBlank { parsedVideo.thumbUrl }
-            } else {
-              ""
-            }
-
-            val p = Product(
-              id = product?.id ?: "p_${System.currentTimeMillis()}",
-              name = name.trim(),
-              price = effectivePrice,
-              regularPrice = regularInput,
-              offerPrice = if (hasValidOffer) offerInput else 0,
-              stock = stock,
-              category = category.trim().ifBlank { "অন্যান্য" },
-              imageUrl = imageUrl.trim().ifBlank { "res://banner_eid_special_1792530116809" },
-              sku = sku.trim().ifBlank { "SAJ-${(100..999).random()}" },
-              description = description.trim().ifBlank { "সজগোজ ফ্যাশনের আকর্ষণীয় প্রিমিয়াম কোয়ালিটি পণ্য।" },
-              colors = colors,
-              sizes = sizes,
-              ageGroups = ageGroups,
-              isHotSale = isHotSale,
-              isBestDeal = isBestDeal,
-              isB2G1 = isB2G1,
-              createdAt = product?.createdAt ?: System.currentTimeMillis(),
-              videoEnabled = finalVideoEnabled,
-              videoType = videoType,
-              videoUrl = cleanVideoUrl,
-              videoThumbUrl = resolvedThumb,
-              additionalImages = product?.additionalImages ?: emptyList()
-            )
-            onSave(p)
-          },
-          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean),
-          shape = RoundedCornerShape(16.dp),
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-        ) {
-          Text("সংরক্ষণ করুন", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-    }
-  }
-}
-
-@Composable
-fun CategoryFormDialog(
-  onDismiss: () -> Unit,
-  onSave: (Category) -> Unit
-) {
-  var name by remember { mutableStateOf("") }
-  var icon by remember { mutableStateOf("✨") }
-
-  Dialog(onDismissRequest = onDismiss) {
-    Surface(
-      shape = RoundedCornerShape(22.dp),
-      color = Color.White,
-      border = BorderStroke(1.5.dp, AdminCardBorderWarm),
-      shadowElevation = 10.dp,
-      modifier = Modifier
-        .fillMaxWidth(0.92f)
-        .padding(16.dp)
-    ) {
-      Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-      ) {
-        Text(text = "নতুন ক্যাটাগরি তৈরি করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminV2DeepOcean)
-
-        OutlinedTextField(
-          value = name,
-          onValueChange = { name = it },
-          label = { Text("ক্যাটাগরির নাম (যেমন: ব্রাইডাল সেট)") },
-          singleLine = true,
-          shape = RoundedCornerShape(12.dp),
-          colors = adminOutlinedTextFieldColors(),
-          modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-          value = icon,
-          onValueChange = { icon = it },
-          label = { Text("ইমোজি আইকন (যেমন: 👑)") },
-          singleLine = true,
-          shape = RoundedCornerShape(12.dp),
-          colors = adminOutlinedTextFieldColors(),
-          modifier = Modifier.fillMaxWidth()
-        )
-
-        Button(
-          onClick = {
-            if (name.isNotBlank()) {
-              onSave(Category(id = "c_${System.currentTimeMillis()}", name = name, icon = icon.ifBlank { "✨" }))
-            }
-          },
-          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
-          shape = RoundedCornerShape(14.dp),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Text("যুক্ত করুন", fontWeight = FontWeight.Bold)
-        }
-      }
-    }
-  }
-}
-
 @Composable
 fun CouponFormDialog(
   onDismiss: () -> Unit,
@@ -4502,7 +3253,7 @@ fun BannerFormDialog(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Text(text = "নতুন ব্যানার যোগ করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminV2DeepOcean)
+        Text(text = "নতুন ব্যানার যোগ করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
 
         OutlinedTextField(
           value = title,
@@ -4549,9 +3300,9 @@ fun BannerFormDialog(
               )
             }
           },
-          colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+          colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
-          modifier = Modifier.fillMaxWidth()
+          modifier = Modifier.fillMaxWidth().height(48.dp)
         ) {
           Text("ব্যানার যুক্ত করুন", fontWeight = FontWeight.Bold)
         }
