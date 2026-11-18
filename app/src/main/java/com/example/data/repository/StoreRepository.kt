@@ -27,8 +27,15 @@ import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.data.sync.InventorySyncService
 import com.example.data.sync.LocalInventoryStorageSync
-import com.google.firebase.FirebaseApp
+import com.example.firebase.GoogleAuthHelper
+import com.example.firebase.OperationType
+import com.example.firebase.handleFirestoreError
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,7 +61,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 3500,
       stock = 8,
       category = "শাড়ি",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       sku = "SAJ-001",
       description = "খাঁটি বেনারসি ও কাতানের মেলবন্ধনে তৈরি সোনালী জরি পাড়যুক্ত জমকালো ডিজাইনার শাড়ি। উৎসব এবং বিয়ের অনুষ্ঠানের জন্য আদর্শ কালেকশন। সাথে রয়েছে আনস্টিচড ম্যাচিং ব্লাউজ পিস।",
       colors = listOf("রয়েল রেড", "মেরুন", "কালো", "গোল্ডেন"),
@@ -72,7 +79,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 2999,
       stock = 14,
       category = "নেকলেস",
-      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      imageUrl = "res://banner_jewelry_royal_1792530130914",
       sku = "SAJ-002",
       description = "অ্যান্টিক গোল্ড প্লেটেড রয়্যাল কুন্দন চোকার, সাথে ম্যাচিং স্টেটমেন্ট ঝুমকা এবং টিকলি। রুচিশীল রত্নপাথর ও মুক্তোর কারুকার্যময় কাজ।",
       colors = listOf("রয়্যাল গোল্ডেন", "অ্যান্টিক গোল্ড", "রুবী রেড"),
@@ -89,7 +96,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 1250,
       stock = 4,
       category = "চুড়ি",
-      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      imageUrl = "res://ic_app_icon_1792530102214",
       sku = "SAJ-003",
       description = "লং লাস্টিং টেকসই প্রিমিয়াম সিটি গোল্ড চুড়ি সেট (৪ পিস)। প্রতিদিনের ব্যবহার এবং পার্টিতে পরার জন্য দারুণ ফিনিশিং।",
       sizes = listOf("2.4", "2.6", "2.8"),
@@ -105,7 +112,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 890,
       stock = 20,
       category = "ব্রেসলেট",
-      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      imageUrl = "res://banner_jewelry_royal_1792530130914",
       sku = "SAJ-004",
       description = "হালকা ও আকর্ষণীয় রুবি ক্রিস্টাল পাথরে খচিত অ্যাডজাস্টেবল ব্রেসলেট জোড়া। যেকোনো পোশাকের সাথে দারুণ মানানসই।",
       colors = listOf("রুবী রেড", "পান্না সবুজ", "রয়েল ব্লু"),
@@ -122,7 +129,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 4200,
       stock = 6,
       category = "শাড়ি",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       sku = "SAJ-005",
       description = "হাতে বোনা ঐতিহ্যবাহী জামদানি মোটিফ এবং নরম আরামদায়ক সিল্ক-সুতি টেক্সচার। আভিজাত্যে ভরপুর বিশেষ সংগ্রহ।",
       colors = listOf("হলুদ ও লাল", "কালো ও সোনালী", "রানি গোলাপি"),
@@ -139,7 +146,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 1450,
       stock = 2,
       category = "নেকলেস",
-      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      imageUrl = "res://ic_app_icon_1792530102214",
       sku = "SAJ-006",
       description = "রঙিন এনামেল কারুকাজ সমৃদ্ধ ঐতিহ্যবাহী মীনাকারি কানের দুল ও নোলক। উৎসবের সাজে দেবে এক রাজকীয় মাত্রা।",
       isHotSale = true,
@@ -155,7 +162,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 1450,
       stock = 12,
       category = "বাচ্চাদের পোশাক",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       sku = "KID-001",
       description = "বাচ্চাদের জন্য আকর্ষণীয় সফট নেট ও সুতি কাপড়ে তৈরি আরামদায়ক ডিজাইনার পার্টি ফ্রক। জন্মদিন এবং উৎসব অনুষ্ঠানের জন্য সেরা পছন্দ।",
       colors = listOf("গোলাপী", "রয়েল রেড", "স্কাই ব্লু", "সাদা"),
@@ -173,7 +180,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 1190,
       stock = 10,
       category = "বাচ্চাদের পোশাক",
-      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      imageUrl = "res://ic_app_icon_1792530102214",
       sku = "KID-002",
       description = "১০০% প্রিমিয়াম সুতি কাপড়ে তৈরি আরামদায়ক বাচ্চাদের পাঞ্জাবি সেট। গলায় সূক্ষ্ম সুতার এমব্রয়ডারি কাজ করা।",
       colors = listOf("অফ হোয়াইট", "মেরুন", "রয়েল ব্লু", "সবুজ"),
@@ -191,7 +198,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 990,
       stock = 20,
       category = "বাচ্চাদের পোশাক",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       sku = "SAJ-KD05",
       description = "বাচ্চাদের কোমল ত্বকের জন্য সম্পূর্ণ নিরাপদ, নরম সুতি লাইনিংযুক্ত প্রিমিয়াম পার্টি ফ্রক। উৎসব ও জন্মদিনের জন্য সেরা পছন্দ।",
       rating = 4.9f,
@@ -212,7 +219,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 4500,
       stock = 10,
       category = "শাড়ি",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       sku = "SAJ-SR10",
       description = "হাতে বোনা আসল দেশি ঢাকাই জামদানি শাড়ি, সোনালী জরির সূক্ষ্ম নকশা সমৃদ্ধ। বিয়ে ও উৎসবের সাজে অনন্য।",
       rating = 4.9f,
@@ -231,7 +238,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 3850,
       stock = 7,
       category = "ব্রাইডাল সেট",
-      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      imageUrl = "res://banner_jewelry_royal_1792530130914",
       sku = "SAJ-BR11",
       description = "সীতাহার, চোকার, ঝুমকা ও টিকলিসহ সম্পূর্ণ রয়্যাল ব্রাইডাল জুয়েলারি সেট।",
       rating = 5.0f,
@@ -251,7 +258,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 1890,
       stock = 18,
       category = "জামা / কামিজ",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       sku = "SAJ-KM12",
       description = "পিওর কটন কাপড়ের ওপর নিখুঁত কাজের প্রিমিয়াম থ্রি-পিস ও ওড়না সেট।",
       rating = 4.8f,
@@ -270,7 +277,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 550,
       stock = 24,
       category = "টি-শার্ট",
-      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      imageUrl = "res://ic_app_icon_1792530102214",
       sku = "SAJ-TS13",
       description = "২২০ জিএসএম ১০০% কম্বড কটন ড্রপ-শোল্ডার টি-শার্ট। প্রতিদিনের আরামদায়ক ও স্টাইলিশ ব্যবহারের জন্য সেরা।",
       rating = 4.9f,
@@ -289,7 +296,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 1190,
       stock = 16,
       category = "প্যান্ট",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       sku = "SAJ-PN14",
       description = "স্লিম-কম্ফোর্ট ফিট স্ট্রেচ কটন টুইল প্যান্ট। অফিস ও ক্যাজুয়াল দুই ক্ষেত্রেই দারুণ মানানসই।",
       rating = 4.8f,
@@ -308,7 +315,7 @@ class StoreRepository(private val context: Context) {
       offerPrice = 1390,
       stock = 14,
       category = "চুড়ি ও বালা",
-      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      imageUrl = "res://banner_jewelry_royal_1792530130914",
       sku = "SAJ-BG15",
       description = "আধুনিক ও ঐতিহ্যবাহী ডিজাইনের মুক্তা বসানো বালা ও চুড়ি সেট। যেকোনো উৎসবে হাতে দেবে রাজকীয় আভা।",
       rating = 4.9f,
@@ -329,7 +336,7 @@ class StoreRepository(private val context: Context) {
       subtitle = "ঈদ ও বিয়ের রাজকীয় সেট",
       description = "এক্সক্লুসিভ কাতান শাড়ি এবং রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট একসাথে স্পেশাল কম্বো মূল্যে।",
       badge = "ব্রাইডাল কম্বো ✨",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       productIds = listOf("p1", "p2"),
       regularPrice = 6499,
       comboPrice = 5499,
@@ -343,7 +350,7 @@ class StoreRepository(private val context: Context) {
       subtitle = "৩টি প্রিমিয়াম পণ্যের সেট",
       description = "জামদানি শাড়ি, মীনাকারি ঝুমকো ও সিটি গোল্ড চুড়ি সেট — উৎসবের সম্পূর্ণ সাজ এক প্যাকেজে।",
       badge = "হট কম্বো 🔥",
-      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      imageUrl = "res://banner_jewelry_royal_1792530130914",
       productIds = listOf("p5", "p6", "p3"),
       regularPrice = 6900,
       comboPrice = 5850,
@@ -357,7 +364,7 @@ class StoreRepository(private val context: Context) {
       subtitle = "স্মার্ট ক্যাজুয়াল ডুয়ো",
       description = "প্রিমিয়াম ড্রপ-শোল্ডার কটন টি-শার্ট ও কম্ফোর্ট চিনো প্যান্ট কম্বো ডিল।",
       badge = "সুপার সেভ 💰",
-      imageUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      imageUrl = "res://ic_app_icon_1792530102214",
       productIds = listOf("p13", "p14"),
       regularPrice = 1740,
       comboPrice = 1490,
@@ -371,7 +378,7 @@ class StoreRepository(private val context: Context) {
       subtitle = "ডেইলি ও পার্টি স্টাইল",
       description = "ডিজাইনার কটন থ্রি-পিস সাথে ফ্রি-ম্যাচিং রুবি ক্রিস্টাল ব্রেসলেট পেয়ার।",
       badge = "মেগা অফার 🎁",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       productIds = listOf("p12", "p4"),
       regularPrice = 2780,
       comboPrice = 2350,
@@ -400,7 +407,7 @@ class StoreRepository(private val context: Context) {
       title = "রাজকীয় কুন্দন চোকার ও ঝুমকা সেট আনবক্সিং ✨",
       caption = "প্রিমিয়াম ফিনিশিং ও নিখুঁত কারুকার্যের বিয়ের স্পেশাল কালেকশন।",
       videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-gold-necklace-41380-large.mp4",
-      posterUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      posterUrl = "res://banner_jewelry_royal_1792530130914",
       productId = "p2",
       views = "2.8k",
       likes = 142,
@@ -412,7 +419,7 @@ class StoreRepository(private val context: Context) {
       title = "এক্সক্লুসিভ পিওর জামদানি শাড়ি ড্র্যাপ ও লুক 🥻",
       caption = "আসল দেশি তাঁতের বোনা কাতান ও জামদানি শাড়ি কালেকশন।",
       videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-traditional-oriental-fabric-moving-slowly-41656-large.mp4",
-      posterUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      posterUrl = "res://banner_eid_special_1792530116809",
       productId = "p1",
       views = "5.1k",
       likes = 236,
@@ -424,7 +431,7 @@ class StoreRepository(private val context: Context) {
       title = "এন্টিক গোল্ড প্লেটেড বালা ও চুড়ি সেট 👑",
       caption = "রয়েল ব্রাইডাল সাজের আসল আভিজাত্য। নিখুঁত গোল্ডেন ফিনিশিং।",
       videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-delicate-gold-jewelry-pieces-on-display-42044-large.mp4",
-      posterUrl = "res://${R.drawable.ic_app_icon_1792530102214}",
+      posterUrl = "res://ic_app_icon_1792530102214",
       productId = "p3",
       views = "3.4k",
       likes = 189,
@@ -436,7 +443,7 @@ class StoreRepository(private val context: Context) {
       title = "ডিজাইনার রেশম কাতান ও জমকালো শাড়ি কালেকশন ✨",
       caption = "হাতে বোনা গর্জিয়াস শাড়ির রিয়েল ভিডিও প্রিভিউ।",
       videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-hands-touching-silk-textile-42004-large.mp4",
-      posterUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      posterUrl = "res://banner_eid_special_1792530116809",
       productId = "p10",
       views = "2.1k",
       likes = 112,
@@ -477,7 +484,7 @@ class StoreRepository(private val context: Context) {
       title = "Eid Collection 2026",
       subtitle = "এক্সক্লুসিভ ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন",
       buttonText = "কালেকশন দেখুন",
-      imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+      imageUrl = "res://banner_eid_special_1792530116809",
       isActive = true
     ),
     BannerItem(
@@ -485,7 +492,7 @@ class StoreRepository(private val context: Context) {
       title = "রাজওয়াড়ি ব্রাইডাল কালেকশন",
       subtitle = "ফ্ল্যাট ২০% ছাড় • খাঁটি কুন্দন ও মুক্তোর নিখুঁত কাজ",
       buttonText = "অফার লুফে নিন",
-      imageUrl = "res://${R.drawable.banner_jewelry_royal_1792530130914}",
+      imageUrl = "res://banner_jewelry_royal_1792530130914",
       isActive = true
     )
   )
@@ -690,15 +697,25 @@ class StoreRepository(private val context: Context) {
 
   private val firestore: FirebaseFirestore? by lazy {
     try {
-      val dbId = context.getString(R.string.firestore_database_id)
-      FirebaseFirestore.getInstance(FirebaseApp.getInstance(), dbId)
-    } catch (e: Exception) {
-      try {
-        FirebaseFirestore.getInstance()
-      } catch (e2: Exception) {
-        null
-      }
+      GoogleAuthHelper.createFirestore(context)
+    } catch (_: Exception) {
+      null
     }
+  }
+
+  private var ordersListener: ListenerRegistration? = null
+  private var returnsListener: ListenerRegistration? = null
+
+  private fun currentAuthUid(): String? = try {
+    Firebase.auth.currentUser?.uid
+  } catch (_: Exception) {
+    null
+  }
+
+  private fun isVerifiedAdmin(): Boolean = try {
+    GoogleAuthHelper.toSummary(Firebase.auth.currentUser)?.isAdmin == true
+  } catch (_: Exception) {
+    false
   }
 
   val inventorySyncService: InventorySyncService by lazy {
@@ -759,6 +776,7 @@ class StoreRepository(private val context: Context) {
     try {
       db.collection("products").addSnapshotListener { snapshot, error ->
         if (error != null) {
+          handleFirestoreError(error, OperationType.LIST, "products")
           inventorySyncService.recordSyncError(
             source = "FIRESTORE_PRODUCTS_LISTENER",
             severity = "ERROR",
@@ -792,13 +810,19 @@ class StoreRepository(private val context: Context) {
               val extraImages = (doc.get("images") as? List<*>)?.mapNotNull { it?.toString() }?.drop(1)
                 ?: (doc.get("additionalImages") as? List<*>)?.mapNotNull { it?.toString() }
                 ?: emptyList()
+              val rawImageUrl = doc.getString("imageUrl") ?: (doc.get("images") as? List<*>)?.firstOrNull()?.toString() ?: ""
+              val resolvedImageUrl = if (rawImageUrl.startsWith("res://") && rawImageUrl.removePrefix("res://").toIntOrNull() != null) {
+                seedMatch?.imageUrl ?: "res://banner_eid_special_1792530116809"
+              } else {
+                rawImageUrl
+              }
               Product(
                 id = docId,
                 name = doc.getString("name") ?: "",
                 price = docPrice,
                 stock = (doc.getLong("stock") ?: 0L).toInt(),
                 category = doc.getString("category") ?: "শাড়ি",
-                imageUrl = doc.getString("imageUrl") ?: (doc.get("images") as? List<*>)?.firstOrNull()?.toString() ?: "",
+                imageUrl = resolvedImageUrl,
                 sku = docSku,
                 description = doc.getString("description") ?: "",
                 rating = ratingVal,
@@ -812,7 +836,9 @@ class StoreRepository(private val context: Context) {
                 isHotSale = doc.getBoolean("isHotSale") ?: false,
                 isBestDeal = doc.getBoolean("isBestDeal") ?: false,
                 isB2G1 = doc.getBoolean("isB2G1") ?: false,
-                createdAt = doc.getLong("createdAt") ?: 0L,
+                createdAt = doc.getTimestamp("createdAt")?.toDate()?.time
+                  ?: (doc.get("createdAt") as? Number)?.toLong()
+                  ?: 0L,
                 regularPrice = regularPriceVal,
                 offerPrice = offerPriceVal,
                 videoEnabled = doc.getBoolean("videoEnabled") ?: false,
@@ -842,7 +868,11 @@ class StoreRepository(private val context: Context) {
       }
 
       db.collection("reviews").addSnapshotListener { snapshot, error ->
-        if (error == null && snapshot != null && !snapshot.isEmpty) {
+        if (error != null) {
+          handleFirestoreError(error, OperationType.LIST, "reviews")
+          return@addSnapshotListener
+        }
+        if (snapshot != null && !snapshot.isEmpty) {
           val list = snapshot.documents.mapNotNull { doc ->
             try {
               ProductReview(
@@ -852,7 +882,9 @@ class StoreRepository(private val context: Context) {
                 rating = (doc.getLong("rating") ?: 5L).toInt(),
                 comment = doc.getString("comment") ?: "",
                 date = doc.getString("date") ?: "",
-                createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis(),
+                createdAt = doc.getTimestamp("createdAt")?.toDate()?.time
+                  ?: (doc.get("createdAt") as? Number)?.toLong()
+                  ?: System.currentTimeMillis(),
                 verified = doc.getBoolean("verified") ?: true
               )
             } catch (e: Exception) {
@@ -862,72 +894,100 @@ class StoreRepository(private val context: Context) {
           if (list.isNotEmpty()) {
             _reviews.value = list
           }
-        } else if (snapshot != null && snapshot.isEmpty) {
-          initialReviews.forEach { r ->
-            db.collection("reviews").document(r.id).set(
-              mapOf(
-                "id" to r.id,
-                "productId" to r.productId,
-                "customerName" to r.customerName,
-                "rating" to r.rating,
-                "comment" to r.comment,
-                "date" to r.date,
-                "createdAt" to r.createdAt,
-                "verified" to r.verified
+        }
+      }
+    } catch (e: Exception) {
+      inventorySyncService.recordSyncError(
+        source = "FIRESTORE_INIT",
+        severity = "ERROR",
+        code = e.javaClass.simpleName,
+        message = e.localizedMessage ?: "Firestore রিয়েল-টাইম সিঙ্ক শুরু করতে ব্যর্থ",
+        details = e.toString(),
+        products = _products.value
+      )
+    }
+  }
+
+  /**
+   * Starts or tears down auth-gated Firestore listeners (orders, returns, POS sync)
+   * strictly aligned with zero-trust rules and the signed-in Google account.
+   */
+  fun onAuthSessionChanged(user: FirebaseUser?) {
+    ordersListener?.remove()
+    ordersListener = null
+    returnsListener?.remove()
+    returnsListener = null
+
+    val db = firestore ?: return
+    if (user == null) {
+      inventorySyncService.stopListening()
+      return
+    }
+
+    val isAdmin = GoogleAuthHelper.toSummary(user)?.isAdmin == true
+    val ordersQuery = if (isAdmin) {
+      db.collection("orders")
+    } else {
+      db.collection("orders").whereEqualTo("userId", user.uid)
+    }
+
+    ordersListener = ordersQuery.addSnapshotListener { snapshot, error ->
+      if (error != null) {
+        handleFirestoreError(error, OperationType.LIST, "orders")
+        return@addSnapshotListener
+      }
+      if (snapshot != null && !snapshot.isEmpty) {
+        val list = snapshot.documents.mapNotNull { doc ->
+          try {
+            val itemsList = (doc.get("items") as? List<*>)?.mapNotNull { itemMap ->
+              val m = itemMap as? Map<*, *> ?: return@mapNotNull null
+              OrderItem(
+                productId = m["productId"]?.toString() ?: "",
+                name = m["name"]?.toString() ?: "",
+                quantity = (m["quantity"] as? Number)?.toInt() ?: 1,
+                price = (m["price"] as? Number)?.toInt() ?: 0,
+                color = m["color"]?.toString() ?: "",
+                size = m["size"]?.toString() ?: "",
+                ageGroup = m["ageGroup"]?.toString() ?: ""
               )
+            } ?: emptyList()
+
+            Order(
+              id = doc.getString("id") ?: doc.id,
+              customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
+              phone = doc.getString("phone") ?: "",
+              district = doc.getString("district") ?: "ঢাকা",
+              thana = doc.getString("thana") ?: "সদর",
+              address = doc.getString("address") ?: "",
+              items = itemsList,
+              subtotal = (doc.getLong("subtotal") ?: 0L).toInt(),
+              deliveryCharge = (doc.getLong("deliveryCharge") ?: 0L).toInt(),
+              discount = (doc.getLong("discount") ?: 0L).toInt(),
+              couponCode = doc.getString("couponCode") ?: "",
+              total = (doc.getLong("total") ?: 0L).toInt(),
+              paymentMethod = doc.getString("paymentMethod") ?: "Cash on Delivery",
+              status = doc.getString("status") ?: "Pending",
+              date = doc.getString("date") ?: "",
+              trackingId = doc.getString("trackingId") ?: "",
+              stockRestockedOnCancel = doc.getBoolean("stockRestockedOnCancel") ?: false
             )
+          } catch (_: Exception) {
+            null
           }
         }
-      }
-
-      db.collection("orders").addSnapshotListener { snapshot, error ->
-        if (error == null && snapshot != null && !snapshot.isEmpty) {
-          val list = snapshot.documents.mapNotNull { doc ->
-            try {
-              val itemsList = (doc.get("items") as? List<*>)?.mapNotNull { itemMap ->
-                val m = itemMap as? Map<*, *> ?: return@mapNotNull null
-                OrderItem(
-                  productId = m["productId"]?.toString() ?: "",
-                  name = m["name"]?.toString() ?: "",
-                  quantity = (m["quantity"] as? Number)?.toInt() ?: 1,
-                  price = (m["price"] as? Number)?.toInt() ?: 0,
-                  color = m["color"]?.toString() ?: "",
-                  size = m["size"]?.toString() ?: "",
-                  ageGroup = m["ageGroup"]?.toString() ?: ""
-                )
-              } ?: emptyList()
-
-              Order(
-                id = doc.getString("id") ?: doc.id,
-                customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
-                phone = doc.getString("phone") ?: "",
-                district = doc.getString("district") ?: "ঢাকা",
-                thana = doc.getString("thana") ?: "সদর",
-                address = doc.getString("address") ?: "",
-                items = itemsList,
-                subtotal = (doc.getLong("subtotal") ?: 0L).toInt(),
-                deliveryCharge = (doc.getLong("deliveryCharge") ?: 0L).toInt(),
-                discount = (doc.getLong("discount") ?: 0L).toInt(),
-                couponCode = doc.getString("couponCode") ?: "",
-                total = (doc.getLong("total") ?: 0L).toInt(),
-                paymentMethod = doc.getString("paymentMethod") ?: "Cash on Delivery",
-                status = doc.getString("status") ?: "Pending",
-                date = doc.getString("date") ?: "",
-                trackingId = doc.getString("trackingId") ?: "",
-                stockRestockedOnCancel = doc.getBoolean("stockRestockedOnCancel") ?: false
-              )
-            } catch (e: Exception) {
-              null
-            }
-          }
-          if (list.isNotEmpty()) {
-            _orders.value = list
-          }
+        if (list.isNotEmpty()) {
+          _orders.value = list
         }
       }
+    }
 
-      db.collection("returns").addSnapshotListener { snapshot, error ->
-        if (error == null && snapshot != null && !snapshot.isEmpty) {
+    if (isAdmin) {
+      returnsListener = db.collection("returns").addSnapshotListener { snapshot, error ->
+        if (error != null) {
+          handleFirestoreError(error, OperationType.LIST, "returns")
+          return@addSnapshotListener
+        }
+        if (snapshot != null && !snapshot.isEmpty) {
           val list = snapshot.documents.mapNotNull { doc ->
             try {
               val retItems = (doc.get("returnedItems") as? List<*>)?.mapNotNull { itemMap ->
@@ -977,7 +1037,7 @@ class StoreRepository(private val context: Context) {
                 reason = doc.getString("reason") ?: "পণ্য পরিবর্তন / অপছন্দ",
                 note = doc.getString("note") ?: ""
               )
-            } catch (e: Exception) {
+            } catch (_: Exception) {
               null
             }
           }
@@ -987,7 +1047,6 @@ class StoreRepository(private val context: Context) {
         }
       }
 
-      // Real-time bidirectional listener on `pos_inventory` and `inventory_sync_events`
       inventorySyncService.startListening(
         getCurrentProducts = { _products.value },
         onRemotePosUpdateProducts = { updatedProducts ->
@@ -995,15 +1054,8 @@ class StoreRepository(private val context: Context) {
           persistLocalSyncSnapshot()
         }
       )
-    } catch (e: Exception) {
-      inventorySyncService.recordSyncError(
-        source = "FIRESTORE_INIT",
-        severity = "ERROR",
-        code = e.javaClass.simpleName,
-        message = e.localizedMessage ?: "Firestore রিয়েল-টাইম সিঙ্ক শুরু করতে ব্যর্থ",
-        details = e.toString(),
-        products = _products.value
-      )
+    } else {
+      inventorySyncService.stopListening()
     }
   }
 
@@ -1050,7 +1102,7 @@ class StoreRepository(private val context: Context) {
       price = combo.comboPrice,
       stock = combo.stock,
       category = "কম্বো প্যাক",
-      imageUrl = combo.imageUrl.ifBlank { "res://${R.drawable.banner_eid_special_1792530116809}" },
+      imageUrl = combo.imageUrl.ifBlank { "res://banner_eid_special_1792530116809" },
       sku = combo.id.uppercase(),
       description = combo.description.ifBlank { combo.subtitle },
       rating = 5.0f,
@@ -1169,42 +1221,50 @@ class StoreRepository(private val context: Context) {
     _orders.value = listOf(newOrder) + _orders.value
 
     try {
-      val itemsMaps = newOrder.items.map {
-        mapOf(
-          "productId" to it.productId,
-          "name" to it.name,
-          "quantity" to it.quantity,
-          "price" to it.price,
-          "color" to it.color,
-          "size" to it.size,
-          "ageGroup" to it.ageGroup
-        )
-      }
+      val uid = currentAuthUid()
+      if (uid != null) {
+        val itemsMaps = newOrder.items.map {
+          mapOf(
+            "productId" to it.productId,
+            "name" to it.name,
+            "quantity" to it.quantity,
+            "price" to it.price,
+            "color" to it.color,
+            "size" to it.size,
+            "ageGroup" to it.ageGroup
+          )
+        }
 
-      firestore?.collection("orders")?.document(newOrder.id)?.set(
-        mapOf(
-          "id" to newOrder.id,
-          "customer" to newOrder.customerName,
-          "customerName" to newOrder.customerName,
-          "phone" to newOrder.phone,
-          "district" to newOrder.district,
-          "thana" to newOrder.thana,
-          "address" to newOrder.address,
-          "items" to itemsMaps,
-          "subtotal" to newOrder.subtotal,
-          "deliveryCharge" to newOrder.deliveryCharge,
-          "discount" to newOrder.discount,
-          "couponCode" to newOrder.couponCode,
-          "total" to newOrder.total,
-          "paymentMethod" to newOrder.paymentMethod,
-          "status" to newOrder.status,
-          "date" to newOrder.date,
-          "trackingId" to newOrder.trackingId,
-          "stockRestockedOnCancel" to false
-        )
-      )
+        val orderPath = "orders/${newOrder.id}"
+        firestore?.collection("orders")?.document(newOrder.id)?.set(
+          mapOf(
+            "userId" to uid,
+            "customer" to newOrder.customerName,
+            "customerName" to newOrder.customerName,
+            "phone" to newOrder.phone,
+            "district" to newOrder.district,
+            "thana" to newOrder.thana,
+            "address" to newOrder.address,
+            "items" to itemsMaps,
+            "subtotal" to newOrder.subtotal,
+            "deliveryCharge" to newOrder.deliveryCharge,
+            "discount" to newOrder.discount,
+            "couponCode" to newOrder.couponCode,
+            "total" to newOrder.total,
+            "paymentMethod" to newOrder.paymentMethod,
+            "status" to newOrder.status,
+            "date" to newOrder.date,
+            "trackingId" to newOrder.trackingId,
+            "stockRestockedOnCancel" to false,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "updatedAt" to FieldValue.serverTimestamp()
+          )
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.CREATE, orderPath)
+        }
+      }
     } catch (e: Exception) {
-      // Ignore
+      handleFirestoreError(e, OperationType.CREATE, "orders/${newOrder.id}")
     }
 
     // Clear cart
@@ -1259,50 +1319,58 @@ class StoreRepository(private val context: Context) {
     _orders.value = listOf(posOrder) + _orders.value
 
     try {
-      val itemsMaps = items.map {
-        mapOf(
-          "productId" to it.productId,
-          "name" to it.name,
-          "quantity" to it.quantity,
-          "price" to it.price,
-          "color" to it.color,
-          "size" to it.size,
-          "ageGroup" to it.ageGroup
-        )
-      }
-      firestore?.collection("orders")?.document(posOrder.id)?.set(
-        mapOf(
-          "id" to posOrder.id,
-          "customer" to posOrder.customerName,
-          "customerName" to posOrder.customerName,
-          "phone" to posOrder.phone,
-          "district" to posOrder.district,
-          "thana" to posOrder.thana,
-          "address" to posOrder.address,
-          "items" to itemsMaps,
-          "subtotal" to posOrder.subtotal,
-          "deliveryCharge" to 0,
-          "discount" to posOrder.discount,
-          "total" to posOrder.total,
-          "paymentMethod" to posOrder.paymentMethod,
-          "orderType" to "POS_SALE",
-          "status" to posOrder.status,
-          "date" to posOrder.date,
-          "trackingId" to ""
-        )
-      )?.addOnSuccessListener {
-        inventorySyncService.markFirestoreSync(products = _products.value)
-      }?.addOnFailureListener { e ->
-        inventorySyncService.recordSyncError(
-          source = "FIRESTORE_POS_ORDER_WRITE",
-          severity = "ERROR",
-          code = e.javaClass.simpleName,
-          message = e.localizedMessage ?: "POS অর্ডার Firestore-এ সেভ করতে ব্যর্থ",
-          details = "collection=orders doc=${posOrder.id}",
-          products = _products.value
-        )
+      val uid = currentAuthUid()
+      if (uid != null && isVerifiedAdmin()) {
+        val itemsMaps = items.map {
+          mapOf(
+            "productId" to it.productId,
+            "name" to it.name,
+            "quantity" to it.quantity,
+            "price" to it.price,
+            "color" to it.color,
+            "size" to it.size,
+            "ageGroup" to it.ageGroup
+          )
+        }
+        firestore?.collection("orders")?.document(posOrder.id)?.set(
+          mapOf(
+            "userId" to uid,
+            "customer" to posOrder.customerName,
+            "customerName" to posOrder.customerName,
+            "phone" to posOrder.phone,
+            "district" to posOrder.district,
+            "thana" to posOrder.thana,
+            "address" to posOrder.address,
+            "items" to itemsMaps,
+            "subtotal" to posOrder.subtotal,
+            "deliveryCharge" to 0,
+            "discount" to posOrder.discount,
+            "couponCode" to "",
+            "total" to posOrder.total,
+            "paymentMethod" to posOrder.paymentMethod,
+            "status" to posOrder.status,
+            "date" to posOrder.date,
+            "trackingId" to "",
+            "stockRestockedOnCancel" to false,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "updatedAt" to FieldValue.serverTimestamp()
+          )
+        )?.addOnSuccessListener {
+          inventorySyncService.markFirestoreSync(products = _products.value)
+        }?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.CREATE, "orders/${posOrder.id}")
+          inventorySyncService.recordSyncError(
+            source = "FIRESTORE_POS_ORDER_WRITE",
+            severity = "ERROR",
+            code = e.javaClass.simpleName,
+            message = e.localizedMessage ?: "POS অর্ডার Firestore-এ সেভ করতে ব্যর্থ",
+            details = "collection=orders doc=${posOrder.id}",
+            products = _products.value
+          )
+        }
       }
     } catch (e: Exception) {
+      handleFirestoreError(e, OperationType.CREATE, "orders/${posOrder.id}")
       inventorySyncService.recordSyncError(
         source = "FIRESTORE_POS_ORDER_WRITE",
         severity = "ERROR",
@@ -1377,14 +1445,21 @@ class StoreRepository(private val context: Context) {
     _orders.value = _orders.value.map {
       if (it.id == orderId) it.copy(status = newStatus, stockRestockedOnCancel = nextRestockedFlag) else it
     }
-    try {
-      firestore?.collection("orders")?.document(orderId)?.update(
-        mapOf(
-          "status" to newStatus,
-          "stockRestockedOnCancel" to nextRestockedFlag
-        )
-      )
-    } catch (e: Exception) {}
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("orders")?.document(orderId)?.update(
+          mapOf(
+            "status" to newStatus,
+            "stockRestockedOnCancel" to nextRestockedFlag,
+            "updatedAt" to FieldValue.serverTimestamp()
+          )
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+        }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+      }
+    }
   }
 
   fun dispatchToCourier(orderId: String, provider: String): String {
@@ -1393,14 +1468,21 @@ class StoreRepository(private val context: Context) {
     _orders.value = _orders.value.map {
       if (it.id == orderId) it.copy(status = "Shipped", trackingId = tracking) else it
     }
-    try {
-      firestore?.collection("orders")?.document(orderId)?.update(
-        mapOf(
-          "status" to "Shipped",
-          "trackingId" to tracking
-        )
-      )
-    } catch (e: Exception) {}
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("orders")?.document(orderId)?.update(
+          mapOf(
+            "status" to "Shipped",
+            "trackingId" to tracking,
+            "updatedAt" to FieldValue.serverTimestamp()
+          )
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+        }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+      }
+    }
     return tracking
   }
 
@@ -1412,55 +1494,63 @@ class StoreRepository(private val context: Context) {
     _products.value = inventorySyncService.applyReturnAndExchange(_products.value, record)
     persistLocalSyncSnapshot()
 
-    try {
-      val returnedMaps = record.returnedItems.map {
-        mapOf(
-          "productId" to it.productId,
-          "name" to it.name,
-          "price" to it.price,
-          "qty" to it.quantity,
-          "condition" to it.condition,
-          "restock" to it.restock,
-          "color" to it.color,
-          "size" to it.size
-        )
+    val uid = currentAuthUid()
+    if (uid != null && isVerifiedAdmin()) {
+      try {
+        val returnedMaps = record.returnedItems.map {
+          mapOf(
+            "productId" to it.productId,
+            "name" to it.name,
+            "price" to it.price,
+            "qty" to it.quantity,
+            "condition" to it.condition,
+            "restock" to it.restock,
+            "color" to it.color,
+            "size" to it.size
+          )
+        }
+        val exchangeMaps = record.exchangeItems.map {
+          mapOf(
+            "productId" to it.productId,
+            "name" to it.name,
+            "price" to it.price,
+            "qty" to it.quantity,
+            "color" to it.color,
+            "size" to it.size,
+            "sku" to it.sku
+          )
+        }
+        firestore?.collection("returns")?.document(record.id)?.set(
+          mapOf(
+            "userId" to uid,
+            "orderId" to record.orderId,
+            "customer" to record.customerName,
+            "customerName" to record.customerName,
+            "phone" to record.phone,
+            "date" to record.date,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "updatedAt" to FieldValue.serverTimestamp(),
+            "returnedItems" to returnedMaps,
+            "isExchange" to record.isExchange,
+            "exchangeItems" to exchangeMaps,
+            "totalReturnValue" to record.totalReturnValue,
+            "totalExchangeValue" to record.totalExchangeValue,
+            "deliveryFee" to record.deliveryFee,
+            "priceDifference" to record.priceDifference,
+            "differenceType" to record.differenceType,
+            "settlementMethod" to record.settlementMethod,
+            "settlementTrxId" to record.settlementTrxId,
+            "settlementStatus" to record.settlementStatus,
+            "reason" to record.reason,
+            "note" to record.note
+          )
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.CREATE, "returns/${record.id}")
+        }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.CREATE, "returns/${record.id}")
       }
-      val exchangeMaps = record.exchangeItems.map {
-        mapOf(
-          "productId" to it.productId,
-          "name" to it.name,
-          "price" to it.price,
-          "qty" to it.quantity,
-          "color" to it.color,
-          "size" to it.size,
-          "sku" to it.sku
-        )
-      }
-      firestore?.collection("returns")?.document(record.id)?.set(
-        mapOf(
-          "id" to record.id,
-          "orderId" to record.orderId,
-          "customer" to record.customerName,
-          "customerName" to record.customerName,
-          "phone" to record.phone,
-          "date" to record.date,
-          "timestamp" to System.currentTimeMillis(),
-          "returnedItems" to returnedMaps,
-          "isExchange" to record.isExchange,
-          "exchangeItems" to exchangeMaps,
-          "totalReturnValue" to record.totalReturnValue,
-          "totalExchangeValue" to record.totalExchangeValue,
-          "deliveryFee" to record.deliveryFee,
-          "priceDifference" to record.priceDifference,
-          "differenceType" to record.differenceType,
-          "settlementMethod" to record.settlementMethod,
-          "settlementTrxId" to record.settlementTrxId,
-          "settlementStatus" to record.settlementStatus,
-          "reason" to record.reason,
-          "note" to record.note
-        )
-      )
-    } catch (e: Exception) {}
+    }
   }
 
   // Product CRUD
@@ -1475,36 +1565,42 @@ class StoreRepository(private val context: Context) {
     syncProductFlagsToHomeSections(stamped)
     inventorySyncService.mirrorCatalogToPos(_products.value, source = "ADMIN_ADD", pushToCloud = true)
     persistLocalSyncSnapshot()
-    try {
-      firestore?.collection("products")?.document(stamped.id)?.set(
-        mapOf(
-          "id" to stamped.id,
-          "name" to stamped.name,
-          "price" to stamped.price,
-          "stock" to stamped.stock,
-          "category" to stamped.category,
-          "imageUrl" to stamped.imageUrl,
-          "sku" to stamped.sku,
-          "description" to stamped.description,
-          "colors" to stamped.colors,
-          "sizes" to stamped.sizes,
-          "ageGroups" to stamped.ageGroups,
-          "stockUpdatedAt" to stamped.stockUpdatedAt,
-          "lastSyncSource" to stamped.lastSyncSource,
-          "isHotSale" to stamped.isHotSale,
-          "isBestDeal" to stamped.isBestDeal,
-          "isB2G1" to stamped.isB2G1,
-          "createdAt" to stamped.createdAt,
-          "regularPrice" to stamped.regularPrice,
-          "offerPrice" to stamped.offerPrice,
-          "videoEnabled" to stamped.videoEnabled,
-          "videoType" to stamped.videoType,
-          "videoUrl" to stamped.videoUrl,
-          "videoThumbUrl" to stamped.videoThumbUrl,
-          "additionalImages" to stamped.additionalImages
-        )
-      )
-    } catch (e: Exception) {}
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("products")?.document(stamped.id)?.set(
+          mapOf(
+            "name" to stamped.name,
+            "price" to stamped.price,
+            "stock" to stamped.stock,
+            "category" to stamped.category,
+            "imageUrl" to stamped.imageUrl,
+            "sku" to stamped.sku,
+            "description" to stamped.description,
+            "colors" to stamped.colors,
+            "sizes" to stamped.sizes,
+            "ageGroups" to stamped.ageGroups,
+            "stockUpdatedAt" to stamped.stockUpdatedAt,
+            "lastSyncSource" to stamped.lastSyncSource,
+            "isHotSale" to stamped.isHotSale,
+            "isBestDeal" to stamped.isBestDeal,
+            "isB2G1" to stamped.isB2G1,
+            "createdAt" to stamped.createdAt,
+            "regularPrice" to stamped.regularPrice,
+            "offerPrice" to stamped.offerPrice,
+            "videoEnabled" to stamped.videoEnabled,
+            "videoType" to stamped.videoType,
+            "videoUrl" to stamped.videoUrl,
+            "videoThumbUrl" to stamped.videoThumbUrl,
+            "additionalImages" to stamped.additionalImages,
+            "updatedAt" to FieldValue.serverTimestamp()
+          )
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.CREATE, "products/${stamped.id}")
+        }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.CREATE, "products/${stamped.id}")
+      }
+    }
   }
 
   fun updateProduct(product: Product) {
@@ -1540,46 +1636,59 @@ class StoreRepository(private val context: Context) {
       persistLocalSyncSnapshot()
     }
     syncProductFlagsToHomeSections(stamped)
-    try {
-      firestore?.collection("products")?.document(stamped.id)?.set(
-        mapOf(
-          "id" to stamped.id,
-          "name" to stamped.name,
-          "price" to stamped.price,
-          "stock" to stamped.stock,
-          "category" to stamped.category,
-          "imageUrl" to stamped.imageUrl,
-          "sku" to stamped.sku,
-          "description" to stamped.description,
-          "colors" to stamped.colors,
-          "sizes" to stamped.sizes,
-          "ageGroups" to stamped.ageGroups,
-          "stockUpdatedAt" to stamped.stockUpdatedAt,
-          "lastSyncSource" to stamped.lastSyncSource,
-          "isHotSale" to stamped.isHotSale,
-          "isBestDeal" to stamped.isBestDeal,
-          "isB2G1" to stamped.isB2G1,
-          "createdAt" to stamped.createdAt,
-          "regularPrice" to stamped.regularPrice,
-          "offerPrice" to stamped.offerPrice,
-          "videoEnabled" to stamped.videoEnabled,
-          "videoType" to stamped.videoType,
-          "videoUrl" to stamped.videoUrl,
-          "videoThumbUrl" to stamped.videoThumbUrl,
-          "additionalImages" to stamped.additionalImages
-        ),
-        SetOptions.merge()
-      )
-    } catch (e: Exception) {}
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("products")?.document(stamped.id)?.set(
+          mapOf(
+            "name" to stamped.name,
+            "price" to stamped.price,
+            "stock" to stamped.stock,
+            "category" to stamped.category,
+            "imageUrl" to stamped.imageUrl,
+            "sku" to stamped.sku,
+            "description" to stamped.description,
+            "colors" to stamped.colors,
+            "sizes" to stamped.sizes,
+            "ageGroups" to stamped.ageGroups,
+            "stockUpdatedAt" to stamped.stockUpdatedAt,
+            "lastSyncSource" to stamped.lastSyncSource,
+            "isHotSale" to stamped.isHotSale,
+            "isBestDeal" to stamped.isBestDeal,
+            "isB2G1" to stamped.isB2G1,
+            "createdAt" to stamped.createdAt,
+            "regularPrice" to stamped.regularPrice,
+            "offerPrice" to stamped.offerPrice,
+            "videoEnabled" to stamped.videoEnabled,
+            "videoType" to stamped.videoType,
+            "videoUrl" to stamped.videoUrl,
+            "videoThumbUrl" to stamped.videoThumbUrl,
+            "additionalImages" to stamped.additionalImages,
+            "updatedAt" to FieldValue.serverTimestamp()
+          ),
+          SetOptions.merge()
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.UPDATE, "products/${stamped.id}")
+        }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.UPDATE, "products/${stamped.id}")
+      }
+    }
   }
 
   fun deleteProduct(productId: String) {
     _products.value = _products.value.filterNot { it.id == productId }
     inventorySyncService.removeProductFromPos(productId)
     persistLocalSyncSnapshot()
-    try {
-      firestore?.collection("products")?.document(productId)?.delete()
-    } catch (e: Exception) {}
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("products")?.document(productId)?.delete()
+          ?.addOnFailureListener { e ->
+            handleFirestoreError(e, OperationType.DELETE, "products/$productId")
+          }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.DELETE, "products/$productId")
+      }
+    }
   }
 
   // Category CRUD
@@ -1809,38 +1918,43 @@ class StoreRepository(private val context: Context) {
       }
 
       val db = firestore
-      if (db != null) {
+      if (db != null && isVerifiedAdmin()) {
         try {
           db.collection("products").document(review.productId).set(
             mapOf(
               "rating" to roundedAvg,
-              "reviewsCount" to count
+              "reviewsCount" to count,
+              "updatedAt" to FieldValue.serverTimestamp()
             ),
             SetOptions.merge()
-          )
+          ).addOnFailureListener { e ->
+            handleFirestoreError(e, OperationType.UPDATE, "products/${review.productId}")
+          }
         } catch (e: Exception) {
-          // ignore
+          handleFirestoreError(e, OperationType.UPDATE, "products/${review.productId}")
         }
       }
     }
 
     val db = firestore ?: return
+    val uid = currentAuthUid() ?: return
     try {
       db.collection("reviews").document(review.id).set(
         mapOf(
-          "id" to review.id,
+          "userId" to uid,
           "productId" to review.productId,
           "customerName" to review.customerName,
           "rating" to review.rating,
           "comment" to review.comment,
           "date" to review.date,
-          "createdAt" to review.createdAt,
+          "createdAt" to FieldValue.serverTimestamp(),
           "verified" to review.verified
-        ),
-        SetOptions.merge()
-      )
+        )
+      ).addOnFailureListener { e ->
+        handleFirestoreError(e, OperationType.CREATE, "reviews/${review.id}")
+      }
     } catch (e: Exception) {
-      // ignore
+      handleFirestoreError(e, OperationType.CREATE, "reviews/${review.id}")
     }
   }
 

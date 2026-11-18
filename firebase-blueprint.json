@@ -2,52 +2,133 @@
   "entities": {
     "Product": {
       "title": "Product",
-      "description": "Sajgoj Fashion product item",
+      "description": "Sajgoj Fashion catalog product document (document ID stored in path)",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
         "name": { "type": "string" },
         "price": { "type": "number" },
         "stock": { "type": "number" },
         "category": { "type": "string" },
         "imageUrl": { "type": "string" },
         "sku": { "type": "string" },
-        "description": { "type": "string" }
+        "description": { "type": "string" },
+        "colors": { "type": "array" },
+        "sizes": { "type": "array" },
+        "ageGroups": { "type": "array" },
+        "stockUpdatedAt": { "type": "number" },
+        "lastSyncSource": { "type": "string" },
+        "isHotSale": { "type": "boolean" },
+        "isBestDeal": { "type": "boolean" },
+        "isB2G1": { "type": "boolean" },
+        "createdAt": { "type": "number" },
+        "regularPrice": { "type": "number" },
+        "offerPrice": { "type": "number" },
+        "videoEnabled": { "type": "boolean" },
+        "videoType": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "videoThumbUrl": { "type": "string" },
+        "additionalImages": { "type": "array" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
       },
-      "required": ["id", "name", "price"]
+      "required": ["name", "price", "stock", "category", "updatedAt"]
+    },
+    "ProductReview": {
+      "title": "ProductReview",
+      "description": "Authenticated customer review for a Sajgoj product",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "date": { "type": "string" },
+        "verified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "productId", "customerName", "rating", "comment", "createdAt"]
     },
     "Order": {
       "title": "Order",
-      "description": "Customer order",
+      "description": "Authenticated customer or POS order with strict owner/admin PII isolation",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
+        "userId": { "type": "string" },
         "customer": { "type": "string" },
+        "customerName": { "type": "string" },
         "phone": { "type": "string" },
+        "district": { "type": "string" },
+        "thana": { "type": "string" },
+        "address": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "deliveryCharge": { "type": "number" },
+        "discount": { "type": "number" },
+        "couponCode": { "type": "string" },
         "total": { "type": "number" },
-        "status": { "type": "string" }
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Confirmed", "Shipped", "Delivered", "Cancelled"] },
+        "date": { "type": "string" },
+        "trackingId": { "type": "string" },
+        "stockRestockedOnCancel": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
       },
-      "required": ["id", "customer", "phone", "total"]
+      "required": ["userId", "customer", "phone", "items", "total", "status", "createdAt", "updatedAt"]
+    },
+    "ReturnRecord": {
+      "title": "ReturnRecord",
+      "description": "Admin-managed return and exchange memo record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "customer": { "type": "string" },
+        "customerName": { "type": "string" },
+        "phone": { "type": "string" },
+        "date": { "type": "string" },
+        "returnedItems": { "type": "array" },
+        "isExchange": { "type": "boolean" },
+        "exchangeItems": { "type": "array" },
+        "totalReturnValue": { "type": "number" },
+        "totalExchangeValue": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "priceDifference": { "type": "number" },
+        "differenceType": { "type": "string" },
+        "settlementMethod": { "type": "string" },
+        "settlementTrxId": { "type": "string" },
+        "settlementStatus": { "type": "string" },
+        "reason": { "type": "string" },
+        "note": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "orderId", "customerName", "phone", "totalReturnValue", "createdAt", "updatedAt"]
     },
     "Category": {
       "title": "Category",
-      "description": "Product category",
+      "description": "Product category metadata",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
         "name": { "type": "string" },
-        "icon": { "type": "string" }
+        "icon": { "type": "string" },
+        "type": { "type": "string" },
+        "parentId": { "type": "string" },
+        "badge": { "type": "string" },
+        "showInSlider": { "type": "boolean" }
       },
-      "required": ["id", "name"]
+      "required": ["name"]
     },
     "StoreConfig": {
       "title": "StoreConfig",
-      "description": "Store settings and configuration",
+      "description": "Store settings and configuration document",
       "type": "object",
       "properties": {
         "storeName": { "type": "string" },
-        "logo": { "type": "string" },
-        "tagline": { "type": "string" }
+        "tagline": { "type": "string" },
+        "announcementText": { "type": "string" }
       }
     },
     "PosInventoryItem": {
@@ -62,16 +143,16 @@
         "price": { "type": "number" },
         "updatedAt": { "type": "number" },
         "lastSource": { "type": "string" },
+        "lastOrigin": { "type": "string" },
         "lastReferenceId": { "type": "string" }
       },
       "required": ["productId", "stock", "updatedAt"]
     },
     "InventorySyncEvent": {
       "title": "InventorySyncEvent",
-      "description": "Real-time bidirectional stock sync audit event",
+      "description": "Immutable real-time bidirectional stock sync audit event",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
         "productId": { "type": "string" },
         "productName": { "type": "string" },
         "sku": { "type": "string" },
@@ -83,33 +164,41 @@
         "referenceId": { "type": "string" },
         "timestamp": { "type": "number" }
       },
-      "required": ["id", "productId", "previousStock", "newStock", "source", "timestamp"]
+      "required": ["productId", "previousStock", "newStock", "source", "timestamp"]
     }
   },
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "E-commerce product collection"
+      "description": "E-commerce product catalog collection (public read, verified admin write)"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "ProductReview",
+      "description": "Product customer reviews (public read, signed-in user create/manage own, admin manage)"
     },
     "/orders/{orderId}": {
       "schema": "Order",
-      "description": "Customer orders collection"
+      "description": "Customer & POS orders (owner/admin read, signed-in create, admin status/courier update)"
+    },
+    "/returns/{returnId}": {
+      "schema": "ReturnRecord",
+      "description": "Return and exchange records (admin read and write)"
     },
     "/categories/{categoryId}": {
       "schema": "Category",
-      "description": "Categories collection"
+      "description": "Categories collection (public read, admin write)"
     },
     "/config/{configDoc}": {
       "schema": "StoreConfig",
-      "description": "Configuration documents"
+      "description": "Storefront configuration documents (store public read, secrets admin-only)"
     },
     "/pos_inventory/{productId}": {
       "schema": "PosInventoryItem",
-      "description": "Real-time POS inventory mirror"
+      "description": "Real-time POS inventory mirror (admin read and write)"
     },
     "/inventory_sync_events/{eventId}": {
       "schema": "InventorySyncEvent",
-      "description": "Inventory bidirectional sync audit log"
+      "description": "Immutable inventory bidirectional sync audit log (admin read and create)"
     }
   }
 }

@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
@@ -82,7 +83,8 @@ fun ProductDetailDialog(
   reviews: List<ProductReview> = emptyList(),
   onDismiss: () -> Unit,
   onAddToCart: (Product, Int, String, String, String) -> Unit,
-  onAddReview: (rating: Int, customerName: String, comment: String) -> Unit = { _, _, _ -> }
+  onAddReview: (rating: Int, customerName: String, comment: String) -> Unit = { _, _, _ -> },
+  onAskAiForProduct: (Product) -> Unit = {}
 ) {
   var quantity by remember { mutableIntStateOf(1) }
   var selectedColor by remember { mutableStateOf(product.colors.firstOrNull() ?: "") }
@@ -398,6 +400,35 @@ fun ProductDetailDialog(
               fontSize = 13.sp,
               color = DarkEspresso,
               lineHeight = 18.sp
+            )
+          }
+
+          Spacer(modifier = Modifier.height(10.dp))
+
+          // AI Styling & Matching Assistant trigger for this item
+          OutlinedButton(
+            onClick = { onAskAiForProduct(product) },
+            border = BorderStroke(1.dp, RoyalMaroon.copy(alpha = 0.65f)),
+            colors = ButtonDefaults.outlinedButtonColors(
+              containerColor = CreamSurface,
+              contentColor = RoyalMaroon
+            ),
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("product_detail_ai_tip_button")
+          ) {
+            Icon(
+              imageVector = Icons.Default.AutoAwesome,
+              contentDescription = null,
+              tint = AntiqueGoldDark,
+              modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = "এই পণ্যের সাথে স্টাইলিং ও ম্যাচিং টিপস দেখুন",
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Bold
             )
           }
 

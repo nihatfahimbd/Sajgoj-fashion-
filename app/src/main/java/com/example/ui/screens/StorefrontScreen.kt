@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
@@ -126,6 +127,7 @@ fun StorefrontScreen(
   onAddComboToCart: (ComboPack) -> Unit = {},
   onLikeReel: (String) -> Unit = {},
   onBannerClick: (BannerItem) -> Unit,
+  onOpenAiStylist: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -545,24 +547,46 @@ fun StorefrontScreen(
       }
     }
 
-    // Floating WhatsApp Order Help Button
-    FloatingActionButton(
-      onClick = { openWhatsApp() },
-      containerColor = Color(0xFF25D366),
-      contentColor = Color.White,
-      shape = CircleShape,
+    // Floating Action Stack: AI Fashion Stylist + WhatsApp Order Help
+    Column(
       modifier = Modifier
         .align(Alignment.BottomEnd)
-        .padding(16.dp)
-        .testTag("whatsapp_fab")
+        .padding(16.dp),
+      horizontalAlignment = Alignment.End,
+      verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-      Row(
-        modifier = Modifier.padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      FloatingActionButton(
+        onClick = onOpenAiStylist,
+        containerColor = RoyalMaroon,
+        contentColor = Color.White,
+        shape = CircleShape,
+        modifier = Modifier.testTag("ai_stylist_fab")
       ) {
-        Icon(imageVector = Icons.Default.Chat, contentDescription = "WhatsApp", modifier = Modifier.size(20.dp))
-        Text(text = "WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Row(
+          modifier = Modifier.padding(horizontal = 12.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+          Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "AI স্টাইলিস্ট", tint = AntiqueGold, modifier = Modifier.size(18.dp))
+          Text(text = "স্টাইলিস্ট", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+      }
+
+      FloatingActionButton(
+        onClick = { openWhatsApp() },
+        containerColor = Color(0xFF25D366),
+        contentColor = Color.White,
+        shape = CircleShape,
+        modifier = Modifier.testTag("whatsapp_fab")
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 12.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+          Icon(imageVector = Icons.Default.Chat, contentDescription = "WhatsApp", modifier = Modifier.size(20.dp))
+          Text(text = "WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
       }
     }
 

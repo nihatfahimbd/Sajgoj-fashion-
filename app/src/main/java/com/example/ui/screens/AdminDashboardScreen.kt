@@ -33,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -45,11 +46,13 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,6 +63,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -87,6 +91,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.R
+import com.example.ai.AiTaskState
+import com.example.ai.SajgojAiService
 import com.example.data.model.BannerItem
 import com.example.data.model.Category
 import com.example.data.model.Coupon
@@ -101,6 +107,8 @@ import com.example.data.model.ReturnRecord
 import com.example.data.model.StoreConfig
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
+import com.example.firebase.AuthUserSummary
+import com.example.firebase.BOOTSTRAPPED_ADMIN_EMAIL
 import com.example.ui.AdminTab
 import com.example.ui.components.AdminAmberGradEnd
 import com.example.ui.components.AdminAmberGradStart
@@ -205,6 +213,12 @@ fun AdminDashboardScreen(
   onAddCustomHomeSection: (HomeSectionConfig) -> Unit = {},
   onDeleteHomeSection: (String) -> Unit = {},
   onResetHomeSectionsToDefault: () -> Unit = {},
+  authUser: AuthUserSummary? = null,
+  isAuthBusy: Boolean = false,
+  onGoogleSignInAdmin: () -> Unit = {},
+  onGoogleSignOut: () -> Unit = {},
+  aiInsightsState: AiTaskState<String> = AiTaskState.Idle,
+  onGenerateAiInsights: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -316,6 +330,29 @@ fun AdminDashboardScreen(
           }
 
           Spacer(modifier = Modifier.height(10.dp))
+
+          OutlinedButton(
+            onClick = onGoogleSignInAdmin,
+            enabled = !isAuthBusy,
+            border = BorderStroke(1.dp, AdminV2CyanDeep),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+              .fillMaxWidth()
+              .heightIn(min = 48.dp)
+              .testTag("admin_google_signin_button")
+          ) {
+            if (isAuthBusy) {
+              CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp), color = AdminV2DeepOcean)
+              Spacer(modifier = Modifier.width(8.dp))
+              Text("সাইন-ইন হচ্ছে...", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+            } else {
+              Icon(imageVector = Icons.Default.VerifiedUser, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(17.dp))
+              Spacer(modifier = Modifier.width(6.dp))
+              Text("Google দিয়ে অ্যাডমিন সাইন-ইন ($BOOTSTRAPPED_ADMIN_EMAIL)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+          }
+
+          Spacer(modifier = Modifier.height(10.dp))
           Text(
             text = "ডিফল্ট পাসওয়ার্ড: admin123",
             fontSize = 11.5.sp,
@@ -398,6 +435,12 @@ fun AdminDashboardScreen(
             orders = orders,
             categories = categories,
             returnsCount = returns.size,
+            authUser = authUser,
+            isAuthBusy = isAuthBusy,
+            onGoogleSignInAdmin = onGoogleSignInAdmin,
+            onGoogleSignOut = onGoogleSignOut,
+            aiInsightsState = aiInsightsState,
+            onGenerateAiInsights = onGenerateAiInsights,
             onGoToTab = onSelectTab,
             onAddProductClick = {
               editingProduct = null
@@ -645,6 +688,12 @@ fun AdminOverviewTab(
   orders: List<Order>,
   categories: List<Category>,
   returnsCount: Int = 0,
+  authUser: AuthUserSummary? = null,
+  isAuthBusy: Boolean = false,
+  onGoogleSignInAdmin: () -> Unit = {},
+  onGoogleSignOut: () -> Unit = {},
+  aiInsightsState: AiTaskState<String> = AiTaskState.Idle,
+  onGenerateAiInsights: () -> Unit = {},
   onGoToTab: (AdminTab) -> Unit,
   onAddProductClick: () -> Unit,
   onOpenNewReturn: () -> Unit = {}
@@ -796,6 +845,196 @@ fun AdminOverviewTab(
           rightLabel = "ডেলিভার্ড",
           rightValue = "${deliveredOrders.size} টি"
         )
+      }
+
+      // Cloud Sync Google Account Status + Admin AI Insights Card
+      GlossyAdminCard(
+        modifier = Modifier.testTag("admin_cloud_auth_status_card"),
+        cornerRadius = 16.dp,
+        accentBorderColor = if (authUser?.isAdmin == true) Color(0xFFA7F3D0) else AdminCardBorderWarm,
+        contentPadding = 12.dp
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f)
+          ) {
+            Icon(
+              imageVector = Icons.Default.VerifiedUser,
+              contentDescription = null,
+              tint = if (authUser?.isAdmin == true) AdminV2Emerald else AdminInkMuted,
+              modifier = Modifier.size(18.dp)
+            )
+            Column {
+              Text(
+                text = when {
+                  authUser?.isAdmin == true -> "ক্লাউড অ্যাডমিন সিঙ্ক সক্রিয়"
+                  authUser != null -> "সাইন-ইন: ${authUser.email}"
+                  else -> "অ্যাডমিন ক্লাউড সিঙ্ক (Google সাইন-ইন)"
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = AdminInkPrimary
+              )
+              Text(
+                text = if (authUser != null) authUser.email else "অর্ডার ও POS ক্লাউডে সেভ করতে Google দিয়ে সাইন-ইন করুন",
+                fontSize = 10.5.sp,
+                color = AdminInkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+          OutlinedButton(
+            onClick = { if (authUser != null) onGoogleSignOut() else onGoogleSignInAdmin() },
+            enabled = !isAuthBusy,
+            shape = RoundedCornerShape(12.dp),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.heightIn(min = 36.dp)
+          ) {
+            Text(
+              text = if (authUser != null) "সাইন-আউট" else "Google লগইন",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold,
+              color = AdminV2DeepOcean
+            )
+          }
+        }
+      }
+
+      GlossyAdminCard(
+        modifier = Modifier.testTag("admin_ai_insights_card"),
+        cornerRadius = 18.dp,
+        accentBorderColor = AdminV2Cyan.copy(alpha = 0.55f),
+        contentPadding = 14.dp
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              modifier = Modifier.weight(1f)
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(36.dp)
+                  .clip(RoundedCornerShape(10.dp))
+                  .background(adminRoyalGlossBrush()),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Default.AutoAwesome,
+                  contentDescription = "AI Insights",
+                  tint = Color.White,
+                  modifier = Modifier.size(19.dp)
+                )
+              }
+              Column {
+                Text(
+                  text = "Gemini AI স্টোর ইনসাইট ও প্রোমো ক্যাপশন",
+                  fontSize = 13.5.sp,
+                  fontWeight = FontWeight.Black,
+                  color = AdminInkPrimary
+                )
+                Text(
+                  text = "বিক্রয়, লো-স্টক ও সোশ্যাল মিডিয়া মার্কেটিং পরামর্শ",
+                  fontSize = 10.5.sp,
+                  color = AdminInkMuted
+                )
+              }
+            }
+
+            Button(
+              onClick = onGenerateAiInsights,
+              enabled = aiInsightsState !is AiTaskState.Loading,
+              colors = ButtonDefaults.buttonColors(containerColor = AdminV2DeepOcean, contentColor = Color.White),
+              shape = RoundedCornerShape(12.dp),
+              contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+              modifier = Modifier
+                .heightIn(min = 40.dp)
+                .testTag("admin_ai_insights_button")
+            ) {
+              Text(
+                text = if (aiInsightsState is AiTaskState.Loading) "তৈরি হচ্ছে..." else "✨ বিশ্লেষণ করুন",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+              )
+            }
+          }
+
+          when (aiInsightsState) {
+            is AiTaskState.Idle -> {
+              Text(
+                text = "বাটনে ট্যাপ করে লাইভ স্টক, অর্ডার ট্রেন্ড এবং ফেসবুক/ইদ প্রোমো ক্যাপশন এক ক্লিকে তৈরি করুন।",
+                fontSize = 11.5.sp,
+                color = AdminInkSecondary,
+                lineHeight = 16.sp
+              )
+            }
+            is AiTaskState.Loading -> {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+              ) {
+                CircularProgressIndicator(strokeWidth = 2.dp, color = AdminV2DeepOcean, modifier = Modifier.size(18.dp))
+                Text(
+                  text = "স্টোরের ডাটা বিশ্লেষণ করে ইনসাইট তৈরি হচ্ছে...",
+                  fontSize = 12.sp,
+                  color = AdminInkPrimary
+                )
+              }
+            }
+            is AiTaskState.Error -> {
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFFEF2F2),
+                border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                Row(
+                  modifier = Modifier.padding(10.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Text(
+                    text = aiInsightsState.message,
+                    fontSize = 11.5.sp,
+                    color = Color(0xFF991B1B),
+                    modifier = Modifier.weight(1f)
+                  )
+                  OutlinedButton(onClick = onGenerateAiInsights) {
+                    Text("পুনরায়", fontSize = 11.sp)
+                  }
+                }
+              }
+            }
+            is AiTaskState.Success -> {
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = AdminV2IceSurface,
+                border = BorderStroke(1.dp, AdminCardBorderWarm),
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                Text(
+                  text = aiInsightsState.data,
+                  fontSize = 12.sp,
+                  lineHeight = 18.sp,
+                  color = AdminInkPrimary,
+                  modifier = Modifier.padding(12.dp)
+                )
+              }
+            }
+          }
+        }
       }
 
       // Quick Shortcuts Header
@@ -3474,7 +3713,7 @@ fun ProductFormDialog(
   var isCategoryDropdownExpanded by remember { mutableStateOf(false) }
   var sku by remember { mutableStateOf(product?.sku ?: "SAJ-${(100..999).random()}") }
   var description by remember { mutableStateOf(product?.description ?: "") }
-  var imageUrl by remember { mutableStateOf(product?.imageUrl ?: "res://${R.drawable.banner_eid_special_1792530116809}") }
+  var imageUrl by remember { mutableStateOf(product?.imageUrl ?: "res://banner_eid_special_1792530116809") }
   var videoEnabled by remember { mutableStateOf(product?.videoEnabled ?: false) }
   var videoType by remember { mutableStateOf(product?.videoType ?: "upload") }
   var videoUrl by remember { mutableStateOf(product?.videoUrl ?: "") }
@@ -3495,6 +3734,9 @@ fun ProductFormDialog(
   var isB2G1 by remember { mutableStateOf(product?.isB2G1 ?: false) }
 
   var formError by remember { mutableStateOf<String?>(null) }
+  var isGeneratingAiDesc by remember { mutableStateOf(false) }
+  var aiDescError by remember { mutableStateOf<String?>(null) }
+  val formScope = rememberCoroutineScope()
 
   // Preset options for quick clicks
   val presetColors = listOf("লাল", "মেরুন", "কালো", "সবুজ", "নীল", "গোল্ডেন", "গোলাপী", "সাদা", "হলুদ", "পার্পল", "অরেঞ্জ", "অফ হোয়াইট", "রয়েল ব্লু")
@@ -3502,9 +3744,9 @@ fun ProductFormDialog(
   val presetAges = listOf("০-৬ মাস", "৬-১২ মাস", "১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৪-৫ বছর", "৫-৬ বছর", "৭-৮ বছর", "৯-১০ বছর", "১১-১২ বছর")
 
   val presetImages = listOf(
-    "res://${R.drawable.banner_eid_special_1792530116809}" to "পোশাক / শাড়ি",
-    "res://${R.drawable.banner_jewelry_royal_1792530130914}" to "জুয়েলারি",
-    "res://${R.drawable.ic_app_icon_1792530102214}" to "ব্র্যান্ড লোগো"
+    "res://banner_eid_special_1792530116809" to "পোশাক / শাড়ি",
+    "res://banner_jewelry_royal_1792530130914" to "জুয়েলারি",
+    "res://ic_app_icon_1792530102214" to "ব্র্যান্ড লোগো"
   )
 
   Dialog(onDismissRequest = onDismiss) {
@@ -4143,17 +4385,85 @@ fun ProductFormDialog(
           }
         }
 
-        // Description field
-        OutlinedTextField(
-          value = description,
-          onValueChange = { description = it },
-          label = { Text("পণ্যের বিস্তারিত বিবরণ") },
-          placeholder = { Text("কাপড়ের কোয়ালিটি, ফেব্রিক ও স্পেসিফিকেশন লিখুন") },
-          minLines = 2,
-          shape = RoundedCornerShape(12.dp),
-          colors = adminOutlinedTextFieldColors(),
-          modifier = Modifier.fillMaxWidth()
-        )
+        // Description field + Gemini AI copywriter trigger
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text(
+              text = "পণ্যের বিবরণ (AI সহায়তা):",
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Bold,
+              color = AdminInkPrimary
+            )
+            OutlinedButton(
+              onClick = {
+                if (name.isBlank()) {
+                  aiDescError = "আগে পণ্যের নাম লিখুন।"
+                  return@OutlinedButton
+                }
+                aiDescError = null
+                isGeneratingAiDesc = true
+                formScope.launch {
+                  val effectivePrice = offerPriceStr.toIntOrNull() ?: priceStr.toIntOrNull() ?: 0
+                  val res = SajgojAiService.generateProductDescription(
+                    productName = name.trim(),
+                    category = category.trim(),
+                    price = effectivePrice,
+                    colors = colors,
+                    sizes = sizes,
+                    ageGroups = ageGroups
+                  )
+                  isGeneratingAiDesc = false
+                  res.onSuccess { generated ->
+                    description = generated
+                  }.onFailure { err ->
+                    aiDescError = err.localizedMessage ?: "AI বিবরণ তৈরি করতে পারেনি।"
+                  }
+                }
+              },
+              enabled = !isGeneratingAiDesc,
+              border = BorderStroke(1.dp, AdminV2CyanDeep),
+              shape = RoundedCornerShape(10.dp),
+              contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+              modifier = Modifier
+                .heightIn(min = 36.dp)
+                .testTag("product_form_ai_desc_button")
+            ) {
+              if (isGeneratingAiDesc) {
+                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(13.dp), color = AdminV2DeepOcean)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("তৈরি হচ্ছে...", fontSize = 11.sp, color = AdminV2DeepOcean)
+              } else {
+                Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("✨ AI দিয়ে বিবরণ লিখুন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2DeepOcean)
+              }
+            }
+          }
+
+          if (aiDescError != null) {
+            Text(
+              text = aiDescError!!,
+              fontSize = 11.sp,
+              color = Color(0xFFDC2626),
+              fontWeight = FontWeight.SemiBold
+            )
+          }
+
+          OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("পণ্যের বিস্তারিত বিবরণ") },
+            placeholder = { Text("কাপড়ের কোয়ালিটি, ফেব্রিক ও স্পেসিফিকেশন লিখুন") },
+            minLines = 2,
+            shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
+            modifier = Modifier.fillMaxWidth()
+          )
+        }
 
         // Home Page Block Display Placement Checkboxes / Switches
         Card(
@@ -4277,7 +4587,7 @@ fun ProductFormDialog(
               offerPrice = if (hasValidOffer) offerInput else 0,
               stock = stock,
               category = category.trim().ifBlank { "অন্যান্য" },
-              imageUrl = imageUrl.trim().ifBlank { "res://${R.drawable.banner_eid_special_1792530116809}" },
+              imageUrl = imageUrl.trim().ifBlank { "res://banner_eid_special_1792530116809" },
               sku = sku.trim().ifBlank { "SAJ-${(100..999).random()}" },
               description = description.trim().ifBlank { "সজগোজ ফ্যাশনের আকর্ষণীয় প্রিমিয়াম কোয়ালিটি পণ্য।" },
               colors = colors,
@@ -4531,7 +4841,7 @@ fun BannerFormDialog(
                   title = title,
                   subtitle = subtitle,
                   buttonText = buttonText,
-                  imageUrl = "res://${R.drawable.banner_eid_special_1792530116809}",
+                  imageUrl = "res://banner_eid_special_1792530116809",
                   isActive = true
                 )
               )

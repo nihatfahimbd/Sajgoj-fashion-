@@ -54,8 +54,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.firebase.configureAppCheck
 import com.example.ui.AppScreen
 import com.example.ui.StoreViewModel
+import com.example.ui.components.AiStylistDialog
 import com.example.ui.components.CartAndCheckoutDialog
 import com.example.ui.components.InvoiceDialog
 import com.example.ui.components.ProductDetailDialog
@@ -81,6 +83,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    configureAppCheck(this, intent)
     enableEdgeToEdge()
 
     setContent {
@@ -121,10 +124,17 @@ class MainActivity : ComponentActivity() {
         val selectedShippingLabelOrder by viewModel.selectedShippingLabelOrder.collectAsStateWithLifecycle()
         val isCartOpen by viewModel.isCartOpen.collectAsStateWithLifecycle()
 
+        val authUser by viewModel.authUser.collectAsStateWithLifecycle()
+        val isAuthBusy by viewModel.isAuthBusy.collectAsStateWithLifecycle()
+        val aiStylistState by viewModel.aiStylistState.collectAsStateWithLifecycle()
+        val aiAdminInsightsState by viewModel.aiAdminInsightsState.collectAsStateWithLifecycle()
+
         var showVoiceFallbackDialog by remember { mutableStateOf(false) }
         var voiceFallbackInput by remember { mutableStateOf("") }
         var showScannerDialog by remember { mutableStateOf(false) }
         var manualScanInput by remember { mutableStateOf("") }
+        var showAiStylistDialog by remember { mutableStateOf(false) }
+        var aiStylistInitialPrompt by remember { mutableStateOf("") }
 
         // Zero-permission Photo Picker for Visual Image Search
         val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -196,9 +206,11 @@ class MainActivity : ComponentActivity() {
             selectedOrderInvoice != null ||
             selectedShippingLabelOrder != null ||
             showVoiceFallbackDialog ||
-            showScannerDialog
+            showScannerDialog ||
+            showAiStylistDialog
         ) {
           when {
+            showAiStylistDialog -> showAiStylistDialog = false
             showScannerDialog -> showScannerDialog = false
             showVoiceFallbackDialog -> showVoiceFallbackDialog = false
             selectedShippingLabelOrder != null -> viewModel.closeShippingLabel()
@@ -274,6 +286,15 @@ class MainActivity : ComponentActivity() {
               onClearAllSearch = {
                 viewModel.setSearchQuery("")
                 viewModel.clearImageSearch()
+              },
+              authUser = authUser,
+              isAuthBusy = isAuthBusy,
+              onGoogleAuthClick = {
+                if (authUser != null) {
+                  viewModel.signOutGoogle(context)
+                } else {
+                  viewModel.signInWithGoogle(context, unlockAdminIfVerified = false)
+                }
               }
             )
 
@@ -301,7 +322,11 @@ class MainActivity : ComponentActivity() {
                     onAddToCart = { viewModel.addToCart(it, 1) },
                     onAddComboToCart = { viewModel.addComboToCart(it) },
                     onLikeReel = { viewModel.likeReel(it) },
-                    onBannerClick = { /* scroll or search */ }
+                    onBannerClick = { /* scroll or search */ },
+                    onOpenAiStylist = {
+                      aiStylistInitialPrompt = ""
+                      showAiStylistDialog = true
+                    }
                   )
                 }
 
@@ -356,7 +381,13 @@ class MainActivity : ComponentActivity() {
                     onToggleProductInHomeSection = { secId, prodId -> viewModel.toggleProductInHomeSection(secId, prodId) },
                     onAddCustomHomeSection = { viewModel.addCustomHomeSection(it) },
                     onDeleteHomeSection = { viewModel.deleteHomeSection(it) },
-                    onResetHomeSectionsToDefault = { viewModel.resetHomeSectionsToDefault() }
+                    onResetHomeSectionsToDefault = { viewModel.resetHomeSectionsToDefault() },
+                    authUser = authUser,
+                    isAuthBusy = isAuthBusy,
+                    onGoogleSignInAdmin = { viewModel.signInWithGoogle(context, unlockAdminIfVerified = true) },
+                    onGoogleSignOut = { viewModel.signOutGoogle(context) },
+                    aiInsightsState = aiAdminInsightsState,
+                    onGenerateAiInsights = { viewModel.generateAdminStoreInsights() }
                   )
                 }
               }
@@ -373,7 +404,30 @@ class MainActivity : ComponentActivity() {
                   },
                   onAddReview = { rating, name, comment ->
                     viewModel.addReview(selectedProduct!!.id, name, rating, comment)
+                  },
+                  onAskAiForProduct = { prod ->
+                    viewModel.closeProductDetail()
+                    aiStylistInitialPrompt = "\"${prod.name}\" (৳${prod.price}) এর সাথে কী ধরনের গহনা ও স্টাইলিং মানাবে?"
+                    showAiStylistDialog = true
                   }
+                )
+              }
+
+              if (showAiStylistDialog) {
+                AiStylistDialog(
+                  initialPrompt = aiStylistInitialPrompt,
+                  aiState = aiStylistState,
+                  products = allProducts,
+                  onAskStylist = { prompt, occasion, bitmap ->
+                    viewModel.askAiStylist(prompt, occasion, bitmap)
+                  },
+                  onClearState = { viewModel.clearAiStylist() },
+                  onProductClick = { prod ->
+                    showAiStylistDialog = false
+                    viewModel.openProductDetail(prod)
+                  },
+                  onAddToCart = { prod -> viewModel.addToCart(prod, 1) },
+                  onDismiss = { showAiStylistDialog = false }
                 )
               }
 

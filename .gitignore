@@ -19,3 +19,4 @@ node_modules/
 local.properties
 .env
 debug.keystore
+*-debug.log

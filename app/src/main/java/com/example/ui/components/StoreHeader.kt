@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Category
 import com.example.data.model.StoreConfig
+import com.example.firebase.AuthUserSummary
 import com.example.ui.AppScreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
@@ -87,7 +90,10 @@ fun StoreHeader(
   onImageSearchClick: () -> Unit = {},
   onScanClick: () -> Unit = {},
   isImageSearchActive: Boolean = false,
-  onClearAllSearch: () -> Unit = { onSearchChange("") }
+  onClearAllSearch: () -> Unit = { onSearchChange("") },
+  authUser: AuthUserSummary? = null,
+  isAuthBusy: Boolean = false,
+  onGoogleAuthClick: () -> Unit = {}
 ) {
   var isCategoryMenuExpanded by remember { mutableStateOf(false) }
   val d = config.design
@@ -172,11 +178,48 @@ fun StoreHeader(
         }
       }
 
-      // Actions: Switch Admin & Open Cart
+      // Actions: Google Account, Switch Admin & Open Cart
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
       ) {
+        // Google Sign-In / Signed-in Status Pill
+        Surface(
+          shape = RoundedCornerShape(18.dp),
+          color = if (authUser != null) Color(0xFFECFDF5) else CreamSurface,
+          border = BorderStroke(1.dp, if (authUser != null) Color(0xFF10B981) else BorderGold),
+          modifier = Modifier
+            .heightIn(min = 40.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(enabled = !isAuthBusy) { onGoogleAuthClick() }
+            .testTag("header_google_auth_button")
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Icon(
+              imageVector = if (authUser != null) Icons.Default.VerifiedUser else Icons.Default.AccountCircle,
+              contentDescription = if (authUser != null) "সাইন-ইন সম্পন্ন: ${authUser.displayName}" else "Google সাইন-ইন",
+              tint = if (authUser != null) Color(0xFF047857) else RoyalMaroon,
+              modifier = Modifier.size(16.dp)
+            )
+            Text(
+              text = when {
+                isAuthBusy -> "..."
+                authUser != null -> authUser.displayName.take(8)
+                else -> "লগইন"
+              },
+              color = if (authUser != null) Color(0xFF047857) else DarkEspresso,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+        }
+
         // Toggle Admin / Store Button
         IconButton(
           onClick = onToggleScreen,

@@ -210,4 +210,26 @@ class LocalInventoryStorageSyncTest {
     assertEquals("https://www.facebook.com/reel/555666777", reloaded.videoUrl)
     assertEquals("https://cdn.example.com/reel_poster.jpg", reloaded.videoThumbUrl)
   }
+
+  @Test
+  fun staleNumericResUrl_healsOnLoadAndSafeDrawableResolutionNeverThrows() {
+    val seedRepo = StoreRepository(context)
+    val webRaw = prefs.getString(LocalInventoryStorageSync.KEY_WEBSITE_PRODUCTS, null)!!
+    val arr = JSONArray(webRaw)
+    val first = arr.getJSONObject(0)
+    // Inject the exact obsolete resource ID 0x7f040003 (2130968579) from the crash log
+    first.put("imageUrl", "res://2130968579")
+    prefs.edit().putString(LocalInventoryStorageSync.KEY_WEBSITE_PRODUCTS, arr.toString()).commit()
+
+    val reloadedRepo = StoreRepository(context)
+    val healedProduct = reloadedRepo.products.value.first { it.id == first.optString("id") }
+    assertEquals("res://banner_eid_special_1792530116809", healedProduct.imageUrl)
+
+    val safeFallback = com.example.ui.components.resolveSafeDrawableResId(context, "res://2130968579")
+    assertEquals(R.drawable.banner_eid_special_1792530116809, safeFallback)
+    assertEquals(
+      R.drawable.banner_jewelry_royal_1792530130914,
+      com.example.ui.components.resolveSafeDrawableResId(context, "res://banner_jewelry_royal_1792530130914")
+    )
+  }
 }

@@ -3,6 +3,11 @@ package com.example.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
+import android.graphics.Bitmap
+import com.example.ai.AiStylistSuggestion
+import com.example.ai.AiTaskState
+import com.example.ai.SajgojAiService
 import com.example.data.model.BannerItem
 import com.example.data.model.CartItem
 import com.example.data.model.Category
@@ -23,8 +28,15 @@ import com.example.data.model.StoreConfig
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.data.repository.StoreRepository
+import com.example.firebase.AuthUserSummary
+import com.example.firebase.GoogleAuthHelper
+import com.example.firebase.GoogleAuthHelper.authStateFlow
 import com.example.util.VisualImageSearchHelper
 import com.example.util.VisualSearchAnalysis
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.auth
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -32,9 +44,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class ImageSearchState(
   val imageUri: String,
@@ -120,6 +134,37 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   private val _toastEvent = MutableSharedFlow<String>()
   val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
+
+  private val _authUser = MutableStateFlow<AuthUserSummary?>(null)
+  val authUser: StateFlow<AuthUserSummary?> = _authUser.asStateFlow()
+
+  private val _isAuthBusy = MutableStateFlow(false)
+  val isAuthBusy: StateFlow<Boolean> = _isAuthBusy.asStateFlow()
+
+  private val _aiStylistState = MutableStateFlow<AiTaskState<AiStylistSuggestion>>(AiTaskState.Idle)
+  val aiStylistState: StateFlow<AiTaskState<AiStylistSuggestion>> = _aiStylistState.asStateFlow()
+
+  private val _aiAdminInsightsState = MutableStateFlow<AiTaskState<String>>(AiTaskState.Idle)
+  val aiAdminInsightsState: StateFlow<AiTaskState<String>> = _aiAdminInsightsState.asStateFlow()
+
+  init {
+    try {
+      if (FirebaseApp.getApps(application).isNotEmpty()) {
+        viewModelScope.launch {
+          Firebase.auth.authStateFlow().collectLatest { firebaseUser ->
+            val summary = GoogleAuthHelper.toSummary(firebaseUser)
+            _authUser.value = summary
+            repository.onAuthSessionChanged(firebaseUser)
+            if (summary?.isAdmin == true) {
+              _isAdminLoggedIn.value = true
+            }
+          }
+        }
+      }
+    } catch (_: Exception) {
+      // Safe fallback in isolated JVM unit test environments without FirebaseApp initialization
+    }
+  }
 
   // Filtered Products (supports bilingual voice/text search, category filter, and visual image search)
   val filteredProducts: StateFlow<List<Product>> = combine(
@@ -261,6 +306,81 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     _isAdminLoggedIn.value = false
     _currentScreen.value = AppScreen.STOREFRONT
     emitToast("অ্যাডমিন প্যানেল থেকে লগআউট সম্পন্ন হয়েছে।")
+  }
+
+  fun signInWithGoogle(activityContext: Context, unlockAdminIfVerified: Boolean = false) {
+    if (_isAuthBusy.value) return
+    viewModelScope.launch {
+      _isAuthBusy.value = true
+      val result = GoogleAuthHelper.signInInteractive(activityContext)
+      _isAuthBusy.value = false
+      result.onSuccess { user ->
+        val summary = GoogleAuthHelper.toSummary(user)
+        _authUser.value = summary
+        repository.onAuthSessionChanged(user)
+        if (summary?.isAdmin == true) {
+          _isAdminLoggedIn.value = true
+          if (unlockAdminIfVerified) {
+            _currentScreen.value = AppScreen.ADMIN_PANEL
+          }
+          emitToast("✅ অ্যাডমিন অ্যাকাউন্ট (${summary.email}) ভেরিফাইড ও সিঙ্কড!")
+        } else if (unlockAdminIfVerified) {
+          emitToast("👋 ${summary?.displayName ?: "ইউজার"} সাইন-ইন সম্পন্ন! (অ্যাডমিন অনুমতি সীমিত)")
+        } else {
+          emitToast("👋 স্বাগতম ${summary?.displayName ?: ""}! ক্লাউড সিঙ্ক সক্রিয় হয়েছে।")
+        }
+      }.onFailure { err ->
+        emitToast("⚠️ ${err.localizedMessage ?: "Google Sign-In সম্পন্ন হয়নি।"}")
+      }
+    }
+  }
+
+  fun signOutGoogle(context: Context) {
+    viewModelScope.launch {
+      _isAuthBusy.value = true
+      withContext(NonCancellable) {
+        repository.onAuthSessionChanged(null)
+        GoogleAuthHelper.signOut(context)
+      }
+      _authUser.value = null
+      _isAdminLoggedIn.value = false
+      _isAuthBusy.value = false
+      emitToast("Google অ্যাকাউন্ট থেকে সাইন-আউট সম্পন্ন হয়েছে।")
+    }
+  }
+
+  fun askAiStylist(prompt: String, occasion: String = "", bitmap: Bitmap? = null) {
+    viewModelScope.launch {
+      _aiStylistState.value = AiTaskState.Loading
+      val result = SajgojAiService.askFashionStylist(
+        userPrompt = prompt,
+        catalog = products.value,
+        occasion = occasion,
+        referenceImage = bitmap
+      )
+      _aiStylistState.value = result.fold(
+        onSuccess = { AiTaskState.Success(it) },
+        onFailure = { AiTaskState.Error(it.localizedMessage ?: "AI সাজেশন পাওয়া যায়নি।") }
+      )
+    }
+  }
+
+  fun clearAiStylist() {
+    _aiStylistState.value = AiTaskState.Idle
+  }
+
+  fun generateAdminStoreInsights() {
+    viewModelScope.launch {
+      _aiAdminInsightsState.value = AiTaskState.Loading
+      val result = SajgojAiService.generateAdminStoreInsights(
+        products = products.value,
+        orders = orders.value
+      )
+      _aiAdminInsightsState.value = result.fold(
+        onSuccess = { AiTaskState.Success(it) },
+        onFailure = { AiTaskState.Error(it.localizedMessage ?: "AI ইনসাইট তৈরি করা যায়নি।") }
+      )
+    }
   }
 
   fun addToCart(

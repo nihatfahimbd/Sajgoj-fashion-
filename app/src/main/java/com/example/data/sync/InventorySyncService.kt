@@ -8,6 +8,12 @@ import com.example.data.model.Product
 import com.example.data.model.ReturnRecord
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
+import com.example.firebase.GoogleAuthHelper
+import com.example.firebase.OperationType
+import com.example.firebase.handleFirestoreError
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
@@ -215,24 +221,26 @@ class InventorySyncService(
           }
           if (remote != null && remote.stock != product.stock && remote.updatedAt > product.stockUpdatedAt) {
             changed = true
-            // Ensure storefront `products` collection reflects the newer POS stock
-            db.collection("products").document(product.id).set(
-              mapOf(
-                "stock" to remote.stock,
-                "stockUpdatedAt" to remote.updatedAt,
-                "lastSyncSource" to remote.lastSource
-              ),
-              SetOptions.merge()
-            ).addOnSuccessListener {
-              markFirestoreSync(products = currentProducts)
-            }.addOnFailureListener { e ->
-              recordSyncError(
-                source = "FIRESTORE_WRITE",
-                severity = "ERROR",
-                code = e.javaClass.simpleName,
-                message = e.localizedMessage ?: "স্টোরফ্রন্ট প্রোডাক্ট স্টক আপডেট ব্যর্থ",
-                details = "collection=products doc=${product.id}"
-              )
+            if (canWriteAdminCloud()) {
+              db.collection("products").document(product.id).update(
+                mapOf(
+                  "stock" to remote.stock,
+                  "stockUpdatedAt" to remote.updatedAt,
+                  "lastSyncSource" to remote.lastSource,
+                  "updatedAt" to FieldValue.serverTimestamp()
+                )
+              ).addOnSuccessListener {
+                markFirestoreSync(products = currentProducts)
+              }.addOnFailureListener { e ->
+                handleFirestoreError(e, OperationType.UPDATE, "products/${product.id}")
+                recordSyncError(
+                  source = "FIRESTORE_WRITE",
+                  severity = "ERROR",
+                  code = e.javaClass.simpleName,
+                  message = e.localizedMessage ?: "স্টোরফ্রন্ট প্রোডাক্ট স্টক আপডেট ব্যর্থ",
+                  details = "collection=products doc=${product.id}"
+                )
+              }
             }
             product.copy(
               stock = remote.stock,
@@ -351,10 +359,20 @@ class InventorySyncService(
     refreshHealth(products)
   }
 
+  private fun canWriteAdminCloud(): Boolean {
+    if (firestore == null) return false
+    return try {
+      GoogleAuthHelper.toSummary(Firebase.auth.currentUser)?.isAdmin == true
+    } catch (_: Exception) {
+      false
+    }
+  }
+
   fun removeProductFromPos(productId: String) {
     val nextMap = _posInventory.value.toMutableMap()
     nextMap.remove(productId)
     _posInventory.value = nextMap
+    if (!canWriteAdminCloud()) return
     try {
       firestore?.collection("pos_inventory")?.document(productId)?.delete()
         ?.addOnSuccessListener { markFirestoreSync() }
@@ -737,17 +755,19 @@ class InventorySyncService(
   }
 
   private fun pushStorefrontStockDoc(product: Product) {
+    if (!canWriteAdminCloud()) return
     try {
-      firestore?.collection("products")?.document(product.id)?.set(
+      firestore?.collection("products")?.document(product.id)?.update(
         mapOf(
           "stock" to product.stock,
           "stockUpdatedAt" to product.stockUpdatedAt,
-          "lastSyncSource" to product.lastSyncSource
-        ),
-        SetOptions.merge()
+          "lastSyncSource" to product.lastSyncSource,
+          "updatedAt" to FieldValue.serverTimestamp()
+        )
       )?.addOnSuccessListener {
         markFirestoreSync()
       }?.addOnFailureListener { e ->
+        handleFirestoreError(e, OperationType.UPDATE, "products/${product.id}")
         recordSyncError(
           source = "FIRESTORE_WRITE",
           severity = "ERROR",
@@ -757,6 +777,7 @@ class InventorySyncService(
         )
       }
     } catch (e: Exception) {
+      handleFirestoreError(e, OperationType.UPDATE, "products/${product.id}")
       recordSyncError(
         source = "FIRESTORE_WRITE",
         severity = "ERROR",
@@ -768,6 +789,7 @@ class InventorySyncService(
   }
 
   private fun pushPosInventoryDoc(item: PosInventoryItem) {
+    if (!canWriteAdminCloud()) return
     try {
       firestore?.collection("pos_inventory")?.document(item.productId)?.set(
         mapOf(
@@ -785,6 +807,7 @@ class InventorySyncService(
       )?.addOnSuccessListener {
         markFirestoreSync()
       }?.addOnFailureListener { e ->
+        handleFirestoreError(e, OperationType.WRITE, "pos_inventory/${item.productId}")
         recordSyncError(
           source = "FIRESTORE_WRITE",
           severity = "ERROR",
@@ -794,6 +817,7 @@ class InventorySyncService(
         )
       }
     } catch (e: Exception) {
+      handleFirestoreError(e, OperationType.WRITE, "pos_inventory/${item.productId}")
       recordSyncError(
         source = "FIRESTORE_WRITE",
         severity = "ERROR",
@@ -805,10 +829,10 @@ class InventorySyncService(
   }
 
   private fun pushSyncEventDoc(event: InventorySyncEvent) {
+    if (!canWriteAdminCloud()) return
     try {
       firestore?.collection("inventory_sync_events")?.document(event.id)?.set(
         mapOf(
-          "id" to event.id,
           "productId" to event.productId,
           "productName" to event.productName,
           "sku" to event.sku,
@@ -823,6 +847,7 @@ class InventorySyncService(
       )?.addOnSuccessListener {
         markFirestoreSync()
       }?.addOnFailureListener { e ->
+        handleFirestoreError(e, OperationType.CREATE, "inventory_sync_events/${event.id}")
         recordSyncError(
           source = "FIRESTORE_WRITE",
           severity = "ERROR",
@@ -832,6 +857,7 @@ class InventorySyncService(
         )
       }
     } catch (e: Exception) {
+      handleFirestoreError(e, OperationType.CREATE, "inventory_sync_events/${event.id}")
       recordSyncError(
         source = "FIRESTORE_WRITE",
         severity = "ERROR",

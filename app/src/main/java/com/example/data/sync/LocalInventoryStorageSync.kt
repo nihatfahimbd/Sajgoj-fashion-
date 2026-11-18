@@ -127,15 +127,39 @@ class LocalInventoryStorageSync(
       // Merge seed metadata (like drawable resource imageUrls) if missing, preserve saved stock
       seedProducts.map { seed ->
         val saved = storedWebsite.find { it.id == seed.id || (it.sku.isNotBlank() && it.sku == seed.sku) }
-        if (saved != null && saved.regularPrice <= 0 && saved.offerPrice <= 0 && seed.regularPrice > saved.price) {
+        if (saved != null) {
+          val healedImageUrl = if (saved.imageUrl.isBlank() ||
+            (saved.imageUrl.startsWith("res://") && saved.imageUrl.removePrefix("res://").toIntOrNull() != null)
+          ) {
+            seed.imageUrl
+          } else {
+            saved.imageUrl
+          }
+          val healedRegPrice = if (saved.regularPrice <= 0 && saved.offerPrice <= 0 && seed.regularPrice > saved.price) {
+            seed.regularPrice
+          } else {
+            saved.regularPrice
+          }
+          val healedOfferPrice = if (saved.regularPrice <= 0 && saved.offerPrice <= 0 && seed.regularPrice > saved.price) {
+            if (saved.price < seed.regularPrice) saved.price else seed.offerPrice
+          } else {
+            saved.offerPrice
+          }
           saved.copy(
-            regularPrice = seed.regularPrice,
-            offerPrice = if (saved.price < seed.regularPrice) saved.price else seed.offerPrice
+            imageUrl = healedImageUrl,
+            regularPrice = healedRegPrice,
+            offerPrice = healedOfferPrice
           )
         } else {
-          saved ?: seed
+          seed
         }
-      } + storedWebsite.filter { saved -> seedProducts.none { it.id == saved.id } }
+      } + storedWebsite.filter { saved -> seedProducts.none { it.id == saved.id } }.map { saved ->
+        if (saved.imageUrl.startsWith("res://") && saved.imageUrl.removePrefix("res://").toIntOrNull() != null) {
+          saved.copy(imageUrl = "res://banner_eid_special_1792530116809")
+        } else {
+          saved
+        }
+      }
     } else {
       seedProducts
     }
