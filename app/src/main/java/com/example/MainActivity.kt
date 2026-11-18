@@ -234,7 +234,7 @@ class MainActivity : ComponentActivity() {
             .fillMaxSize()
             .background(scaffoldBg)
         ) { innerPadding ->
-          Column(
+          Box(
             modifier = Modifier
               .fillMaxSize()
               .then(
@@ -254,6 +254,7 @@ class MainActivity : ComponentActivity() {
               .padding(innerPadding)
               .statusBarsPadding()
           ) {
+            Column(modifier = Modifier.fillMaxSize()) {
             // App Header
             StoreHeader(
               config = storeConfig,
@@ -434,20 +435,6 @@ class MainActivity : ComponentActivity() {
                 )
               }
 
-              if (isCartOpen) {
-                CartAndCheckoutDialog(
-                  cartItems = cartItems,
-                  coupons = coupons,
-                  onDismiss = { viewModel.setCartOpen(false) },
-                  onUpdateQty = { id, delta -> viewModel.updateCartQty(id, delta) },
-                  onRemoveItem = { id -> viewModel.removeFromCart(id) },
-                  onPlaceOrder = { name, phone, district, thana, address, payment, coupon ->
-                    viewModel.placeOrder(name, phone, district, thana, address, payment, coupon)
-                  },
-                  onShowToast = { viewModel.emitToast(it) }
-                )
-              }
-
               if (selectedOrderInvoice != null) {
                 InvoiceDialog(
                   order = selectedOrderInvoice!!,
@@ -619,6 +606,20 @@ class MainActivity : ComponentActivity() {
                 )
               }
             }
+          }
+
+          CartAndCheckoutDialog(
+            visible = isCartOpen,
+            cartItems = cartItems,
+            coupons = coupons,
+            onDismiss = { viewModel.setCartOpen(false) },
+            onUpdateQty = { id, delta -> viewModel.updateCartQty(id, delta) },
+            onRemoveItem = { id -> viewModel.removeFromCart(id) },
+            onPlaceOrder = { name, phone, district, thana, address, payment, coupon ->
+              viewModel.placeOrder(name, phone, district, thana, address, payment, coupon)
+            },
+            onShowToast = { viewModel.emitToast(it) }
+          )
           }
         }
       }

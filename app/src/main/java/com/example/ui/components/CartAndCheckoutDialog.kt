@@ -1,19 +1,39 @@
 package com.example.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +44,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -43,7 +62,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,8 +79,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.CartItem
 import com.example.data.model.Coupon
 import com.example.ui.theme.AccentGreen
@@ -71,6 +90,7 @@ import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.RoyalMaroon
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,14 +101,32 @@ fun CartAndCheckoutDialog(
   onUpdateQty: (String, Int) -> Unit,
   onRemoveItem: (String) -> Unit,
   onPlaceOrder: (String, String, String, String, String, String, Coupon?) -> Unit,
-  onShowToast: (String) -> Unit
+  onShowToast: (String) -> Unit,
+  visible: Boolean = true
 ) {
   var isCheckoutMode by remember { mutableStateOf(false) }
+
+  // Reset back to cart view after drawer finishes closing
+  LaunchedEffect(visible) {
+    if (!visible && isCheckoutMode) {
+      delay(260)
+      isCheckoutMode = false
+    }
+  }
 
   // Form states
   var name by remember { mutableStateOf("") }
   var phone by remember { mutableStateOf("") }
-  val districts = listOf("ঢাকা (Dhaka)", "চট্টগ্রাম (Chattogram)", "সিলেট (Sylhet)", "রাজশাহী (Rajshahi)", "খুলনা (Khulna)", "বরিশাল (Barishal)", "রংপুর (Rangpur)", "ময়মনসিংহ (Mymensingh)")
+  val districts = listOf(
+    "ঢাকা (Dhaka)",
+    "চট্টগ্রাম (Chattogram)",
+    "সিলেট (Sylhet)",
+    "রাজশাহী (Rajshahi)",
+    "খুলনা (Khulna)",
+    "বরিশাল (Barishal)",
+    "রংপুর (Rangpur)",
+    "ময়মনসিংহ (Mymensingh)"
+  )
   var selectedDistrict by remember { mutableStateOf(districts[0]) }
   var isDistrictExpanded by remember { mutableStateOf(false) }
   var thana by remember { mutableStateOf("") }
@@ -115,524 +153,311 @@ fun CartAndCheckoutDialog(
   }
   val grandTotal = (subtotal - discount).coerceAtLeast(0) + deliveryCharge
 
-  Dialog(
-    onDismissRequest = onDismiss,
-    properties = DialogProperties(usePlatformDefaultWidth = false)
-  ) {
-    Surface(
-      shape = RoundedCornerShape(24.dp),
-      color = Color.White,
-      modifier = Modifier
-        .fillMaxWidth(0.95f)
-        .padding(vertical = 20.dp)
-        .testTag("cart_dialog")
+  Box(modifier = Modifier.fillMaxSize()) {
+    // 1. Animated Backdrop Scrim
+    AnimatedVisibility(
+      visible = visible,
+      enter = fadeIn(animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)),
+      exit = fadeOut(animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing))
     ) {
-      Column(
+      Box(
         modifier = Modifier
-          .fillMaxWidth()
-          .verticalScroll(rememberScrollState())
+          .fillMaxSize()
+          .background(Color.Black.copy(alpha = 0.45f))
+          .clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onDismiss
+          )
+          .testTag("cart_drawer_backdrop")
+      )
+    }
+
+    // 2. Animated Slide-In End Cart Drawer Panel
+    AnimatedVisibility(
+      visible = visible,
+      enter = slideInHorizontally(
+        initialOffsetX = { fullWidth -> fullWidth },
+        animationSpec = spring(
+          dampingRatio = Spring.DampingRatioLowBouncy,
+          stiffness = Spring.StiffnessMediumLow
+        )
+      ) + fadeIn(animationSpec = tween(durationMillis = 220)),
+      exit = slideOutHorizontally(
+        targetOffsetX = { fullWidth -> fullWidth },
+        animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing)
+      ) + fadeOut(animationSpec = tween(durationMillis = 180)),
+      modifier = Modifier.align(Alignment.CenterEnd)
+    ) {
+      Surface(
+        shape = RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp),
+        color = Color.White,
+        shadowElevation = 16.dp,
+        tonalElevation = 4.dp,
+        modifier = Modifier
+          .fillMaxHeight()
+          .fillMaxWidth(0.88f)
+          .widthIn(max = 430.dp)
+          .clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = {}
+          )
+          .testTag("cart_dialog")
       ) {
-        // Modal Header
-        Row(
+        Column(
           modifier = Modifier
-            .fillMaxWidth()
-            .background(CreamSurface)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .imePadding()
         ) {
+          // Sticky Drawer Header
           Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            Icon(
-              imageVector = if (isCheckoutMode) Icons.Default.Payment else Icons.Default.ShoppingBag,
-              contentDescription = null,
-              tint = RoyalMaroon
-            )
-            Text(
-              text = if (isCheckoutMode) "ক্যাশ অন ডেলিভারি চেকআউট" else "শপিং কার্ট (${cartItems.size})",
-              fontSize = 16.sp,
-              fontWeight = FontWeight.Bold,
-              color = RoyalMaroon
-            )
-          }
-
-          IconButton(
-            onClick = onDismiss,
-            modifier = Modifier
-              .size(32.dp)
-              .clip(CircleShape)
-              .background(Color.White)
-          ) {
-            Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = DarkEspresso, modifier = Modifier.size(18.dp))
-          }
-        }
-
-        // Cart Items List
-        if (cartItems.isEmpty()) {
-          Box(
             modifier = Modifier
               .fillMaxWidth()
-              .padding(40.dp),
-            contentAlignment = Alignment.Center
+              .background(CreamSurface)
+              .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
           ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-              Text(text = "🛍️", fontSize = 48.sp)
-              Spacer(modifier = Modifier.height(12.dp))
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              modifier = Modifier.weight(1f)
+            ) {
+              Icon(
+                imageVector = if (isCheckoutMode) Icons.Default.Payment else Icons.Default.ShoppingBag,
+                contentDescription = null,
+                tint = RoyalMaroon
+              )
               Text(
-                text = "আপনার কার্ট বর্তমানে খালি!",
+                text = if (isCheckoutMode) "ক্যাশ অন ডেলিভারি চেকআউট" else "শপিং কার্ট (${cartItems.size})",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = DarkEspresso
+                color = RoyalMaroon,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
               )
-              Text(
-                text = "পণ্য নির্বাচন করে 'অর্ডার' বাটনে চাপুন।",
-                fontSize = 12.sp,
-                color = Color.Gray
-              )
+            }
+
+            IconButton(
+              onClick = onDismiss,
+              modifier = Modifier
+                .minimumInteractiveComponentSize()
+                .testTag("cart_drawer_close_button")
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(34.dp)
+                  .clip(CircleShape)
+                  .background(Color.White)
+                  .border(1.dp, BorderGold.copy(alpha = 0.6f), CircleShape),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Default.Close,
+                  contentDescription = "কার্ট বন্ধ করুন",
+                  tint = DarkEspresso,
+                  modifier = Modifier.size(18.dp)
+                )
+              }
             }
           }
-        } else {
-          Column(modifier = Modifier.padding(16.dp)) {
-            // Cart items listing
-            cartItems.forEach { item ->
-              Card(
+
+          HorizontalDivider(color = BorderGold.copy(alpha = 0.45f))
+
+          // Scrollable Drawer Content
+          Column(
+            modifier = Modifier
+              .fillMaxSize()
+              .verticalScroll(rememberScrollState())
+          ) {
+            if (cartItems.isEmpty()) {
+              Box(
                 modifier = Modifier
                   .fillMaxWidth()
-                  .padding(vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = CreamBackground),
-                border = BorderStroke(1.dp, BorderGold)
+                  .padding(horizontal = 24.dp, vertical = 64.dp),
+                contentAlignment = Alignment.Center
               ) {
-                Row(
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                  verticalAlignment = Alignment.CenterVertically
-                ) {
-                  AppImage(
-                    model = item.product.imageUrl,
-                    contentDescription = item.product.name,
-                    modifier = Modifier
-                      .size(54.dp)
-                      .clip(RoundedCornerShape(8.dp))
-                  )
-
-                  Spacer(modifier = Modifier.width(10.dp))
-
-                  Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                      text = item.product.name,
-                      fontSize = 13.sp,
-                      fontWeight = FontWeight.SemiBold,
-                      color = DarkEspresso,
-                      maxLines = 1,
-                      overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                      text = "${item.product.price} ৳ / পিস",
-                      fontSize = 11.sp,
-                      color = AntiqueGoldDark,
-                      fontWeight = FontWeight.Medium
-                    )
-
-                    // Variant Badges (Color, Size, Kids Age)
-                    val hasVariants = item.selectedColor.isNotBlank() || item.selectedSize.isNotBlank() || item.selectedAgeGroup.isNotBlank()
-                    if (hasVariants) {
-                      Row(
-                        modifier = Modifier
-                          .fillMaxWidth()
-                          .padding(vertical = 3.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                      ) {
-                        if (item.selectedColor.isNotBlank()) {
-                          Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = RoyalMaroon.copy(alpha = 0.12f),
-                            border = BorderStroke(0.5.dp, RoyalMaroon.copy(alpha = 0.4f))
-                          ) {
-                            Text(
-                              text = "রং: ${item.selectedColor}",
-                              fontSize = 10.sp,
-                              fontWeight = FontWeight.Bold,
-                              color = RoyalMaroon,
-                              modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                          }
-                        }
-
-                        if (item.selectedSize.isNotBlank()) {
-                          Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = DarkEspresso.copy(alpha = 0.1f),
-                            border = BorderStroke(0.5.dp, DarkEspresso.copy(alpha = 0.3f))
-                          ) {
-                            Text(
-                              text = "সাইজ: ${item.selectedSize}",
-                              fontSize = 10.sp,
-                              fontWeight = FontWeight.Bold,
-                              color = DarkEspresso,
-                              modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                          }
-                        }
-
-                        if (item.selectedAgeGroup.isNotBlank()) {
-                          Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = AntiqueGold.copy(alpha = 0.2f),
-                            border = BorderStroke(0.5.dp, BorderGold)
-                          ) {
-                            Text(
-                              text = "👶 ${item.selectedAgeGroup}",
-                              fontSize = 10.sp,
-                              fontWeight = FontWeight.Bold,
-                              color = RoyalMaroon,
-                              modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                          }
-                        }
-                      }
-                    }
-
-                    // Quantity controls
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(4.dp),
-                      modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                      Box(
-                        modifier = Modifier
-                          .size(24.dp)
-                          .clip(CircleShape)
-                          .background(Color.White)
-                          .border(1.dp, BorderGold, CircleShape)
-                          .clickable { onUpdateQty(item.itemKey, -1) },
-                        contentAlignment = Alignment.Center
-                      ) {
-                        Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(12.dp))
-                      }
-
-                      Text(
-                        text = item.quantity.toString(),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp)
-                      )
-
-                      Box(
-                        modifier = Modifier
-                          .size(24.dp)
-                          .clip(CircleShape)
-                          .background(Color.White)
-                          .border(1.dp, BorderGold, CircleShape)
-                          .clickable { onUpdateQty(item.itemKey, 1) },
-                        contentAlignment = Alignment.Center
-                      ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(12.dp))
-                      }
-                    }
-                  }
-
-                  Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.padding(start = 6.dp)
-                  ) {
-                    Text(
-                      text = "${item.product.price * item.quantity} ৳",
-                      fontSize = 14.sp,
-                      fontWeight = FontWeight.Bold,
-                      color = RoyalMaroon
-                    )
-                    IconButton(
-                      onClick = { onRemoveItem(item.itemKey) },
-                      modifier = Modifier.size(24.dp)
-                    ) {
-                      Icon(imageVector = Icons.Default.Delete, contentDescription = "Remove", tint = AccentRed, modifier = Modifier.size(16.dp))
-                    }
-                  }
-                }
-              }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Coupon Box
-            Card(
-              modifier = Modifier.fillMaxWidth(),
-              shape = RoundedCornerShape(12.dp),
-              colors = CardDefaults.cardColors(containerColor = CreamSurface),
-              border = BorderStroke(1.dp, BorderGold)
-            ) {
-              Column(modifier = Modifier.padding(10.dp)) {
-                Text(
-                  text = "🎟️ কুপন বা ডিসকাউন্ট কোড",
-                  fontSize = 12.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = RoyalMaroon
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                  OutlinedTextField(
-                    value = couponCodeInput,
-                    onValueChange = { couponCodeInput = it.uppercase() },
-                    placeholder = { Text("যেমন: EID2026", fontSize = 12.sp) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                      focusedContainerColor = Color.White,
-                      unfocusedContainerColor = Color.White,
-                      focusedBorderColor = RoyalMaroon,
-                      unfocusedBorderColor = BorderGold
-                    ),
-                    modifier = Modifier
-                      .weight(1f)
-                      .height(44.dp)
-                      .testTag("coupon_input")
-                  )
-
-                  Button(
-                    onClick = {
-                      val found = coupons.find { it.code.equals(couponCodeInput.trim(), ignoreCase = true) && it.isActive }
-                      if (found == null) {
-                        onShowToast("ভুল বা মেয়াদোত্তীর্ণ কুপন কোড!")
-                      } else if (subtotal < found.minOrder) {
-                        onShowToast("এই কুপনের জন্য নূন্যতম ${found.minOrder} ৳ এর অর্ডার প্রয়োজন!")
-                      } else {
-                        appliedCoupon = found
-                        onShowToast("🎉 কুপন \"${found.code}\" কার্যকর হয়েছে!")
-                      }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.height(44.dp)
-                  ) {
-                    Text("প্রয়োগ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                  }
-                }
-
-                if (appliedCoupon != null) {
-                  Row(
-                    modifier = Modifier
-                      .fillMaxWidth()
-                      .padding(top = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                  ) {
-                    Text(
-                      text = "✓ কুপন ${appliedCoupon!!.code} প্রযোজ্য হয়েছে (-$discount ৳)",
-                      color = AccentGreen,
-                      fontSize = 11.sp,
-                      fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                      text = "বাতিল",
-                      color = AccentRed,
-                      fontSize = 11.sp,
-                      fontWeight = FontWeight.Bold,
-                      modifier = Modifier.clickable {
-                        appliedCoupon = null
-                        couponCodeInput = ""
-                      }
-                    )
-                  }
-                }
-              }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Pricing Summary Card
-            Card(
-              modifier = Modifier.fillMaxWidth(),
-              shape = RoundedCornerShape(12.dp),
-              colors = CardDefaults.cardColors(containerColor = CreamBackground)
-            ) {
-              Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                  Text(text = "সাবটোটাল", fontSize = 12.sp, color = DarkEspresso)
-                  Text(text = "$subtotal ৳", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                }
-
-                if (discount > 0) {
-                  Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "কুপন ছাড় (${appliedCoupon?.code})", fontSize = 12.sp, color = AccentGreen)
-                    Text(text = "- $discount ৳", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
-                  }
-                }
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                  Text(text = "ডেলিভারি চার্জ", fontSize = 12.sp, color = DarkEspresso)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                  Text(text = "🛍️", fontSize = 52.sp)
+                  Spacer(modifier = Modifier.height(12.dp))
                   Text(
-                    text = if (deliveryCharge == 0) "ফ্রি (Free ৳)" else "$deliveryCharge ৳",
-                    fontSize = 12.sp,
+                    text = "আপনার কার্ট বর্তমানে খালি!",
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (deliveryCharge == 0) AccentGreen else DarkEspresso
+                    color = DarkEspresso
+                  )
+                  Spacer(modifier = Modifier.height(4.dp))
+                  Text(
+                    text = "পণ্য নির্বাচন করে 'অর্ডার' বাটনে চাপুন।",
+                    fontSize = 12.sp,
+                    color = Color.Gray
                   )
                 }
-
-                HorizontalDivider(color = BorderGold, modifier = Modifier.padding(vertical = 4.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                  Text(text = "সর্বমোট প্রদেয়", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-                  Text(text = "$grandTotal ৳", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
-                }
-              }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Mode Switching: Show Order Form vs Proceed Button
-            if (!isCheckoutMode) {
-              Button(
-                onClick = { isCheckoutMode = true },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .height(48.dp)
-                  .testTag("proceed_checkout_button")
-              ) {
-                Text(
-                  text = "চেকআউট ও ঠিকানা দিন →",
-                  fontSize = 14.sp,
-                  fontWeight = FontWeight.Bold
-                )
               }
             } else {
-              // Customer Checkout Form
-              Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                  text = "🚚 ডেলিভারি ঠিকানা পূরণ করুন",
-                  fontSize = 14.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = RoyalMaroon
-                )
-
-                // Name
-                OutlinedTextField(
-                  value = name,
-                  onValueChange = { name = it },
-                  label = { Text("আপনার নাম *", fontSize = 12.sp) },
-                  placeholder = { Text("সম্পূর্ণ নাম লিখুন", fontSize = 12.sp) },
-                  singleLine = true,
-                  shape = RoundedCornerShape(14.dp),
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("checkout_name_input")
-                )
-
-                // Phone
-                OutlinedTextField(
-                  value = phone,
-                  onValueChange = { phone = it },
-                  label = { Text("মোবাইল নম্বর * (১১ ডিজিট)", fontSize = 12.sp) },
-                  placeholder = { Text("01XXXXXXXXX", fontSize = 12.sp) },
-                  singleLine = true,
-                  keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                  shape = RoundedCornerShape(14.dp),
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("checkout_phone_input")
-                )
-
-                // District Dropdown
-                ExposedDropdownMenuBox(
-                  expanded = isDistrictExpanded,
-                  onExpandedChange = { isDistrictExpanded = !isDistrictExpanded }
-                ) {
-                  OutlinedTextField(
-                    value = selectedDistrict,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("জেলা নির্বাচন করুন", fontSize = 12.sp) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDistrictExpanded) },
-                    shape = RoundedCornerShape(14.dp),
+              Column(modifier = Modifier.padding(16.dp)) {
+                // Cart items listing
+                cartItems.forEach { item ->
+                  Card(
                     modifier = Modifier
-                      .menuAnchor()
                       .fillMaxWidth()
-                  )
-                  ExposedDropdownMenu(
-                    expanded = isDistrictExpanded,
-                    onDismissRequest = { isDistrictExpanded = false }
+                      .padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = CreamBackground),
+                    border = BorderStroke(1.dp, BorderGold)
                   ) {
-                    districts.forEach { dist ->
-                      DropdownMenuItem(
-                        text = { Text(dist, fontSize = 13.sp) },
-                        onClick = {
-                          selectedDistrict = dist
-                          isDistrictExpanded = false
-                        }
-                      )
-                    }
-                  }
-                }
-
-                // Thana / Upazila
-                OutlinedTextField(
-                  value = thana,
-                  onValueChange = { thana = it },
-                  label = { Text("থানা / উপজেলা", fontSize = 12.sp) },
-                  placeholder = { Text("যেমন: ধানমন্ডি / মিরপুর", fontSize = 12.sp) },
-                  singleLine = true,
-                  shape = RoundedCornerShape(14.dp),
-                  modifier = Modifier.fillMaxWidth()
-                )
-
-                // Full Address
-                OutlinedTextField(
-                  value = address,
-                  onValueChange = { address = it },
-                  label = { Text("সম্পূর্ণ বিস্তারিত ঠিকানা *", fontSize = 12.sp) },
-                  placeholder = { Text("বাসা নম্বর, রোড নম্বর, ফ্ল্যাট নম্বর...", fontSize = 12.sp) },
-                  minLines = 2,
-                  maxLines = 3,
-                  shape = RoundedCornerShape(14.dp),
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("checkout_address_input")
-                )
-
-                // Payment Method Selector
-                Text(
-                  text = "পেমেন্ট মাধ্যম নির্বাচন:",
-                  fontSize = 12.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = DarkEspresso
-                )
-
-                Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                  listOf("Cash on Delivery", "bKash", "Nagad").forEach { method ->
-                    val isSelected = paymentMethod == method
-                    Surface(
-                      shape = RoundedCornerShape(12.dp),
-                      color = if (isSelected) RoyalMaroon else CreamBackground,
-                      border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+                    Row(
                       modifier = Modifier
-                        .weight(1f)
-                        .clickable { paymentMethod = method }
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                      verticalAlignment = Alignment.CenterVertically
                     ) {
-                      Box(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
+                      AppImage(
+                        model = item.product.imageUrl,
+                        contentDescription = item.product.name,
+                        modifier = Modifier
+                          .size(54.dp)
+                          .clip(RoundedCornerShape(8.dp))
+                      )
+
+                      Spacer(modifier = Modifier.width(10.dp))
+
+                      Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                          text = item.product.name,
+                          fontSize = 13.sp,
+                          fontWeight = FontWeight.SemiBold,
+                          color = DarkEspresso,
+                          maxLines = 1,
+                          overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                          text = "${item.product.price} ৳ / পিস",
+                          fontSize = 11.sp,
+                          color = AntiqueGoldDark,
+                          fontWeight = FontWeight.Medium
+                        )
+
+                        // Variant Badges (Color, Size, Kids Age)
+                        val hasVariants = item.selectedColor.isNotBlank() ||
+                          item.selectedSize.isNotBlank() ||
+                          item.selectedAgeGroup.isNotBlank()
+                        if (hasVariants) {
+                          Row(
+                            modifier = Modifier
+                              .fillMaxWidth()
+                              .padding(vertical = 3.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                          ) {
+                            if (item.selectedColor.isNotBlank()) {
+                              Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = RoyalMaroon.copy(alpha = 0.12f),
+                                border = BorderStroke(0.5.dp, RoyalMaroon.copy(alpha = 0.4f))
+                              ) {
+                                Text(
+                                  text = "রং: ${item.selectedColor}",
+                                  fontSize = 10.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = RoyalMaroon,
+                                  modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                              }
+                            }
+
+                            if (item.selectedSize.isNotBlank()) {
+                              Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = DarkEspresso.copy(alpha = 0.1f),
+                                border = BorderStroke(0.5.dp, DarkEspresso.copy(alpha = 0.3f))
+                              ) {
+                                Text(
+                                  text = "সাইজ: ${item.selectedSize}",
+                                  fontSize = 10.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = DarkEspresso,
+                                  modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                              }
+                            }
+
+                            if (item.selectedAgeGroup.isNotBlank()) {
+                              Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = AntiqueGold.copy(alpha = 0.2f),
+                                border = BorderStroke(0.5.dp, BorderGold)
+                              ) {
+                                Text(
+                                  text = "👶 ${item.selectedAgeGroup}",
+                                  fontSize = 10.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = RoyalMaroon,
+                                  modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                              }
+                            }
+                          }
+                        }
+
+                        // Quantity controls
+                        Row(
+                          verticalAlignment = Alignment.CenterVertically,
+                          horizontalArrangement = Arrangement.spacedBy(4.dp),
+                          modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                          Box(
+                            modifier = Modifier
+                              .size(28.dp)
+                              .clip(CircleShape)
+                              .background(Color.White)
+                              .border(1.dp, BorderGold, CircleShape)
+                              .clickable { onUpdateQty(item.itemKey, -1) },
+                            contentAlignment = Alignment.Center
+                          ) {
+                            Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(14.dp))
+                          }
+
+                          Text(
+                            text = item.quantity.toString(),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp)
+                          )
+
+                          Box(
+                            modifier = Modifier
+                              .size(28.dp)
+                              .clip(CircleShape)
+                              .background(Color.White)
+                              .border(1.dp, BorderGold, CircleShape)
+                              .clickable { onUpdateQty(item.itemKey, 1) },
+                            contentAlignment = Alignment.Center
+                          ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(14.dp))
+                          }
+                        }
+                      }
+
+                      Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(start = 6.dp)
                       ) {
                         Text(
-                          text = method,
-                          fontSize = 11.sp,
-                          fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                          color = if (isSelected) Color.White else DarkEspresso
+                          text = "${item.product.price * item.quantity} ৳",
+                          fontSize = 14.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = RoyalMaroon
                         )
+                        IconButton(
+                          onClick = { onRemoveItem(item.itemKey) },
+                          modifier = Modifier.minimumInteractiveComponentSize()
+                        ) {
+                          Icon(imageVector = Icons.Default.Delete, contentDescription = "Remove", tint = AccentRed, modifier = Modifier.size(18.dp))
+                        }
                       }
                     }
                   }
@@ -640,49 +465,353 @@ fun CartAndCheckoutDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Submit Button
-                Button(
-                  onClick = {
-                    if (name.isBlank() || phone.isBlank() || address.isBlank()) {
-                      onShowToast("অনুগ্রহ করে নাম, ফোন নম্বর এবং সম্পূর্ণ ঠিকানা লিখুন!")
-                      return@Button
-                    }
-                    if (phone.length < 11) {
-                      onShowToast("সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!")
-                      return@Button
-                    }
-                    onPlaceOrder(
-                      name,
-                      phone,
-                      selectedDistrict,
-                      thana,
-                      address,
-                      paymentMethod,
-                      appliedCoupon
-                    )
-                  },
-                  colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-                  shape = RoundedCornerShape(20.dp),
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("confirm_order_button")
+                // Coupon Box
+                Card(
+                  modifier = Modifier.fillMaxWidth(),
+                  shape = RoundedCornerShape(12.dp),
+                  colors = CardDefaults.cardColors(containerColor = CreamSurface),
+                  border = BorderStroke(1.dp, BorderGold)
                 ) {
-                  Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                  Spacer(modifier = Modifier.width(8.dp))
-                  Text(
-                    text = "অর্ডার নিশ্চিত করুন ($grandTotal ৳)",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                  )
+                  Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                      text = "🎟️ কুপন বা ডিসকাউন্ট কোড",
+                      fontSize = 12.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = RoyalMaroon
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                      OutlinedTextField(
+                        value = couponCodeInput,
+                        onValueChange = { couponCodeInput = it.uppercase() },
+                        placeholder = { Text("যেমন: EID2026", fontSize = 12.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                          focusedContainerColor = Color.White,
+                          unfocusedContainerColor = Color.White,
+                          focusedBorderColor = RoyalMaroon,
+                          unfocusedBorderColor = BorderGold
+                        ),
+                        modifier = Modifier
+                          .weight(1f)
+                          .heightIn(min = 48.dp)
+                          .testTag("coupon_input")
+                      )
+
+                      Button(
+                        onClick = {
+                          val found = coupons.find { it.code.equals(couponCodeInput.trim(), ignoreCase = true) && it.isActive }
+                          if (found == null) {
+                            onShowToast("ভুল বা মেয়াদোত্তীর্ণ কুপন কোড!")
+                          } else if (subtotal < found.minOrder) {
+                            onShowToast("এই কুপনের জন্য নূন্যতম ${found.minOrder} ৳ এর অর্ডার প্রয়োজন!")
+                          } else {
+                            appliedCoupon = found
+                            onShowToast("🎉 কুপন \"${found.code}\" কার্যকর হয়েছে!")
+                          }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkEspresso),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.heightIn(min = 48.dp)
+                      ) {
+                        Text("প্রয়োগ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                      }
+                    }
+
+                    AnimatedVisibility(
+                      visible = appliedCoupon != null,
+                      enter = expandVertically() + fadeIn(),
+                      exit = shrinkVertically() + fadeOut()
+                    ) {
+                      appliedCoupon?.let { coupon ->
+                        Row(
+                          modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp),
+                          verticalAlignment = Alignment.CenterVertically,
+                          horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                          Text(
+                            text = "✓ কুপন ${coupon.code} প্রযোজ্য হয়েছে (-$discount ৳)",
+                            color = AccentGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                          )
+                          Text(
+                            text = "বাতিল",
+                            color = AccentRed,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable {
+                              appliedCoupon = null
+                              couponCodeInput = ""
+                            }
+                          )
+                        }
+                      }
+                    }
+                  }
                 }
 
-                Button(
-                  onClick = { isCheckoutMode = false },
-                  colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = DarkEspresso),
-                  modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Pricing Summary Card
+                Card(
+                  modifier = Modifier.fillMaxWidth(),
+                  shape = RoundedCornerShape(12.dp),
+                  colors = CardDefaults.cardColors(containerColor = CreamBackground)
                 ) {
-                  Text("← কার্টে ফিরে যান", fontSize = 12.sp)
+                  Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                      Text(text = "সাবটোটাল", fontSize = 12.sp, color = DarkEspresso)
+                      Text(text = "$subtotal ৳", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    if (discount > 0) {
+                      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "কুপন ছাড় (${appliedCoupon?.code})", fontSize = 12.sp, color = AccentGreen)
+                        Text(text = "- $discount ৳", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                      }
+                    }
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                      Text(text = "ডেলিভারি চার্জ", fontSize = 12.sp, color = DarkEspresso)
+                      Text(
+                        text = if (deliveryCharge == 0) "ফ্রি (Free ৳)" else "$deliveryCharge ৳",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (deliveryCharge == 0) AccentGreen else DarkEspresso
+                      )
+                    }
+
+                    HorizontalDivider(color = BorderGold, modifier = Modifier.padding(vertical = 4.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                      Text(text = "সর্বমোট প্রদেয়", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                      Text(text = "$grandTotal ৳", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+                    }
+                  }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Animated Mode Switching: Order Summary CTA <-> Checkout Form
+                AnimatedContent(
+                  targetState = isCheckoutMode,
+                  transitionSpec = {
+                    (fadeIn(animationSpec = tween(220)) + slideInHorizontally { width ->
+                      if (targetState) width / 4 else -width / 4
+                    }) togetherWith (fadeOut(animationSpec = tween(160)) + slideOutHorizontally { width ->
+                      if (targetState) -width / 4 else width / 4
+                    })
+                  },
+                  label = "cart_checkout_mode_transition"
+                ) { checkoutActive ->
+                  if (!checkoutActive) {
+                    Button(
+                      onClick = { isCheckoutMode = true },
+                      colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                      shape = RoundedCornerShape(20.dp),
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("proceed_checkout_button")
+                    ) {
+                      Text(
+                        text = "চেকআউট ও ঠিকানা দিন →",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                      )
+                    }
+                  } else {
+                    // Customer Checkout Form
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                      Text(
+                        text = "🚚 ডেলিভারি ঠিকানা পূরণ করুন",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = RoyalMaroon
+                      )
+
+                      // Name
+                      OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("আপনার নাম *", fontSize = 12.sp) },
+                        placeholder = { Text("সম্পূর্ণ নাম লিখুন", fontSize = 12.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .testTag("checkout_name_input")
+                      )
+
+                      // Phone
+                      OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        label = { Text("মোবাইল নম্বর * (১১ ডিজিট)", fontSize = 12.sp) },
+                        placeholder = { Text("01XXXXXXXXX", fontSize = 12.sp) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .testTag("checkout_phone_input")
+                      )
+
+                      // District Dropdown
+                      ExposedDropdownMenuBox(
+                        expanded = isDistrictExpanded,
+                        onExpandedChange = { isDistrictExpanded = !isDistrictExpanded }
+                      ) {
+                        OutlinedTextField(
+                          value = selectedDistrict,
+                          onValueChange = {},
+                          readOnly = true,
+                          label = { Text("জেলা নির্বাচন করুন", fontSize = 12.sp) },
+                          trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDistrictExpanded) },
+                          shape = RoundedCornerShape(14.dp),
+                          modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                          expanded = isDistrictExpanded,
+                          onDismissRequest = { isDistrictExpanded = false },
+                          containerColor = Color.White
+                        ) {
+                          districts.forEach { dist ->
+                            DropdownMenuItem(
+                              text = { Text(dist, fontSize = 13.sp) },
+                              onClick = {
+                                selectedDistrict = dist
+                                isDistrictExpanded = false
+                              }
+                            )
+                          }
+                        }
+                      }
+
+                      // Thana / Upazila
+                      OutlinedTextField(
+                        value = thana,
+                        onValueChange = { thana = it },
+                        label = { Text("থানা / উপজেলা", fontSize = 12.sp) },
+                        placeholder = { Text("যেমন: ধানমন্ডি / মিরপুর", fontSize = 12.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                      )
+
+                      // Full Address
+                      OutlinedTextField(
+                        value = address,
+                        onValueChange = { address = it },
+                        label = { Text("সম্পূর্ণ বিস্তারিত ঠিকানা *", fontSize = 12.sp) },
+                        placeholder = { Text("বাসা নম্বর, রোড নম্বর, ফ্ল্যাট নম্বর...", fontSize = 12.sp) },
+                        minLines = 2,
+                        maxLines = 3,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .testTag("checkout_address_input")
+                      )
+
+                      // Payment Method Selector
+                      Text(
+                        text = "পেমেন্ট মাধ্যম নির্বাচন:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DarkEspresso
+                      )
+
+                      Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                      ) {
+                        listOf("Cash on Delivery", "bKash", "Nagad").forEach { method ->
+                          val isSelected = paymentMethod == method
+                          Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) RoyalMaroon else CreamBackground,
+                            border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+                            modifier = Modifier
+                              .weight(1f)
+                              .heightIn(min = 48.dp)
+                              .clickable { paymentMethod = method }
+                          ) {
+                            Box(
+                              modifier = Modifier.padding(vertical = 8.dp),
+                              contentAlignment = Alignment.Center
+                            ) {
+                              Text(
+                                text = method,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color.White else DarkEspresso
+                              )
+                            }
+                          }
+                        }
+                      }
+
+                      Spacer(modifier = Modifier.height(10.dp))
+
+                      // Submit Button
+                      Button(
+                        onClick = {
+                          if (name.isBlank() || phone.isBlank() || address.isBlank()) {
+                            onShowToast("অনুগ্রহ করে নাম, ফোন নম্বর এবং সম্পূর্ণ ঠিকানা লিখুন!")
+                            return@Button
+                          }
+                          if (phone.length < 11) {
+                            onShowToast("সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!")
+                            return@Button
+                          }
+                          onPlaceOrder(
+                            name,
+                            phone,
+                            selectedDistrict,
+                            thana,
+                            address,
+                            paymentMethod,
+                            appliedCoupon
+                          )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .height(48.dp)
+                          .testTag("confirm_order_button")
+                      ) {
+                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                          text = "অর্ডার নিশ্চিত করুন ($grandTotal ৳)",
+                          fontSize = 14.sp,
+                          fontWeight = FontWeight.Bold
+                        )
+                      }
+
+                      Button(
+                        onClick = { isCheckoutMode = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = DarkEspresso),
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .heightIn(min = 48.dp)
+                      ) {
+                        Text("← কার্টে ফিরে যান", fontSize = 12.sp)
+                      }
+                    }
+                  }
                 }
               }
             }

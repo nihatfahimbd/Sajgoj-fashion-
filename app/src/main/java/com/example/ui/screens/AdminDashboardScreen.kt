@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -140,6 +141,7 @@ import com.example.ui.components.AdminV2Rose
 import com.example.ui.components.AdminV2SidebarContent
 import com.example.ui.components.AdminV2SkySoft
 import com.example.ui.components.AdminV2TopBar
+import com.example.ui.components.AdminQrScannerDialog
 import com.example.ui.components.AppImage
 import com.example.ui.components.DailyRevenueTrendChartCard
 import com.example.ui.components.GlossyAdminCard
@@ -238,6 +240,7 @@ fun AdminDashboardScreen(
   var showReturnDialog by remember { mutableStateOf(false) }
   var returnTargetOrder by remember { mutableStateOf<Order?>(null) }
   var viewingReturnSlip by remember { mutableStateOf<ReturnRecord?>(null) }
+  var showQrScannerDialog by remember { mutableStateOf(false) }
 
   if (!isAdminLoggedIn) {
     // V2 Frosted Ocean & Ice-White Admin Login Screen
@@ -393,6 +396,7 @@ fun AdminDashboardScreen(
           activeBlocksCount = activeBlocksCount,
           showMenuButton = !isWideLayout,
           onOpenDrawer = { scope.launch { drawerState.open() } },
+          onOpenQrScanner = { showQrScannerDialog = true },
           onLogout = onLogout
         )
 
@@ -452,7 +456,8 @@ fun AdminDashboardScreen(
             onOpenNewReturn = {
               returnTargetOrder = null
               showReturnDialog = true
-            }
+            },
+            onOpenQrScanner = { showQrScannerDialog = true }
           )
         }
 
@@ -531,6 +536,7 @@ fun AdminDashboardScreen(
               viewingReturnSlip = record
             },
             onUpdateCourierConfig = onUpdateCourierConfig,
+            onOpenQrScanner = { showQrScannerDialog = true },
             onShowToast = onShowToast
           )
         }
@@ -695,6 +701,31 @@ fun AdminDashboardScreen(
       onShowToast = onShowToast
     )
   }
+
+  // Dedicated Admin QR & Barcode Lookup Scanner Dialog
+  if (showQrScannerDialog) {
+    AdminQrScannerDialog(
+      products = products,
+      orders = orders,
+      posInventory = posInventory,
+      onDismiss = { showQrScannerDialog = false },
+      onEditProduct = { product ->
+        showQrScannerDialog = false
+        editingProduct = product
+        showProductDialog = true
+      },
+      onViewInvoice = { order ->
+        showQrScannerDialog = false
+        onViewInvoice(order)
+      },
+      onOpenShippingLabel = { order ->
+        showQrScannerDialog = false
+        onOpenShippingLabel(order)
+      },
+      onUpdateOrderStatus = onUpdateOrderStatus,
+      onShowToast = onShowToast
+    )
+  }
 }
 
 // ----------------- SUB-TABS -----------------
@@ -713,7 +744,8 @@ fun AdminOverviewTab(
   onGenerateAiInsights: () -> Unit = {},
   onGoToTab: (AdminTab) -> Unit,
   onAddProductClick: () -> Unit,
-  onOpenNewReturn: () -> Unit = {}
+  onOpenNewReturn: () -> Unit = {},
+  onOpenQrScanner: () -> Unit = {}
 ) {
   val totalRevenue = orders.sumOf { it.total }
   val pendingOrders = orders.filter { it.status.equals("Pending", ignoreCase = true) }
@@ -769,6 +801,71 @@ fun AdminOverviewTab(
           Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
           Spacer(modifier = Modifier.width(5.dp))
           Text(text = "নতুন পণ্য", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+        }
+      }
+
+      // Dedicated Quick QR & Barcode Lookup Strip
+      GlossyAdminCard(
+        modifier = Modifier
+          .clickable(onClick = onOpenQrScanner)
+          .testTag("admin_overview_qr_scanner_button"),
+        cornerRadius = 18.dp,
+        accentBorderColor = AdminV2Cyan.copy(alpha = 0.65f),
+        contentPadding = 12.dp
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+          ) {
+            Box(
+              modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(adminRoyalGlossBrush()),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Default.QrCodeScanner,
+                contentDescription = "QR ও বারকোড স্ক্যানার",
+                tint = Color.White,
+                modifier = Modifier.size(22.dp)
+              )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = "কুইক QR ও বারকোড স্ক্যানার",
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Black,
+                color = AdminInkPrimary
+              )
+              Text(
+                text = "ক্যামেরা দিয়ে পণ্যের SKU বা পার্সেল ট্র্যাকিং QR মুহূর্তেই দেখুন",
+                fontSize = 11.sp,
+                color = AdminInkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = AdminV2SkySoft,
+            border = BorderStroke(1.dp, AdminCardBorderWarm)
+          ) {
+            Text(
+              text = "স্ক্যান করুন",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = AdminV2CyanDeep,
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+            )
+          }
         }
       }
 
@@ -1699,6 +1796,7 @@ fun AdminOrdersHub(
   onOpenReturn: (Order?) -> Unit,
   onViewReturnSlip: (ReturnRecord) -> Unit,
   onUpdateCourierConfig: (CourierConfig) -> Unit,
+  onOpenQrScanner: () -> Unit = {},
   onShowToast: (String) -> Unit
 ) {
   var selectedOrderSubTab by remember { mutableStateOf("NEW_ORDERS") }
@@ -1765,18 +1863,47 @@ fun AdminOrdersHub(
             }
           }
 
-          if (pendingOrders.isNotEmpty()) {
-            Surface(
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            OutlinedButton(
+              onClick = onOpenQrScanner,
+              border = BorderStroke(1.dp, AdminV2CyanDeep),
               shape = RoundedCornerShape(12.dp),
-              color = AdminV2Rose
+              contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+              modifier = Modifier
+                .heightIn(min = 48.dp)
+                .testTag("admin_orders_qr_scanner_button")
             ) {
-              Text(
-                text = "🔔 ${pendingOrders.size} টি নতুন",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+              Icon(
+                imageVector = Icons.Default.QrCodeScanner,
+                contentDescription = "পার্সেল QR স্ক্যান",
+                tint = AdminV2CyanDeep,
+                modifier = Modifier.size(17.dp)
               )
+              Spacer(modifier = Modifier.width(4.dp))
+              Text(
+                text = "QR",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = AdminV2CyanDeep
+              )
+            }
+
+            if (pendingOrders.isNotEmpty()) {
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = AdminV2Rose
+              ) {
+                Text(
+                  text = "🔔 ${pendingOrders.size} টি নতুন",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.ExtraBold,
+                  color = Color.White,
+                  modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+              }
             }
           }
         }

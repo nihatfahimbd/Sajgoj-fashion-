@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -345,6 +346,7 @@ fun AdminV2TopBar(
   activeBlocksCount: Int,
   showMenuButton: Boolean,
   onOpenDrawer: () -> Unit,
+  onOpenQrScanner: () -> Unit = {},
   onLogout: () -> Unit,
   modifier: Modifier = Modifier
 ) {
@@ -414,32 +416,68 @@ fun AdminV2TopBar(
         }
       }
 
-      Surface(
-        shape = RoundedCornerShape(13.dp),
-        color = Color.White.copy(alpha = 0.24f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.55f)),
-        modifier = Modifier
-          .heightIn(min = 48.dp)
-          .clip(RoundedCornerShape(13.dp))
-          .clickable(onClick = onLogout)
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(5.dp)
+        Surface(
+          shape = RoundedCornerShape(13.dp),
+          color = Color.White,
+          border = BorderStroke(1.dp, Color.White),
+          shadowElevation = 2.dp,
+          modifier = Modifier
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .clickable(onClick = onOpenQrScanner)
+            .testTag("admin_topbar_qr_scanner_button")
         ) {
-          Icon(
-            imageVector = Icons.Default.PowerSettingsNew,
-            contentDescription = "Logout",
-            tint = Color.White,
-            modifier = Modifier.size(16.dp)
-          )
-          Text(
-            text = "লগআউট",
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = Color.White
-          )
+          Row(
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.QrCodeScanner,
+              contentDescription = "QR ও বারকোড স্ক্যানার খুলুন",
+              tint = AdminV2CyanDeep,
+              modifier = Modifier.size(18.dp)
+            )
+            Text(
+              text = "QR স্ক্যান",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = AdminV2CyanDeep
+            )
+          }
+        }
+
+        Surface(
+          shape = RoundedCornerShape(13.dp),
+          color = Color.White.copy(alpha = 0.24f),
+          border = BorderStroke(1.dp, Color.White.copy(alpha = 0.55f)),
+          modifier = Modifier
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .clickable(onClick = onLogout)
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Default.PowerSettingsNew,
+              contentDescription = "Logout",
+              tint = Color.White,
+              modifier = Modifier.size(16.dp)
+            )
+            Text(
+              text = "লগআউট",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = Color.White
+            )
+          }
         }
       }
     }
