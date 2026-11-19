@@ -156,6 +156,25 @@
       box-shadow: 0 12px 32px -10px rgba(99, 102, 241, 0.22), inset 0 1.5px 1px rgba(255, 255, 255, 0.95);
       color: #000000;
     }
+    header.liquid-glass-nav {
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: clip;
+    }
+    @media (max-width: 767px) {
+      header.liquid-glass-nav {
+        width: 100%;
+        overflow-x: clip;
+      }
+      header.liquid-glass-nav .mobile-header-icon-btn {
+        min-width: 42px;
+        min-height: 42px;
+      }
+      header.liquid-glass-nav .mobile-search-icon-btn {
+        min-width: 38px;
+        min-height: 38px;
+      }
+    }
 
     .liquid-glass-hero {
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.62) 0%, rgba(245, 208, 254, 0.45) 48%, rgba(186, 230, 253, 0.58) 100%);
@@ -306,7 +325,7 @@
     }
     /* Crisp white pill/box backdrops behind black card text without overflowing card edges */
     .red-black-photo-card .product-title {
-      background-color: rgba(255, 255, 255, 0.95);
+      background-color: rgba(255, 255, 255, 0.96);
       color: #000000 !important;
       padding: 3px 6px;
       border-radius: 10px;
@@ -315,12 +334,16 @@
       max-width: 100%;
       box-sizing: border-box;
       overflow: hidden;
-      margin: 0;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      margin: 0 0 8px 0;
+      line-height: 1.35;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.55), 0 2px 6px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
       word-break: break-word;
     }
     .red-black-photo-card .product-price {
-      background-color: rgba(255, 255, 255, 0.96);
+      background-color: rgba(255, 255, 255, 0.97);
       color: #000000 !important;
       padding: 2px 6px;
       border-radius: 9999px;
@@ -329,13 +352,32 @@
       justify-content: center;
       max-width: 100%;
       min-width: 0;
-      flex-shrink: 1;
+      flex-shrink: 0;
       box-sizing: border-box;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      line-height: 1.2;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      line-height: 1.25;
+      margin-top: 2px;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.55), 0 2px 6px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .product-title {
+      margin-bottom: 8px;
+      line-height: 1.35;
+      position: relative;
+      flex-shrink: 0;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2), 0 3px 8px -2px rgba(15, 23, 42, 0.22);
+      transition: box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .product-price {
+      margin-top: 2px;
+      position: relative;
+      flex-shrink: 0;
+      box-shadow: 0 0 10px rgba(255, 248, 240, 0.38), 0 3px 8px -2px rgba(15, 23, 42, 0.18);
+      transition: box-shadow 0.2s ease, filter 0.2s ease;
     }
     .red-black-photo-card .category-pill-label {
       background-color: rgba(255, 255, 255, 0.95);
@@ -436,7 +478,7 @@
     .storefront-card-meta-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 2px;
       min-width: 0;
       width: 100%;
     }
@@ -447,14 +489,18 @@
       border: 1.5px solid var(--sf-card-title-border, #991b1b) !important;
       border-radius: 10px;
       padding: 5px 7px;
+      margin: 0 0 6px 0;
       font-size: 12px;
       line-height: 1.3;
       width: 100%;
+      flex-shrink: 0;
+      position: relative;
       box-sizing: border-box;
       overflow: hidden;
       overflow-wrap: anywhere;
       word-break: break-word;
-      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.24), 0 4px 12px -3px rgba(220, 38, 38, 0.46), inset 0 1px 1px rgba(255, 255, 255, 0.34) !important;
+      transition: box-shadow 0.2s ease, filter 0.2s ease;
     }
     .storefront-title-text {
       display: -webkit-box;
@@ -464,6 +510,7 @@
       min-height: 2.6em;
       line-height: inherit;
       color: var(--sf-card-title-text, #ffffff) !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
     }
     /* CREAM PRICE BOX: Line 1 Navy Blue crossed-out regular price, Line 2 Red Offer Price */
     .storefront-price-box {
@@ -471,6 +518,7 @@
       border: 1.5px solid var(--sf-card-price-border, #f3d5b5) !important;
       border-radius: 10px;
       padding: 4px 7px;
+      margin-top: 2px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -478,8 +526,19 @@
       gap: 1.5px;
       width: 100%;
       min-width: 0;
+      flex-shrink: 0;
+      position: relative;
       box-sizing: border-box;
-      box-shadow: 0 3px 8px -3px rgba(15, 41, 74, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+      box-shadow: 0 0 12px rgba(255, 248, 240, 0.46), 0 3px 10px -2px rgba(15, 41, 74, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.94) !important;
+      transition: box-shadow 0.2s ease;
+    }
+    .group:hover .storefront-title-box,
+    .group:hover .product-title {
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.34), 0 5px 14px -3px rgba(220, 38, 38, 0.52), inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+    }
+    .group:hover .storefront-price-box,
+    .group:hover .product-price {
+      box-shadow: 0 0 16px rgba(255, 248, 240, 0.6), 0 4px 12px -2px rgba(15, 41, 74, 0.24), inset 0 1px 1px rgba(255, 255, 255, 0.98) !important;
     }
     .storefront-price-old {
       color: var(--sf-card-reg-price-color, #0f294a) !important;
@@ -535,40 +594,58 @@
         border-width: 1px !important;
       }
       .storefront-navy-card-body {
-        padding: 5px;
+        padding: 8px;
         gap: 4px;
+        overflow: hidden;
       }
       .storefront-card-meta-group {
-        gap: 3.5px;
+        gap: 2px;
+        overflow: hidden;
       }
-      .storefront-title-box {
-        padding: 4px 5px;
+      .storefront-navy-card-body .storefront-title-box,
+      .storefront-navy-card-body .product-title {
+        padding: 3.5px 5px;
+        margin: 0 0 4px 0;
         border-radius: 8px;
         border-width: 1px !important;
-        font-size: 10.5px;
-        line-height: 1.28;
+        font-size: 10px;
+        line-height: 1.24;
+        max-width: 100%;
       }
-      .storefront-title-text {
-        min-height: 2.56em;
+      .storefront-navy-card-body .storefront-title-text {
+        min-height: 2.48em;
       }
-      .storefront-price-box {
-        padding: 3.5px 5px;
+      .storefront-navy-card-body .storefront-price-box,
+      .storefront-navy-card-body .product-price {
+        padding: 3px 5px;
+        margin-top: 1px;
         border-radius: 8px;
         border-width: 1px !important;
         gap: 1px;
+        max-width: 100%;
+        overflow: hidden;
       }
-      .storefront-price-old {
-        font-size: 9.5px;
+      .storefront-navy-card-body .storefront-price-old {
+        font-size: 9px;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-      .storefront-price-current {
-        font-size: 12px;
+      .storefront-navy-card-body .storefront-price-current {
+        font-size: 11px;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-      .storefront-view-btn {
+      .storefront-navy-card-body .storefront-view-btn {
         font-size: 10px;
         line-height: 1.15;
         padding: 4px 5px;
         min-height: 26px;
         border-width: 1px !important;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
 
@@ -577,33 +654,37 @@
         border-radius: 10px !important;
       }
       .storefront-navy-card-body {
-        padding: 4px;
+        padding: 8px;
         gap: 3px;
       }
       .storefront-card-meta-group {
-        gap: 3px;
+        gap: 2px;
       }
-      .storefront-title-box {
+      .storefront-navy-card-body .storefront-title-box,
+      .storefront-navy-card-body .product-title {
         padding: 3px 4px;
+        margin: 0 0 4px 0;
         border-radius: 7px;
-        font-size: 9.75px;
-        line-height: 1.24;
+        font-size: 9.5px;
+        line-height: 1.22;
       }
-      .storefront-title-text {
-        min-height: 2.48em;
+      .storefront-navy-card-body .storefront-title-text {
+        min-height: 2.44em;
       }
-      .storefront-price-box {
-        padding: 3px 4px;
+      .storefront-navy-card-body .storefront-price-box,
+      .storefront-navy-card-body .product-price {
+        padding: 2.5px 4px;
+        margin-top: 1px;
         border-radius: 7px;
         gap: 0.5px;
       }
-      .storefront-price-old {
-        font-size: 8.75px;
+      .storefront-navy-card-body .storefront-price-old {
+        font-size: 8.5px;
       }
-      .storefront-price-current {
-        font-size: 11px;
+      .storefront-navy-card-body .storefront-price-current {
+        font-size: 10.5px;
       }
-      .storefront-view-btn {
+      .storefront-navy-card-body .storefront-view-btn {
         font-size: 9.5px;
         padding: 3.5px 4px;
         min-height: 24px;
@@ -1681,7 +1762,7 @@
     ];
 
     // =========================================================
-    // INDEXEDDB MULTI-TIER PERSISTENCE HELPER (Zero 5MB Quota Limits)
+    // INDEXEDDB MULTI-TIER PERSISTENCE HELPER (Catalog Cache & Offline Order Queue)
     // =========================================================
     const idbStore = {
       dbPromise: null,
@@ -1690,11 +1771,17 @@
         this.dbPromise = new Promise((resolve) => {
           if (typeof indexedDB === "undefined") return resolve(null);
           try {
-            const req = indexedDB.open("sajgoj_fashion_db", 1);
+            const req = indexedDB.open("sajgoj_fashion_db", 2);
             req.onupgradeneeded = (e) => {
               const db = e.target.result;
               if (!db.objectStoreNames.contains("store_data")) {
                 db.createObjectStore("store_data");
+              }
+              if (!db.objectStoreNames.contains("product_catalog_cache")) {
+                db.createObjectStore("product_catalog_cache", { keyPath: "id" });
+              }
+              if (!db.objectStoreNames.contains("offline_orders_queue")) {
+                db.createObjectStore("offline_orders_queue", { keyPath: "id" });
               }
             };
             req.onsuccess = () => resolve(req.result);
@@ -1736,6 +1823,165 @@
               req.onerror = () => resolve(false);
             } catch(e) { resolve(false); }
           });
+        } catch(e) { return false; }
+      },
+      async postToSw(message) {
+        try {
+          if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return false;
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage(message);
+            return true;
+          }
+          const reg = await navigator.serviceWorker.ready;
+          if (reg && reg.active) {
+            reg.active.postMessage(message);
+            return true;
+          }
+        } catch(e) {}
+        return false;
+      },
+      async registerOfflineOrderBgSync() {
+        try {
+          if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            if (reg && "sync" in reg) {
+              await reg.sync.register("sync-offline-orders");
+              return true;
+            }
+          }
+        } catch(e) {}
+        return false;
+      },
+      async cacheCatalogProducts(productsList, categoriesList = null) {
+        if (!Array.isArray(productsList)) return false;
+        try {
+          const db = await this.init();
+          if (db && db.objectStoreNames.contains("product_catalog_cache")) {
+            await new Promise((resolve) => {
+              try {
+                const tx = db.transaction(["product_catalog_cache", "store_data"], "readwrite");
+                const catalogStore = tx.objectStore("product_catalog_cache");
+                const dataStore = tx.objectStore("store_data");
+                catalogStore.clear();
+                const now = Date.now();
+                productsList.forEach((p, idx) => {
+                  if (p && (p.id || p.sku)) {
+                    catalogStore.put({ ...p, id: String(p.id || p.sku || `prod_${idx}`), cachedAt: now });
+                  }
+                });
+                dataStore.put(productsList, "products");
+                if (Array.isArray(categoriesList) && categoriesList.length > 0) {
+                  dataStore.put(categoriesList, "categories");
+                }
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+              } catch(e) { resolve(false); }
+            });
+          }
+          this.postToSw({
+            type: "CACHE_PRODUCT_CATALOG",
+            products: productsList,
+            categories: categoriesList || undefined,
+            updatedAt: Date.now()
+          });
+          return true;
+        } catch(e) { return false; }
+      },
+      async getCachedCatalogProducts() {
+        try {
+          const db = await this.init();
+          if (!db) return null;
+          if (db.objectStoreNames.contains("product_catalog_cache")) {
+            const list = await new Promise((resolve) => {
+              try {
+                const tx = db.transaction("product_catalog_cache", "readonly");
+                const req = tx.objectStore("product_catalog_cache").getAll();
+                req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+                req.onerror = () => resolve([]);
+              } catch(e) { resolve([]); }
+            });
+            if (list && list.length > 0) return list;
+          }
+          return await this.get("products");
+        } catch(e) { return null; }
+      },
+      async enqueueOfflineOrder(queueEntry) {
+        if (!queueEntry || !queueEntry.id) return false;
+        try {
+          const db = await this.init();
+          if (db && db.objectStoreNames.contains("offline_orders_queue")) {
+            await new Promise((resolve) => {
+              try {
+                const tx = db.transaction("offline_orders_queue", "readwrite");
+                const req = tx.objectStore("offline_orders_queue").put(queueEntry);
+                req.onsuccess = () => resolve(true);
+                req.onerror = () => resolve(false);
+              } catch(e) { resolve(false); }
+            });
+          } else {
+            const existing = (await this.get("offline_orders_queue_fallback")) || [];
+            const next = [...existing.filter(item => item.id !== queueEntry.id), queueEntry];
+            await this.set("offline_orders_queue_fallback", next);
+          }
+          await this.postToSw({ type: "QUEUE_OFFLINE_ORDER", queueEntry });
+          await this.registerOfflineOrderBgSync();
+          return true;
+        } catch(e) { return false; }
+      },
+      async getOfflineOrdersQueue() {
+        try {
+          const db = await this.init();
+          if (db && db.objectStoreNames.contains("offline_orders_queue")) {
+            const list = await new Promise((resolve) => {
+              try {
+                const tx = db.transaction("offline_orders_queue", "readonly");
+                const req = tx.objectStore("offline_orders_queue").getAll();
+                req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+                req.onerror = () => resolve([]);
+              } catch(e) { resolve([]); }
+            });
+            return list.sort((a, b) => Number(a.queuedAt || 0) - Number(b.queuedAt || 0));
+          }
+          const fallback = await this.get("offline_orders_queue_fallback");
+          return Array.isArray(fallback) ? fallback : [];
+        } catch(e) { return []; }
+      },
+      async updateOfflineOrderStatus(queueEntry) {
+        if (!queueEntry || !queueEntry.id) return false;
+        try {
+          const db = await this.init();
+          if (db && db.objectStoreNames.contains("offline_orders_queue")) {
+            return await new Promise((resolve) => {
+              try {
+                const tx = db.transaction("offline_orders_queue", "readwrite");
+                const req = tx.objectStore("offline_orders_queue").put(queueEntry);
+                req.onsuccess = () => resolve(true);
+                req.onerror = () => resolve(false);
+              } catch(e) { resolve(false); }
+            });
+          }
+        } catch(e) {}
+        return false;
+      },
+      async removeOfflineOrder(orderId) {
+        if (!orderId) return false;
+        try {
+          const db = await this.init();
+          if (db && db.objectStoreNames.contains("offline_orders_queue")) {
+            await new Promise((resolve) => {
+              try {
+                const tx = db.transaction("offline_orders_queue", "readwrite");
+                const req = tx.objectStore("offline_orders_queue").delete(orderId);
+                req.onsuccess = () => resolve(true);
+                req.onerror = () => resolve(false);
+              } catch(e) { resolve(false); }
+            });
+          } else {
+            const existing = (await this.get("offline_orders_queue_fallback")) || [];
+            await this.set("offline_orders_queue_fallback", existing.filter(item => item.id !== orderId));
+          }
+          this.postToSw({ type: "REMOVE_SYNCED_OFFLINE_ORDER", orderId });
+          return true;
         } catch(e) { return false; }
       }
     };
@@ -1889,6 +2135,9 @@
         }
         // Always persist to IndexedDB asynchronously (handles large high-res images, logos, banners)
         idbStore.set(key, val);
+        if (key === "products" && Array.isArray(val)) {
+          idbStore.cacheCatalogProducts(val).catch(() => {});
+        }
       };
 
       // Reconcile Website products with POS localStorage ("sajgoj_products") using newest stockUpdatedAt
@@ -2165,17 +2414,21 @@
         return list;
       }, [categories, products]);
 
-      // Online/Offline Network Status Detection
+      // Online/Offline Network Status Detection & Offline Order Background Sync State
       const [isOnline, setIsOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
+      const [offlineOrderQueue, setOfflineOrderQueue] = useState([]);
+      const [isSyncingOfflineOrders, setIsSyncingOfflineOrders] = useState(false);
+      const [lastOfflineOrderSyncAt, setLastOfflineOrderSyncAt] = useState(0);
+      const isSyncingOfflineOrdersRef = useRef(false);
 
       useEffect(() => {
         const handleOnline = () => {
           setIsOnline(true);
-          notify("🌐 আপনি আবার অনলাইনে সংযুক্ত হয়েছেন! ক্লাউড সিঙ্ক সক্রিয়।");
+          notify("🌐 আপনি আবার অনলাইনে সংযুক্ত হয়েছেন! ক্লাউড ও অফলাইন অর্ডার সিঙ্ক হচ্ছে...");
         };
         const handleOffline = () => {
           setIsOnline(false);
-          notify("⚡ অফলাইন মোড: সংরক্ষিত প্রোডাক্ট ও POS নির্বিঘ্নে চলবে।");
+          notify("⚡ অফলাইন মোড: ক্যাশড প্রোডাক্ট ক্যাটালগ ও অফলাইন অর্ডার কিউ সচল রয়েছে।");
         };
         window.addEventListener("online", handleOnline);
         window.addEventListener("offline", handleOffline);
@@ -2280,6 +2533,30 @@
               }
             } catch(e) {}
           }
+          // Recover product catalog from dedicated IndexedDB product_catalog_cache if store_data missed it
+          try {
+            const cachedCatalog = await idbStore.getCachedCatalogProducts();
+            if (isMounted && Array.isArray(cachedCatalog) && cachedCatalog.length > 0) {
+              setProducts(prev => (prev && prev.length > 0 ? prev : mergeWithPosLocalStorage(normalizeProductsList(cachedCatalog))));
+              idbStore.postToSw({ type: "CACHE_PRODUCT_CATALOG", products: cachedCatalog, updatedAt: Date.now() });
+            }
+          } catch(e) {}
+          // Hydrate any queued offline orders from IndexedDB and merge into visible orders list
+          try {
+            const pendingQueue = await idbStore.getOfflineOrdersQueue();
+            if (isMounted && Array.isArray(pendingQueue)) {
+              setOfflineOrderQueue(pendingQueue);
+              if (pendingQueue.length > 0) {
+                setOrders(prev => {
+                  const existingIds = new Set((prev || []).map(o => o.id));
+                  const pendingOrders = pendingQueue
+                    .map(q => q.orderData ? { ...q.orderData, offlineQueued: true, syncStatus: q.syncStatus || "pending" } : null)
+                    .filter(o => o && !existingIds.has(o.id));
+                  return pendingOrders.length > 0 ? [...pendingOrders, ...(prev || [])] : prev;
+                });
+              }
+            }
+          } catch(e) {}
           if (isMounted) {
             hasHydratedRef.current = true;
           }
@@ -2337,6 +2614,26 @@
       const [lastPosLocalSyncTs, setLastPosLocalSyncTs] = useState(() => Number(getStored("pos_last_local_sync_ts", 0)) || 0);
       const [lastFirestorePosSyncTs, setLastFirestorePosSyncTs] = useState(() => Number(getStored("pos_last_firestore_sync_ts", 0)) || 0);
       const [isPosDiagnosticOpen, setIsPosDiagnosticOpen] = useState(true);
+      const [stockDiagnosticReport, setStockDiagnosticReport] = useState({
+        loading: false,
+        lastCheckedTs: 0,
+        firestoreConnected: false,
+        firestoreCount: 0,
+        posLocalCount: 0,
+        idbProductsCount: 0,
+        idbPosCount: 0,
+        matchedCount: 0,
+        discrepanciesCount: 0,
+        mismatchCount: 0,
+        missingFirestoreCount: 0,
+        missingLocalPosCount: 0,
+        rows: [],
+        error: null
+      });
+      const [stockDiagnosticFilter, setStockDiagnosticFilter] = useState("discrepancies"); // "discrepancies" | "all"
+      const [stockDiagnosticSearch, setStockDiagnosticSearch] = useState("");
+      const [stockReconcileStrategy, setStockReconcileStrategy] = useState("newest"); // "newest" | "firestore" | "local_pos"
+      const [isReconcilingStock, setIsReconcilingStock] = useState(false);
 
       const syncOriginIdRef = useRef("WEB-" + Math.random().toString(36).slice(2, 8));
       const suppressPosPushRef = useRef(false);
@@ -2402,6 +2699,536 @@
           });
         } catch (e) {
           return new Date(Number(ts)).toISOString();
+        }
+      };
+
+      // Validate stock levels across Firestore 'products' collection vs local POS localStorage & IndexedDB
+      const runStockValidationDiagnostic = async (silent = false) => {
+        setStockDiagnosticReport(prev => ({ ...prev, loading: true, error: null }));
+        const checkedAt = Date.now();
+        let firestoreList = [];
+        let firestoreConnected = false;
+        let firestoreReadError = null;
+
+        // 1. Live fetch Firestore 'products' collection
+        if (firestoreDb) {
+          try {
+            const snap = await firestoreDb.collection("products").get();
+            snap.forEach(doc => {
+              const d = doc.data();
+              if (d) firestoreList.push({ ...d, id: d.id || doc.id });
+            });
+            firestoreConnected = true;
+            markFirestorePosSync(checkedAt);
+          } catch (err) {
+            firestoreReadError = err?.message || String(err);
+            recordPosSyncError({
+              source: "STOCK_DIAGNOSTIC",
+              severity: "ERROR",
+              code: err?.code || "FIRESTORE_READ_FAILED",
+              message: "স্টক ভ্যালিডেশনের সময় Firestore 'products' কালেকশন পড়া যায়নি",
+              details: firestoreReadError
+            });
+          }
+        } else {
+          firestoreReadError = "Firestore সংযুক্ত নয় (Offline Mode)";
+        }
+
+        // 2. Read local POS localStorage ('sajgoj_products')
+        let posLocalList = [];
+        try {
+          const rawPos = localStorage.getItem("sajgoj_products");
+          const parsed = rawPos ? JSON.parse(rawPos) : [];
+          if (Array.isArray(parsed)) posLocalList = parsed;
+        } catch (err) {
+          recordPosSyncError({
+            source: "LOCAL_POS_STORAGE",
+            severity: "ERROR",
+            code: "DIAGNOSTIC_LS_PARSE_ERROR",
+            message: "ডায়াগনস্টিক চলাকালে localStorage (sajgoj_products) পার্স করতে ব্যর্থ",
+            details: err?.message || String(err)
+          });
+        }
+
+        // 3. Read IndexedDB ('sajgoj_fashion_db' -> store_data -> 'pos_products' & 'products')
+        let idbPosList = [];
+        let idbProductsList = [];
+        try {
+          const [idbPosRaw, idbProdsRaw] = await Promise.all([
+            idbStore.get("pos_products"),
+            idbStore.get("products")
+          ]);
+          if (Array.isArray(idbPosRaw)) idbPosList = idbPosRaw;
+          if (Array.isArray(idbProdsRaw)) idbProductsList = idbProdsRaw;
+        } catch (err) {
+          recordPosSyncError({
+            source: "INDEXEDDB_STORAGE",
+            severity: "WARNING",
+            code: "DIAGNOSTIC_IDB_READ_ERROR",
+            message: "IndexedDB স্টক ডাটা পড়তে সমস্যা হয়েছে",
+            details: err?.message || String(err)
+          });
+        }
+
+        const effectiveIdbList = idbPosList.length > 0 ? idbPosList : idbProductsList;
+        const idbSourceLabel = idbPosList.length > 0 ? "IndexedDB (pos_products)" : "IndexedDB (products)";
+
+        const normalizeKey = (item) => String(item?.id || item?.productId || "").trim();
+        const normalizeSku = (item) => String(item?.sku || "").trim().toLowerCase();
+        const normalizeName = (item) => String(item?.name || item?.nameBn || item?.nameEn || "").trim().toLowerCase();
+
+        const findMatch = (list, refItem) => {
+          const refId = normalizeKey(refItem);
+          const refSku = normalizeSku(refItem);
+          const refName = normalizeName(refItem);
+          return list.find(x =>
+            (refId && normalizeKey(x) === refId) ||
+            (refSku && normalizeSku(x) === refSku) ||
+            (refName && normalizeName(x) === refName)
+          ) || null;
+        };
+
+        // Build unified catalog index across Firestore, POS localStorage, and IndexedDB
+        const unifiedSeeds = [];
+        const addSeed = (item) => {
+          if (!item) return;
+          if (!findMatch(unifiedSeeds, item)) {
+            unifiedSeeds.push(item);
+          }
+        };
+        firestoreList.forEach(addSeed);
+        posLocalList.forEach(addSeed);
+        effectiveIdbList.forEach(addSeed);
+        if (idbPosList.length > 0) idbProductsList.forEach(addSeed);
+
+        let matchedCount = 0;
+        let mismatchCount = 0;
+        let missingFirestoreCount = 0;
+        let missingLocalPosCount = 0;
+
+        const rows = unifiedSeeds.map(seed => {
+          const fsItem = findMatch(firestoreList, seed);
+          const lsItem = findMatch(posLocalList, seed);
+          const idbPosItem = findMatch(idbPosList, seed);
+          const idbProdItem = findMatch(idbProductsList, seed);
+          const idbItem = idbPosItem || idbProdItem;
+
+          const id = normalizeKey(fsItem || lsItem || idbItem || seed) || `ITEM-${Math.random().toString(36).slice(2, 7)}`;
+          const name = (fsItem?.name || lsItem?.nameBn || lsItem?.name || idbItem?.name || "অজানা পণ্য");
+          const sku = (fsItem?.sku || lsItem?.sku || idbItem?.sku || `SAJ-${id}`);
+          const category = (fsItem?.category || lsItem?.category || idbItem?.category || "সাধারণ");
+          const image = (fsItem?.images?.[0] || fsItem?.image || lsItem?.image || idbItem?.images?.[0] || idbItem?.image || "");
+          const posDisabled = (fsItem?.enabledForPos === false || idbProdItem?.enabledForPos === false);
+
+          const fsStock = fsItem && fsItem.stock !== undefined ? Math.max(0, Number(fsItem.stock) || 0) : null;
+          const lsStock = lsItem && lsItem.stock !== undefined ? Math.max(0, Number(lsItem.stock) || 0) : null;
+          const idbStock = idbItem && idbItem.stock !== undefined ? Math.max(0, Number(idbItem.stock) || 0) : null;
+          const idbMirrorDiffers = idbPosItem && idbProdItem &&
+            Number(idbPosItem.stock) !== Number(idbProdItem.stock);
+
+          const fsTs = Number(fsItem?.stockUpdatedAt || fsItem?.updatedAt) || 0;
+          const lsTs = Number(lsItem?.stockUpdatedAt) || 0;
+          const idbTs = Number(idbItem?.stockUpdatedAt) || 0;
+
+          const presentStocks = [fsStock, lsStock, idbStock].filter(v => v !== null);
+          const uniqueStocks = Array.from(new Set(presentStocks));
+          const maxDrift = presentStocks.length > 1
+            ? Math.max(...presentStocks) - Math.min(...presentStocks)
+            : 0;
+
+          let status = "MATCHED";
+          let statusLabel = "সিঙ্কড (Matched)";
+          let issueReasons = [];
+
+          if (posDisabled && lsStock === null) {
+            status = "POS_DISABLED";
+            statusLabel = "POS নিষ্ক্রিয়";
+          } else if (firestoreConnected && fsStock === null && (lsStock !== null || idbStock !== null)) {
+            status = "MISSING_IN_FIRESTORE";
+            statusLabel = "Firestore-এ নেই";
+            missingFirestoreCount++;
+            issueReasons.push("Firestore 'products' কালেকশনে অনুপস্থিত");
+          } else if ((lsStock === null || idbStock === null) && fsStock !== null) {
+            status = "MISSING_IN_LOCAL_POS";
+            statusLabel = "লোকাল POS-এ নেই";
+            missingLocalPosCount++;
+            if (lsStock === null) issueReasons.push("POS localStorage-এ অনুপস্থিত");
+            if (idbStock === null) issueReasons.push("IndexedDB-তে অনুপস্থিত");
+          } else if (uniqueStocks.length > 1 || idbMirrorDiffers) {
+            status = "STOCK_MISMATCH";
+            statusLabel = "স্টক অমিল (Drift)";
+            mismatchCount++;
+            if (fsStock !== null && lsStock !== null && fsStock !== lsStock) {
+              issueReasons.push(`Firestore (${fsStock}) ≠ POS LS (${lsStock})`);
+            }
+            if (fsStock !== null && idbStock !== null && fsStock !== idbStock) {
+              issueReasons.push(`Firestore (${fsStock}) ≠ IndexedDB (${idbStock})`);
+            }
+            if (lsStock !== null && idbStock !== null && lsStock !== idbStock) {
+              issueReasons.push(`POS LS (${lsStock}) ≠ IndexedDB (${idbStock})`);
+            }
+            if (idbMirrorDiffers) {
+              issueReasons.push(`IDB pos (${idbPosItem.stock}) ≠ IDB store (${idbProdItem.stock})`);
+            }
+          } else {
+            matchedCount++;
+          }
+
+          // Determine Smart (newest) recommended stock
+          const candidates = [
+            fsStock !== null ? { src: "FIRESTORE", stock: fsStock, ts: fsTs } : null,
+            lsStock !== null ? { src: "POS_LOCALSTORAGE", stock: lsStock, ts: lsTs } : null,
+            idbStock !== null ? { src: "INDEXEDDB", stock: idbStock, ts: idbTs } : null
+          ].filter(Boolean);
+          candidates.sort((a, b) => b.ts - a.ts);
+          const recommendedStock = candidates.length > 0 ? candidates[0].stock : 0;
+          const recommendedSource = candidates.length > 0 ? candidates[0].src : "NONE";
+
+          return {
+            id,
+            name,
+            sku,
+            category,
+            image,
+            fsStock,
+            lsStock,
+            idbStock,
+            idbProdStock: idbProdItem && idbProdItem.stock !== undefined ? Math.max(0, Number(idbProdItem.stock) || 0) : null,
+            fsTs,
+            lsTs,
+            idbTs,
+            maxDrift,
+            status,
+            statusLabel,
+            issueReasons,
+            recommendedStock,
+            recommendedSource,
+            fsItem,
+            lsItem,
+            idbItem
+          };
+        });
+
+        // Sort discrepancies first, then biggest drift
+        const priority = { STOCK_MISMATCH: 0, MISSING_IN_FIRESTORE: 1, MISSING_IN_LOCAL_POS: 2, POS_DISABLED: 3, MATCHED: 4 };
+        rows.sort((a, b) => {
+          const pDiff = (priority[a.status] ?? 9) - (priority[b.status] ?? 9);
+          if (pDiff !== 0) return pDiff;
+          return (b.maxDrift || 0) - (a.maxDrift || 0);
+        });
+
+        const discrepanciesCount = mismatchCount + missingFirestoreCount + missingLocalPosCount;
+
+        setStockDiagnosticReport({
+          loading: false,
+          lastCheckedTs: checkedAt,
+          firestoreConnected,
+          firestoreCount: firestoreList.length,
+          posLocalCount: posLocalList.length,
+          idbProductsCount: idbProductsList.length,
+          idbPosCount: idbPosList.length,
+          idbSourceLabel,
+          matchedCount,
+          discrepanciesCount,
+          mismatchCount,
+          missingFirestoreCount,
+          missingLocalPosCount,
+          rows,
+          error: firestoreReadError
+        });
+
+        if (!silent) {
+          if (discrepanciesCount === 0) {
+            notify(`✅ ভ্যালিডেশন সম্পন্ন! Firestore 'products' (${firestoreList.length}), POS localStorage এবং IndexedDB-এর সব ${matchedCount}টি পণ্যের স্টক ১০০% মিলে গেছে।`);
+          } else {
+            notify(`⚠️ ভ্যালিডেশনে ${discrepanciesCount}টি পণ্যে স্টক অমিল বা অনুপস্থিতি পাওয়া গেছে! "Reconcile Now" বাটনে ক্লিক করে সমাধান করুন।`);
+          }
+        }
+      };
+
+      // Reconcile discrepancies across Firestore 'products', local POS localStorage, and IndexedDB
+      const reconcileStockDiscrepanciesNow = async (targetIds = null, strategyOverride = null) => {
+        const strategy = strategyOverride || stockReconcileStrategy || "newest";
+        setIsReconcilingStock(true);
+        const now = Date.now();
+
+        try {
+          // Ensure we validate fresh data if rows aren't loaded yet
+          let currentRows = stockDiagnosticReport.rows || [];
+          if (currentRows.length === 0) {
+            await runStockValidationDiagnostic(true);
+          }
+
+          const targetSet = Array.isArray(targetIds) && targetIds.length > 0
+            ? new Set(targetIds.map(String))
+            : null;
+
+          // Read fresh state from current products, localStorage, IndexedDB & Firestore
+          let firestoreMap = {};
+          if (firestoreDb) {
+            try {
+              const snap = await firestoreDb.collection("products").get();
+              snap.forEach(doc => {
+                const d = doc.data();
+                if (d) firestoreMap[String(d.id || doc.id)] = { ...d, id: String(d.id || doc.id) };
+              });
+            } catch (err) {
+              recordPosSyncError({
+                source: "FIRESTORE_RECONCILE",
+                severity: "ERROR",
+                code: err?.code || "READ_FAILED",
+                message: "Reconcile করার সময় Firestore পড়া যায়নি",
+                details: err?.message || String(err)
+              });
+            }
+          }
+
+          let posLocalList = [];
+          try {
+            const raw = localStorage.getItem("sajgoj_products");
+            const parsed = raw ? JSON.parse(raw) : [];
+            if (Array.isArray(parsed)) posLocalList = parsed;
+          } catch (e) { posLocalList = []; }
+
+          let idbProductsList = [];
+          try {
+            const rawIdb = await idbStore.get("products");
+            if (Array.isArray(rawIdb)) idbProductsList = rawIdb;
+          } catch (e) { idbProductsList = []; }
+
+          const baseCatalog = [...(productsRef.current || [])];
+          const addToBaseIfMissing = (candidate) => {
+            if (!candidate || !candidate.id) return;
+            const cid = String(candidate.id);
+            const exists = baseCatalog.some(x => String(x.id) === cid || (x.sku && candidate.sku && x.sku === candidate.sku));
+            if (!exists) {
+              baseCatalog.push({
+                ...candidate,
+                id: cid,
+                name: candidate.name || candidate.nameBn || candidate.nameEn || "নতুন পণ্য",
+                price: Number(candidate.price || candidate.sellingPrice) || 0,
+                stock: Math.max(0, Number(candidate.stock) || 0),
+                images: Array.isArray(candidate.images) && candidate.images.length > 0
+                  ? candidate.images
+                  : (candidate.image ? [candidate.image] : [imgSharee])
+              });
+            }
+          };
+          Object.values(firestoreMap).forEach(addToBaseIfMissing);
+          posLocalList.forEach(addToBaseIfMissing);
+          idbProductsList.forEach(addToBaseIfMissing);
+
+          const syncEvents = [];
+          let reconciledCount = 0;
+
+          const updatedCatalog = normalizeProductsList(baseCatalog).map(p => {
+            const pid = String(p.id);
+            if (targetSet && !targetSet.has(pid)) return p;
+
+            const fsItem = firestoreMap[pid] || Object.values(firestoreMap).find(x => x.sku && p.sku && x.sku === p.sku);
+            const lsItem = posLocalList.find(x => String(x.id) === pid || (x.sku && p.sku && x.sku === p.sku));
+            const idbItem = idbProductsList.find(x => String(x.id) === pid || (x.sku && p.sku && x.sku === p.sku));
+
+            const fsStock = fsItem && fsItem.stock !== undefined ? Math.max(0, Number(fsItem.stock) || 0) : null;
+            const lsStock = lsItem && lsItem.stock !== undefined ? Math.max(0, Number(lsItem.stock) || 0) : null;
+            const idbStock = idbItem && idbItem.stock !== undefined ? Math.max(0, Number(idbItem.stock) || 0) : null;
+
+            const fsTs = Number(fsItem?.stockUpdatedAt || fsItem?.updatedAt) || 0;
+            const lsTs = Number(lsItem?.stockUpdatedAt) || 0;
+            const idbTs = Number(idbItem?.stockUpdatedAt) || 0;
+
+            let chosenStock = Math.max(0, Number(p.stock) || 0);
+            let chosenSource = "DIAGNOSTIC_RECONCILE";
+
+            if (strategy === "firestore" && fsStock !== null) {
+              chosenStock = fsStock;
+              chosenSource = "RECONCILE_FIRESTORE_WINS";
+            } else if (strategy === "local_pos" && (lsStock !== null || idbStock !== null)) {
+              chosenStock = lsStock !== null ? lsStock : idbStock;
+              chosenSource = "RECONCILE_LOCAL_POS_WINS";
+            } else {
+              const candidates = [
+                fsStock !== null ? { src: "FIRESTORE", stock: fsStock, ts: fsTs } : null,
+                lsStock !== null ? { src: "POS_LOCAL", stock: lsStock, ts: lsTs } : null,
+                idbStock !== null ? { src: "INDEXEDDB", stock: idbStock, ts: idbTs } : null
+              ].filter(Boolean);
+              candidates.sort((a, b) => b.ts - a.ts);
+              if (candidates.length > 0) {
+                chosenStock = candidates[0].stock;
+                chosenSource = `RECONCILE_${candidates[0].src}`;
+              }
+            }
+
+            const prevStock = Number(p.stock) || 0;
+            const hasDiff = (fsStock !== chosenStock) || (lsStock !== chosenStock) || (idbStock !== chosenStock) || !fsItem || !lsItem;
+            if (hasDiff) {
+              reconciledCount++;
+              syncEvents.push({
+                id: `REC-${now}-${pid}`,
+                productId: pid,
+                productName: p.name,
+                sku: p.sku || `SAJ-${pid}`,
+                previousStock: prevStock,
+                newStock: chosenStock,
+                delta: chosenStock - prevStock,
+                source: chosenSource,
+                reason: `ডায়াগনস্টিক রিকনসিলিয়েশন (${strategy})`,
+                referenceId: "ADMIN_DIAGNOSTIC",
+                timestamp: now
+              });
+            }
+
+            return {
+              ...p,
+              stock: chosenStock,
+              stockUpdatedAt: now,
+              lastSyncSource: chosenSource
+            };
+          });
+
+          // 1. Update React state, localStorage ('sajgoj_store_products'), and IndexedDB ('store_data/products')
+          suppressPosPushRef.current = true;
+          productsRef.current = updatedCatalog;
+          setProducts(updatedCatalog);
+          setStored("products", updatedCatalog);
+
+          // 2. Write reconciled POS list to localStorage ('sajgoj_products'), IndexedDB ('store_data/pos_products'), and POS iframe
+          const reconciledPosList = updatedCatalog
+            .filter(p => p && p.enabledForPos !== false)
+            .map(p => ({
+              id: String(p.id),
+              nameEn: p.name,
+              nameBn: p.name,
+              name: p.name,
+              sku: p.sku || `SAJ-${p.id}`,
+              barcode: p.barcode || p.sku || `SAJ-${p.id}`,
+              category: p.category || "শাড়ি",
+              costPrice: Number(p.costPrice || Math.round((Number(p.price) || 0) * 0.7)) || 0,
+              sellingPrice: Number(p.price) || 0,
+              price: Number(p.price) || 0,
+              stock: Math.max(0, Number(p.stock) || 0),
+              stockUpdatedAt: now,
+              minStockAlert: 5,
+              image: (p.images && p.images[0]) || p.image || "",
+              sizes: p.sizes || [],
+              colors: p.colors || [],
+              enabledForPos: true
+            }));
+
+          const serializedPos = JSON.stringify(reconciledPosList);
+          try {
+            localStorage.setItem("sajgoj_products", serializedPos);
+            window.dispatchEvent(new StorageEvent("storage", {
+              key: "sajgoj_products",
+              newValue: serializedPos,
+              storageArea: window.localStorage
+            }));
+          } catch (se) {
+            window.dispatchEvent(new Event("storage"));
+          }
+          await idbStore.set("pos_products", reconciledPosList);
+          await idbStore.set("products", updatedCatalog);
+
+          const posPayload = {
+            type: "SAJGOJ_PRODUCTS_SYNC",
+            products: reconciledPosList,
+            source: "DIAGNOSTIC_RECONCILE",
+            timestamp: now
+          };
+          const frame = document.getElementById("sajgoj-fullpos-frame");
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage(posPayload, "*");
+          }
+          if (syncChannelRef.current) {
+            syncChannelRef.current.postMessage(posPayload);
+          }
+          markPosLocalSync(now);
+
+          // 3. Persist reconciled stock to Firestore 'products', 'pos_inventory', and 'inventory_sync_events'
+          if (firestoreDb) {
+            const writePromises = [];
+            updatedCatalog.forEach(rp => {
+              const pid = String(rp.id);
+              if (targetSet && !targetSet.has(pid)) return;
+              const isMissingInFs = !firestoreMap[pid];
+              const fsWritePayload = isMissingInFs
+                ? { ...rp, stock: Math.max(0, Number(rp.stock) || 0), stockUpdatedAt: now, lastSyncSource: "DIAGNOSTIC_RECONCILE" }
+                : { stock: Math.max(0, Number(rp.stock) || 0), stockUpdatedAt: now, lastSyncSource: "DIAGNOSTIC_RECONCILE" };
+
+              writePromises.push(
+                firestoreDb.collection("products").doc(pid).set(fsWritePayload, { merge: true }).catch((err) => {
+                  recordPosSyncError({
+                    source: "FIRESTORE_RECONCILE",
+                    severity: "ERROR",
+                    code: err?.code || "RECONCILE_PRODUCTS_WRITE_FAILED",
+                    message: `Firestore 'products' রিকনসিল ব্যর্থ (${rp.name})`,
+                    details: err?.message || String(err)
+                  });
+                })
+              );
+
+              if (rp.enabledForPos !== false) {
+                writePromises.push(
+                  firestoreDb.collection("pos_inventory").doc(pid).set({
+                    productId: pid,
+                    name: rp.name,
+                    sku: rp.sku || `SAJ-${pid}`,
+                    stock: Math.max(0, Number(rp.stock) || 0),
+                    price: Number(rp.price) || 0,
+                    updatedAt: now,
+                    lastSource: "DIAGNOSTIC_RECONCILE",
+                    lastOrigin: syncOriginIdRef.current,
+                    lastReferenceId: "ADMIN_DIAGNOSTIC"
+                  }, { merge: true }).catch((err) => {
+                    recordPosSyncError({
+                      source: "FIRESTORE_RECONCILE",
+                      severity: "ERROR",
+                      code: err?.code || "RECONCILE_POS_INV_WRITE_FAILED",
+                      message: `Firestore pos_inventory রিকনসিল ব্যর্থ (${rp.name})`,
+                      details: err?.message || String(err)
+                    });
+                  })
+                );
+              }
+            });
+
+            syncEvents.slice(0, 40).forEach(ev => {
+              writePromises.push(
+                firestoreDb.collection("inventory_sync_events").doc(ev.id).set(ev).catch(() => {})
+              );
+            });
+
+            await Promise.all(writePromises);
+            markFirestorePosSync(Date.now());
+          } else {
+            recordPosSyncError({
+              source: "FIRESTORE_RECONCILE",
+              severity: "WARNING",
+              code: "FIRESTORE_OFFLINE",
+              message: "অফলাইন থাকার কারণে কেবল লোকাল POS (localStorage ও IndexedDB) রিকনসিল করা হয়েছে",
+              details: `items=${updatedCatalog.length}`
+            });
+          }
+
+          if (syncEvents.length > 0) {
+            setInventorySyncEvents(prev => [...syncEvents, ...(prev || [])].slice(0, 60));
+          }
+
+          setTimeout(() => { suppressPosPushRef.current = false; }, 100);
+          await runStockValidationDiagnostic(true);
+          notify(`✅ Reconcile Now সম্পন্ন! ${reconciledCount}টি পণ্যের স্টক Firestore 'products', POS localStorage ও IndexedDB-তে সমন্বয় করা হয়েছে।`);
+        } catch (err) {
+          recordPosSyncError({
+            source: "STOCK_RECONCILE",
+            severity: "ERROR",
+            code: err?.code || "RECONCILE_EXCEPTION",
+            message: "রিকনসিলিয়েশন প্রক্রিয়ায় ত্রুটি ঘটেছে",
+            details: err?.message || String(err)
+          });
+          notify("⚠️ রিকনসিলিয়েশনের সময় ত্রুটি হয়েছে। নিচের লগ দেখুন।");
+        } finally {
+          setIsReconcilingStock(false);
+          setTimeout(() => { suppressPosPushRef.current = false; }, 120);
         }
       };
 
@@ -2471,6 +3298,103 @@
         }
       };
 
+      // Flush IndexedDB offline_orders_queue to Firestore automatically upon reconnection or manual trigger
+      const syncOfflineOrdersToFirestore = async (triggerReason = "auto") => {
+        if (isSyncingOfflineOrdersRef.current) return { synced: 0, remaining: offlineOrderQueue.length };
+        const queue = await idbStore.getOfflineOrdersQueue();
+        setOfflineOrderQueue(queue);
+        if (!queue || queue.length === 0) return { synced: 0, remaining: 0 };
+        if (typeof navigator !== "undefined" && !navigator.onLine) return { synced: 0, remaining: queue.length };
+        if (!firestoreDb) return { synced: 0, remaining: queue.length };
+
+        isSyncingOfflineOrdersRef.current = true;
+        setIsSyncingOfflineOrders(true);
+        let syncedCount = 0;
+        let failedCount = 0;
+
+        try {
+          for (const entry of queue) {
+            if (!entry || !entry.id || !entry.orderData) continue;
+            const syncedPayload = {
+              ...entry.orderData,
+              offlineQueued: false,
+              syncedFromOfflineQueue: true,
+              offlineQueuedAt: entry.queuedAt || Date.now(),
+              syncedAt: Date.now()
+            };
+            try {
+              await Promise.race([
+                firestoreDb.collection("orders").doc(entry.id).set(syncedPayload, { merge: true }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore offline sync timeout")), 15000))
+              ]);
+              await idbStore.removeOfflineOrder(entry.id);
+              syncedCount++;
+              setOrders(prev => {
+                const updated = (prev || []).map(o =>
+                  o.id === entry.id ? { ...o, ...syncedPayload, syncStatus: "synced" } : o
+                );
+                setStored("orders", updated);
+                return updated;
+              });
+            } catch (err) {
+              failedCount++;
+              await idbStore.updateOfflineOrderStatus({
+                ...entry,
+                attempts: Number(entry.attempts || 0) + 1,
+                syncStatus: "failed",
+                lastError: err?.message || "Sync failed"
+              });
+            }
+          }
+
+          const remainingQueue = await idbStore.getOfflineOrdersQueue();
+          setOfflineOrderQueue(remainingQueue);
+          if (syncedCount > 0) {
+            setLastOfflineOrderSyncAt(Date.now());
+            setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+            notify(`✅ অফলাইনে থাকা ${syncedCount}টি অর্ডার স্বয়ংক্রিয়ভাবে Firestore-এ সিঙ্ক হয়েছে!`);
+          } else if (failedCount > 0 && triggerReason === "manual") {
+            notify(`⚠️ ${failedCount}টি অফলাইন অর্ডার সিঙ্ক করা যায়নি। নেটওয়ার্ক সংযোগ যাচাই করে পুনরায় চেষ্টা করুন।`);
+          }
+          return { synced: syncedCount, remaining: remainingQueue.length };
+        } finally {
+          isSyncingOfflineOrdersRef.current = false;
+          setIsSyncingOfflineOrders(false);
+        }
+      };
+
+      // Auto-sync queued offline orders when browser emits 'online' event, on startup when online, or when Service Worker triggers sync
+      useEffect(() => {
+        const onReconnect = () => {
+          syncOfflineOrdersToFirestore("online_event");
+          idbStore.postToSw({ type: "TRIGGER_OFFLINE_ORDER_SYNC" });
+        };
+        window.addEventListener("online", onReconnect);
+
+        const onSwMessage = (event) => {
+          if (event?.data?.type === "SAJGOJ_SW_SYNC_OFFLINE_ORDERS") {
+            syncOfflineOrdersToFirestore("sw_background_sync");
+          }
+        };
+        if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+          navigator.serviceWorker.addEventListener("message", onSwMessage);
+        }
+
+        const startupTimer = setTimeout(() => {
+          if ((typeof navigator === "undefined" || navigator.onLine) && firestoreDb) {
+            syncOfflineOrdersToFirestore("startup");
+          }
+        }, 1800);
+
+        return () => {
+          clearTimeout(startupTimer);
+          window.removeEventListener("online", onReconnect);
+          if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+            navigator.serviceWorker.removeEventListener("message", onSwMessage);
+          }
+        };
+      }, []);
+
       // Realtime Firestore Subscriptions
       useEffect(() => {
         if (!firestoreDb) {
@@ -2490,12 +3414,14 @@
             const normalized = normalizeProductsList(list);
             setProducts(normalized);
             setStored("products", normalized);
+            idbStore.cacheCatalogProducts(normalized).catch(() => {});
             setCloudSyncStatus("connected");
             markFirestorePosSync(Date.now());
           } else {
             console.log("Seeding products to Firestore from local state...");
             const currentProds = getStored("products", initialProducts);
             currentProds.forEach(p => firestoreDb.collection("products").doc(p.id).set(p));
+            idbStore.cacheCatalogProducts(currentProds).catch(() => {});
             setCloudSyncStatus("connected");
             markFirestorePosSync(Date.now());
           }
@@ -2525,15 +3451,21 @@
           }
         }, (err) => console.warn("Categories sync error:", err));
 
-        // 3. Orders Subscription with Real-time Alerts
-        const unsubOrders = firestoreDb.collection("orders").onSnapshot((snapshot) => {
+        // 3. Orders Subscription with Real-time Alerts (preserves queued offline orders not yet in Firestore)
+        const unsubOrders = firestoreDb.collection("orders").onSnapshot(async (snapshot) => {
           if (!isMounted) return;
           if (!snapshot.empty) {
             const list = [];
             snapshot.forEach(doc => list.push(doc.data()));
-            list.sort((a,b) => (b.date || "").localeCompare(a.date || "") || (b.id || "").localeCompare(a.id || ""));
-            setOrders(list);
-            setStored("orders", list);
+            const queued = await idbStore.getOfflineOrdersQueue();
+            const remoteIds = new Set(list.map(o => o.id));
+            const unsyncedLocal = (queued || [])
+              .map(q => q.orderData ? { ...q.orderData, offlineQueued: true, syncStatus: q.syncStatus || "pending" } : null)
+              .filter(o => o && !remoteIds.has(o.id));
+            const combined = [...unsyncedLocal, ...list];
+            combined.sort((a,b) => (b.date || "").localeCompare(a.date || "") || (b.id || "").localeCompare(a.id || ""));
+            setOrders(combined);
+            setStored("orders", combined);
 
             // Real-time detection of newly received orders via Firebase
             if (!isInitialOrdersLoad.current) {
@@ -9003,6 +9935,7 @@
               window.dispatchEvent(new Event("storage"));
             }
           }
+          idbStore.set("pos_products", posProducts).catch(() => {});
           markPosLocalSync(now);
 
           const payload = {
@@ -10485,6 +11418,391 @@
         );
       };
 
+      // Stock Validation Diagnostic Panel (Firestore 'products' vs Local POS IndexedDB & localStorage)
+      const renderStockValidationDiagnosticView = (compactMode = false) => {
+        const rep = stockDiagnosticReport || {};
+        const rows = Array.isArray(rep.rows) ? rep.rows : [];
+        const q = (stockDiagnosticSearch || "").trim().toLowerCase();
+
+        const filteredRows = rows.filter(r => {
+          if (stockDiagnosticFilter === "discrepancies" && (r.status === "MATCHED" || r.status === "POS_DISABLED")) {
+            return false;
+          }
+          if (q) {
+            return (r.name && r.name.toLowerCase().includes(q)) ||
+                   (r.sku && r.sku.toLowerCase().includes(q)) ||
+                   (r.id && String(r.id).toLowerCase().includes(q));
+          }
+          return true;
+        });
+
+        const displayedRows = compactMode ? filteredRows.slice(0, 15) : filteredRows;
+
+        return (
+          <div className={`${compactMode ? "bg-white/95 border border-black/15 rounded-2xl p-4" : "liquid-glass-surface p-5 sm:p-6 rounded-3xl shadow-md"} space-y-4 text-slate-900 animate-fadeIn`}>
+            {/* Header & Controls */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#dc2626] to-[#991b1b] text-white flex items-center justify-center text-xl shadow shrink-0">
+                  🩺
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-black text-sm sm:text-base text-[#7a1c2b]">
+                      স্টক ভ্যালিডেশন ডায়াগনস্টিক (Firestore 'products' ↔ Local POS Storage)
+                    </h4>
+                    {rep.discrepanciesCount > 0 ? (
+                      <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full animate-pulse">
+                        ⚠️ {rep.discrepanciesCount} টি অমিল পাওয়া গেছে
+                      </span>
+                    ) : rep.lastCheckedTs > 0 ? (
+                      <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full">
+                        ✅ ১০০% সিঙ্কড
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
+                    Firestore <code className="font-mono bg-rose-50 text-[#7a1c2b] px-1 rounded">products</code> কালেকশন এবং লোকাল POS স্টোরেজ (<code className="font-mono bg-slate-100 px-1 rounded">localStorage</code> ও <code className="font-mono bg-slate-100 px-1 rounded">IndexedDB</code>)-এর লাইভ স্টক তুলনা ও অমিল নির্ণয়
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={stockReconcileStrategy}
+                  onChange={(e) => setStockReconcileStrategy(e.target.value)}
+                  className="bg-white border border-slate-300 text-slate-800 rounded-xl px-2.5 py-2 text-xs font-bold outline-none focus:border-[#dc2626]"
+                  title="রিকনসিল করার সময় কোন উৎসের স্টককে প্রাধান্য দেওয়া হবে"
+                >
+                  <option value="newest">⚡ স্মার্ট (সর্বশেষ আপডেট অনুযায়ী)</option>
+                  <option value="firestore">☁️ Firestore 'products' প্রাধান্য</option>
+                  <option value="local_pos">💾 Local POS Storage প্রাধান্য</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => runStockValidationDiagnostic(false)}
+                  disabled={rep.loading}
+                  className="bg-white hover:bg-rose-50 text-[#7a1c2b] border border-rose-300 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-60"
+                >
+                  <span>{rep.loading ? "⏳" : "🔍"}</span>
+                  <span>{rep.loading ? "যাচাই হচ্ছে..." : "Validate Now"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => reconcileStockDiscrepanciesNow(null, stockReconcileStrategy)}
+                  disabled={isReconcilingStock || rep.loading}
+                  className="bg-gradient-to-r from-[#dc2626] to-[#991b1b] hover:brightness-110 text-white px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer disabled:opacity-60"
+                >
+                  <span>{isReconcilingStock ? "⏳" : "🔄"}</span>
+                  <span>{isReconcilingStock ? "Reconciling..." : "Reconcile Now"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Summary KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+              <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-slate-500 flex items-center justify-between">
+                  <span>☁️ Firestore 'products'</span>
+                  <span className={`w-2 h-2 rounded-full ${rep.firestoreConnected ? "bg-emerald-500" : "bg-amber-500"}`}></span>
+                </div>
+                <div className="text-lg font-black text-slate-900 mt-0.5">{rep.firestoreCount} টি পণ্য</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {rep.firestoreConnected ? "লাইভ কালেকশন পঠিত" : "অফলাইন / ক্লাউড বিচ্ছিন্ন"}
+                </div>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-slate-500">💾 POS localStorage</div>
+                <div className="text-lg font-black text-slate-900 mt-0.5">{rep.posLocalCount} টি পণ্য</div>
+                <div className="text-[10px] text-slate-500 font-mono mt-0.5">key: sajgoj_products</div>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-slate-500">🗄️ Local IndexedDB</div>
+                <div className="text-lg font-black text-slate-900 mt-0.5">
+                  {Math.max(rep.idbPosCount || 0, rep.idbProductsCount || 0)} টি পণ্য
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  POS: {rep.idbPosCount || 0} • Store: {rep.idbProductsCount || 0}
+                </div>
+              </div>
+
+              <div className={`rounded-2xl p-3 border shadow-2xs ${
+                rep.discrepanciesCount > 0
+                  ? "bg-red-50 border-red-300"
+                  : "bg-emerald-50 border-emerald-200"
+              }`}>
+                <div className={`text-[11px] font-bold ${rep.discrepanciesCount > 0 ? "text-red-800" : "text-emerald-800"}`}>
+                  {rep.discrepanciesCount > 0 ? "⚠️ অমিল / Discrepancies" : "✅ সিঙ্ক ভ্যালিডেশন স্ট্যাটাস"}
+                </div>
+                <div className={`text-lg font-black mt-0.5 ${rep.discrepanciesCount > 0 ? "text-red-700" : "text-emerald-700"}`}>
+                  {rep.discrepanciesCount > 0 ? `${rep.discrepanciesCount} টি অমিল` : "০ টি অমিল"}
+                </div>
+                <div className="text-[10px] text-slate-600 mt-0.5">
+                  শেষ যাচাই: {rep.lastCheckedTs > 0 ? formatDiagnosticTimestamp(rep.lastCheckedTs) : "ক্লিক করে যাচাই করুন"}
+                </div>
+              </div>
+            </div>
+
+            {rep.error && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-semibold flex items-center justify-between gap-2">
+                <span>⚠️ Firestore সতর্কতা: {rep.error}</span>
+                <button
+                  type="button"
+                  onClick={() => runStockValidationDiagnostic(false)}
+                  className="px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-[11px] font-bold text-amber-900 hover:bg-amber-100"
+                >
+                  পুনরায় চেষ্টা
+                </button>
+              </div>
+            )}
+
+            {/* Filter & Search Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setStockDiagnosticFilter("discrepancies")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                    stockDiagnosticFilter === "discrepancies"
+                      ? "bg-[#dc2626] text-white border-[#dc2626] shadow-xs"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-rose-50"
+                  }`}
+                >
+                  ⚠️ শুধু অমিলসমূহ ({rep.discrepanciesCount || 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStockDiagnosticFilter("all")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                    stockDiagnosticFilter === "all"
+                      ? "bg-[#dc2626] text-white border-[#dc2626] shadow-xs"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-rose-50"
+                  }`}
+                >
+                  📋 সকল পণ্য ({rows.length})
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={stockDiagnosticSearch}
+                onChange={(e) => setStockDiagnosticSearch(e.target.value)}
+                placeholder="🔍 পণ্যের নাম, ID বা SKU দিয়ে খুঁজুন..."
+                className="bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-xl px-3.5 py-1.5 text-xs outline-none focus:border-[#dc2626] sm:w-64"
+              />
+            </div>
+
+            {/* Discrepancy Highlight Banner when mismatches exist */}
+            {rep.discrepanciesCount > 0 && (
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="text-xs text-red-900 space-y-0.5">
+                  <p className="font-black">
+                    🚨 সতর্কতা: Firestore 'products' এবং লোকাল POS স্টোরেজের মধ্যে {rep.discrepanciesCount}টি পণ্যে পার্থক্য রয়েছে!
+                  </p>
+                  <p className="text-[11px] text-red-700">
+                    স্টক মিসম্যাচ: <b>{rep.mismatchCount}</b> টি • Firestore-এ নেই: <b>{rep.missingFirestoreCount}</b> টি • লোকাল POS-এ নেই: <b>{rep.missingLocalPosCount}</b> টি
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => reconcileStockDiscrepanciesNow(null, stockReconcileStrategy)}
+                  disabled={isReconcilingStock}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition shrink-0 cursor-pointer disabled:opacity-60"
+                >
+                  {isReconcilingStock ? "⏳ সিঙ্ক হচ্ছে..." : "⚡ Reconcile Now (সব ঠিক করুন)"}
+                </button>
+              </div>
+            )}
+
+            {/* Comparison Table */}
+            {rep.lastCheckedTs === 0 && !rep.loading ? (
+              <div className="p-8 text-center bg-rose-50/50 rounded-2xl border border-rose-200 space-y-2">
+                <p className="text-2xl">🔎</p>
+                <p className="text-xs font-bold text-slate-800">
+                  Firestore 'products' এবং লোকাল POS IndexedDB/localStorage তুলনা করতে "Validate Now" বাটনে ক্লিক করুন
+                </p>
+              </div>
+            ) : displayedRows.length === 0 ? (
+              <div className="p-6 text-center bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 space-y-1">
+                <p className="text-xl">✅</p>
+                <p>
+                  {stockDiagnosticFilter === "discrepancies"
+                    ? "কোনো স্টক অমিল পাওয়া যায়নি! Firestore 'products', POS localStorage এবং IndexedDB সম্পূর্ণভাবে সিঙ্কড আছে।"
+                    : "কোনো পণ্য খুঁজে পাওয়া যায়নি।"}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-rose-50 text-[#7a1c2b] border-b border-rose-200 font-black">
+                    <tr>
+                      <th className="py-2.5 px-3">পণ্য ও SKU</th>
+                      <th className="py-2.5 px-3 text-center">☁️ Firestore 'products'</th>
+                      <th className="py-2.5 px-3 text-center">💾 POS localStorage</th>
+                      <th className="py-2.5 px-3 text-center">🗄️ IndexedDB</th>
+                      <th className="py-2.5 px-3 text-center">পার্থক্য / স্ট্যাটাস</th>
+                      <th className="py-2.5 px-3 text-right">অ্যাকশন</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {displayedRows.map(row => {
+                      const hasIssue = row.status !== "MATCHED" && row.status !== "POS_DISABLED";
+                      const fsDiff = hasIssue && row.fsStock !== null && row.fsStock !== row.recommendedStock;
+                      const lsDiff = hasIssue && (row.lsStock === null || row.lsStock !== row.recommendedStock);
+                      const idbDiff = hasIssue && (row.idbStock === null || row.idbStock !== row.recommendedStock);
+
+                      return (
+                        <tr
+                          key={row.id}
+                          className={
+                            row.status === "STOCK_MISMATCH"
+                              ? "bg-red-50/75 hover:bg-red-50"
+                              : row.status === "MISSING_IN_FIRESTORE" || row.status === "MISSING_IN_LOCAL_POS"
+                              ? "bg-amber-50/75 hover:bg-amber-50"
+                              : "hover:bg-slate-50"
+                          }
+                        >
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-2 min-w-[160px]">
+                              {row.image ? (
+                                <img
+                                  src={row.image}
+                                  alt={row.name}
+                                  className="w-8 h-8 rounded-lg object-cover border border-rose-200 shrink-0"
+                                  onError={(e) => { e.target.style.display = "none"; }}
+                                />
+                              ) : null}
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-900 truncate max-w-[190px]" title={row.name}>{row.name}</p>
+                                <p className="font-mono text-[10px] text-slate-500">ID: {row.id} • {row.sku}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-2.5 px-3 text-center">
+                            {row.fsStock === null ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px]">
+                                অনুপস্থিত
+                              </span>
+                            ) : (
+                              <span className={`inline-block px-2.5 py-0.5 rounded-full font-mono font-black text-xs ${
+                                fsDiff || row.status === "STOCK_MISMATCH"
+                                  ? "bg-white text-red-700 border border-red-300"
+                                  : "bg-slate-100 text-slate-800"
+                              }`}>
+                                {row.fsStock} পিস
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-center">
+                            {row.lsStock === null ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px]">
+                                অনুপস্থিত
+                              </span>
+                            ) : (
+                              <span className={`inline-block px-2.5 py-0.5 rounded-full font-mono font-black text-xs ${
+                                lsDiff
+                                  ? "bg-red-100 text-red-800 border border-red-300"
+                                  : "bg-slate-100 text-slate-800"
+                              }`}>
+                                {row.lsStock} পিস
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-center">
+                            {row.idbStock === null ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px]">
+                                অনুপস্থিত
+                              </span>
+                            ) : (
+                              <span className={`inline-block px-2.5 py-0.5 rounded-full font-mono font-black text-xs ${
+                                idbDiff
+                                  ? "bg-red-100 text-red-800 border border-red-300"
+                                  : "bg-slate-100 text-slate-800"
+                              }`}>
+                                {row.idbStock} পিস
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-center">
+                            {row.status === "MATCHED" ? (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px]">
+                                ✅ সিঙ্কড
+                              </span>
+                            ) : row.status === "POS_DISABLED" ? (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px]">
+                                POS নিষ্ক্রিয়
+                              </span>
+                            ) : (
+                              <div className="space-y-0.5">
+                                <span className={`inline-block px-2 py-0.5 rounded-full font-black text-[10px] ${
+                                  row.status === "STOCK_MISMATCH"
+                                    ? "bg-red-600 text-white"
+                                    : "bg-amber-600 text-white"
+                                }`}>
+                                  {row.statusLabel}{row.maxDrift > 0 ? ` (±${row.maxDrift})` : ""}
+                                </span>
+                                {row.issueReasons.length > 0 && (
+                                  <p className="text-[10px] text-red-800 font-semibold leading-tight">
+                                    {row.issueReasons.join(" • ")}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-right">
+                            {hasIssue ? (
+                              <button
+                                type="button"
+                                onClick={() => reconcileStockDiscrepanciesNow([row.id], stockReconcileStrategy)}
+                                disabled={isReconcilingStock}
+                                className="bg-gradient-to-r from-[#dc2626] to-[#991b1b] hover:brightness-110 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-xs transition cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                title={`প্রস্তাবিত স্টক: ${row.recommendedStock} পিস (${row.recommendedSource})`}
+                              >
+                                🔄 Reconcile Now
+                              </button>
+                            ) : (
+                              <span className="text-[11px] font-bold text-emerald-700">সমন্বিত ✓</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {compactMode && filteredRows.length > 15 && (
+              <div className="flex items-center justify-between pt-1 text-xs">
+                <span className="text-slate-600 font-semibold">
+                  আরও {filteredRows.length - 15}টি আইটেম পূর্ণাঙ্গ ডায়াগনস্টিক ভিউতে দেখুন
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("Products");
+                    setAdminProductSubTab("stock_diagnostic");
+                    runStockValidationDiagnostic(true);
+                  }}
+                  className="px-3 py-1.5 bg-rose-50 border border-rose-200 text-[#7a1c2b] rounded-xl font-bold hover:bg-rose-100 cursor-pointer"
+                >
+                  সব আইটেম দেখুন →
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      };
+
       // Admin Modals & Forms
       const [adminOrderFilter, setAdminOrderFilter] = useState("All");
       const [dashboardProductSearch, setDashboardProductSearch] = useState("");
@@ -10517,7 +11835,16 @@
       const [idbVideoUrls, setIdbVideoUrls] = useState({});
       const [isUploadingVideo, setIsUploadingVideo] = useState(false);
       const [adminProductBogoFilter, setAdminProductBogoFilter] = useState("All");
-      const [adminProductSubTab, setAdminProductSubTab] = useState("list"); // "list", "stock", "sales", "categories"
+      const [adminProductSubTab, setAdminProductSubTab] = useState("list"); // "list", "stock", "sales", "categories", "stock_diagnostic"
+      useEffect(() => {
+        if (!isAdminLoggedIn) return;
+        const shouldAutoValidate =
+          (activeTab === "POS" && isPosDiagnosticOpen) ||
+          (activeTab === "Products" && adminProductSubTab === "stock_diagnostic");
+        if (shouldAutoValidate && !stockDiagnosticReport?.isChecking && !(stockDiagnosticReport?.lastCheckedTs > 0)) {
+          runStockValidationDiagnostic(true);
+        }
+      }, [isAdminLoggedIn, activeTab, isPosDiagnosticOpen, adminProductSubTab]);
       const [adminStockCatFilter, setAdminStockCatFilter] = useState("All");
       const [adminOrderSubTab, setAdminOrderSubTab] = useState("new_orders"); // "new_orders", "delivery_tracking", "all_orders", "courier", "returns"
       const [deliveryTrackingFilter, setDeliveryTrackingFilter] = useState("All"); // "All", "Pending", "Shipped", "Delivered"
@@ -11955,8 +13282,47 @@
         // 2. Automatically deduct stock across Storefront, POS Inventory & Firestore (regular, combo bundled, and free gifts)
         deductPosStock(cart, newOrderId);
 
-        setOrders(prev => [orderData, ...prev]);
-        syncDocToCloud("orders", newOrderId, orderData);
+        const isCurrentlyOffline = (typeof navigator !== "undefined" && !navigator.onLine) || !firestoreDb;
+        const orderRecord = isCurrentlyOffline
+          ? { ...orderData, offlineQueued: true, syncStatus: "pending", queuedAt: Date.now() }
+          : orderData;
+
+        setOrders(prev => {
+          const next = [orderRecord, ...prev];
+          setStored("orders", next);
+          return next;
+        });
+
+        const queueOrderOffline = async () => {
+          const entry = {
+            id: newOrderId,
+            orderData: orderRecord,
+            queuedAt: Date.now(),
+            attempts: 0,
+            syncStatus: "pending",
+            lastError: ""
+          };
+          await idbStore.enqueueOfflineOrder(entry);
+          const refreshed = await idbStore.getOfflineOrdersQueue();
+          setOfflineOrderQueue(refreshed);
+        };
+
+        if (isCurrentlyOffline) {
+          queueOrderOffline();
+        } else {
+          // Try immediate Firestore commit; if connection drops mid-flight, queue automatically in IndexedDB
+          Promise.race([
+            firestoreDb.collection("orders").doc(newOrderId).set(orderData, { merge: true }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Offline fallback timeout")), 10000))
+          ])
+            .then(() => {
+              setCloudSyncStatus("connected");
+              setLastCloudSyncTime(new Date().toLocaleTimeString("bn-BD"));
+            })
+            .catch(() => {
+              queueOrderOffline();
+            });
+        }
 
         setCart([]);
         setIsCheckoutOpen(false);
@@ -11969,7 +13335,11 @@
         setGiftRecipient("");
         setGiftSender("");
         setCheckoutForm(prev => ({ ...prev, orderNote: "" }));
-        notify(`ধন্যবাদ ${checkoutForm.name}! আপনার অর্ডার সফল হয়েছে (ID: #${newOrderId}) 🎉`);
+        if (isCurrentlyOffline) {
+          notify(`⚡ অফলাইন অর্ডার সংরক্ষিত হয়েছে (#${newOrderId})! ইন্টারনেট ফিরলেই অটোমেটিক Firestore-এ সিঙ্ক হবে।`);
+        } else {
+          notify(`ধন্যবাদ ${checkoutForm.name}! আপনার অর্ডার সফল হয়েছে (ID: #${newOrderId}) 🎉`);
+        }
       };
 
       // Courier Dispatch
@@ -12585,11 +13955,35 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         <div
           className={`min-h-screen flex flex-col ${activeTab === "Storefront" && sfDesign.useCustomPageBg ? "storefront-page-canvas" : "liquid-glass-canvas"} text-[#000000]`}
         >
-          {/* Offline Mode Indicator Bar */}
+          {/* Offline Mode & Queued Order Sync Bar */}
           {!isOnline && (
-            <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center text-xs py-2 px-4 font-bold tracking-wide shadow-md flex items-center justify-center gap-2 sticky top-0 z-50">
+            <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center text-xs py-2 px-4 font-bold tracking-wide shadow-md flex flex-wrap items-center justify-center gap-2 sticky top-0 z-50">
               <span>⚡</span>
-              <span>ইন্টারনেট সংযোগ নেই — সাজগোজ অফলাইন মোডে চলছে (ক্যাশড প্রোডাক্ট ও POS সচল রয়েছে)</span>
+              <span>ইন্টারনেট সংযোগ নেই — সাজগোজ অফলাইন মোডে চলছে (IndexedDB ক্যাটালগ ও POS সচল রয়েছে)</span>
+              {offlineOrderQueue.length > 0 && (
+                <span className="bg-black/30 border border-white/40 px-2.5 py-0.5 rounded-full text-[11px] font-black">
+                  ⏳ {offlineOrderQueue.length}টি অর্ডার সিঙ্কের অপেক্ষায় (IndexedDB Queue)
+                </span>
+              )}
+            </div>
+          )}
+          {isOnline && (offlineOrderQueue.length > 0 || isSyncingOfflineOrders) && (
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-center text-xs py-2 px-4 font-bold tracking-wide shadow-md flex flex-wrap items-center justify-center gap-2.5 sticky top-0 z-50">
+              <span>{isSyncingOfflineOrders ? "🔄" : "☁️"}</span>
+              <span>
+                {isSyncingOfflineOrders
+                  ? `অফলাইন অর্ডার Firestore-এ সিঙ্ক হচ্ছে (${offlineOrderQueue.length}টি বাকি)...`
+                  : `${offlineOrderQueue.length}টি অফলাইন অর্ডার Firestore সিঙ্কের জন্য অপেক্ষমাণ রয়েছে`}
+              </span>
+              {!isSyncingOfflineOrders && (
+                <button
+                  type="button"
+                  onClick={() => syncOfflineOrdersToFirestore("manual")}
+                  className="bg-white text-emerald-800 hover:bg-emerald-50 px-3 py-0.5 rounded-full text-[11px] font-black shadow-xs cursor-pointer transition active:scale-95"
+                >
+                  এখনই সিঙ্ক করুন
+                </button>
+              )}
             </div>
           )}
 
@@ -12609,10 +14003,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               className={`liquid-glass-nav sm:mx-4 sm:mt-2 sm:rounded-3xl transition-all duration-200 ${config?.header?.sticky ? 'sticky top-0 sm:top-2 z-30' : ''}`}
               style={sfDesign.useCustomHeaderColors ? { background: sfDesign.headerBg, color: sfDesign.headerTextColor } : undefined}
             >
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+            <div className="max-w-7xl mx-auto px-2.5 sm:px-5 py-2 sm:py-3 flex items-center justify-between gap-1.5 sm:gap-4 w-full min-w-0">
               
               {/* Logo & Store Title: Strictly 1 line for Store Name & 1 line for Tagline */}
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 shrink" onClick={() => setActiveTab("Storefront")}>
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 flex-1 md:flex-initial overflow-hidden" onClick={() => setActiveTab("Storefront")}>
                 {config.logo ? (
                   <img src={config.logo} alt="Logo" className="w-9 h-9 sm:w-11 sm:h-11 object-cover rounded-full border-2 border-white shrink-0 shadow-md" />
                 ) : (
@@ -12620,15 +14014,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     👑
                   </div>
                 )}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1 overflow-hidden">
                   <h1
-                    className="text-sm xs:text-base sm:text-xl lg:text-2xl font-black tracking-tight text-[#000000] leading-tight whitespace-nowrap uppercase"
+                    className="text-[13px] xs:text-sm sm:text-xl lg:text-2xl font-black tracking-tight text-[#000000] leading-tight truncate uppercase"
                     style={sfDesign.useCustomHeaderColors ? { color: sfDesign.headerTextColor } : undefined}
                   >
                     {config.storeName || "SAJGOJ FASHION"}
                   </h1>
                   <p
-                    className="text-[10px] sm:text-xs text-slate-900 font-bold leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] xs:max-w-[220px] sm:max-w-none"
+                    className="text-[10px] sm:text-xs text-slate-900 font-bold leading-tight truncate max-w-full sm:max-w-none"
                     style={sfDesign.useCustomHeaderColors ? { color: sfDesign.headerTextColor, opacity: 0.82 } : undefined}
                   >
                     {config.tagline || "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ"}
@@ -12786,17 +14180,17 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     {currentUser ? (
                       <button 
                         onClick={() => setIsProfileModalOpen(true)}
-                        className="red-black-tab px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 cursor-pointer"
+                        className="red-black-tab min-h-[42px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs flex items-center justify-center gap-1 active:scale-95 whitespace-nowrap shrink-0 cursor-pointer"
                         title="আমার একাউন্ট ও প্রোফাইল"
                       >
-                        <span className="font-bold text-[11px] sm:text-xs text-[#000000] max-w-[65px] sm:max-w-[85px] truncate">
+                        <span className="font-bold text-[11px] sm:text-xs text-[#000000] max-w-[60px] sm:max-w-[85px] truncate">
                           {currentUser?.name && !currentUser.name.startsWith("0") ? String(currentUser.name).trim().split(" ")[0] : "প্রোফাইল"}
                         </span>
                       </button>
                     ) : (
                       <button 
                         onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-                        className="cta-dark-pill px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold transition active:scale-95 whitespace-nowrap shrink-0 cursor-pointer"
+                        className="cta-dark-pill min-h-[42px] sm:min-h-[38px] px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold transition active:scale-95 whitespace-nowrap shrink-0 cursor-pointer flex items-center justify-center"
                         title="Customer Login / Sign Up"
                       >
                         <span className="hidden sm:inline">Login / Sign</span>
@@ -12818,11 +14212,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <button 
                       type="button"
                       onClick={() => setIsWishlistOpen(true)}
-                      className={`relative ${sfDesign.useCustomHeaderColors ? "" : "red-black-tab"} px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-1 text-xs sm:text-sm font-black transition active:scale-95 shrink-0 cursor-pointer border border-white/50 shadow-sm`}
+                      className={`mobile-header-icon-btn relative ${sfDesign.useCustomHeaderColors ? "" : "red-black-tab"} min-w-[42px] min-h-[42px] sm:min-w-0 sm:min-h-[38px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full flex items-center justify-center gap-1 text-xs sm:text-sm font-black transition active:scale-95 shrink-0 cursor-pointer border border-white/50 shadow-sm`}
                       style={sfDesign.useCustomHeaderColors ? { background: sfDesign.wishlistBg, color: sfDesign.wishlistTextColor } : undefined}
                       title="পছন্দের তালিকা (Wishlist) - পরে কেনার জন্য"
                     >
-                      <span className="text-xs sm:text-sm">{sfDesign.wishlistIcon || "❤️"}</span>
+                      <span className="text-sm sm:text-sm leading-none">{sfDesign.wishlistIcon || "❤️"}</span>
                       <span className="hidden sm:inline">পছন্দ</span>
                       {wishlist.length > 0 && (
                         <span className="cta-dark-pill text-[9px] sm:text-[11px] px-1.5 py-0.2 rounded-full font-black animate-pulse">
@@ -12835,10 +14229,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     {config?.header?.showCart !== false && (
                       <button 
                         onClick={() => setIsCartOpen(true)}
-                        className={`relative ${sfDesign.useCustomHeaderColors ? "" : "cta-dark-pill"} px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold transition shrink-0 whitespace-nowrap cursor-pointer border border-white/40 shadow-sm`}
+                        className={`mobile-header-icon-btn relative ${sfDesign.useCustomHeaderColors ? "" : "cta-dark-pill"} min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-[38px] px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center justify-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold transition shrink-0 whitespace-nowrap cursor-pointer border border-white/40 shadow-sm active:scale-95`}
                         style={sfDesign.useCustomHeaderColors ? { background: sfDesign.cartBg, color: sfDesign.cartTextColor } : undefined}
+                        aria-label="শপিং কার্ট"
                       >
-                        <span>{sfDesign.cartIcon || "🛒"}</span>
+                        <span className="text-base sm:text-base leading-none">{sfDesign.cartIcon || "🛒"}</span>
                         <span className="hidden xs:inline">কার্ট</span>
                         {cart.length > 0 && (
                           <span
@@ -12862,6 +14257,153 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 )}
               </div>
             </div>
+
+            {/* Mobile Search, Category Menu & Quick Home Bar inside Header */}
+            {config?.header?.showSearch && activeTab === "Storefront" && (
+              <div className="md:hidden px-2.5 pb-2.5 pt-0.5 w-full min-w-0 relative z-30" ref={mobileCatMenuRef}>
+                <div className="flex items-center gap-1.5 w-full min-w-0">
+                  {/* 1. All Categories Menu Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCatMenuOpen(prev => !prev)}
+                    className="mobile-header-icon-btn red-black-tab h-[42px] min-h-[42px] px-2.5 rounded-full text-[11px] flex items-center justify-center gap-1 shrink-0 cursor-pointer active:scale-95 shadow-xs"
+                    title="সকল ক্যাটাগরী মেনু"
+                    aria-label="ক্যাটাগরী মেনু"
+                  >
+                    <span className="text-sm leading-none">☰</span>
+                    <span className="max-w-[54px] xs:max-w-[74px] truncate font-black">{selectedCat === "All" ? "ক্যাটাগরি" : selectedCat}</span>
+                    <span className="text-[10px] leading-none">{isCatMenuOpen ? "▴" : "▾"}</span>
+                  </button>
+
+                  {/* 2. Home Icon Button */}
+                  <button
+                    type="button"
+                    onClick={handleHomeResetClick}
+                    className="mobile-header-icon-btn red-black-tab w-[42px] h-[42px] min-w-[42px] min-h-[42px] rounded-full flex items-center justify-center text-base shrink-0 cursor-pointer active:scale-95 shadow-xs"
+                    title="হোম (সব ফিল্টার রিসেট)"
+                    aria-label="হোম"
+                  >
+                    🏠
+                  </button>
+
+                  {/* 3. Responsive Search Input + Voice + Image + Scan */}
+                  <div className="flex-1 min-w-0 flex items-center bg-white/95 backdrop-blur-md border border-white rounded-full h-[42px] pl-2.5 pr-1 shadow-sm focus-within:border-black transition overflow-hidden">
+                    <span className="text-slate-700 text-xs shrink-0 mr-1 hidden xs:inline">🔍</span>
+                    <input
+                      type="text"
+                      value={storeSearch}
+                      onChange={(e) => setStoreSearch(e.target.value)}
+                      placeholder="খুঁজুন..."
+                      className="flex-1 min-w-[40px] w-full bg-transparent text-xs text-[#000000] placeholder:text-slate-600 outline-none font-semibold"
+                    />
+                    <div className="flex items-center gap-0.5 shrink-0 ml-0.5">
+                      {(storeSearch || imageSearchResult) && (
+                        <button
+                          type="button"
+                          onClick={() => { setStoreSearch(""); setImageSearchResult(null); }}
+                          className="w-8 h-9 min-w-[32px] min-h-[36px] rounded-full flex items-center justify-center text-xs text-slate-700 hover:text-black hover:bg-gray-100 cursor-pointer"
+                          title="মুছুন"
+                          aria-label="সার্চ মুছুন"
+                        >
+                          ✕
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={startVoiceProductSearch}
+                        className={`mobile-search-icon-btn w-[38px] h-[38px] min-w-[38px] min-h-[38px] rounded-full flex items-center justify-center text-sm transition cursor-pointer active:scale-95 ${isVoiceListening ? "bg-[#ef4444] text-black animate-pulse ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
+                        title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
+                        aria-label="ভয়েস সার্চ"
+                      >
+                        🎙️
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
+                        className={`mobile-search-icon-btn w-[38px] h-[38px] min-w-[38px] min-h-[38px] rounded-full flex items-center justify-center text-sm transition cursor-pointer active:scale-95 ${imageSearchResult ? "bg-[#ef4444] text-black ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
+                        title="ছবি দিয়ে খুঁজুন (ডিভাইস থেকে ব্রাউজ করুন)"
+                        aria-label="ইমেজ সার্চ"
+                      >
+                        {isImageAnalyzing ? "⏳" : "🖼️"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsScannerOpen(true);
+                          startScanner();
+                        }}
+                        className="mobile-search-icon-btn red-black-tab active:scale-95 min-w-[38px] h-[38px] min-h-[38px] px-2 xs:px-2.5 rounded-full text-[11px] flex items-center justify-center gap-0.5 cursor-pointer shrink-0"
+                        title="ক্যামেরা দিয়ে QR স্ক্যান করুন"
+                        aria-label="স্ক্যান"
+                      >
+                        <span className="text-sm leading-none">📷</span>
+                        <span className="hidden xs:inline font-black">স্ক্যান</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Dropdown Menu for All Categories */}
+                {isCatMenuOpen && (
+                  <div className="absolute left-2.5 top-full mt-1.5 w-64 max-w-[calc(100vw-24px)] max-h-72 overflow-y-auto bg-white rounded-2xl shadow-2xl border-2 border-[#ef4444] p-2 z-50 animate-fadeIn space-y-1">
+                    <div className="px-2.5 py-1.5 text-[11px] font-black text-[#000000] border-b border-red-100 flex items-center justify-between">
+                      <span>📂 সকল ক্যাটাগরী মেনু</span>
+                      <button type="button" onClick={() => setIsCatMenuOpen(false)} className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-black cursor-pointer">✕</button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCat("All");
+                        setSelectedSubCat("All");
+                        setIsCatMenuOpen(false);
+                        const el = document.getElementById("products-section");
+                        if (el) el.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "All" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                    >
+                      <span className="flex items-center gap-2"><span>🌟</span><span>সকল পণ্য (All)</span></span>
+                      <span className="text-[10px] opacity-80">{products.filter(p => p.enabledForWeb !== false).length}</span>
+                    </button>
+                    {bogoProductsCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCat("BOGO");
+                          setSelectedSubCat("All");
+                          setIsCatMenuOpen(false);
+                          const el = document.getElementById("products-section");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "BOGO" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                      >
+                        <span className="flex items-center gap-2"><span>🎁</span><span>BOGO অফার</span></span>
+                        <span className="text-[10px] opacity-80">{bogoProductsCount}</span>
+                      </button>
+                    )}
+                    {displayCategories.map(cat => (
+                      <button
+                        key={cat.id || cat.name}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCat(cat.name);
+                          setSelectedSubCat("All");
+                          setIsCatMenuOpen(false);
+                          const el = document.getElementById("products-section");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === cat.name ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <span>{cat.icon || "✨"}</span>
+                          <span className="truncate">{cat.name}</span>
+                        </span>
+                        <span className="text-[10px] opacity-75 shrink-0">{products.filter(p => p.category === cat.name && p.enabledForWeb !== false).length}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             </header>
           )}
@@ -12905,7 +14447,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               {/* Storefront Main View */}
               <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-5">
                 <div className="space-y-1.5 sm:space-y-2.5 animate-fadeIn">
-                {/* Mobile Compact Search Strip: [সকল ক্যাটাগরী ▾] [🏠] [🔍 Short Search + 🎙️ + 🖼️ + 📷 স্ক্যান] */}
                 <input
                   ref={imageSearchInputRef}
                   type="file"
@@ -12913,148 +14454,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   onChange={handleVisualImageFileChange}
                   className="hidden"
                 />
-                {config?.header?.showSearch && (
-                  <div className="md:hidden relative z-20" ref={mobileCatMenuRef}>
-                    <div className="flex items-center gap-1.5 w-full">
-                      {/* 1. All Categories Menu Button */}
-                      <button
-                        type="button"
-                        onClick={() => setIsCatMenuOpen(prev => !prev)}
-                        className="red-black-tab h-9 px-2.5 rounded-full text-[11px] flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 shadow-xs"
-                        title="সকল ক্যাটাগরী মেনু"
-                      >
-                        <span className="text-xs leading-none">☰</span>
-                        <span className="max-w-[74px] truncate font-black">{selectedCat === "All" ? "সকল ক্যাটাগরী" : selectedCat}</span>
-                        <span className="text-[9px] leading-none">{isCatMenuOpen ? "▴" : "▾"}</span>
-                      </button>
-
-                      {/* 2. Home Icon Button */}
-                      <button
-                        type="button"
-                        onClick={handleHomeResetClick}
-                        className="red-black-tab w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 cursor-pointer active:scale-95 shadow-xs"
-                        title="হোম (সব ফিল্টার রিসেট)"
-                        aria-label="হোম"
-                      >
-                        🏠
-                      </button>
-
-                      {/* 3. Shorter Compact Search Box + Voice + Image + Scan */}
-                      <div className="flex-1 min-w-0 flex items-center bg-white/95 backdrop-blur-md border border-white rounded-full h-9 pl-2.5 pr-1 shadow-sm focus-within:border-black transition">
-                        <span className="text-slate-700 text-xs shrink-0 mr-1">🔍</span>
-                        <input
-                          type="text"
-                          value={storeSearch}
-                          onChange={(e) => setStoreSearch(e.target.value)}
-                          placeholder="খুঁজুন..."
-                          className="flex-1 min-w-0 bg-transparent text-xs text-[#000000] placeholder:text-slate-600 outline-none font-semibold"
-                        />
-                        <div className="flex items-center gap-1 shrink-0 ml-0.5">
-                          {(storeSearch || imageSearchResult) && (
-                            <button
-                              type="button"
-                              onClick={() => { setStoreSearch(""); setImageSearchResult(null); }}
-                              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-slate-700 hover:text-black hover:bg-gray-100 cursor-pointer"
-                              title="মুছুন"
-                            >
-                              ✕
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={startVoiceProductSearch}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition cursor-pointer active:scale-95 ${isVoiceListening ? "bg-[#ef4444] text-black animate-pulse ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
-                            title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
-                            aria-label="ভয়েস সার্চ"
-                          >
-                            🎙️
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition cursor-pointer active:scale-95 ${imageSearchResult ? "bg-[#ef4444] text-black ring-2 ring-red-400" : "bg-red-50 hover:bg-red-100 text-[#000000] border border-red-200"}`}
-                            title="ছবি দিয়ে খুঁজুন (ডিভাইস থেকে ব্রাউজ করুন)"
-                            aria-label="ইমেজ সার্চ"
-                          >
-                            {isImageAnalyzing ? "⏳" : "🖼️"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsScannerOpen(true);
-                              startScanner();
-                            }}
-                            className="red-black-tab active:scale-95 px-2 py-1 rounded-full text-[10px] flex items-center gap-0.5 cursor-pointer"
-                            title="ক্যামেরা দিয়ে QR স্ক্যান করুন"
-                          >
-                            <span>📷</span>
-                            <span className="font-black">স্ক্যান</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Mobile Dropdown Menu for All Categories */}
-                    {isCatMenuOpen && (
-                      <div className="absolute left-0 top-full mt-2 w-64 max-h-72 overflow-y-auto bg-white rounded-2xl shadow-2xl border-2 border-[#ef4444] p-2 z-50 animate-fadeIn space-y-1">
-                        <div className="px-2.5 py-1.5 text-[11px] font-black text-[#000000] border-b border-red-100 flex items-center justify-between">
-                          <span>📂 সকল ক্যাটাগরী মেনু</span>
-                          <button type="button" onClick={() => setIsCatMenuOpen(false)} className="text-slate-600 hover:text-black cursor-pointer">✕</button>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedCat("All");
-                            setSelectedSubCat("All");
-                            setIsCatMenuOpen(false);
-                            const el = document.getElementById("products-section");
-                            if (el) el.scrollIntoView({ behavior: "smooth" });
-                          }}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "All" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
-                        >
-                          <span className="flex items-center gap-2"><span>🌟</span><span>সকল পণ্য (All)</span></span>
-                          <span className="text-[10px] opacity-80">{products.filter(p => p.enabledForWeb !== false).length}</span>
-                        </button>
-                        {bogoProductsCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedCat("BOGO");
-                              setSelectedSubCat("All");
-                              setIsCatMenuOpen(false);
-                              const el = document.getElementById("products-section");
-                              if (el) el.scrollIntoView({ behavior: "smooth" });
-                            }}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === "BOGO" ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
-                          >
-                            <span className="flex items-center gap-2"><span>🎁</span><span>BOGO অফার</span></span>
-                            <span className="text-[10px] opacity-80">{bogoProductsCount}</span>
-                          </button>
-                        )}
-                        {displayCategories.map(cat => (
-                          <button
-                            key={cat.id || cat.name}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCat(cat.name);
-                              setSelectedSubCat("All");
-                              setIsCatMenuOpen(false);
-                              const el = document.getElementById("products-section");
-                              if (el) el.scrollIntoView({ behavior: "smooth" });
-                            }}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold flex items-center justify-between cursor-pointer ${selectedCat === cat.name ? "red-black-tab-active" : "hover:bg-red-50 text-[#000000]"}`}
-                          >
-                            <span className="flex items-center gap-2 truncate">
-                              <span>{cat.icon || "✨"}</span>
-                              <span className="truncate">{cat.name}</span>
-                            </span>
-                            <span className="text-[10px] opacity-75 shrink-0">{products.filter(p => p.category === cat.name && p.enabledForWeb !== false).length}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {(() => {
                   const isFilteredStoreView = selectedCat !== "All" || selectedSubCat !== "All" || storeSearch.trim().length > 0 || Boolean(imageSearchResult);
@@ -13161,12 +14560,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <div className="storefront-card-meta-group">
                             <h4
                               onClick={openProductDetail}
-                              className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
+                              className="storefront-title-box product-title font-black cursor-pointer hover:brightness-110 transition"
                             >
                               <span className="storefront-title-text">{p.name}</span>
                             </h4>
 
-                            <div className="storefront-price-box">
+                            <div className="storefront-price-box product-price">
                               {hasDiscount && (
                                 <span className="storefront-price-old">
                                   ৳{regPrice.toLocaleString()}
@@ -13731,12 +15130,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <div className="storefront-card-meta-group">
                                 <h4
                                   onClick={openComboDetail}
-                                  className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
+                                  className="storefront-title-box product-title font-black cursor-pointer hover:brightness-110 transition"
                                 >
                                   <span className="storefront-title-text">{combo.title}</span>
                                 </h4>
 
-                                <div className="storefront-price-box">
+                                <div className="storefront-price-box product-price">
                                   {hasComboDiscount && (
                                     <span className="storefront-price-old">
                                       ৳{comboOriginalPrice.toLocaleString()}
@@ -13878,11 +15277,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                             <div className="storefront-navy-card-body flex-1 flex flex-col justify-between overflow-hidden">
                               <div className="storefront-card-meta-group">
-                                <h4 className="storefront-title-box font-black">
+                                <h4 className="storefront-title-box product-title font-black">
                                   <span className="storefront-title-text">{effectiveProduct.name}</span>
                                 </h4>
 
-                                <div className="storefront-price-box">
+                                <div className="storefront-price-box product-price">
                                   {hasDiscount && (
                                     <span className="storefront-price-old">
                                       ৳{regPrice.toLocaleString()}
@@ -14987,6 +16386,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             {[
                               { id: "Products", sub: "list", label: "🛍️ সকল প্রোডাক্ট", count: products.length },
                               { id: "Products", sub: "stock", label: "📦 স্টক ও ভ্যালুয়েশন" },
+                              { id: "Products", sub: "stock_diagnostic", label: "🩺 স্টক ভ্যালিডেশন", count: stockDiagnosticReport.discrepanciesCount > 0 ? stockDiagnosticReport.discrepanciesCount : undefined },
                               { id: "Products", sub: "sales", label: "📊 সেলস ও রিটার্ন রিপোর্ট" },
                               { id: "Categories", label: "🏷️ ক্যাটাগরি", count: categories.length }
                             ].map((pill, idx) => {
@@ -14998,6 +16398,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   onClick={() => {
                                     setActiveTab(pill.id);
                                     if (pill.sub) setAdminProductSubTab(pill.sub);
+                                    if (pill.sub === "stock_diagnostic") runStockValidationDiagnostic(true);
                                   }}
                                   className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
                                     isOn ? "red-black-tab-active" : "red-black-tab"
@@ -15189,12 +16590,22 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                           <button
                             type="button"
-                            onClick={() => setIsPosDiagnosticOpen(prev => !prev)}
+                            onClick={() => {
+                              setIsPosDiagnosticOpen(prev => {
+                                const next = !prev;
+                                if (next) runStockValidationDiagnostic(true);
+                                return next;
+                              });
+                            }}
                             className="red-black-tab px-3.5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-sm"
                             title="লোকাল POS ও Firestore সিঙ্ক ডায়াগনস্টিক"
                           >
                             <span>🩺</span>
-                            <span>ডায়াগনস্টিক {(posSyncErrorLogs || []).length > 0 ? `(${posSyncErrorLogs.length})` : ""}</span>
+                            <span>
+                              ডায়াগনস্টিক {(posSyncErrorLogs || []).length + (stockDiagnosticReport.discrepanciesCount || 0) > 0
+                                ? `(${(posSyncErrorLogs || []).length + (stockDiagnosticReport.discrepanciesCount || 0)})`
+                                : ""}
+                            </span>
                           </button>
 
                           <button
@@ -15338,6 +16749,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               ))}
                             </div>
                           )}
+
+                          {/* Embedded Stock Validation Diagnostic Table (Firestore 'products' vs POS localStorage & IndexedDB) */}
+                          {renderStockValidationDiagnosticView(true)}
                         </div>
                       )}
 
@@ -16209,6 +17623,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   {[
                     { id: "list", label: "🛍️ পণ্য তালিকা ও ফিল্টার", count: products.length },
                     { id: "stock", label: "💰 স্টক ও ইনভেন্টরি ভ্যালুয়েশন", badge: `${products.reduce((s, p) => s + (parseInt(p.stock) || 0), 0)} পিস` },
+                    { id: "stock_diagnostic", label: "🩺 স্টক সিঙ্ক ডায়াগনস্টিক", badge: stockDiagnosticReport.discrepanciesCount > 0 ? `${stockDiagnosticReport.discrepanciesCount} অমিল` : "Validate" },
                     { id: "sales", label: "📈 সেলস ও রিটার্ন রিপোর্ট", badge: `${orders.filter(o => o.status === "Delivered").length} সম্পন্ন` },
                     { id: "categories", label: "🏷️ ক্যাটাগরি ম্যানেজমেন্ট", count: categories.length }
                   ].map(tab => (
@@ -16220,6 +17635,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           setActiveTab("Categories");
                         } else {
                           setAdminProductSubTab(tab.id);
+                          if (tab.id === "stock_diagnostic") runStockValidationDiagnostic(true);
                         }
                       }}
                       className={`px-4 py-2 rounded-full text-xs whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -16524,6 +17940,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   );
                 })()}
+
+                {/* 🩺 STOCK VALIDATION DIAGNOSTIC VIEW (Firestore 'products' vs Local POS IndexedDB & localStorage) */}
+                {adminProductSubTab === "stock_diagnostic" && renderStockValidationDiagnosticView(false)}
 
                 {/* 🛍️ PRODUCT LIST & FILTER VIEW */}
                 {adminProductSubTab === "list" && (
@@ -17054,6 +18473,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <span className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-full font-bold">
                       সম্পন্ন: {orders.filter(o => o.status === "Delivered").length}
                     </span>
+                    {offlineOrderQueue.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => syncOfflineOrdersToFirestore("manual")}
+                        disabled={isSyncingOfflineOrders || !isOnline}
+                        className="text-xs bg-indigo-50 border border-indigo-200 text-indigo-800 hover:bg-indigo-100 px-3 py-1.5 rounded-full font-bold flex items-center gap-1 cursor-pointer disabled:opacity-60"
+                        title="IndexedDB অফলাইন কিউ থেকে অর্ডার Firestore-এ সিঙ্ক করুন"
+                      >
+                        <span>{isSyncingOfflineOrders ? "🔄" : "⏳"}</span>
+                        <span>অফলাইন কিউ: {offlineOrderQueue.length}টি {isOnline ? "• সিঙ্ক করুন" : "(অফলাইন)"}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -22176,6 +23607,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     >
                       <span>🔄</span>
                       <span>সম্পূর্ণ ডাটা ক্লাউডে ফোর্স সিঙ্ক করুন</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("Products");
+                        setAdminProductSubTab("stock_diagnostic");
+                        runStockValidationDiagnostic(false);
+                      }}
+                      className="bg-white hover:bg-rose-50 text-[#7a1c2b] border border-rose-300 px-5 py-2.5 rounded-full text-xs font-bold shadow-xs transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>🩺</span>
+                      <span>Firestore ↔ POS স্টক ভ্যালিডেশন চেক</span>
                     </button>
                   </div>
                 </div>
@@ -30039,11 +31483,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 <div className="storefront-card-meta-group">
                                   <h4
                                     onClick={openModalProduct}
-                                    className="storefront-title-box font-black cursor-pointer"
+                                    className="storefront-title-box product-title font-black cursor-pointer"
                                   >
                                     <span className="storefront-title-text">{p.name}</span>
                                   </h4>
-                                  <div className="storefront-price-box">
+                                  <div className="storefront-price-box product-price">
                                     {hasDiscount && (
                                       <span className="storefront-price-old">
                                         ৳{regPrice.toLocaleString()}

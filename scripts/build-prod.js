@@ -73,8 +73,14 @@ fs.writeFileSync(path.join('public', '200.html'), optimizedHtml);
   }
 });
 
-// 5. Update and sync Service Worker to precache app.min.js
-if (fs.existsSync('public/sw.js')) {
+// 5. Update and sync Service Worker to public/sw.js and ensure app.min.js is precached
+if (fs.existsSync('sw.js')) {
+  let swContent = fs.readFileSync('sw.js', 'utf8');
+  if (!swContent.includes('./app.min.js')) {
+    swContent = swContent.replace("'./200.html',", "'./200.html',\n  './app.min.js',");
+  }
+  fs.writeFileSync(path.join('public', 'sw.js'), swContent);
+} else if (fs.existsSync('public/sw.js')) {
   let swContent = fs.readFileSync('public/sw.js', 'utf8');
   if (!swContent.includes('./app.min.js')) {
     swContent = swContent.replace("'./200.html',", "'./200.html',\n  './app.min.js',");
