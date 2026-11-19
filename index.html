@@ -1740,9 +1740,9 @@
         about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
         contactTitle: "Contact Info",
         servicesTitle: "সেবাসমূহ",
-        footerBg: "#075985",
-        footerBgEnd: "#0284c7",
-        footerTextColor: "#f8fafc",
+        titleBtnBg: "#075985",
+        titleBtnBgEnd: "#0284c7",
+        titleBtnTextColor: "#f8fafc",
         email: "support@sajgoj.com",
         phone: "018051198888",
         address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
@@ -1776,9 +1776,9 @@
           ...(r.footer || {}),
           contactTitle: (r.footer?.contactTitle ?? b.footer?.contactTitle) || initialStoreConfig.footer.contactTitle,
           servicesTitle: (r.footer?.servicesTitle ?? b.footer?.servicesTitle) || initialStoreConfig.footer.servicesTitle,
-          footerBg: (r.footer?.footerBg ?? b.footer?.footerBg) || initialStoreConfig.footer.footerBg,
-          footerBgEnd: (r.footer?.footerBgEnd ?? b.footer?.footerBgEnd) || initialStoreConfig.footer.footerBgEnd,
-          footerTextColor: (r.footer?.footerTextColor ?? b.footer?.footerTextColor) || initialStoreConfig.footer.footerTextColor
+          titleBtnBg: (r.footer?.titleBtnBg ?? b.footer?.titleBtnBg) || initialStoreConfig.footer.titleBtnBg,
+          titleBtnBgEnd: (r.footer?.titleBtnBgEnd ?? b.footer?.titleBtnBgEnd) || initialStoreConfig.footer.titleBtnBgEnd,
+          titleBtnTextColor: (r.footer?.titleBtnTextColor ?? b.footer?.titleBtnTextColor) || initialStoreConfig.footer.titleBtnTextColor
         }
       };
     };
@@ -16691,42 +16691,50 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </div>
               </main>
               
-              {/* Storefront Footer (Deep Sky Background + Light White Text + Side-by-Side Contact Info & সেবাসমূহ) */}
+              {/* Storefront Footer (Liquid Glass + Side-by-Side Deep-Sky Title Card Buttons + Red/Black Bottom Cards) */}
               {(() => {
                 const ftr = config.footer || initialStoreConfig.footer;
-                const ftrBgStart = ftr.footerBg || "#075985";
-                const ftrBgEnd = ftr.footerBgEnd || "#0284c7";
-                const ftrText = ftr.footerTextColor || "#f8fafc";
+                const titleBtnBgStart = ftr.titleBtnBg || "#075985";
+                const titleBtnBgEnd = ftr.titleBtnBgEnd || "#0284c7";
+                const titleBtnText = ftr.titleBtnTextColor || "#f8fafc";
                 const contactHeading = ftr.contactTitle || "Contact Info";
                 const servicesHeading = ftr.servicesTitle || "সেবাসমূহ";
+                const titleBtnStyle = {
+                  background: `linear-gradient(135deg, ${titleBtnBgStart} 0%, ${titleBtnBgEnd} 100%)`,
+                  color: titleBtnText
+                };
                 return (
-              <footer
-                className="py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl border border-sky-200/40 shadow-2xl"
-                style={{
-                  background: `linear-gradient(145deg, ${ftrBgStart} 0%, ${ftrBgEnd} 100%)`,
-                  color: ftrText
-                }}
-              >
+              <footer className="liquid-glass-hero text-[#000000] py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl">
                 <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-7 sm:gap-8">
                   <div className="col-span-2 md:col-span-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="w-9 h-9 rounded-full cta-dark-pill font-black text-xl flex items-center justify-center shrink-0">S</div>
-                      <h4 className="font-black text-lg" style={{ color: ftrText }}>{config.storeName}</h4>
+                      <h4 className="font-black text-lg text-[#000000]">{config.storeName}</h4>
                     </div>
-                    <p className="text-xs font-semibold leading-relaxed opacity-95" style={{ color: ftrText }}>{ftr.about}</p>
+                    <p className="text-xs text-[#000000] font-semibold leading-relaxed">{ftr.about}</p>
                   </div>
                   <div className="col-span-1 min-w-0">
-                    <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-3 border-b border-sky-200/30 pb-1.5 inline-block" style={{ color: ftrText }}>{contactHeading}</h5>
-                    <div className="space-y-1.5 text-[11px] sm:text-xs font-semibold leading-relaxed" style={{ color: ftrText }}>
+                    <h5
+                      className="inline-flex items-center justify-center font-black text-[11px] sm:text-xs tracking-wider mb-3 px-3 py-1.5 rounded-xl shadow-md border border-sky-200/60"
+                      style={titleBtnStyle}
+                    >
+                      {contactHeading}
+                    </h5>
+                    <div className="space-y-1.5 text-[11px] sm:text-xs text-[#000000] font-semibold leading-relaxed">
                       <p className="break-words">📞 {config.phone}</p>
                       <p className="break-words">💬 WhatsApp: {config.whatsapp}</p>
                       <p className="break-all sm:break-words">✉️ {config.email}</p>
                       <p className="break-words">📍 {config.address}</p>
                     </div>
                   </div>
-                  <div className="col-span-1 min-w-0 border-l border-sky-200/35 pl-3 sm:pl-4 md:border-l-0 md:pl-0">
-                    <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-3 border-b border-sky-200/30 pb-1.5 inline-block" style={{ color: ftrText }}>{servicesHeading}</h5>
-                    <ul className="text-[11px] sm:text-xs space-y-1.5 font-semibold leading-relaxed" style={{ color: ftrText }}>
+                  <div className="col-span-1 min-w-0 border-l border-slate-400/35 pl-3 sm:pl-4 md:border-l-0 md:pl-0">
+                    <h5
+                      className="inline-flex items-center justify-center font-black text-[11px] sm:text-xs tracking-wider mb-3 px-3 py-1.5 rounded-xl shadow-md border border-sky-200/60"
+                      style={titleBtnStyle}
+                    >
+                      {servicesHeading}
+                    </h5>
+                    <ul className="text-[11px] sm:text-xs space-y-1.5 text-[#000000] font-semibold leading-relaxed">
                       <li>• রিটার্ন ও রিফান্ড পলিসি ({config?.returnPolicyDays || 7} দিন)</li>
                       <li>• ক্যাশ অন ডেলিভারি সুবিধা</li>
                       <li>• সারা দেশে হোম ডেলিভারি</li>
@@ -16734,7 +16742,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </ul>
                   </div>
                   <div className="col-span-2 md:col-span-1">
-                    <h5 className="font-black text-sm uppercase tracking-wider mb-3" style={{ color: ftrText }}>পেমেন্ট মেথড</h5>
+                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">পেমেন্ট মেথড</h5>
                     <div className="flex flex-wrap gap-2 text-xs font-bold">
                       {ftr.bkash && <span className="bg-[#e2136e] keep-white-text px-2.5 py-1 rounded">bKash</span>}
                       {ftr.nagad && <span className="bg-[#f7941d] keep-white-text px-2.5 py-1 rounded">Nagad</span>}
@@ -16742,14 +16750,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {ftr.cod && <span className="bg-emerald-700 keep-white-text px-2.5 py-1 rounded">Cash on Delivery</span>}
                       {ftr.visa && <span className="bg-[#1e3a8a] keep-white-text px-2.5 py-1 rounded">Visa / Mastercard</span>}
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold" style={{ color: ftrText }}>
-                      {ftr.fb && <a href={ftr.fb} target="_blank" className="hover:underline" style={{ color: ftrText }}>🌐 Facebook</a>}
-                      {ftr.insta && <a href={ftr.insta} target="_blank" className="hover:underline" style={{ color: ftrText }}>📸 Instagram</a>}
+                    <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold text-[#000000]">
+                      {ftr.fb && <a href={ftr.fb} target="_blank" className="hover:underline">🌐 Facebook</a>}
+                      {ftr.insta && <a href={ftr.insta} target="_blank" className="hover:underline">📸 Instagram</a>}
                     </div>
                   </div>
                 </div>
                 {/* 🚚 4 TRUST BADGES IN 1 LINE AS RED BACKGROUND + BLACK TEXT BOTTOM CARDS */}
-                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-sky-200/35">
+                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/70">
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 mb-5">
                     {/* Card 1: নিরাপদ পেমেন্ট */}
                     <div className="red-black-bottom-card rounded-2xl p-2.5 sm:p-3 text-center flex items-center justify-center gap-2 transition group">
@@ -24936,39 +24944,39 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-[#7a1c2b]">ফুটার ব্যাকগ্রাউন্ড ১</label>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">টাইটেল বাটন ব্যাকগ্রাউন্ড ১</label>
                         <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-full px-2.5 py-1 mt-1">
                           <input
                             type="color"
-                            value={config.footer.footerBg || "#075985"}
-                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, footerBg: e.target.value } })}
+                            value={config.footer.titleBtnBg || "#075985"}
+                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, titleBtnBg: e.target.value } })}
                             className="w-5 h-5 rounded-full cursor-pointer border-0 bg-transparent p-0"
                           />
-                          <span className="text-[10px] font-mono text-slate-700">{config.footer.footerBg || "#075985"}</span>
+                          <span className="text-[10px] font-mono text-slate-700">{config.footer.titleBtnBg || "#075985"}</span>
                         </div>
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-[#7a1c2b]">ফুটার ব্যাকগ্রাউন্ড ২</label>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">টাইটেল বাটন ব্যাকগ্রাউন্ড ২</label>
                         <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-full px-2.5 py-1 mt-1">
                           <input
                             type="color"
-                            value={config.footer.footerBgEnd || "#0284c7"}
-                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, footerBgEnd: e.target.value } })}
+                            value={config.footer.titleBtnBgEnd || "#0284c7"}
+                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, titleBtnBgEnd: e.target.value } })}
                             className="w-5 h-5 rounded-full cursor-pointer border-0 bg-transparent p-0"
                           />
-                          <span className="text-[10px] font-mono text-slate-700">{config.footer.footerBgEnd || "#0284c7"}</span>
+                          <span className="text-[10px] font-mono text-slate-700">{config.footer.titleBtnBgEnd || "#0284c7"}</span>
                         </div>
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-[#7a1c2b]">ফুটার টেক্সট কালার</label>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">টাইটেল বাটন টেক্সট কালার</label>
                         <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-full px-2.5 py-1 mt-1">
                           <input
                             type="color"
-                            value={config.footer.footerTextColor || "#f8fafc"}
-                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, footerTextColor: e.target.value } })}
+                            value={config.footer.titleBtnTextColor || "#f8fafc"}
+                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, titleBtnTextColor: e.target.value } })}
                             className="w-5 h-5 rounded-full cursor-pointer border-0 bg-transparent p-0"
                           />
-                          <span className="text-[10px] font-mono text-slate-700">{config.footer.footerTextColor || "#f8fafc"}</span>
+                          <span className="text-[10px] font-mono text-slate-700">{config.footer.titleBtnTextColor || "#f8fafc"}</span>
                         </div>
                       </div>
                     </div>
