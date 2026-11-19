@@ -1737,6 +1737,21 @@
             } catch(e) { resolve(false); }
           });
         } catch(e) { return false; }
+      },
+      async remove(key) {
+        try {
+          const db = await this.init();
+          if (!db) return false;
+          return new Promise((resolve) => {
+            try {
+              const tx = db.transaction("store_data", "readwrite");
+              const store = tx.objectStore("store_data");
+              const req = store.delete(key);
+              req.onsuccess = () => resolve(true);
+              req.onerror = () => resolve(false);
+            } catch(e) { resolve(false); }
+          });
+        } catch(e) { return false; }
       }
     };
 
@@ -2324,6 +2339,7 @@
           }));
         } else {
           localStorage.removeItem("sajgoj_store_customer_user");
+          idbStore.remove("customer_user");
         }
       }, [currentUser]);
 
@@ -2953,13 +2969,33 @@
       };
 
       const handleAdminLogout = () => {
-        sessionStorage.removeItem("sajgoj_admin_auth");
-        localStorage.removeItem("sajgoj_admin_auth");
+        try {
+          sessionStorage.removeItem("sajgoj_admin_auth");
+          localStorage.removeItem("sajgoj_admin_auth");
+        } catch (e) {}
+        try {
+          const authInstance = firebaseAuth || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth() : null);
+          if (authInstance && typeof authInstance.signOut === "function") {
+            authInstance.signOut().catch(() => {});
+          }
+        } catch (e) {}
+        setAdminLoginForm(prev => ({ ...prev, password: "" }));
+        setAdminLoginError("");
+        setIsAdminDrawerOpen(false);
+        setAdminV2MobileSidebar(false);
         setIsAdminLoggedIn(false);
         setActiveTab("Storefront");
-        if (window.location.hash === "#admin" || window.location.hash === "#login" || window.location.hash === "#backend") {
-          window.location.hash = "";
-        }
+        try {
+          const h = (window.location.hash || "").toLowerCase();
+          if (h === "#admin" || h === "#login" || h === "#backend") {
+            window.location.hash = "";
+          }
+          const p = (window.location.pathname || "").toLowerCase();
+          const s = (window.location.search || "").toLowerCase();
+          if (p.startsWith("/admin") || p.startsWith("/login") || s.includes("admin=1") || s.includes("admin=true")) {
+            window.history.replaceState(null, "", "/");
+          }
+        } catch (e) {}
         notify("অ্যাডমিন প্যানেল থেকে সফলভাবে লগআউট করা হয়েছে।");
       };
 
@@ -11509,15 +11545,20 @@
       };
 
       const handleCustomerLogout = () => {
-        if (confirm("আপনি কি একাউন্ট থেকে লগআউট করতে চান?")) {
-          if (typeof firebase !== "undefined" && firebase.auth) {
-            try { firebase.auth().signOut(); } catch(e) {}
+        try {
+          const authInstance = firebaseAuth || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth() : null);
+          if (authInstance && typeof authInstance.signOut === "function") {
+            authInstance.signOut().catch(() => {});
           }
-          setCurrentUser(null);
+        } catch (e) {}
+        try {
           localStorage.removeItem("sajgoj_store_customer_user");
-          setIsProfileModalOpen(false);
-          notify("সফলভাবে লগআউট হয়েছে!");
-        }
+        } catch (e) {}
+        idbStore.remove("customer_user");
+        setCurrentUser(null);
+        setProfileForm({ name: "", phone: "", email: "", photoUrl: "", district: "Dhaka", thana: "", address: "" });
+        setIsProfileModalOpen(false);
+        notify("সফলভাবে লগআউট হয়েছে!");
       };
 
       const handleCustomerPhotoUpload = (e) => {
@@ -12825,19 +12866,32 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {activeTab === "Storefront" ? (
                   <>
-                    {/* CUSTOMER LOGIN / PROFILE TAB */}
+                    {/* CUSTOMER LOGIN / PROFILE + LOGOUT TABS */}
                     {currentUser ? (
-                      <button 
-                        onClick={() => setIsProfileModalOpen(true)}
-                        className="red-black-tab px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 cursor-pointer"
-                        title="আমার একাউন্ট ও প্রোফাইল"
-                      >
-                        <span className="font-bold text-[11px] sm:text-xs text-[#000000] max-w-[65px] sm:max-w-[85px] truncate">
-                          {currentUser?.name && !currentUser.name.startsWith("0") ? String(currentUser.name).trim().split(" ")[0] : "প্রোফাইল"}
-                        </span>
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button 
+                          type="button"
+                          onClick={() => setIsProfileModalOpen(true)}
+                          className="red-black-tab px-2.5 sm:px-3 py-1.5 rounded-full text-xs flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0 cursor-pointer"
+                          title="আমার একাউন্ট ও প্রোফাইল"
+                        >
+                          <span className="font-bold text-[11px] sm:text-xs text-[#000000] max-w-[60px] sm:max-w-[85px] truncate">
+                            {currentUser?.name && !currentUser.name.startsWith("0") ? String(currentUser.name).trim().split(" ")[0] : "প্রোফাইল"}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCustomerLogout}
+                          className="bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-300 px-2 sm:px-2.5 py-1.5 rounded-full text-[11px] font-bold transition active:scale-95 whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1"
+                          title="একাউন্ট থেকে লগআউট করুন"
+                        >
+                          <span>🚪</span>
+                          <span className="hidden md:inline">লগআউট</span>
+                        </button>
+                      </div>
                     ) : (
                       <button 
+                        type="button"
                         onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
                         className="cta-dark-pill px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold transition active:scale-95 whitespace-nowrap shrink-0 cursor-pointer"
                         title="Customer Login / Sign Up"
@@ -12895,13 +12949,27 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     )}
                   </>
                 ) : (
-                  <button 
-                    onClick={() => setActiveTab("Storefront")}
-                    className="cta-dark-pill px-4 py-2 rounded-full text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>←</span>
-                    <span>স্টোরফ্রন্ট দেখুন</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button 
+                      type="button"
+                      onClick={() => setActiveTab("Storefront")}
+                      className="cta-dark-pill px-3.5 py-2 rounded-full text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>←</span>
+                      <span>স্টোরফ্রন্ট দেখুন</span>
+                    </button>
+                    {isAdminLoggedIn && (
+                      <button
+                        type="button"
+                        onClick={handleAdminLogout}
+                        className="red-black-tab px-3 py-2 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        title="অ্যাডমিন লগআউট"
+                      >
+                        <span>🚪</span>
+                        <span>লগআউট</span>
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -15016,10 +15084,21 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             <button
                               type="button"
                               onClick={() => setActiveTab("Storefront")}
-                              className="cta-dark-pill px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                              className="cta-dark-pill px-3 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                              title="লাইভ স্টোরফ্রন্ট দেখুন"
                             >
                               <span>🛍️</span>
                               <span className="hidden sm:inline">স্টোরফ্রন্ট</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleAdminLogout}
+                              className="red-black-tab px-3 py-2 rounded-2xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                              title="অ্যাডমিন প্যানেল থেকে লগআউট করুন"
+                            >
+                              <span>🚪</span>
+                              <span>লগআউট</span>
                             </button>
                           </div>
                         </div>

@@ -343,7 +343,19 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   fun logoutAdmin() {
     _isAdminLoggedIn.value = false
+    _authUser.value = null
     _currentScreen.value = AppScreen.STOREFRONT
+    viewModelScope.launch {
+      withContext(NonCancellable) {
+        try {
+          if (FirebaseApp.getApps(getApplication()).isNotEmpty()) {
+            repository.onAuthSessionChanged(null)
+            GoogleAuthHelper.signOut(getApplication())
+          }
+        } catch (_: Exception) {
+        }
+      }
+    }
     emitToast("অ্যাডমিন প্যানেল থেকে লগআউট সম্পন্ন হয়েছে।")
   }
 

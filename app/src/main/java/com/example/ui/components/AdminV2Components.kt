@@ -418,7 +418,7 @@ fun AdminV2TopBar(
 
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
       ) {
         Surface(
           shape = RoundedCornerShape(13.dp),
@@ -432,21 +432,22 @@ fun AdminV2TopBar(
             .testTag("admin_topbar_qr_scanner_button")
         ) {
           Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
             Icon(
               imageVector = Icons.Default.QrCodeScanner,
               contentDescription = "QR ও বারকোড স্ক্যানার খুলুন",
               tint = AdminV2CyanDeep,
-              modifier = Modifier.size(18.dp)
+              modifier = Modifier.size(17.dp)
             )
             Text(
-              text = "QR স্ক্যান",
+              text = "QR",
               fontSize = 11.5.sp,
               fontWeight = FontWeight.ExtraBold,
-              color = AdminV2CyanDeep
+              color = AdminV2CyanDeep,
+              maxLines = 1
             )
           }
         }
@@ -459,15 +460,16 @@ fun AdminV2TopBar(
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(13.dp))
             .clickable(onClick = onLogout)
+            .testTag("admin_logout_button")
         ) {
           Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
             Icon(
               imageVector = Icons.Default.PowerSettingsNew,
-              contentDescription = "Logout",
+              contentDescription = "অ্যাডমিন থেকে লগআউট করুন",
               tint = Color.White,
               modifier = Modifier.size(16.dp)
             )
@@ -475,7 +477,8 @@ fun AdminV2TopBar(
               text = "লগআউট",
               fontSize = 11.5.sp,
               fontWeight = FontWeight.ExtraBold,
-              color = Color.White
+              color = Color.White,
+              maxLines = 1
             )
           }
         }

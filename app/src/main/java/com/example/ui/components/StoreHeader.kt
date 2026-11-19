@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -183,36 +184,36 @@ fun StoreHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
       ) {
-        // Google Sign-In / Signed-in Status Pill
+        // Google Sign-In / Signed-in Logout Pill
         Surface(
           shape = RoundedCornerShape(18.dp),
-          color = if (authUser != null) Color(0xFFECFDF5) else CreamSurface,
-          border = BorderStroke(1.dp, if (authUser != null) Color(0xFF10B981) else BorderGold),
+          color = if (authUser != null) Color(0xFFFFF1F2) else CreamSurface,
+          border = BorderStroke(1.dp, if (authUser != null) Color(0xFFF43F5E) else BorderGold),
           modifier = Modifier
-            .heightIn(min = 40.dp)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(18.dp))
             .clickable(enabled = !isAuthBusy) { onGoogleAuthClick() }
             .testTag("header_google_auth_button")
         ) {
           Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
             Icon(
-              imageVector = if (authUser != null) Icons.Default.VerifiedUser else Icons.Default.AccountCircle,
-              contentDescription = if (authUser != null) "সাইন-ইন সম্পন্ন: ${authUser.displayName}" else "Google সাইন-ইন",
-              tint = if (authUser != null) Color(0xFF047857) else RoyalMaroon,
+              imageVector = if (authUser != null) Icons.Default.PowerSettingsNew else Icons.Default.AccountCircle,
+              contentDescription = if (authUser != null) "লগআউট করুন (${authUser.displayName})" else "Google সাইন-ইন",
+              tint = if (authUser != null) Color(0xFFBE123C) else RoyalMaroon,
               modifier = Modifier.size(16.dp)
             )
             Text(
               text = when {
                 isAuthBusy -> "..."
-                authUser != null -> authUser.displayName.take(8)
+                authUser != null -> "লগআউট"
                 else -> "লগইন"
               },
-              color = if (authUser != null) Color(0xFF047857) else DarkEspresso,
-              fontSize = 11.sp,
+              color = if (authUser != null) Color(0xFFBE123C) else DarkEspresso,
+              fontSize = 11.5.sp,
               fontWeight = FontWeight.Bold,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
