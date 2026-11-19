@@ -8,8 +8,8 @@ const STORE_CATALOG = 'product_catalog_cache';
 const STORE_ORDER_QUEUE = 'offline_orders_queue';
 const SYNC_TAG_ORDERS = 'sync-offline-orders';
 
-const FIRESTORE_PROJECT_ID = 'gen-lang-client-0722859710';
-const FIRESTORE_DATABASE_ID = 'ai-studio-android-sajgojfa-722ad4cf-babb-4676-b27a-8dd4451c81da';
+const FIRESTORE_PROJECT_ID = 'gen-lang-client-0562799796';
+const FIRESTORE_DATABASE_ID = 'ai-studio-android-sajgojfa-3e596357-5132-4fa3-9784-b12eabde40bf';
 
 const STATIC_ASSETS = [
   './',
