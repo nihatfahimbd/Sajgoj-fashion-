@@ -1343,8 +1343,61 @@
 
     const initialHomeSections = [
       { id: "top_banner", type: "top_banner", title: "হিরো ব্যানার ও স্লাইডার", subtitle: "হোম পেজের প্রধান ব্যানার স্লাইডার", icon: "🖼️", enabled: true, layout: "banner", productIds: [] },
-      { id: "voucher_strip", type: "voucher_strip", title: "ভাউচার ডিসকাউন্ট কার্ড", subtitle: "Claim Vouchers to Save More!", icon: "🎟️", enabled: true, layout: "strip", productIds: [] },
-      { id: "category_slider", type: "category_slider", title: "স্লাইডিং ক্যাটাগরি কার্ড", subtitle: "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি", icon: "🏷️", enabled: true, layout: "strip", productIds: [] },
+      {
+        id: "voucher_strip",
+        type: "voucher_strip",
+        title: "ভাউচার ডিসকাউন্ট কার্ড",
+        subtitle: "Claim Vouchers to Save More!",
+        icon: "🎟️",
+        enabled: true,
+        layout: "strip",
+        productIds: [],
+        voucherHeading: "Claim Vouchers to Save More!",
+        voucherBadge: "11.11 / SAJGOJ",
+        voucherMoreText: "More Voucher",
+        voucher1Amount: "৳২,২৫০",
+        voucher1Label: "Voucher Max",
+        voucher2Amount: "৳৪৫",
+        voucher2Label: "Free shipping",
+        voucherCollectText: "Collect All",
+        showVoucherBadge: true,
+        showVoucherSlot2: true,
+        useCustomStyle: false,
+        voucherCardBg: "#fca5a5",
+        voucherCardBorder: "#ffffff",
+        voucherTitleColor: "#000000",
+        voucherBadgeBg: "#0b0f19",
+        voucherBadgeText: "#ffffff",
+        voucherInnerBg: "#fca5a5",
+        voucherInnerBorder: "#991b1b",
+        voucherInnerTextColor: "#000000",
+        voucherBtnBg: "#0b0f19",
+        voucherBtnText: "#ffffff"
+      },
+      {
+        id: "category_slider",
+        type: "category_slider",
+        title: "স্লাইডিং ক্যাটাগরি কার্ড",
+        subtitle: "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি",
+        icon: "🏷️",
+        enabled: true,
+        layout: "strip",
+        productIds: [],
+        showSectionHeader: false,
+        showAllCard: true,
+        allItemLabel: "সকল পণ্য",
+        allItemIcon: "🌟",
+        selectedCategoryIds: [],
+        useCustomStyle: false,
+        catBlockBg: "#ffffff",
+        catBlockBorder: "#ffffff",
+        catBlockTitleColor: "#000000",
+        catCardBg: "#f87171",
+        catCardBorder: "#ffffff",
+        catIconBoxBg: "#ffffff",
+        catLabelBg: "#ffffff",
+        catLabelText: "#000000"
+      },
       { id: "new_products", type: "new_products", title: "নতুন প্রোডাক্ট", subtitle: "নতুন আপলোড হওয়া প্রোডাক্ট (৩টি করে স্লাইড)", icon: "✨", badge: "NEW", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: [], maxItems: 12 },
       { id: "hot_sale", type: "hot_sale", title: "Hot Sale", subtitle: "হট সেল প্রোডাক্ট ডিসপ্লে (৩টি করে স্লাইড)", icon: "🔥", badge: "HOT 🔥", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: ["p9", "p6", "p5", "p4", "p2", "p1"], maxItems: 12 },
       { id: "best_deals", type: "best_deals", title: "সেরা ডিল", subtitle: "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon: "⭐", badge: "সেরা ডিল", enabled: true, layout: "grid3x2", displayStyle: "grid", columnsPerRow: 3, rowCount: 2, productIds: ["p1", "p2", "p3", "p4", "p5", "p6", "p10", "p11", "p12"], maxItems: 6 },
@@ -1352,7 +1405,29 @@
       { id: "combo_packs", type: "combo_packs", title: "কম্বো প্যাক", subtitle: "বান্ডেল কম্বো অফারে আকর্ষণীয় সাশ্রয়", icon: "🎁", badge: "COMBO", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: [], maxItems: 12 },
       { id: "b2g1_offers", type: "b2g1_offers", title: "Buy 2 Get 1", subtitle: "২টি পণ্য কিনলে ১টি প্রোডাক্ট একদম ফ্রি!", icon: "🎉", badge: "২+১ ফ্রি", enabled: true, layout: "slider3", displayStyle: "slider", columnsPerRow: 3, rowCount: 1, productIds: ["p1", "p2", "p4", "p6", "p9", "p11"], maxItems: 12 },
       { id: "all_products", type: "all_products", title: "সব প্রোডাক্ট", subtitle: "সকল ক্যাটাগরির প্রোডাক্ট ডিসপ্লে + আরো দেখুন", icon: "🛍️", badge: "সকল পণ্য", enabled: true, layout: "grid3x3", displayStyle: "grid", columnsPerRow: 3, rowCount: 3, productIds: [], maxItems: 9 },
-      { id: "category_pills", type: "category_pills", title: "ক্যাটাগরি ফিল্টার পিলস", subtitle: "ক্যাটাগরি অনুযায়ী ব্রাউজ বাটন", icon: "📂", enabled: true, layout: "pills", productIds: [] }
+      {
+        id: "category_pills",
+        type: "category_pills",
+        title: "ক্যাটাগরি অনুযায়ী ব্রাউজ করুন",
+        subtitle: "ক্যাটাগরি অনুযায়ী ব্রাউজ বাটন",
+        icon: "📂",
+        enabled: true,
+        layout: "pills",
+        productIds: [],
+        allPillLabel: "সকল কালেকশন",
+        allPillIcon: "🌟",
+        bogoPillLabel: "১টি কিনলে ১টি ফ্রি (BOGO)",
+        showB2g1Pill: true,
+        showComboPill: true,
+        useCustomStyle: false,
+        pillBlockBg: "#ffffff",
+        pillBlockBorder: "#ffffff",
+        pillBlockTitleColor: "#000000",
+        pillBg: "#fca5a5",
+        pillTextColor: "#000000",
+        pillActiveBg: "#ef4444",
+        pillActiveTextColor: "#ffffff"
+      }
     ];
 
     const isHomeSectionsCustomized = () => {
@@ -1615,9 +1690,39 @@
         announcementTextColor: "#000000",
         headerBg: "#ffffff",
         headerTextColor: "#000000",
+        useCustomSearchBarColors: false,
+        catMenuIcon: "☰",
+        catMenuLabel: "ক্যাটাগরি",
+        catMenuDesktopLabel: "সকল ক্যাটাগরী",
+        catMenuBg: "#fca5a5",
+        catMenuBorder: "#dc2626",
+        catMenuTextColor: "#000000",
+        catMenuIconColor: "#000000",
+        homeBtnIcon: "🏠",
+        homeBtnLabel: "হোম",
+        homeBtnShowText: false,
+        homeBtnBg: "#fca5a5",
+        homeBtnBorder: "#dc2626",
+        homeBtnIconColor: "#000000",
         searchBg: "#ffffff",
-        searchBorder: "#ffffff",
+        searchBorder: "#ef4444",
         searchTextColor: "#000000",
+        searchPlaceholder: "প্রোডাক্ট খুঁজুন (নাম, SKU)...",
+        searchPlaceholderMobile: "প্রোডাক্ট খুঁজুন...",
+        searchIcon: "",
+        searchIconColor: "#475569",
+        showMicBtn: true,
+        micBtnBg: "#4f46e5",
+        micBtnIcon: "",
+        micBtnIconColor: "#ffffff",
+        showScanBtn: true,
+        scanBtnBg: "#059669",
+        scanBtnIcon: "",
+        scanBtnIconColor: "#ffffff",
+        showImageSearchBtn: true,
+        imageSearchBtnBg: "#4f46e5",
+        imageSearchBtnIcon: "",
+        imageSearchBtnIconColor: "#ffffff",
         cartIcon: "🛒",
         cartBg: "#0f172a",
         cartTextColor: "#ffffff",
@@ -1633,6 +1738,11 @@
       },
       footer: {
         about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
+        contactTitle: "Contact Info",
+        servicesTitle: "সেবাসমূহ",
+        footerBg: "#075985",
+        footerBgEnd: "#0284c7",
+        footerTextColor: "#f8fafc",
         email: "support@sajgoj.com",
         phone: "018051198888",
         address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
@@ -1660,7 +1770,16 @@
         b2g1: { ...initialStoreConfig.b2g1, ...(b.b2g1 || {}), ...(r.b2g1 || {}) },
         header: { ...initialStoreConfig.header, ...(b.header || {}), ...(r.header || {}) },
         design: { ...initialStoreConfig.design, ...(b.design || {}), ...(r.design || {}) },
-        footer: { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) }
+        footer: {
+          ...initialStoreConfig.footer,
+          ...(b.footer || {}),
+          ...(r.footer || {}),
+          contactTitle: (r.footer?.contactTitle ?? b.footer?.contactTitle) || initialStoreConfig.footer.contactTitle,
+          servicesTitle: (r.footer?.servicesTitle ?? b.footer?.servicesTitle) || initialStoreConfig.footer.servicesTitle,
+          footerBg: (r.footer?.footerBg ?? b.footer?.footerBg) || initialStoreConfig.footer.footerBg,
+          footerBgEnd: (r.footer?.footerBgEnd ?? b.footer?.footerBgEnd) || initialStoreConfig.footer.footerBgEnd,
+          footerTextColor: (r.footer?.footerTextColor ?? b.footer?.footerTextColor) || initialStoreConfig.footer.footerTextColor
+        }
       };
     };
 
@@ -11617,9 +11736,389 @@
                 {renderColorInput("কার্ট ব্যাজ টেক্সট", d.cartBadgeText, (v) => updateDesignField({ useCustomHeaderColors: true, cartBadgeText: v }))}
                 {renderColorInput("উইশলিস্ট বাটন ব্যাকগ্রাউন্ড", d.wishlistBg, (v) => updateDesignField({ useCustomHeaderColors: true, wishlistBg: v }))}
                 {renderColorInput("উইশলিস্ট বাটন টেক্সট", d.wishlistTextColor, (v) => updateDesignField({ useCustomHeaderColors: true, wishlistTextColor: v }))}
-                {renderColorInput("B2G1 স্ট্রিপ ব্যাকগ্রাউন্ড", d.b2g1Bg, (v) => updateDesignField({ b2g1Bg: v }))}
-                {renderColorInput("B2G1 স্ট্রিপ টেক্সট", d.b2g1TextColor, (v) => updateDesignField({ b2g1TextColor: v }))}
+                {renderColorInput("B2G1 স্ট্রিপ ব্যাকগ্রাউন্ড", d.b2g1Bg, (v) => updateDesignField({ useCustomHeaderColors: true, b2g1Bg: v }))}
+                {renderColorInput("B2G1 স্ট্রিপ টেক্সট", d.b2g1TextColor, (v) => updateDesignField({ useCustomHeaderColors: true, b2g1TextColor: v }))}
               </div>
+            </div>
+
+            {/* 5. Search Box, Category Menu & Home Icon Full Customization */}
+            {renderSearchCategoryHomeBarEditor()}
+          </div>
+        );
+      };
+
+      const renderSearchCategoryHomeBarEditor = () => {
+        const d = { ...initialStoreConfig.design, ...(config?.design || {}) };
+        const useCustom = Boolean(d.useCustomSearchBarColors);
+        return (
+          <div className="p-4 sm:p-5 rounded-2xl bg-rose-50/55 border border-rose-200/90 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h5 className="font-black text-xs sm:text-sm text-[#7a1c2b] flex items-center gap-1.5">
+                  <span>🔍</span>
+                  <span>৪. সার্চ বক্স, ক্যাটাগরী মেনু, হোম বাটন ও স্ক্যান/ইমেজ আইকন কাস্টমাইজেশন</span>
+                </h5>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  ক্যাটাগরি মেনু বাটন, হোম আইকন ব্লক, সার্চ বক্স, প্লেসহোল্ডার লেখা, ব্যাকগ্রাউন্ড, বর্ডার, মাইক/স্ক্যান/ইমেজ আইকন ও আইকন কালার সম্পূর্ণ পরিবর্তন করুন
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 cursor-pointer bg-white px-3 py-1.5 rounded-full border border-rose-200">
+                  <input
+                    type="checkbox"
+                    checked={useCustom}
+                    onChange={(e) => updateDesignField({ useCustomSearchBarColors: e.target.checked })}
+                    className="accent-[#dc2626]"
+                  />
+                  কাস্টম কালার চালু রাখুন
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateDesignField({
+                      useCustomSearchBarColors: false,
+                      catMenuIcon: "☰",
+                      catMenuLabel: "ক্যাটাগরি",
+                      catMenuDesktopLabel: "সকল ক্যাটাগরী",
+                      catMenuBg: "#fca5a5",
+                      catMenuBorder: "#dc2626",
+                      catMenuTextColor: "#000000",
+                      catMenuIconColor: "#000000",
+                      homeBtnIcon: "🏠",
+                      homeBtnLabel: "হোম",
+                      homeBtnShowText: false,
+                      homeBtnBg: "#fca5a5",
+                      homeBtnBorder: "#dc2626",
+                      homeBtnIconColor: "#000000",
+                      searchBg: "#ffffff",
+                      searchBorder: "#ef4444",
+                      searchTextColor: "#000000",
+                      searchPlaceholder: "প্রোডাক্ট খুঁজুন (নাম, SKU)...",
+                      searchPlaceholderMobile: "প্রোডাক্ট খুঁজুন...",
+                      searchIcon: "",
+                      searchIconColor: "#475569",
+                      showMicBtn: true,
+                      micBtnBg: "#4f46e5",
+                      micBtnIcon: "",
+                      micBtnIconColor: "#ffffff",
+                      showScanBtn: true,
+                      scanBtnBg: "#059669",
+                      scanBtnIcon: "",
+                      scanBtnIconColor: "#ffffff",
+                      showImageSearchBtn: true,
+                      imageSearchBtnBg: "#4f46e5",
+                      imageSearchBtnIcon: "",
+                      imageSearchBtnIconColor: "#ffffff"
+                    });
+                    notify("সার্চ বক্স, ক্যাটাগরি মেনু ও হোম আইকন ডিফল্ট অবস্থায় রিসেট হয়েছে!");
+                  }}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-white border border-rose-200 text-[#7a1c2b] hover:bg-rose-100 cursor-pointer"
+                >
+                  ↺ রিসেট
+                </button>
+              </div>
+            </div>
+
+            {/* Live Interactive Preview of the Header Search Row */}
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-rose-50 to-sky-50 border border-slate-200 space-y-1.5">
+              <p className="text-[10px] font-black text-slate-600 uppercase tracking-wider">👁️ লাইভ প্রিভিউ (স্টোরফ্রন্ট হেডার)</p>
+              <div className="flex items-center gap-1.5 max-w-xl">
+                <div
+                  className={`${useCustom ? "" : "red-black-tab"} h-10 px-3 rounded-full text-xs flex items-center gap-1.5 shrink-0 shadow-xs font-extrabold`}
+                  style={useCustom ? { background: d.catMenuBg, border: `1.5px solid ${d.catMenuBorder || "#dc2626"}`, color: d.catMenuTextColor } : undefined}
+                >
+                  <span style={useCustom ? { color: d.catMenuIconColor || d.catMenuTextColor } : undefined}>{d.catMenuIcon || "☰"}</span>
+                  <span className="truncate max-w-[90px]">{d.catMenuLabel || "ক্যাটাগরি"}</span>
+                  <span className="text-[10px]">▾</span>
+                </div>
+                <div
+                  className={`${useCustom ? "" : "red-black-tab"} ${d.homeBtnShowText ? "px-2.5 gap-1" : "w-10"} h-10 rounded-full flex items-center justify-center text-sm shrink-0 shadow-xs font-bold`}
+                  style={useCustom ? { background: d.homeBtnBg, border: `1.5px solid ${d.homeBtnBorder || "#dc2626"}`, color: d.homeBtnIconColor } : undefined}
+                >
+                  <span style={useCustom ? { color: d.homeBtnIconColor } : undefined}>{d.homeBtnIcon || "🏠"}</span>
+                  {d.homeBtnShowText && <span className="text-[11px] font-extrabold">{d.homeBtnLabel || "হোম"}</span>}
+                </div>
+                <div
+                  className="flex-1 min-w-0 flex items-center rounded-full h-10 pl-3 pr-1 shadow-xs"
+                  style={{
+                    backgroundColor: d.searchBg || "#ffffff",
+                    border: `1.5px solid ${d.searchBorder || "#ef4444"}`
+                  }}
+                >
+                  {d.searchIcon ? (
+                    <span className="text-sm mr-1.5 shrink-0" style={{ color: d.searchIconColor || "#475569" }}>{d.searchIcon}</span>
+                  ) : (
+                    <svg className="w-4 h-4 shrink-0 mr-1.5" style={{ color: d.searchIconColor || "#475569" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </svg>
+                  )}
+                  <span className="flex-1 text-xs truncate font-medium" style={{ color: d.searchTextColor || "#000000", opacity: 0.75 }}>
+                    {d.searchPlaceholderMobile || "প্রোডাক্ট খুঁজুন..."}
+                  </span>
+                  {d.showMicBtn !== false && (
+                    <span
+                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: d.micBtnBg || "#4f46e5", color: d.micBtnIconColor || "#ffffff" }}
+                    >
+                      {d.micBtnIcon ? (
+                        <span className="text-xs leading-none">{d.micBtnIcon}</span>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                          <line x1="12" x2="12" y1="19" y2="22" />
+                        </svg>
+                      )}
+                    </span>
+                  )}
+                </div>
+                {d.showScanBtn !== false && (
+                  <span
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                    style={{ backgroundColor: d.scanBtnBg || "#059669", color: d.scanBtnIconColor || "#ffffff" }}
+                  >
+                    {d.scanBtnIcon ? (
+                      <span className="text-sm leading-none">{d.scanBtnIcon}</span>
+                    ) : (
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <line x1="7" x2="17" y1="12" y2="12" />
+                      </svg>
+                    )}
+                  </span>
+                )}
+                {d.showImageSearchBtn !== false && (
+                  <span
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                    style={{ backgroundColor: d.imageSearchBtnBg || "#4f46e5", color: d.imageSearchBtnIconColor || "#ffffff" }}
+                  >
+                    {d.imageSearchBtnIcon ? (
+                      <span className="text-sm leading-none">{d.imageSearchBtnIcon}</span>
+                    ) : (
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="3" ry="3" />
+                        <circle cx="9" cy="9" r="2" />
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                      </svg>
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Category Menu Block + Home Icon Block Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-white p-3.5 rounded-2xl border border-rose-200/80 space-y-2.5 shadow-2xs">
+                <p className="text-xs font-black text-[#7a1c2b]">📂 ক্যাটাগরী মেনু ব্লক কাস্টমাইজেশন</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">আইকন (Emoji)</label>
+                    <input
+                      type="text"
+                      value={d.catMenuIcon ?? "☰"}
+                      onChange={(e) => updateDesignField({ catMenuIcon: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-2.5 py-1.5 text-xs text-center outline-none focus:border-[#dc2626]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">মোবাইল লেখা</label>
+                    <input
+                      type="text"
+                      value={d.catMenuLabel ?? "ক্যাটাগরি"}
+                      onChange={(e) => updateDesignField({ catMenuLabel: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">ডেস্কটপ লেখা</label>
+                    <input
+                      type="text"
+                      value={d.catMenuDesktopLabel ?? "সকল ক্যাটাগরী"}
+                      onChange={(e) => updateDesignField({ catMenuDesktopLabel: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {renderColorInput("মেনু ব্যাকগ্রাউন্ড", d.catMenuBg, (v) => updateDesignField({ useCustomSearchBarColors: true, catMenuBg: v }))}
+                  {renderColorInput("মেনু বর্ডার", d.catMenuBorder, (v) => updateDesignField({ useCustomSearchBarColors: true, catMenuBorder: v }))}
+                  {renderColorInput("মেনু টেক্সট কালার", d.catMenuTextColor, (v) => updateDesignField({ useCustomSearchBarColors: true, catMenuTextColor: v }))}
+                  {renderColorInput("মেনু আইকন কালার", d.catMenuIconColor, (v) => updateDesignField({ useCustomSearchBarColors: true, catMenuIconColor: v }))}
+                </div>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-2xl border border-rose-200/80 space-y-2.5 shadow-2xs">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-black text-[#7a1c2b]">🏠 Home আইকন ব্লক কাস্টমাইজেশন</p>
+                  <label className="flex items-center gap-1 text-[11px] font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(d.homeBtnShowText)}
+                      onChange={(e) => updateDesignField({ homeBtnShowText: e.target.checked })}
+                      className="accent-[#dc2626]"
+                    />
+                    টেক্সটও দেখান
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Home আইকন (Emoji)</label>
+                    <input
+                      type="text"
+                      value={d.homeBtnIcon ?? "🏠"}
+                      onChange={(e) => updateDesignField({ homeBtnIcon: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs text-center outline-none focus:border-[#dc2626]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Home বাটনের লেখা / টুলটিপ</label>
+                    <input
+                      type="text"
+                      value={d.homeBtnLabel ?? "হোম"}
+                      onChange={(e) => updateDesignField({ homeBtnLabel: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {renderColorInput("Home ব্যাকগ্রাউন্ড", d.homeBtnBg, (v) => updateDesignField({ useCustomSearchBarColors: true, homeBtnBg: v }))}
+                  {renderColorInput("Home বর্ডার", d.homeBtnBorder, (v) => updateDesignField({ useCustomSearchBarColors: true, homeBtnBorder: v }))}
+                  {renderColorInput("Home আইকন কালার", d.homeBtnIconColor, (v) => updateDesignField({ useCustomSearchBarColors: true, homeBtnIconColor: v }))}
+                </div>
+              </div>
+            </div>
+
+            {/* Search Input Box + Mic/Scan/Image Icon Controls */}
+            <div className="bg-white p-3.5 rounded-2xl border border-rose-200/80 space-y-3 shadow-2xs">
+              <p className="text-xs font-black text-[#7a1c2b]">🔎 সার্চ ইনপুট বক্স ও অ্যাকশন বাটন (মাইক / স্ক্যান / ইমেজ)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 block mb-0.5">সার্চ প্লেসহোল্ডার (ডেস্কটপ)</label>
+                  <input
+                    type="text"
+                    value={d.searchPlaceholder ?? "প্রোডাক্ট খুঁজুন (নাম, SKU)..."}
+                    onChange={(e) => updateDesignField({ searchPlaceholder: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 block mb-0.5">সার্চ প্লেসহোল্ডার (মোবাইল)</label>
+                  <input
+                    type="text"
+                    value={d.searchPlaceholderMobile ?? "প্রোডাক্ট খুঁজুন..."}
+                    onChange={(e) => updateDesignField({ searchPlaceholderMobile: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 block mb-0.5">কাস্টম সার্চ আইকন (খালি = SVG)</label>
+                  <input
+                    type="text"
+                    placeholder="খালি রাখলে ডিফল্ট SVG"
+                    value={d.searchIcon || ""}
+                    onChange={(e) => updateDesignField({ searchIcon: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                {renderColorInput("সার্চ বক্স ব্যাকগ্রাউন্ড", d.searchBg, (v) => updateDesignField({ useCustomSearchBarColors: true, searchBg: v }))}
+                {renderColorInput("সার্চ বক্স বর্ডার", useCustom ? d.searchBorder : "#ef4444", (v) => updateDesignField({ useCustomSearchBarColors: true, searchBorder: v }))}
+                {renderColorInput("সার্চ লেখা কালার", d.searchTextColor, (v) => updateDesignField({ useCustomSearchBarColors: true, searchTextColor: v }))}
+                {renderColorInput("সার্চ আইকন কালার", d.searchIconColor, (v) => updateDesignField({ useCustomSearchBarColors: true, searchIconColor: v }))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                {/* Voice Mic Button */}
+                <div className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-200/75 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-slate-800">🎙️ ভয়েস মাইক বাটন</span>
+                    <label className="flex items-center gap-1 text-[10px] font-bold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={d.showMicBtn !== false}
+                        onChange={(e) => updateDesignField({ showMicBtn: e.target.checked })}
+                        className="accent-[#dc2626]"
+                      />
+                      চালু
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="কাস্টম আইকন (খালি = SVG)"
+                    value={d.micBtnIcon || ""}
+                    onChange={(e) => updateDesignField({ micBtnIcon: e.target.value })}
+                    className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-2.5 py-1 text-[11px] outline-none"
+                  />
+                  {renderColorInput("বাটন ব্যাকগ্রাউন্ড", d.micBtnBg, (v) => updateDesignField({ useCustomSearchBarColors: true, micBtnBg: v }))}
+                  {renderColorInput("মাইক আইকন কালার", d.micBtnIconColor, (v) => updateDesignField({ useCustomSearchBarColors: true, micBtnIconColor: v }))}
+                </div>
+
+                {/* QR Scan Button */}
+                <div className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-200/75 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-slate-800">📷 QR / স্ক্যান বাটন</span>
+                    <label className="flex items-center gap-1 text-[10px] font-bold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={d.showScanBtn !== false}
+                        onChange={(e) => updateDesignField({ showScanBtn: e.target.checked })}
+                        className="accent-[#dc2626]"
+                      />
+                      চালু
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="কাস্টম আইকন (খালি = SVG)"
+                    value={d.scanBtnIcon || ""}
+                    onChange={(e) => updateDesignField({ scanBtnIcon: e.target.value })}
+                    className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-2.5 py-1 text-[11px] outline-none"
+                  />
+                  {renderColorInput("বাটন ব্যাকগ্রাউন্ড", d.scanBtnBg, (v) => updateDesignField({ useCustomSearchBarColors: true, scanBtnBg: v }))}
+                  {renderColorInput("স্ক্যান আইকন কালার", d.scanBtnIconColor, (v) => updateDesignField({ useCustomSearchBarColors: true, scanBtnIconColor: v }))}
+                </div>
+
+                {/* Image Search Button */}
+                <div className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-200/75 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-slate-800">🖼️ ইমেজ সার্চ বাটন</span>
+                    <label className="flex items-center gap-1 text-[10px] font-bold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={d.showImageSearchBtn !== false}
+                        onChange={(e) => updateDesignField({ showImageSearchBtn: e.target.checked })}
+                        className="accent-[#dc2626]"
+                      />
+                      চালু
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="কাস্টম আইকন (খালি = SVG)"
+                    value={d.imageSearchBtnIcon || ""}
+                    onChange={(e) => updateDesignField({ imageSearchBtnIcon: e.target.value })}
+                    className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-2.5 py-1 text-[11px] outline-none"
+                  />
+                  {renderColorInput("বাটন ব্যাকগ্রাউন্ড", d.imageSearchBtnBg, (v) => updateDesignField({ useCustomSearchBarColors: true, imageSearchBtnBg: v }))}
+                  {renderColorInput("ইমেজ আইকন কালার", d.imageSearchBtnIconColor, (v) => updateDesignField({ useCustomSearchBarColors: true, imageSearchBtnIconColor: v }))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => saveDesignToCloud(config)}
+                className="px-5 py-2 rounded-full text-xs font-black bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white shadow cursor-pointer hover:brightness-110"
+              >
+                💾 সার্চ বার, মেনু ও হোম সেটিংস সেভ ও লাইভ করুন
+              </button>
             </div>
           </div>
         );
@@ -14320,11 +14819,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={() => setIsCatMenuOpen(prev => !prev)}
-                    className="red-black-tab h-10 px-3.5 rounded-full text-xs flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 transition"
+                    className={`${sfDesign.useCustomSearchBarColors ? "" : "red-black-tab"} h-10 px-3.5 rounded-full text-xs flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 transition font-extrabold shadow-xs`}
+                    style={sfDesign.useCustomSearchBarColors ? { background: sfDesign.catMenuBg || "#fca5a5", border: `1.5px solid ${sfDesign.catMenuBorder || "#dc2626"}`, color: sfDesign.catMenuTextColor || "#000000" } : undefined}
                     title="সকল ক্যাটাগরি মেনু"
                   >
-                    <span>☰</span>
-                    <span className="max-w-[95px] truncate font-black">{selectedCat === "All" ? "সকল ক্যাটাগরী" : selectedCat}</span>
+                    <span style={sfDesign.useCustomSearchBarColors ? { color: sfDesign.catMenuIconColor || sfDesign.catMenuTextColor || "#000000" } : undefined}>{sfDesign.catMenuIcon || "☰"}</span>
+                    <span className="max-w-[95px] truncate font-black">{selectedCat === "All" ? (sfDesign.catMenuDesktopLabel || "সকল ক্যাটাগরী") : selectedCat}</span>
                     <span className="text-[10px]">{isCatMenuOpen ? "▴" : "▾"}</span>
                   </button>
 
@@ -14332,26 +14832,39 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={handleHomeResetClick}
-                    className="red-black-tab w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0 cursor-pointer active:scale-95 transition"
-                    title="হোম (সব ফিল্টার রিসেট করুন)"
-                    aria-label="হোম"
+                    className={`${sfDesign.useCustomSearchBarColors ? "" : "red-black-tab"} ${sfDesign.homeBtnShowText ? "px-3 gap-1" : "w-10"} h-10 rounded-full flex items-center justify-center text-sm shrink-0 cursor-pointer active:scale-95 transition font-extrabold shadow-xs`}
+                    style={sfDesign.useCustomSearchBarColors ? { background: sfDesign.homeBtnBg || "#fca5a5", border: `1.5px solid ${sfDesign.homeBtnBorder || "#dc2626"}`, color: sfDesign.homeBtnIconColor || "#000000" } : undefined}
+                    title={`${sfDesign.homeBtnLabel || "হোম"} (সব ফিল্টার রিসেট করুন)`}
+                    aria-label={sfDesign.homeBtnLabel || "হোম"}
                   >
-                    🏠
+                    <span style={sfDesign.useCustomSearchBarColors ? { color: sfDesign.homeBtnIconColor || "#000000" } : undefined}>{sfDesign.homeBtnIcon || "🏠"}</span>
+                    {sfDesign.homeBtnShowText && <span className="text-xs font-black whitespace-nowrap">{sfDesign.homeBtnLabel || "হোম"}</span>}
                   </button>
 
                   {/* Red-Bordered Pill Search Box + Circular Indigo Mic + Green Scan + Indigo Image Icon */}
                   <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                    <div className="flex-1 min-w-0 relative flex items-center bg-white border-[1.5px] border-[#ef4444] rounded-full h-10 pl-3.5 pr-1 shadow-xs focus-within:border-[#dc2626] focus-within:ring-2 focus-within:ring-red-200 transition">
-                      <svg className="w-4 h-4 text-slate-600 shrink-0 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.3-4.3" />
-                      </svg>
+                    <div
+                      className="flex-1 min-w-0 relative flex items-center rounded-full h-10 pl-3.5 pr-1 shadow-xs focus-within:ring-2 focus-within:ring-red-200 transition"
+                      style={{
+                        backgroundColor: sfDesign.useCustomSearchBarColors ? (sfDesign.searchBg || "#ffffff") : "#ffffff",
+                        border: `1.5px solid ${sfDesign.useCustomSearchBarColors ? (sfDesign.searchBorder || "#ef4444") : "#ef4444"}`
+                      }}
+                    >
+                      {sfDesign.searchIcon ? (
+                        <span className="text-sm shrink-0 mr-2 leading-none" style={{ color: sfDesign.searchIconColor || "#475569" }}>{sfDesign.searchIcon}</span>
+                      ) : (
+                        <svg className="w-4 h-4 shrink-0 mr-2" style={{ color: sfDesign.searchIconColor || "#475569" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.3-4.3" />
+                        </svg>
+                      )}
                       <input
                         type="text"
                         value={storeSearch}
                         onChange={(e) => setStoreSearch(e.target.value)}
-                        placeholder="প্রোডাক্ট খুঁজুন (নাম, SKU)..."
-                        className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-[#000000] placeholder:text-slate-500 outline-none font-medium"
+                        placeholder={sfDesign.searchPlaceholder || "প্রোডাক্ট খুঁজুন (নাম, SKU)..."}
+                        style={{ color: sfDesign.searchTextColor || "#000000" }}
+                        className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm placeholder:text-slate-500 outline-none font-medium"
                       />
                       <div className="flex items-center gap-1 shrink-0 ml-1">
                         {(storeSearch || imageSearchResult) && (
@@ -14364,58 +14877,77 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             ✕
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={startVoiceProductSearch}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white transition cursor-pointer active:scale-95 shadow-xs ${isVoiceListening ? "bg-[#dc2626] animate-pulse ring-2 ring-red-300" : "bg-[#4f46e5] hover:bg-[#4338ca]"}`}
-                          title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
-                          aria-label="ভয়েস সার্চ"
-                        >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                            <line x1="12" x2="12" y1="19" y2="22" />
-                          </svg>
-                        </button>
+                        {sfDesign.showMicBtn !== false && (
+                          <button
+                            type="button"
+                            onClick={startVoiceProductSearch}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xs ${isVoiceListening ? "bg-[#dc2626] animate-pulse ring-2 ring-red-300 text-white" : "hover:brightness-110"}`}
+                            style={!isVoiceListening ? { backgroundColor: sfDesign.micBtnBg || "#4f46e5", color: sfDesign.micBtnIconColor || "#ffffff" } : undefined}
+                            title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
+                            aria-label="ভয়েস সার্চ"
+                          >
+                            {sfDesign.micBtnIcon ? (
+                              <span className="text-sm leading-none">{sfDesign.micBtnIcon}</span>
+                            ) : (
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                <line x1="12" x2="12" y1="19" y2="22" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsScannerOpen(true);
-                        startScanner();
-                      }}
-                      className="w-10 h-10 rounded-xl bg-[#059669] hover:bg-[#047857] text-white flex items-center justify-center shadow-sm active:scale-95 transition cursor-pointer shrink-0"
-                      title="ক্যামেরা দিয়ে QR বা বারকোড স্ক্যান করুন"
-                      aria-label="স্ক্যান"
-                    >
-                      <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                        <line x1="7" x2="17" y1="12" y2="12" />
-                      </svg>
-                    </button>
+                    {sfDesign.showScanBtn !== false && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsScannerOpen(true);
+                          startScanner();
+                        }}
+                        className="w-10 h-10 rounded-xl hover:brightness-110 flex items-center justify-center shadow-sm active:scale-95 transition cursor-pointer shrink-0"
+                        style={{ backgroundColor: sfDesign.scanBtnBg || "#059669", color: sfDesign.scanBtnIconColor || "#ffffff" }}
+                        title="ক্যামেরা দিয়ে QR বা বারকোড স্ক্যান করুন"
+                        aria-label="স্ক্যান"
+                      >
+                        {sfDesign.scanBtnIcon ? (
+                          <span className="text-base leading-none">{sfDesign.scanBtnIcon}</span>
+                        ) : (
+                          <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                            <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                            <line x1="7" x2="17" y1="12" y2="12" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
 
-                    <button
-                      type="button"
-                      onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm active:scale-95 transition cursor-pointer shrink-0 ${imageSearchResult ? "bg-[#dc2626] ring-2 ring-red-300" : "bg-[#4f46e5] hover:bg-[#4338ca]"}`}
-                      title="ছবি দিয়ে সার্চ (ডিভাইস থেকে ছবি ব্রাউজ করুন)"
-                      aria-label="ইমেজ সার্চ"
-                    >
-                      {isImageAnalyzing ? (
-                        <span className="text-sm leading-none">⏳</span>
-                      ) : (
-                        <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <rect width="18" height="18" x="3" y="3" rx="3" ry="3" />
-                          <circle cx="9" cy="9" r="2" />
-                          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                        </svg>
-                      )}
-                    </button>
+                    {sfDesign.showImageSearchBtn !== false && (
+                      <button
+                        type="button"
+                        onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition cursor-pointer shrink-0 ${imageSearchResult ? "bg-[#dc2626] ring-2 ring-red-300 text-white" : "hover:brightness-110"}`}
+                        style={!imageSearchResult ? { backgroundColor: sfDesign.imageSearchBtnBg || "#4f46e5", color: sfDesign.imageSearchBtnIconColor || "#ffffff" } : undefined}
+                        title="ছবি দিয়ে সার্চ (ডিভাইস থেকে ছবি ব্রাউজ করুন)"
+                        aria-label="ইমেজ সার্চ"
+                      >
+                        {isImageAnalyzing ? (
+                          <span className="text-sm leading-none">⏳</span>
+                        ) : sfDesign.imageSearchBtnIcon ? (
+                          <span className="text-base leading-none">{sfDesign.imageSearchBtnIcon}</span>
+                        ) : (
+                          <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect width="18" height="18" x="3" y="3" rx="3" ry="3" />
+                            <circle cx="9" cy="9" r="2" />
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Desktop Dropdown Menu for All Categories */}
@@ -14574,12 +15106,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={() => setIsCatMenuOpen(prev => !prev)}
-                    className="mobile-header-icon-btn red-black-tab h-[42px] min-h-[42px] px-2 rounded-full text-[11px] flex items-center justify-center gap-1 shrink-0 cursor-pointer active:scale-95 shadow-xs"
+                    className={`mobile-header-icon-btn ${sfDesign.useCustomSearchBarColors ? "" : "red-black-tab"} h-[42px] min-h-[42px] px-2 rounded-full text-[11px] flex items-center justify-center gap-1 shrink-0 cursor-pointer active:scale-95 shadow-xs font-extrabold`}
+                    style={sfDesign.useCustomSearchBarColors ? { background: sfDesign.catMenuBg || "#fca5a5", border: `1.5px solid ${sfDesign.catMenuBorder || "#dc2626"}`, color: sfDesign.catMenuTextColor || "#000000" } : undefined}
                     title="সকল ক্যাটাগরী মেনু"
                     aria-label="ক্যাটাগরী মেনু"
                   >
-                    <span className="text-sm leading-none">☰</span>
-                    <span className="max-w-[40px] xs:max-w-[64px] truncate font-black">{selectedCat === "All" ? "ক্যাটাগরি" : selectedCat}</span>
+                    <span className="text-sm leading-none" style={sfDesign.useCustomSearchBarColors ? { color: sfDesign.catMenuIconColor || sfDesign.catMenuTextColor || "#000000" } : undefined}>{sfDesign.catMenuIcon || "☰"}</span>
+                    <span className="max-w-[40px] xs:max-w-[64px] truncate font-black">{selectedCat === "All" ? (sfDesign.catMenuLabel || "ক্যাটাগরি") : selectedCat}</span>
                     <span className="text-[10px] leading-none">{isCatMenuOpen ? "▴" : "▾"}</span>
                   </button>
 
@@ -14587,25 +15120,38 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={handleHomeResetClick}
-                    className="mobile-header-icon-btn red-black-tab w-[40px] h-[42px] min-w-[40px] min-h-[42px] rounded-full flex items-center justify-center text-base shrink-0 cursor-pointer active:scale-95 shadow-xs"
-                    title="হোম (সব ফিল্টার রিসেট)"
-                    aria-label="হোম"
+                    className={`mobile-header-icon-btn ${sfDesign.useCustomSearchBarColors ? "" : "red-black-tab"} ${sfDesign.homeBtnShowText ? "px-2.5 gap-1 w-auto" : "w-[40px] min-w-[40px]"} h-[42px] min-h-[42px] rounded-full flex items-center justify-center text-base shrink-0 cursor-pointer active:scale-95 shadow-xs font-extrabold`}
+                    style={sfDesign.useCustomSearchBarColors ? { background: sfDesign.homeBtnBg || "#fca5a5", border: `1.5px solid ${sfDesign.homeBtnBorder || "#dc2626"}`, color: sfDesign.homeBtnIconColor || "#000000" } : undefined}
+                    title={`${sfDesign.homeBtnLabel || "হোম"} (সব ফিল্টার রিসেট)`}
+                    aria-label={sfDesign.homeBtnLabel || "হোম"}
                   >
-                    🏠
+                    <span style={sfDesign.useCustomSearchBarColors ? { color: sfDesign.homeBtnIconColor || "#000000" } : undefined}>{sfDesign.homeBtnIcon || "🏠"}</span>
+                    {sfDesign.homeBtnShowText && <span className="text-[10px] font-black whitespace-nowrap">{sfDesign.homeBtnLabel || "হোম"}</span>}
                   </button>
 
                   {/* 3. Red-Bordered Pill Search Box + Circular Indigo Mic */}
-                  <div className="flex-1 min-w-0 flex items-center bg-white border-[1.5px] border-[#ef4444] rounded-full h-[42px] pl-2.5 pr-1 shadow-xs focus-within:border-[#dc2626] focus-within:ring-2 focus-within:ring-red-200 transition overflow-hidden">
-                    <svg className="w-4 h-4 text-slate-600 shrink-0 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="m21 21-4.3-4.3" />
-                    </svg>
+                  <div
+                    className="flex-1 min-w-0 flex items-center rounded-full h-[42px] pl-2.5 pr-1 shadow-xs focus-within:ring-2 focus-within:ring-red-200 transition overflow-hidden"
+                    style={{
+                      backgroundColor: sfDesign.useCustomSearchBarColors ? (sfDesign.searchBg || "#ffffff") : "#ffffff",
+                      border: `1.5px solid ${sfDesign.useCustomSearchBarColors ? (sfDesign.searchBorder || "#ef4444") : "#ef4444"}`
+                    }}
+                  >
+                    {sfDesign.searchIcon ? (
+                      <span className="text-sm shrink-0 mr-1.5 leading-none" style={{ color: sfDesign.searchIconColor || "#475569" }}>{sfDesign.searchIcon}</span>
+                    ) : (
+                      <svg className="w-4 h-4 shrink-0 mr-1.5" style={{ color: sfDesign.searchIconColor || "#475569" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                    )}
                     <input
                       type="text"
                       value={storeSearch}
                       onChange={(e) => setStoreSearch(e.target.value)}
-                      placeholder="প্রোডাক্ট খুঁজুন..."
-                      className="flex-1 min-w-[36px] w-full bg-transparent text-xs text-[#000000] placeholder:text-slate-500 outline-none font-medium"
+                      placeholder={sfDesign.searchPlaceholderMobile || "প্রোডাক্ট খুঁজুন..."}
+                      style={{ color: sfDesign.searchTextColor || "#000000" }}
+                      className="flex-1 min-w-[36px] w-full bg-transparent text-xs placeholder:text-slate-500 outline-none font-medium"
                     />
                     <div className="flex items-center gap-0.5 shrink-0 ml-0.5">
                       {(storeSearch || imageSearchResult) && (
@@ -14619,60 +15165,79 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ✕
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={startVoiceProductSearch}
-                        className={`w-[34px] h-[34px] min-w-[34px] min-h-[34px] rounded-full flex items-center justify-center text-white transition cursor-pointer active:scale-95 shadow-xs ${isVoiceListening ? "bg-[#dc2626] animate-pulse ring-2 ring-red-300" : "bg-[#4f46e5] hover:bg-[#4338ca]"}`}
-                        title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
-                        aria-label="ভয়েস সার্চ"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                          <line x1="12" x2="12" y1="19" y2="22" />
-                        </svg>
-                      </button>
+                      {sfDesign.showMicBtn !== false && (
+                        <button
+                          type="button"
+                          onClick={startVoiceProductSearch}
+                          className={`w-[34px] h-[34px] min-w-[34px] min-h-[34px] rounded-full flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xs ${isVoiceListening ? "bg-[#dc2626] animate-pulse ring-2 ring-red-300 text-white" : "hover:brightness-110"}`}
+                          style={!isVoiceListening ? { backgroundColor: sfDesign.micBtnBg || "#4f46e5", color: sfDesign.micBtnIconColor || "#ffffff" } : undefined}
+                          title="ভয়েস সার্চ (কথা বলে পণ্য খুঁজুন)"
+                          aria-label="ভয়েস সার্চ"
+                        >
+                          {sfDesign.micBtnIcon ? (
+                            <span className="text-sm leading-none">{sfDesign.micBtnIcon}</span>
+                          ) : (
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                              <line x1="12" x2="12" y1="19" y2="22" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
 
                   {/* 4. Green Rounded-Square Scan Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsScannerOpen(true);
-                      startScanner();
-                    }}
-                    className="mobile-search-icon-btn w-[38px] h-[42px] min-w-[38px] min-h-[42px] rounded-xl bg-[#059669] hover:bg-[#047857] text-white flex items-center justify-center shadow-sm active:scale-95 transition cursor-pointer shrink-0"
-                    title="ক্যামেরা দিয়ে QR বা বারকোড স্ক্যান করুন"
-                    aria-label="স্ক্যান"
-                  >
-                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                      <line x1="7" x2="17" y1="12" y2="12" />
-                    </svg>
-                  </button>
+                  {sfDesign.showScanBtn !== false && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsScannerOpen(true);
+                        startScanner();
+                      }}
+                      className="mobile-search-icon-btn w-[38px] h-[42px] min-w-[38px] min-h-[42px] rounded-xl hover:brightness-110 flex items-center justify-center shadow-sm active:scale-95 transition cursor-pointer shrink-0"
+                      style={{ backgroundColor: sfDesign.scanBtnBg || "#059669", color: sfDesign.scanBtnIconColor || "#ffffff" }}
+                      title="ক্যামেরা দিয়ে QR বা বারকোড স্ক্যান করুন"
+                      aria-label="স্ক্যান"
+                    >
+                      {sfDesign.scanBtnIcon ? (
+                        <span className="text-base leading-none">{sfDesign.scanBtnIcon}</span>
+                      ) : (
+                        <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                          <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                          <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                          <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                          <line x1="7" x2="17" y1="12" y2="12" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
 
                   {/* 5. Indigo Rounded-Square Image Icon Search Button */}
-                  <button
-                    type="button"
-                    onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
-                    className={`mobile-search-icon-btn w-[38px] h-[42px] min-w-[38px] min-h-[42px] rounded-xl flex items-center justify-center text-white shadow-sm active:scale-95 transition cursor-pointer shrink-0 ${imageSearchResult ? "bg-[#dc2626] ring-2 ring-red-300" : "bg-[#4f46e5] hover:bg-[#4338ca]"}`}
-                    title="ছবি দিয়ে খুঁজুন (ডিভাইস থেকে ব্রাউজ করুন)"
-                    aria-label="ইমেজ সার্চ"
-                  >
-                    {isImageAnalyzing ? (
-                      <span className="text-sm leading-none">⏳</span>
-                    ) : (
-                      <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <rect width="18" height="18" x="3" y="3" rx="3" ry="3" />
-                        <circle cx="9" cy="9" r="2" />
-                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                      </svg>
-                    )}
-                  </button>
+                  {sfDesign.showImageSearchBtn !== false && (
+                    <button
+                      type="button"
+                      onClick={() => imageSearchInputRef.current && imageSearchInputRef.current.click()}
+                      className={`mobile-search-icon-btn w-[38px] h-[42px] min-w-[38px] min-h-[42px] rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition cursor-pointer shrink-0 ${imageSearchResult ? "bg-[#dc2626] ring-2 ring-red-300 text-white" : "hover:brightness-110"}`}
+                      style={!imageSearchResult ? { backgroundColor: sfDesign.imageSearchBtnBg || "#4f46e5", color: sfDesign.imageSearchBtnIconColor || "#ffffff" } : undefined}
+                      title="ছবি দিয়ে খুঁজুন (ডিভাইস থেকে ব্রাউজ করুন)"
+                      aria-label="ইমেজ সার্চ"
+                    >
+                      {isImageAnalyzing ? (
+                        <span className="text-sm leading-none">⏳</span>
+                      ) : sfDesign.imageSearchBtnIcon ? (
+                        <span className="text-base leading-none">{sfDesign.imageSearchBtnIcon}</span>
+                      ) : (
+                        <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect width="18" height="18" x="3" y="3" rx="3" ry="3" />
+                          <circle cx="9" cy="9" r="2" />
+                          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 {/* Mobile Dropdown Menu for All Categories */}
@@ -14973,151 +15538,279 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     ) : null
                   );
 
-                  const renderVoucherStripBlock = () => (
-                    <div className="red-black-table-card rounded-2xl px-2 py-1.5 sm:px-3 sm:py-2 space-y-1 w-full min-w-0 transition-all">
-                      <div className="flex items-center justify-between gap-2 px-0.5 min-w-0">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-[10.5px] sm:text-xs font-black text-[#000000] tracking-tight truncate">
-                            Claim Vouchers to Save More!
-                          </span>
-                          <span className="cta-dark-pill text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
-                            11.11 / SAJGOJ
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setVoucherCenterTab("all");
-                            setIsVoucherCenterOpen(true);
-                          }}
-                          className="text-[10px] sm:text-xs font-black text-[#000000] hover:underline flex items-center gap-0.5 transition active:scale-95 group cursor-pointer shrink-0 whitespace-nowrap"
-                        >
-                          <span>More Voucher</span>
-                          <span className="text-xs font-black group-hover:translate-x-0.5 transition-transform">›</span>
-                        </button>
-                      </div>
+                  const renderVoucherStripBlock = (secOverride) => {
+                    const sec = secOverride || homeSections.find(s => s.type === "voucher_strip") || {};
+                    const useCustom = Boolean(sec.useCustomStyle);
+                    const headingText = sec.voucherHeading !== undefined ? sec.voucherHeading : "Claim Vouchers to Save More!";
+                    const badgeText = sec.voucherBadge !== undefined ? sec.voucherBadge : "11.11 / SAJGOJ";
+                    const moreText = sec.voucherMoreText !== undefined ? sec.voucherMoreText : "More Voucher";
+                    const slot1Amt = sec.voucher1Amount !== undefined ? sec.voucher1Amount : "৳২,২৫০";
+                    const slot1Lbl = sec.voucher1Label !== undefined ? sec.voucher1Label : "Voucher Max";
+                    const slot2Amt = sec.voucher2Amount !== undefined ? sec.voucher2Amount : "৳৪৫";
+                    const slot2Lbl = sec.voucher2Label !== undefined ? sec.voucher2Label : "Free shipping";
+                    const collectText = sec.voucherCollectText !== undefined ? sec.voucherCollectText : "Collect All";
 
-                      <div className="bg-[#fca5a5] rounded-xl border border-red-800/40 shadow-2xs flex items-center justify-between px-2 py-1 sm:px-2.5 sm:py-1.5 divide-x divide-red-800/35">
-                        <div
-                          onClick={() => {
-                            setVoucherCenterTab("max");
-                            setIsVoucherCenterOpen(true);
-                          }}
-                          className="flex-1 cursor-pointer flex flex-col justify-center pr-1.5 group min-w-0"
-                        >
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-xs sm:text-sm font-black text-[#000000] leading-none group-hover:scale-105 transition-transform origin-left">
-                              ৳২,২৫০
+                    return (
+                      <div
+                        className={`${useCustom ? "shadow-md" : "red-black-table-card"} rounded-2xl px-2 py-1.5 sm:px-3 sm:py-2 space-y-1 w-full min-w-0 transition-all`}
+                        style={useCustom ? {
+                          backgroundColor: sec.voucherCardBg || "#fca5a5",
+                          border: `1.5px solid ${sec.voucherCardBorder || "#ffffff"}`,
+                          color: sec.voucherTitleColor || "#000000"
+                        } : undefined}
+                      >
+                        <div className="flex items-center justify-between gap-2 px-0.5 min-w-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="text-[10.5px] sm:text-xs font-black tracking-tight truncate"
+                              style={{ color: useCustom ? (sec.voucherTitleColor || "#000000") : "#000000" }}
+                            >
+                              {headingText}
                             </span>
+                            {sec.showVoucherBadge !== false && badgeText && (
+                              <span
+                                className={`${useCustom ? "" : "cta-dark-pill"} text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0`}
+                                style={useCustom ? { backgroundColor: sec.voucherBadgeBg || "#0b0f19", color: sec.voucherBadgeText || "#ffffff" } : undefined}
+                              >
+                                {badgeText}
+                              </span>
+                            )}
                           </div>
-                          <span className="text-[8.5px] sm:text-[10px] font-bold text-[#000000] mt-0.5 leading-none truncate">
-                            Voucher Max
-                          </span>
+                          {moreText && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVoucherCenterTab("all");
+                                setIsVoucherCenterOpen(true);
+                              }}
+                              className="text-[10px] sm:text-xs font-black hover:underline flex items-center gap-0.5 transition active:scale-95 group cursor-pointer shrink-0 whitespace-nowrap"
+                              style={{ color: useCustom ? (sec.voucherTitleColor || "#000000") : "#000000" }}
+                            >
+                              <span>{moreText}</span>
+                              <span className="text-xs font-black group-hover:translate-x-0.5 transition-transform">›</span>
+                            </button>
+                          )}
                         </div>
 
                         <div
-                          onClick={() => {
-                            setVoucherCenterTab("shipping");
-                            setIsVoucherCenterOpen(true);
+                          className="rounded-xl shadow-2xs flex items-center justify-between px-2 py-1 sm:px-2.5 sm:py-1.5 divide-x"
+                          style={{
+                            backgroundColor: useCustom ? (sec.voucherInnerBg || "#fca5a5") : "#fca5a5",
+                            border: `1px solid ${useCustom ? (sec.voucherInnerBorder || "rgba(153, 27, 27, 0.4)") : "rgba(153, 27, 27, 0.4)"}`,
+                            borderColor: useCustom ? (sec.voucherInnerBorder || "rgba(153, 27, 27, 0.4)") : undefined,
+                            color: useCustom ? (sec.voucherInnerTextColor || "#000000") : "#000000"
                           }}
-                          className="flex-1 cursor-pointer flex flex-col justify-center px-2 sm:px-2.5 group min-w-0"
                         >
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-xs sm:text-sm font-black text-[#000000] leading-none group-hover:scale-105 transition-transform origin-left">
-                              ৳৪৫
-                            </span>
-                          </div>
-                          <span className="text-[8.5px] sm:text-[10px] font-bold text-[#000000] mt-0.5 leading-none truncate">
-                            Free shipping
-                          </span>
-                        </div>
-
-                        <div className="pl-1.5 shrink-0">
-                          <button
-                            type="button"
+                          <div
                             onClick={() => {
-                              setVoucherCenterTab("all");
+                              setVoucherCenterTab("max");
                               setIsVoucherCenterOpen(true);
                             }}
-                            className="cta-dark-pill px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black transition active:scale-95 flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                            title="ভাউচার সেন্টারে যান এবং ভাউচার কালেক্ট করুন"
+                            className="flex-1 cursor-pointer flex flex-col justify-center pr-1.5 group min-w-0"
                           >
-                            <span>Collect All</span>
-                            <span className="text-[10px] font-black">›</span>
-                          </button>
+                            <div className="flex items-baseline gap-1">
+                              <span
+                                className="text-xs sm:text-sm font-black leading-none group-hover:scale-105 transition-transform origin-left"
+                                style={{ color: useCustom ? (sec.voucherInnerTextColor || "#000000") : "#000000" }}
+                              >
+                                {slot1Amt}
+                              </span>
+                            </div>
+                            <span
+                              className="text-[8.5px] sm:text-[10px] font-bold mt-0.5 leading-none truncate"
+                              style={{ color: useCustom ? (sec.voucherInnerTextColor || "#000000") : "#000000" }}
+                            >
+                              {slot1Lbl}
+                            </span>
+                          </div>
+
+                          {sec.showVoucherSlot2 !== false && (
+                            <div
+                              onClick={() => {
+                                setVoucherCenterTab("shipping");
+                                setIsVoucherCenterOpen(true);
+                              }}
+                              className="flex-1 cursor-pointer flex flex-col justify-center px-2 sm:px-2.5 group min-w-0"
+                            >
+                              <div className="flex items-baseline gap-1">
+                                <span
+                                  className="text-xs sm:text-sm font-black leading-none group-hover:scale-105 transition-transform origin-left"
+                                  style={{ color: useCustom ? (sec.voucherInnerTextColor || "#000000") : "#000000" }}
+                                >
+                                  {slot2Amt}
+                                </span>
+                              </div>
+                              <span
+                                className="text-[8.5px] sm:text-[10px] font-bold mt-0.5 leading-none truncate"
+                                style={{ color: useCustom ? (sec.voucherInnerTextColor || "#000000") : "#000000" }}
+                              >
+                                {slot2Lbl}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="pl-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVoucherCenterTab("all");
+                                setIsVoucherCenterOpen(true);
+                              }}
+                              className={`${useCustom ? "shadow-md" : "cta-dark-pill"} px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black transition active:scale-95 flex items-center gap-1 cursor-pointer whitespace-nowrap`}
+                              style={useCustom ? { backgroundColor: sec.voucherBtnBg || "#0b0f19", color: sec.voucherBtnText || "#ffffff" } : undefined}
+                              title="ভাউচার সেন্টারে যান এবং ভাউচার কালেক্ট করুন"
+                            >
+                              <span>{collectText}</span>
+                              <span className="text-[10px] font-black">›</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
+                    );
+                  };
 
-                  const renderCategorySliderBlock = () => (
-                    <div className="liquid-glass-surface rounded-2xl px-2 py-1.5 sm:px-2.5 sm:py-2 w-full min-w-0">
+                  const renderCategorySliderBlock = (secOverride) => {
+                    const sec = secOverride || homeSections.find(s => s.type === "category_slider") || {};
+                    const useCustom = Boolean(sec.useCustomStyle);
+                    const selectedCatIds = Array.isArray(sec.selectedCategoryIds) ? sec.selectedCategoryIds : [];
+                    const sliderCategories = selectedCatIds.length > 0
+                      ? displayCategories.filter(c => selectedCatIds.includes(c.id || c.name))
+                      : displayCategories;
+
+                    return (
                       <div
-                        id="category-slider-scroll"
-                        className="flex items-start gap-2 sm:gap-3 overflow-x-auto py-0.5 px-0.5 scroll-smooth scrollbar-none snap-x"
+                        className={`${useCustom ? "backdrop-blur-md shadow-sm" : "liquid-glass-surface"} rounded-2xl px-2 py-1.5 sm:px-2.5 sm:py-2 w-full min-w-0 space-y-1.5`}
+                        style={useCustom ? {
+                          backgroundColor: sec.catBlockBg || "#ffffff",
+                          border: `1.5px solid ${sec.catBlockBorder || "#ffffff"}`,
+                          color: sec.catBlockTitleColor || "#000000"
+                        } : undefined}
                       >
-                        <div
-                          onClick={() => {
-                            setSelectedCat("All");
-                            setSelectedSubCat("All");
-                            const el = document.getElementById("products-section");
-                            if (el) el.scrollIntoView({ behavior: "smooth" });
-                          }}
-                          className="flex flex-col items-center flex-shrink-0 w-[58px] sm:w-[68px] cursor-pointer group snap-start red-black-photo-card rounded-xl p-1"
-                        >
-                          <div className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/40 text-[#000000] flex items-center justify-center shadow-xs transition-all duration-300 active:scale-95 border-2 ${selectedCat === "All" ? "border-black ring-2 ring-black/25" : "border-white/70"}`}>
-                            <span className="text-lg sm:text-xl animate-pulse">🌟</span>
+                        {sec.showSectionHeader && (sec.title || sec.subtitle) && (
+                          <div className="flex items-center justify-between gap-2 px-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {sec.icon && <span className="text-sm shrink-0">{sec.icon}</span>}
+                              <h3
+                                className="text-xs sm:text-sm font-black truncate"
+                                style={{ color: useCustom ? (sec.catBlockTitleColor || "#000000") : "#000000" }}
+                              >
+                                {sec.title || "ক্যাটাগরি সমূহ"}
+                              </h3>
+                              {sec.subtitle && (
+                                <span
+                                  className="hidden sm:inline text-[11px] font-semibold opacity-75 truncate"
+                                  style={{ color: useCustom ? (sec.catBlockTitleColor || "#000000") : "#000000" }}
+                                >
+                                  • {sec.subtitle}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className="category-pill-label text-[9px] sm:text-[10px] font-extrabold text-[#000000] text-center leading-tight mt-1 truncate">
-                            সকল পণ্য
-                          </span>
-                        </div>
+                        )}
 
-                        {displayCategories.map(cat => {
-                          const isSelected = selectedCat === cat.name;
-                          return (
+                        <div
+                          id="category-slider-scroll"
+                          className="flex items-start gap-2 sm:gap-3 overflow-x-auto py-0.5 px-0.5 scroll-smooth scrollbar-none snap-x"
+                        >
+                          {sec.showAllCard !== false && (
                             <div
-                              key={cat.id || cat.name}
                               onClick={() => {
-                                setSelectedCat(cat.name);
+                                setSelectedCat("All");
                                 setSelectedSubCat("All");
                                 const el = document.getElementById("products-section");
                                 if (el) el.scrollIntoView({ behavior: "smooth" });
                               }}
-                              className={`flex flex-col items-center flex-shrink-0 w-[58px] sm:w-[68px] cursor-pointer group snap-start red-black-photo-card rounded-xl p-1 overflow-hidden ${isSelected ? "ring-2 ring-black" : ""}`}
+                              className={`flex flex-col items-center flex-shrink-0 w-[58px] sm:w-[68px] cursor-pointer group snap-start ${useCustom ? "shadow-sm" : "red-black-photo-card"} rounded-xl p-1`}
+                              style={useCustom ? {
+                                backgroundColor: sec.catCardBg || "#f87171",
+                                border: `1.5px solid ${sec.catCardBorder || "#ffffff"}`
+                              } : undefined}
                             >
-                              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg p-0.5 bg-white/50 border border-white/80 shadow-2xs flex items-center justify-center overflow-hidden active:scale-95">
-                                {cat.imageUrl ? (
-                                  <img
-                                    src={cat.imageUrl}
-                                    alt={cat.name}
-                                    className="w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform duration-300"
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.style.display = "none";
-                                      e.target.parentNode.innerHTML = `<span class="text-lg sm:text-xl">${cat.icon || "✨"}</span>`;
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="w-full h-full rounded-md bg-white/40 flex items-center justify-center text-lg sm:text-xl group-hover:scale-110 transition">
-                                    {cat.icon || "✨"}
-                                  </div>
-                                )}
-                                {cat.badge && (
-                                  <span className="absolute top-0 right-0 cta-dark-pill text-[7px] font-black px-1 py-0.2 rounded-bl-md leading-none">
-                                    {cat.badge}
-                                  </span>
-                                )}
+                              <div
+                                className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shadow-xs transition-all duration-300 active:scale-95 border-2 ${selectedCat === "All" ? "border-black ring-2 ring-black/25" : "border-white/70"}`}
+                                style={{ backgroundColor: useCustom ? (sec.catIconBoxBg || "#ffffff") : "rgba(255,255,255,0.4)" }}
+                              >
+                                <span className="text-lg sm:text-xl animate-pulse">{sec.allItemIcon || "🌟"}</span>
                               </div>
-                              <span className="category-pill-label text-[9px] sm:text-[10px] font-extrabold text-[#000000] text-center leading-tight mt-1 truncate">
-                                {cat.name}
+                              <span
+                                className="category-pill-label text-[9px] sm:text-[10px] font-extrabold text-center leading-tight mt-1 truncate"
+                                style={useCustom ? {
+                                  backgroundColor: sec.catLabelBg || "#ffffff",
+                                  color: sec.catLabelText || "#000000",
+                                  padding: "2px 5px",
+                                  borderRadius: "9999px",
+                                  width: "100%",
+                                  display: "block"
+                                } : undefined}
+                              >
+                                {sec.allItemLabel || "সকল পণ্য"}
                               </span>
                             </div>
-                          );
-                        })}
+                          )}
+
+                          {sliderCategories.map(cat => {
+                            const isSelected = selectedCat === cat.name;
+                            return (
+                              <div
+                                key={cat.id || cat.name}
+                                onClick={() => {
+                                  setSelectedCat(cat.name);
+                                  setSelectedSubCat("All");
+                                  const el = document.getElementById("products-section");
+                                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                                }}
+                                className={`flex flex-col items-center flex-shrink-0 w-[58px] sm:w-[68px] cursor-pointer group snap-start ${useCustom ? "shadow-sm" : "red-black-photo-card"} rounded-xl p-1 overflow-hidden ${isSelected ? "ring-2 ring-black" : ""}`}
+                                style={useCustom ? {
+                                  backgroundColor: sec.catCardBg || "#f87171",
+                                  border: `1.5px solid ${sec.catCardBorder || "#ffffff"}`
+                                } : undefined}
+                              >
+                                <div
+                                  className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg p-0.5 border border-white/80 shadow-2xs flex items-center justify-center overflow-hidden active:scale-95"
+                                  style={{ backgroundColor: useCustom ? (sec.catIconBoxBg || "#ffffff") : "rgba(255,255,255,0.5)" }}
+                                >
+                                  {cat.imageUrl ? (
+                                    <img
+                                      src={cat.imageUrl}
+                                      alt={cat.name}
+                                      className="w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform duration-300"
+                                      onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.style.display = "none";
+                                        e.target.parentNode.innerHTML = `<span class="text-lg sm:text-xl">${cat.icon || "✨"}</span>`;
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full rounded-md flex items-center justify-center text-lg sm:text-xl group-hover:scale-110 transition">
+                                      {cat.icon || "✨"}
+                                    </div>
+                                  )}
+                                  {cat.badge && (
+                                    <span className="absolute top-0 right-0 cta-dark-pill text-[7px] font-black px-1 py-0.2 rounded-bl-md leading-none">
+                                      {cat.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                <span
+                                  className="category-pill-label text-[9px] sm:text-[10px] font-extrabold text-center leading-tight mt-1 truncate"
+                                  style={useCustom ? {
+                                    backgroundColor: sec.catLabelBg || "#ffffff",
+                                    color: sec.catLabelText || "#000000",
+                                    padding: "2px 5px",
+                                    borderRadius: "9999px",
+                                    width: "100%",
+                                    display: "block"
+                                  } : undefined}
+                                >
+                                  {cat.name}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
+                    );
+                  };
 
                   const resolveBlockDisplayConfig = (sec) => {
                     const legacyLayout = sec?.layout || "slider3";
@@ -15683,56 +16376,92 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     );
                   };
 
-                  const renderCategoryPillsBlock = () => (
-                    config.header.showCategories ? (
-                      <div className="space-y-2.5 liquid-glass-surface rounded-2xl sm:rounded-3xl p-3 sm:p-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-black text-lg text-[#000000]">ক্যাটাগরি অনুযায়ী ব্রাউজ করুন</h3>
-                          <span className="red-black-tab text-xs font-extrabold px-2.5 py-0.5 rounded-full">{categories.length} টি ক্যাটাগরি</span>
+                  const renderCategoryPillsBlock = (secOverride) => {
+                    const sec = secOverride || homeSections.find(s => s.type === "category_pills") || {};
+                    const useCustom = Boolean(sec.useCustomStyle);
+                    const pillTitle = sec.title || "ক্যাটাগরি অনুযায়ী ব্রাউজ করুন";
+                    const pillIcon = sec.icon || "";
+                    const allPillLabel = sec.allPillLabel || "সকল কালেকশন";
+                    const allPillIcon = sec.allPillIcon || "🌟";
+                    const bogoPillLabel = sec.bogoPillLabel || "১টি কিনলে ১টি ফ্রি (BOGO)";
+
+                    const customPillStyle = (active) => useCustom ? {
+                      backgroundColor: active ? (sec.pillActiveBg || "#ef4444") : (sec.pillBg || "#fca5a5"),
+                      color: active ? (sec.pillActiveTextColor || "#ffffff") : (sec.pillTextColor || "#000000"),
+                      fontWeight: active ? 900 : 700
+                    } : undefined;
+
+                    return config.header.showCategories ? (
+                      <div
+                        className={`space-y-2.5 ${useCustom ? "shadow-sm" : "liquid-glass-surface"} rounded-2xl sm:rounded-3xl p-3 sm:p-4`}
+                        style={useCustom ? {
+                          backgroundColor: sec.pillBlockBg || "#ffffff",
+                          border: `1.5px solid ${sec.pillBlockBorder || "#ffffff"}`,
+                          color: sec.pillBlockTitleColor || "#000000"
+                        } : undefined}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <h3
+                            className="font-black text-lg flex items-center gap-1.5"
+                            style={{ color: useCustom ? (sec.pillBlockTitleColor || "#000000") : "#000000" }}
+                          >
+                            {pillIcon && <span>{pillIcon}</span>}
+                            <span>{pillTitle}</span>
+                          </h3>
+                          <span
+                            className={`${useCustom ? "" : "red-black-tab"} text-xs font-extrabold px-2.5 py-0.5 rounded-full`}
+                            style={customPillStyle(false)}
+                          >
+                            {categories.length} টি ক্যাটাগরি
+                          </span>
                         </div>
                         <div className="flex gap-2.5 overflow-x-auto scrollbar-hide py-1">
                           <button
                             onClick={() => setSelectedCat("All")}
                             className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-                              selectedCat === "All" ? "red-black-tab-active" : "red-black-tab"
+                              useCustom ? "border border-black/15 shadow-xs" : (selectedCat === "All" ? "red-black-tab-active" : "red-black-tab")
                             }`}
+                            style={customPillStyle(selectedCat === "All")}
                           >
-                            <span>🌟</span>
-                            <span>সকল কালেকশন</span>
+                            <span>{allPillIcon}</span>
+                            <span>{allPillLabel}</span>
                           </button>
                           <button
                             onClick={() => setSelectedCat(selectedCat === "BOGO" ? "All" : "BOGO")}
                             className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
-                              selectedCat === "BOGO" ? "red-black-tab-active ring-2 ring-black" : "red-black-tab"
+                              useCustom ? "border border-black/15 shadow-xs" : (selectedCat === "BOGO" ? "red-black-tab-active ring-2 ring-black" : "red-black-tab")
                             }`}
+                            style={customPillStyle(selectedCat === "BOGO")}
                           >
                             <span className="animate-pulse text-base">🎁</span>
-                            <span>১টি কিনলে ১টি ফ্রি (BOGO)</span>
+                            <span>{bogoPillLabel}</span>
                             {bogoProductsCount > 0 && (
                               <span className="bg-white/80 text-[#000000] text-[10px] px-2 py-0.5 rounded-full font-black border border-black/20">
                                 {bogoProductsCount}
                               </span>
                             )}
                           </button>
-                          {config.b2g1?.enabled && (
+                          {sec.showB2g1Pill !== false && config.b2g1?.enabled && (
                             <button
                               onClick={() => {
                                 notify(`🎉 Buy 2 Get 1 Free অফার: যেকোনো ২টি প্রোডাক্ট কার্টে নিলেই ১টি ফ্রি উপহার আনলক হবে!`);
                               }}
-                              className="red-black-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer"
+                              className={`${useCustom ? "border border-black/15 shadow-xs" : "red-black-tab"} px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer`}
+                              style={customPillStyle(false)}
                             >
                               <span className="text-base">🎁</span>
                               <span>২টি কিনলে ১টি ফ্রি অফার</span>
                               <span className="cta-dark-pill text-[10px] px-2 py-0.5 rounded-full font-black">Free Gift</span>
                             </button>
                           )}
-                          {combos.filter(c => c.active).length > 0 && (
+                          {sec.showComboPill !== false && combos.filter(c => c.active).length > 0 && (
                             <button
                               onClick={() => {
                                 const el = document.getElementById("combo-pack-showcase");
                                 if (el) el.scrollIntoView({ behavior: 'smooth' });
                               }}
-                              className="red-black-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer"
+                              className={`${useCustom ? "border border-black/15 shadow-xs" : "red-black-tab"} px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer`}
+                              style={customPillStyle(false)}
                             >
                               <span>✨</span>
                               <span>স্পেশাল কম্বো প্যাক ({combos.filter(c => c.active).length})</span>
@@ -15746,8 +16475,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 setSelectedSubCat("All");
                               }}
                               className={`px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer ${
-                                selectedCat === c.name ? "red-black-tab-active" : "red-black-tab"
+                                useCustom ? "border border-black/15 shadow-xs" : (selectedCat === c.name ? "red-black-tab-active" : "red-black-tab")
                               }`}
+                              style={customPillStyle(selectedCat === c.name)}
                             >
                               {c.imageUrl ? (
                                 <img src={c.imageUrl} alt={c.name} className="w-4 h-4 object-cover rounded-full border border-black/30" />
@@ -15764,18 +16494,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           ))}
                         </div>
                       </div>
-                    ) : null
-                  );
+                    ) : null;
+                  };
 
                   // Filtered View (when searching or category/image filter active)
                   if (isFilteredStoreView) {
+                    const voucherSec = homeSections.find(s => s.type === "voucher_strip");
+                    const catSliderSec = homeSections.find(s => s.type === "category_slider");
                     return (
                       <>
                         {/* Keep top compact banner/voucher/category stack */}
                         <div className="space-y-1.5 sm:space-y-2 w-full min-w-0">
                           {homeSections.find(s => s.type === "top_banner")?.enabled !== false && renderHeroBannerBlock()}
-                          {homeSections.find(s => s.type === "voucher_strip")?.enabled !== false && renderVoucherStripBlock()}
-                          {homeSections.find(s => s.type === "category_slider")?.enabled !== false && renderCategorySliderBlock()}
+                          {voucherSec?.enabled !== false && renderVoucherStripBlock(voucherSec)}
+                          {catSliderSec?.enabled !== false && renderCategorySliderBlock(catSliderSec)}
                         </div>
 
                         <div id="products-section" className="space-y-4">
@@ -15925,8 +16657,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         {topBuffer.map(ts => (
                           <React.Fragment key={ts.id}>
                             {ts.type === "top_banner" && renderHeroBannerBlock()}
-                            {ts.type === "voucher_strip" && renderVoucherStripBlock()}
-                            {ts.type === "category_slider" && renderCategorySliderBlock()}
+                            {ts.type === "voucher_strip" && renderVoucherStripBlock(ts)}
+                            {ts.type === "category_slider" && renderCategorySliderBlock(ts)}
                           </React.Fragment>
                         ))}
                       </div>
@@ -15949,7 +16681,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     } else if (sec.type === "reels_showcase") {
                       groupedOutput.push(<React.Fragment key={sec.id}>{renderReelsShowcaseBlock(sec)}</React.Fragment>);
                     } else if (sec.type === "category_pills") {
-                      groupedOutput.push(<React.Fragment key={sec.id}>{renderCategoryPillsBlock()}</React.Fragment>);
+                      groupedOutput.push(<React.Fragment key={sec.id}>{renderCategoryPillsBlock(sec)}</React.Fragment>);
                     }
                   });
                   flushTopBuffer("end");
@@ -15959,49 +16691,65 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </div>
               </main>
               
-              {/* Storefront Footer (Liquid Glass + Red/Black Bottom Cards) */}
-              <footer className="liquid-glass-hero text-[#000000] py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-                  <div className="space-y-3">
+              {/* Storefront Footer (Deep Sky Background + Light White Text + Side-by-Side Contact Info & সেবাসমূহ) */}
+              {(() => {
+                const ftr = config.footer || initialStoreConfig.footer;
+                const ftrBgStart = ftr.footerBg || "#075985";
+                const ftrBgEnd = ftr.footerBgEnd || "#0284c7";
+                const ftrText = ftr.footerTextColor || "#f8fafc";
+                const contactHeading = ftr.contactTitle || "Contact Info";
+                const servicesHeading = ftr.servicesTitle || "সেবাসমূহ";
+                return (
+              <footer
+                className="py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl border border-sky-200/40 shadow-2xl"
+                style={{
+                  background: `linear-gradient(145deg, ${ftrBgStart} 0%, ${ftrBgEnd} 100%)`,
+                  color: ftrText
+                }}
+              >
+                <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-7 sm:gap-8">
+                  <div className="col-span-2 md:col-span-1 space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-full cta-dark-pill font-black text-xl flex items-center justify-center">S</div>
-                      <h4 className="font-black text-lg text-[#000000]">{config.storeName}</h4>
+                      <div className="w-9 h-9 rounded-full cta-dark-pill font-black text-xl flex items-center justify-center shrink-0">S</div>
+                      <h4 className="font-black text-lg" style={{ color: ftrText }}>{config.storeName}</h4>
                     </div>
-                    <p className="text-xs text-[#000000] font-semibold leading-relaxed">{config.footer.about}</p>
+                    <p className="text-xs font-semibold leading-relaxed opacity-95" style={{ color: ftrText }}>{ftr.about}</p>
                   </div>
-                  <div>
-                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">যোগাযোগ ও হেল্পলাইন</h5>
-                    <p className="text-xs text-[#000000] font-semibold">📞 {config.phone}</p>
-                    <p className="text-xs text-[#000000] font-semibold mt-1">💬 WhatsApp: {config.whatsapp}</p>
-                    <p className="text-xs text-[#000000] font-semibold mt-1">✉️ {config.email}</p>
-                    <p className="text-xs text-[#000000] font-semibold mt-1">📍 {config.address}</p>
+                  <div className="col-span-1 min-w-0">
+                    <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-3 border-b border-sky-200/30 pb-1.5 inline-block" style={{ color: ftrText }}>{contactHeading}</h5>
+                    <div className="space-y-1.5 text-[11px] sm:text-xs font-semibold leading-relaxed" style={{ color: ftrText }}>
+                      <p className="break-words">📞 {config.phone}</p>
+                      <p className="break-words">💬 WhatsApp: {config.whatsapp}</p>
+                      <p className="break-all sm:break-words">✉️ {config.email}</p>
+                      <p className="break-words">📍 {config.address}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">কাস্টমার কেয়ার</h5>
-                    <ul className="text-xs space-y-1.5 text-[#000000] font-semibold">
-                      <li>• রিটার্ন ও রিফান্ড পলিসি (৭ দিন)</li>
+                  <div className="col-span-1 min-w-0 border-l border-sky-200/35 pl-3 sm:pl-4 md:border-l-0 md:pl-0">
+                    <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-3 border-b border-sky-200/30 pb-1.5 inline-block" style={{ color: ftrText }}>{servicesHeading}</h5>
+                    <ul className="text-[11px] sm:text-xs space-y-1.5 font-semibold leading-relaxed" style={{ color: ftrText }}>
+                      <li>• রিটার্ন ও রিফান্ড পলিসি ({config?.returnPolicyDays || 7} দিন)</li>
                       <li>• ক্যাশ অন ডেলিভারি সুবিধা</li>
                       <li>• সারা দেশে হোম ডেলিভারি</li>
                       <li>• ১০০% প্রিমিয়াম কোয়ালিটি নিশ্চয়তা</li>
                     </ul>
                   </div>
-                  <div>
-                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">পেমেন্ট মেথড</h5>
+                  <div className="col-span-2 md:col-span-1">
+                    <h5 className="font-black text-sm uppercase tracking-wider mb-3" style={{ color: ftrText }}>পেমেন্ট মেথড</h5>
                     <div className="flex flex-wrap gap-2 text-xs font-bold">
-                      {config.footer.bkash && <span className="bg-[#e2136e] keep-white-text px-2.5 py-1 rounded">bKash</span>}
-                      {config.footer.nagad && <span className="bg-[#f7941d] keep-white-text px-2.5 py-1 rounded">Nagad</span>}
-                      {config.footer.rocket && <span className="bg-[#8c3494] keep-white-text px-2.5 py-1 rounded">Rocket</span>}
-                      {config.footer.cod && <span className="bg-emerald-700 keep-white-text px-2.5 py-1 rounded">Cash on Delivery</span>}
-                      {config.footer.visa && <span className="bg-[#1e3a8a] keep-white-text px-2.5 py-1 rounded">Visa / Mastercard</span>}
+                      {ftr.bkash && <span className="bg-[#e2136e] keep-white-text px-2.5 py-1 rounded">bKash</span>}
+                      {ftr.nagad && <span className="bg-[#f7941d] keep-white-text px-2.5 py-1 rounded">Nagad</span>}
+                      {ftr.rocket && <span className="bg-[#8c3494] keep-white-text px-2.5 py-1 rounded">Rocket</span>}
+                      {ftr.cod && <span className="bg-emerald-700 keep-white-text px-2.5 py-1 rounded">Cash on Delivery</span>}
+                      {ftr.visa && <span className="bg-[#1e3a8a] keep-white-text px-2.5 py-1 rounded">Visa / Mastercard</span>}
                     </div>
-                    <div className="mt-4 flex gap-3 text-sm font-bold text-[#000000]">
-                      {config.footer.fb && <a href={config.footer.fb} target="_blank" className="hover:underline">🌐 Facebook</a>}
-                      {config.footer.insta && <a href={config.footer.insta} target="_blank" className="hover:underline">📸 Instagram</a>}
+                    <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold" style={{ color: ftrText }}>
+                      {ftr.fb && <a href={ftr.fb} target="_blank" className="hover:underline" style={{ color: ftrText }}>🌐 Facebook</a>}
+                      {ftr.insta && <a href={ftr.insta} target="_blank" className="hover:underline" style={{ color: ftrText }}>📸 Instagram</a>}
                     </div>
                   </div>
                 </div>
                 {/* 🚚 4 TRUST BADGES IN 1 LINE AS RED BACKGROUND + BLACK TEXT BOTTOM CARDS */}
-                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-white/70">
+                <div className="max-w-7xl mx-auto pt-6 sm:pt-8 mt-8 border-t border-sky-200/35">
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 mb-5">
                     {/* Card 1: নিরাপদ পেমেন্ট */}
                     <div className="red-black-bottom-card rounded-2xl p-2.5 sm:p-3 text-center flex items-center justify-center gap-2 transition group">
@@ -16038,10 +16786,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                   {/* Copyright Bottom Card (Red Background + Black Text) */}
                   <div className="red-black-bottom-card rounded-2xl py-2.5 px-4 text-xs text-[#000000] font-black text-center">
-                    {config.footer.copyright}
+                    {ftr.copyright}
                   </div>
                 </div>
               </footer>
+                );
+              })()}
             </div>
           )}
 
@@ -22899,7 +23649,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   ⬇️
                                 </button>
 
-                                {(isGridConfigurable || sec.type === "promo_banner") && (
+                                {(isGridConfigurable || ["promo_banner", "voucher_strip", "category_slider", "category_pills", "top_banner"].includes(sec.type)) && (
                                   <button
                                     type="button"
                                     onClick={() => setExpandedAdminBlockId(isPickerOpen ? "" : sec.id)}
@@ -22909,7 +23659,21 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                         : "bg-rose-50 border border-rose-200 text-[#7a1c2b] hover:bg-rose-100"
                                     }`}
                                   >
-                                    {isPickerOpen ? "▲ বন্ধ করুন" : (sec.type === "promo_banner" ? "🖼️ ব্যানার এডিট" : isProductEditable ? "⚙️ লেআউট ও প্রোডাক্ট বাছাই" : "⚙️ লেআউট (২/৩/৪ ও লাইন)")}
+                                    {isPickerOpen
+                                      ? "▲ বন্ধ করুন"
+                                      : sec.type === "promo_banner"
+                                      ? "🖼️ ব্যানার এডিট"
+                                      : sec.type === "voucher_strip"
+                                      ? "🎟️ ভাউচার কাস্টমাইজ"
+                                      : sec.type === "category_slider"
+                                      ? "🏷️ ক্যাটাগরি কাস্টমাইজ"
+                                      : sec.type === "category_pills"
+                                      ? "📂 পিলস কাস্টমাইজ"
+                                      : sec.type === "top_banner"
+                                      ? "🖼️ হিরো ব্যানার এডিট"
+                                      : isProductEditable
+                                      ? "⚙️ লেআউট ও প্রোডাক্ট বাছাই"
+                                      : "⚙️ লেআউট (২/৩/৪ ও লাইন)"}
                                   </button>
                                 )}
 
@@ -23104,6 +23868,386 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     </>
                                   )}
                                 </div>
+
+                                {/* VOUCHER STRIP BLOCK FULL CUSTOMIZATION */}
+                                {sec.type === "voucher_strip" && (
+                                  <div className="p-3.5 rounded-2xl bg-white border border-rose-200 space-y-3 shadow-2xs">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <p className="text-xs font-black text-[#7a1c2b]">🎟️ ভাউচার ডিসকাউন্ট ব্লক — টাইটেল, কনটেন্ট ও কালার কাস্টমাইজেশন</p>
+                                      <div className="flex items-center gap-2">
+                                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={Boolean(sec.useCustomStyle)}
+                                            onChange={(e) => updateHomeSectionField(sec.id, { useCustomStyle: e.target.checked })}
+                                            className="accent-[#dc2626]"
+                                          />
+                                          কাস্টম কালার চালু রাখুন
+                                        </label>
+                                        <button
+                                          type="button"
+                                          onClick={() => setActiveTab("Coupons")}
+                                          className="px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 border border-rose-200 text-[#7a1c2b] hover:bg-rose-100 cursor-pointer"
+                                        >
+                                          🎟️ কুপন কোড ম্যানেজার
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">ব্লক হেডার টাইটেল</label>
+                                        <input
+                                          type="text"
+                                          value={sec.voucherHeading !== undefined ? sec.voucherHeading : "Claim Vouchers to Save More!"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucherHeading: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center justify-between mb-0.5">
+                                          <label className="text-[10px] font-bold text-slate-600">ক্যাম্পেইন ব্যাজ টেক্সট</label>
+                                          <label className="flex items-center gap-1 text-[10px] font-bold text-slate-700 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={sec.showVoucherBadge !== false}
+                                              onChange={(e) => updateHomeSectionField(sec.id, { showVoucherBadge: e.target.checked })}
+                                              className="accent-[#dc2626]"
+                                            />
+                                            দেখান
+                                          </label>
+                                        </div>
+                                        <input
+                                          type="text"
+                                          value={sec.voucherBadge !== undefined ? sec.voucherBadge : "11.11 / SAJGOJ"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucherBadge: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">ডান পাশের লিংক টেক্সট</label>
+                                        <input
+                                          type="text"
+                                          value={sec.voucherMoreText !== undefined ? sec.voucherMoreText : "More Voucher"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucherMoreText: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">বাটনের লেখা (CTA)</label>
+                                        <input
+                                          type="text"
+                                          value={sec.voucherCollectText !== undefined ? sec.voucherCollectText : "Collect All"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucherCollectText: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">ভাউচার বক্স ১ (অ্যামাউন্ট)</label>
+                                        <input
+                                          type="text"
+                                          value={sec.voucher1Amount !== undefined ? sec.voucher1Amount : "৳২,২৫০"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucher1Amount: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs font-bold outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">ভাউচার বক্স ১ (সাব-লেবেল)</label>
+                                        <input
+                                          type="text"
+                                          value={sec.voucher1Label !== undefined ? sec.voucher1Label : "Voucher Max"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucher1Label: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center justify-between mb-0.5">
+                                          <label className="text-[10px] font-bold text-slate-600">ভাউচার বক্স ২ (অ্যামাউন্ট)</label>
+                                          <label className="flex items-center gap-1 text-[10px] font-bold text-slate-700 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={sec.showVoucherSlot2 !== false}
+                                              onChange={(e) => updateHomeSectionField(sec.id, { showVoucherSlot2: e.target.checked })}
+                                              className="accent-[#dc2626]"
+                                            />
+                                            দেখান
+                                          </label>
+                                        </div>
+                                        <input
+                                          type="text"
+                                          value={sec.voucher2Amount !== undefined ? sec.voucher2Amount : "৳৪৫"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucher2Amount: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs font-bold outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">ভাউচার বক্স ২ (সাব-লেবেল)</label>
+                                        <input
+                                          type="text"
+                                          value={sec.voucher2Label !== undefined ? sec.voucher2Label : "Free shipping"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { voucher2Label: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                                      {renderColorInput("ব্লক ব্যাকগ্রাউন্ড", sec.voucherCardBg || "#fca5a5", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherCardBg: v }))}
+                                      {renderColorInput("ব্লক বর্ডার", sec.voucherCardBorder || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherCardBorder: v }))}
+                                      {renderColorInput("হেডার টেক্সট কালার", sec.voucherTitleColor || "#000000", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherTitleColor: v }))}
+                                      {renderColorInput("ব্যাজ ব্যাকগ্রাউন্ড", sec.voucherBadgeBg || "#0b0f19", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherBadgeBg: v }))}
+                                      {renderColorInput("ব্যাজ টেক্সট", sec.voucherBadgeText || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherBadgeText: v }))}
+                                      {renderColorInput("ইননার বক্স ব্যাকগ্রাউন্ড", sec.voucherInnerBg || "#fca5a5", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherInnerBg: v }))}
+                                      {renderColorInput("ইননার বক্স বর্ডার", sec.voucherInnerBorder || "#991b1b", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherInnerBorder: v }))}
+                                      {renderColorInput("অ্যামাউন্ট/লেবেল টেক্সট", sec.voucherInnerTextColor || "#000000", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherInnerTextColor: v }))}
+                                      {renderColorInput("Collect বাটন কালার", sec.voucherBtnBg || "#0b0f19", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherBtnBg: v }))}
+                                      {renderColorInput("Collect বাটন টেক্সট", sec.voucherBtnText || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, voucherBtnText: v }))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* CATEGORY SLIDER BLOCK FULL CUSTOMIZATION */}
+                                {sec.type === "category_slider" && (() => {
+                                  const selectedCatIds = Array.isArray(sec.selectedCategoryIds) ? sec.selectedCategoryIds : [];
+                                  const toggleCategoryVisibilityInSlider = (catKey) => {
+                                    const allKeys = displayCategories.map(c => c.id || c.name);
+                                    const current = selectedCatIds.length > 0 ? selectedCatIds : allKeys;
+                                    const exists = current.includes(catKey);
+                                    const next = exists ? current.filter(k => k !== catKey) : [...current, catKey];
+                                    updateHomeSectionField(sec.id, { selectedCategoryIds: next.length === allKeys.length ? [] : next });
+                                  };
+                                  const updateCategoryItemInline = (catObj, patch) => {
+                                    setCategories(prev => {
+                                      const next = prev.map(item => (item.id === catObj.id || item.name === catObj.name) ? { ...item, ...patch } : item);
+                                      setStored("categories", next);
+                                      return next;
+                                    });
+                                    if (catObj.id) {
+                                      syncDocToCloud("categories", catObj.id, { ...catObj, ...patch });
+                                    }
+                                  };
+                                  return (
+                                    <div className="p-3.5 rounded-2xl bg-white border border-rose-200 space-y-3.5 shadow-2xs">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-xs font-black text-[#7a1c2b]">🏷️ ক্যাটাগরি স্লাইডার ব্লক — টাইটেল, কনটেন্ট, আইকন ও কালার কাস্টমাইজেশন</p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={Boolean(sec.showSectionHeader)}
+                                              onChange={(e) => updateHomeSectionField(sec.id, { showSectionHeader: e.target.checked })}
+                                              className="accent-[#dc2626]"
+                                            />
+                                            হোমে শিরোনাম দেখান
+                                          </label>
+                                          <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={Boolean(sec.useCustomStyle)}
+                                              onChange={(e) => updateHomeSectionField(sec.id, { useCustomStyle: e.target.checked })}
+                                              className="accent-[#dc2626]"
+                                            />
+                                            কাস্টম কালার চালু রাখুন
+                                          </label>
+                                          <button
+                                            type="button"
+                                            onClick={() => { setActiveTab("Products"); setAdminProductSubTab("categories"); }}
+                                            className="px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 border border-rose-200 text-[#7a1c2b] hover:bg-rose-100 cursor-pointer"
+                                          >
+                                            + নতুন ক্যাটাগরি যোগ / ম্যানেজার
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* "All Products" Card Customization */}
+                                      <div className="grid sm:grid-cols-3 gap-2.5 p-2.5 rounded-xl bg-rose-50/50 border border-rose-200/75">
+                                        <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={sec.showAllCard !== false}
+                                            onChange={(e) => updateHomeSectionField(sec.id, { showAllCard: e.target.checked })}
+                                            className="accent-[#dc2626]"
+                                          />
+                                          প্রথমে "সকল পণ্য" কার্ড দেখান
+                                        </label>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-slate-600 block mb-0.5">"সকল পণ্য" কার্ডের লেখা</label>
+                                          <input
+                                            type="text"
+                                            value={sec.allItemLabel !== undefined ? sec.allItemLabel : "সকল পণ্য"}
+                                            onChange={(e) => updateHomeSectionField(sec.id, { allItemLabel: e.target.value })}
+                                            className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1 text-xs outline-none focus:border-[#dc2626]"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-slate-600 block mb-0.5">"সকল পণ্য" আইকন (Emoji)</label>
+                                          <input
+                                            type="text"
+                                            value={sec.allItemIcon !== undefined ? sec.allItemIcon : "🌟"}
+                                            onChange={(e) => updateHomeSectionField(sec.id, { allItemIcon: e.target.value })}
+                                            className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1 text-xs text-center outline-none focus:border-[#dc2626]"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Color Pickers for Category Slider */}
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                        {renderColorInput("ব্লক ব্যাকগ্রাউন্ড", sec.catBlockBg || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catBlockBg: v }))}
+                                        {renderColorInput("ব্লক বর্ডার", sec.catBlockBorder || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catBlockBorder: v }))}
+                                        {renderColorInput("শিরোনাম টেক্সট কালার", sec.catBlockTitleColor || "#000000", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catBlockTitleColor: v }))}
+                                        {renderColorInput("ক্যাটাগরি কার্ড ব্যাকগ্রাউন্ড", sec.catCardBg || "#f87171", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catCardBg: v }))}
+                                        {renderColorInput("ক্যাটাগরি কার্ড বর্ডার", sec.catCardBorder || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catCardBorder: v }))}
+                                        {renderColorInput("ছবি/আইকন বক্স ব্যাকগ্রাউন্ড", sec.catIconBoxBg || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catIconBoxBg: v }))}
+                                        {renderColorInput("নামের পিল ব্যাকগ্রাউন্ড", sec.catLabelBg || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catLabelBg: v }))}
+                                        {renderColorInput("নামের টেক্সট কালার", sec.catLabelText || "#000000", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, catLabelText: v }))}
+                                      </div>
+
+                                      {/* Direct Inline Category Content & Visibility Editor */}
+                                      <div className="space-y-2">
+                                        <p className="text-[11px] font-black text-[#7a1c2b]">📋 স্লাইডারের প্রতিটি ক্যাটাগরি আইটেম কনটেন্ট, আইকন ও ছবি পরিবর্তন:</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                                          {displayCategories.map(cat => {
+                                            const catKey = cat.id || cat.name;
+                                            const isVisible = selectedCatIds.length === 0 || selectedCatIds.includes(catKey);
+                                            return (
+                                              <div key={catKey} className={`p-2.5 rounded-xl border flex flex-col gap-2 ${isVisible ? "bg-rose-50/40 border-rose-200" : "bg-slate-100 border-slate-200 opacity-75"}`}>
+                                                <div className="flex items-center justify-between gap-2">
+                                                  <label className="flex items-center gap-1.5 text-xs font-black text-slate-800 cursor-pointer">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={isVisible}
+                                                      onChange={() => toggleCategoryVisibilityInSlider(catKey)}
+                                                      className="accent-[#dc2626]"
+                                                    />
+                                                    <span>{cat.icon || "✨"} {cat.name}</span>
+                                                  </label>
+                                                  <label className="px-2 py-0.5 rounded-full bg-white border border-rose-200 text-[10px] font-bold text-[#7a1c2b] cursor-pointer hover:bg-rose-50">
+                                                    📷 ছবি আপলোড
+                                                    <input
+                                                      type="file"
+                                                      accept="image/*"
+                                                      className="hidden"
+                                                      onChange={(e) => handleImageUpload(e, (dataUrl) => updateCategoryItemInline(cat, { imageUrl: dataUrl }), "category")}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-1.5">
+                                                  <input
+                                                    type="text"
+                                                    value={cat.name || ""}
+                                                    onChange={(e) => updateCategoryItemInline(cat, { name: e.target.value })}
+                                                    placeholder="নাম"
+                                                    className="bg-white border border-slate-300 text-slate-900 rounded-lg px-2 py-1 text-[11px] font-bold outline-none focus:border-[#dc2626]"
+                                                  />
+                                                  <input
+                                                    type="text"
+                                                    value={cat.icon || ""}
+                                                    onChange={(e) => updateCategoryItemInline(cat, { icon: e.target.value })}
+                                                    placeholder="আইকন"
+                                                    className="bg-white border border-slate-300 text-slate-900 rounded-lg px-2 py-1 text-[11px] text-center outline-none focus:border-[#dc2626]"
+                                                  />
+                                                  <input
+                                                    type="text"
+                                                    value={cat.badge || ""}
+                                                    onChange={(e) => updateCategoryItemInline(cat, { badge: e.target.value })}
+                                                    placeholder="ব্যাজ (যেমন NEW)"
+                                                    className="bg-white border border-slate-300 text-slate-900 rounded-lg px-2 py-1 text-[11px] outline-none focus:border-[#dc2626]"
+                                                  />
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* CATEGORY PILLS BLOCK CUSTOMIZATION */}
+                                {sec.type === "category_pills" && (
+                                  <div className="p-3.5 rounded-2xl bg-white border border-rose-200 space-y-3 shadow-2xs">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <p className="text-xs font-black text-[#7a1c2b]">📂 ক্যাটাগরি ফিল্টার পিলস ব্লক কাস্টমাইজেশন</p>
+                                      <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={Boolean(sec.useCustomStyle)}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { useCustomStyle: e.target.checked })}
+                                          className="accent-[#dc2626]"
+                                        />
+                                        কাস্টম কালার চালু রাখুন
+                                      </label>
+                                    </div>
+                                    <div className="grid sm:grid-cols-3 gap-2.5">
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">'সকল' বাটনের লেখা</label>
+                                        <input
+                                          type="text"
+                                          value={sec.allPillLabel || "সকল কালেকশন"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { allPillLabel: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">'BOGO' বাটনের লেখা</label>
+                                        <input
+                                          type="text"
+                                          value={sec.bogoPillLabel || "১টি কিনলে ১টি ফ্রি (BOGO)"}
+                                          onChange={(e) => updateHomeSectionField(sec.id, { bogoPillLabel: e.target.value })}
+                                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#dc2626]"
+                                        />
+                                      </div>
+                                      <div className="flex items-center gap-3 pt-3">
+                                        <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={sec.showB2g1Pill !== false}
+                                            onChange={(e) => updateHomeSectionField(sec.id, { showB2g1Pill: e.target.checked })}
+                                            className="accent-[#dc2626]"
+                                          />
+                                          B2G1 পিল
+                                        </label>
+                                        <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={sec.showComboPill !== false}
+                                            onChange={(e) => updateHomeSectionField(sec.id, { showComboPill: e.target.checked })}
+                                            className="accent-[#dc2626]"
+                                          />
+                                          কম্বো পিল
+                                        </label>
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                      {renderColorInput("ব্লক ব্যাকগ্রাউন্ড", sec.pillBlockBg || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, pillBlockBg: v }))}
+                                      {renderColorInput("ব্লক শিরোনাম কালার", sec.pillBlockTitleColor || "#000000", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, pillBlockTitleColor: v }))}
+                                      {renderColorInput("পিল বাটন ব্যাকগ্রাউন্ড", sec.pillBg || "#fca5a5", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, pillBg: v }))}
+                                      {renderColorInput("পিল বাটন টেক্সট", sec.pillTextColor || "#000000", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, pillTextColor: v }))}
+                                      {renderColorInput("অ্যাক্টিভ পিল ব্যাকগ্রাউন্ড", sec.pillActiveBg || "#ef4444", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, pillActiveBg: v }))}
+                                      {renderColorInput("অ্যাক্টিভ পিল টেক্সট", sec.pillActiveTextColor || "#ffffff", (v) => updateHomeSectionField(sec.id, { useCustomStyle: true, pillActiveTextColor: v }))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* TOP HERO BANNER QUICK ACCESS */}
+                                {sec.type === "top_banner" && (
+                                  <div className="p-3.5 rounded-2xl bg-white border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                                    <div className="text-xs text-slate-700">
+                                      <p className="font-black text-[#7a1c2b]">🖼️ হিরো স্লাইডার ব্যানার ({banners.length}টি স্লাইড)</p>
+                                      <p className="text-[11px] mt-0.5">ব্যানারের শিরোনাম, সাব-টাইটেল, ছবি ও বাটন টেক্সট এডিট করতে ব্যানার ম্যানেজার খুলুন।</p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setHomeSettingSubTab("banners")}
+                                      className="px-4 py-2 rounded-full text-xs font-black bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white shadow cursor-pointer shrink-0"
+                                    >
+                                      🖼️ হিরো ব্যানার ম্যানেজারে যান →
+                                    </button>
+                                  </div>
+                                )}
 
                                 {isProductEditable && (
                                   <div className="space-y-2.5">
@@ -23772,6 +24916,62 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   {/* Footer Settings */}
                   <div className="text-slate-900 p-5 bg-rose-50/55 rounded-3xl border border-rose-200/80 space-y-3">
                     <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৬. ফুটার সেটিংস ও পেমেন্ট মেথড</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                      <div>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">প্রথম কলাম শিরোনাম</label>
+                        <input
+                          type="text"
+                          value={config.footer.contactTitle || "Contact Info"}
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, contactTitle: e.target.value } })}
+                          className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none mt-1 focus:border-[#dc2626]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">দ্বিতীয় কলাম শিরোনাম</label>
+                        <input
+                          type="text"
+                          value={config.footer.servicesTitle || "সেবাসমূহ"}
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, servicesTitle: e.target.value } })}
+                          className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none mt-1 focus:border-[#dc2626]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">ফুটার ব্যাকগ্রাউন্ড ১</label>
+                        <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-full px-2.5 py-1 mt-1">
+                          <input
+                            type="color"
+                            value={config.footer.footerBg || "#075985"}
+                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, footerBg: e.target.value } })}
+                            className="w-5 h-5 rounded-full cursor-pointer border-0 bg-transparent p-0"
+                          />
+                          <span className="text-[10px] font-mono text-slate-700">{config.footer.footerBg || "#075985"}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">ফুটার ব্যাকগ্রাউন্ড ২</label>
+                        <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-full px-2.5 py-1 mt-1">
+                          <input
+                            type="color"
+                            value={config.footer.footerBgEnd || "#0284c7"}
+                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, footerBgEnd: e.target.value } })}
+                            className="w-5 h-5 rounded-full cursor-pointer border-0 bg-transparent p-0"
+                          />
+                          <span className="text-[10px] font-mono text-slate-700">{config.footer.footerBgEnd || "#0284c7"}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">ফুটার টেক্সট কালার</label>
+                        <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-full px-2.5 py-1 mt-1">
+                          <input
+                            type="color"
+                            value={config.footer.footerTextColor || "#f8fafc"}
+                            onChange={(e) => setConfig({ ...config, footer: { ...config.footer, footerTextColor: e.target.value } })}
+                            className="w-5 h-5 rounded-full cursor-pointer border-0 bg-transparent p-0"
+                          />
+                          <span className="text-[10px] font-mono text-slate-700">{config.footer.footerTextColor || "#f8fafc"}</span>
+                        </div>
+                      </div>
+                    </div>
                     <div>
                       <label className="text-xs font-semibold text-[#7a1c2b]">ফুটার পরিচিতি (About Store)</label>
                       <textarea 
