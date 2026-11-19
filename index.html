@@ -1621,9 +1621,9 @@
       logo: "./pwa-512x512.png",
       favicon: "./favicon.ico",
       tagline: "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
-      whatsapp: "88018051198888",
+      whatsapp: "+8801805119888",
       email: "contact@sajgoj.com",
-      phone: "018051198888",
+      phone: "+8801805119888",
       address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
       deliveryInsideDhaka: 60,
       deliveryOutsideDhaka: 120,
@@ -1746,7 +1746,7 @@
         titleBtnTextColor: "#f8fafc",
         customPopups: {},
         email: "support@sajgoj.com",
-        phone: "018051198888",
+        phone: "+8801805119888",
         address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
         fb: "https://facebook.com/sajgojfashion",
         insta: "https://instagram.com/sajgojfashion",
@@ -1764,10 +1764,22 @@
     const mergeStoreConfig = (baseCfg, incomingCfg) => {
       const b = baseCfg || initialStoreConfig;
       const r = incomingCfg || {};
+      const normalizeStorePhone = (val) => {
+        const s = String(val || "").trim();
+        if (!s || s === "018051198888" || s === "88018051198888" || s === "+88018051198888") {
+          return "+8801805119888";
+        }
+        return s;
+      };
+      const mergedPhone = normalizeStorePhone(r.phone ?? b.phone);
+      const mergedWhatsapp = normalizeStorePhone(r.whatsapp ?? b.whatsapp);
+      const mergedFooterPhone = normalizeStorePhone(r.footer?.phone ?? b.footer?.phone ?? mergedPhone);
       return {
         ...initialStoreConfig,
         ...b,
         ...r,
+        phone: mergedPhone,
+        whatsapp: mergedWhatsapp,
         announcement: { ...initialStoreConfig.announcement, ...(b.announcement || {}), ...(r.announcement || {}) },
         b2g1: { ...initialStoreConfig.b2g1, ...(b.b2g1 || {}), ...(r.b2g1 || {}) },
         header: { ...initialStoreConfig.header, ...(b.header || {}), ...(r.header || {}) },
@@ -1776,6 +1788,7 @@
           ...initialStoreConfig.footer,
           ...(b.footer || {}),
           ...(r.footer || {}),
+          phone: mergedFooterPhone,
           infoSectionTitle: (r.footer?.infoSectionTitle ?? b.footer?.infoSectionTitle) || initialStoreConfig.footer.infoSectionTitle,
           supportSectionTitle: (r.footer?.supportSectionTitle ?? b.footer?.supportSectionTitle) || initialStoreConfig.footer.supportSectionTitle,
           policySectionTitle: (r.footer?.policySectionTitle ?? b.footer?.policySectionTitle) || initialStoreConfig.footer.policySectionTitle,
@@ -4720,7 +4733,7 @@
           // Website / Helpline Footer
           ctx.fillStyle = "#2c1810";
           ctx.font = "bold 15px sans-serif";
-          ctx.fillText(`হটলাইন: ${config.phone || '018051198888'}`, canvas.width / 2, 765);
+          ctx.fillText(`হটলাইন: ${config.phone || '+8801805119888'}`, canvas.width / 2, 765);
 
           ctx.fillStyle = "#888888";
           ctx.font = "12px sans-serif";
@@ -4791,7 +4804,7 @@
               </div>
               <div class="instructions">📱 স্ক্যান করে সরাসরি অর্ডার করুন</div>
               <div class="sub-inst">Scan to View & Buy Online</div>
-              <div class="footer">হটলাইন: ${config.phone || '018051198888'}</div>
+              <div class="footer">হটলাইন: ${config.phone || '+8801805119888'}</div>
             </div>
             <script>
               window.onload = function() {
@@ -5173,7 +5186,7 @@
 
             ctx.fillStyle = "#666666";
             ctx.font = "10px sans-serif";
-            ctx.fillText(`হটলাইন: ${config?.phone || '018051198888'}  •  Online Delivery`, width / 2, 458);
+            ctx.fillText(`হটলাইন: ${config?.phone || '+8801805119888'}  •  Online Delivery`, width / 2, 458);
 
             resolve(canvas.toDataURL("image/png"));
           };
@@ -8272,7 +8285,7 @@
                   <img src="${qrSrc}" alt="QR" />
                 </div>
                 <div class="scan-text">📱 ক্যামেরা দিয়ে স্ক্যান করে অর্ডার করুন</div>
-                <div class="tag-footer">হটলাইন: ${config?.phone || '018051198888'}</div>
+                <div class="tag-footer">হটলাইন: ${config?.phone || '+8801805119888'}</div>
               </div>
             </div>
           `;
@@ -8754,7 +8767,7 @@
 
         const isA4 = format === "a4";
         const storeName = config?.storeName || "SAJGOJ FASHION";
-        const storePhone = config?.phone || "018051198888";
+        const storePhone = config?.phone || "+8801805119888";
         const storeAddr = config?.address || "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205";
 
         const escHtml = (str) => String(str ?? "")
@@ -9953,7 +9966,7 @@
                 <h1 class="store-name">${config?.storeName || 'SAJGOJ FASHION'}</h1>
                 <div class="store-tagline">ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ</div>
                 <div class="store-contact">${config?.address || 'Shop 12, Eastern Plaza, Hatirpool, Dhaka'}</div>
-                <div class="store-contact">হটলাইন: ${config?.phone || '018051198888'}</div>
+                <div class="store-contact">হটলাইন: ${config?.phone || '+8801805119888'}</div>
               </div>
 
               <div class="meta-row">
@@ -14360,8 +14373,8 @@ ${order.address || ""}${order.thana ? `, ${order.thana}` : ""}${order.district ?
 📞 কন্টাক্ট নম্বর: ${order.phone || order.customerPhone || ""}
 ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভারি নির্দেশনা:* ${order.orderNote || order.note}\n` : ""}${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং কোড: *${order.trackingId}*\n` : ""}
 যে কোনো জিজ্ঞাসা বা পণ্য সংক্রান্ত প্রয়োজনে আমাদের সাথে সরাসরি যোগাযোগ করতে পারেন:
-📞 হেল্পলাইন: ${config.phone || "018051198888"}
-💬 WhatsApp: ${config.whatsapp || "88018051198888"}
+📞 হেল্পলাইন: ${config.phone || "+8801805119888"}
+💬 WhatsApp: ${config.whatsapp || "+8801805119888"}
 
 আমাদের সাথে কেনাকাটা করার জন্য আপনাকে আন্তরিক ধন্যবাদ! 👑`;
       };
@@ -26542,7 +26555,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       </div>
                       <a
-                        href={`https://wa.me/${config.phone?.replace(/[^0-9]/g, "") || "8801700000000"}?text=${encodeURIComponent("হ্যালো, আমি একটি আংটি/চুড়ি কিনতে চাচ্ছি। আমার সঠিক সাইজ জানতে সাহায্য করবেন?")}`}
+                        href={`https://wa.me/${(config.whatsapp || config.phone || "+8801805119888").replace(/[^0-9]/g, "")}?text=${encodeURIComponent("হ্যালো, আমি একটি আংটি/চুড়ি কিনতে চাচ্ছি। আমার সঠিক সাইজ জানতে সাহায্য করবেন?")}`}
                         target="_blank"
                         rel="noreferrer"
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-bold shadow-xs transition flex items-center gap-1.5 shrink-0 self-stretch sm:self-auto justify-center"
@@ -29655,7 +29668,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <div className="bg-black text-white rounded-lg px-3 py-2 flex items-center justify-between gap-2">
                       <div>
                         <p className="text-xs font-black tracking-wide uppercase">{config?.storeName || "SAJGOJ FASHION"}</p>
-                        <p className="text-[10px] text-slate-200">PARCEL SHIPPING LABEL • {config?.phone || "018051198888"}</p>
+                        <p className="text-[10px] text-slate-200">PARCEL SHIPPING LABEL • {config?.phone || "+8801805119888"}</p>
                       </div>
                       <span className="bg-white text-black text-[9px] font-black px-2 py-0.5 rounded uppercase">
                         {ord.courier && ord.courier !== "None" ? ord.courier : "SHIPPED"}
@@ -29718,7 +29731,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
 
                     <p className="text-[9px] text-slate-600 border-t border-slate-300 pt-1.5 leading-tight">
-                      <b>প্রেরক (FROM):</b> {config?.storeName || "SAJGOJ FASHION"} • {config?.address || "Dhaka"} • 📞 {config?.phone || "018051198888"}
+                      <b>প্রেরক (FROM):</b> {config?.storeName || "SAJGOJ FASHION"} • {config?.address || "Dhaka"} • 📞 {config?.phone || "+8801805119888"}
                     </p>
                   </div>
 
@@ -34787,8 +34800,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           )}
 
           <a 
-            href={`https://wa.me/${config.whatsapp}?text=Hello%20SAJGOJ%20FASHION,%20I%20want%20to%20order`} 
-            target="_blank" 
+            href={`https://wa.me/${String(config.whatsapp || "+8801805119888").replace(/[^0-9]/g, "")}?text=Hello%20SAJGOJ%20FASHION,%20I%20want%20to%20order`} 
+            target="_blank"  
             rel="noopener noreferrer" 
             className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-2xl border-2 border-white hover:scale-110 transition duration-300"
             title="WhatsApp Helpline"
