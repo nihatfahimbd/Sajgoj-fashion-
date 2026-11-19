@@ -1738,11 +1738,13 @@
       },
       footer: {
         about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
-        contactTitle: "Contact Info",
-        servicesTitle: "সেবাসমূহ",
+        infoSectionTitle: "Information",
+        supportSectionTitle: "Support",
+        policySectionTitle: "Consumer Policy",
         titleBtnBg: "#075985",
         titleBtnBgEnd: "#0284c7",
         titleBtnTextColor: "#f8fafc",
+        customPopups: {},
         email: "support@sajgoj.com",
         phone: "018051198888",
         address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
@@ -1774,11 +1776,13 @@
           ...initialStoreConfig.footer,
           ...(b.footer || {}),
           ...(r.footer || {}),
-          contactTitle: (r.footer?.contactTitle ?? b.footer?.contactTitle) || initialStoreConfig.footer.contactTitle,
-          servicesTitle: (r.footer?.servicesTitle ?? b.footer?.servicesTitle) || initialStoreConfig.footer.servicesTitle,
+          infoSectionTitle: (r.footer?.infoSectionTitle ?? b.footer?.infoSectionTitle) || initialStoreConfig.footer.infoSectionTitle,
+          supportSectionTitle: (r.footer?.supportSectionTitle ?? b.footer?.supportSectionTitle) || initialStoreConfig.footer.supportSectionTitle,
+          policySectionTitle: (r.footer?.policySectionTitle ?? b.footer?.policySectionTitle) || initialStoreConfig.footer.policySectionTitle,
           titleBtnBg: (r.footer?.titleBtnBg ?? b.footer?.titleBtnBg) || initialStoreConfig.footer.titleBtnBg,
           titleBtnBgEnd: (r.footer?.titleBtnBgEnd ?? b.footer?.titleBtnBgEnd) || initialStoreConfig.footer.titleBtnBgEnd,
-          titleBtnTextColor: (r.footer?.titleBtnTextColor ?? b.footer?.titleBtnTextColor) || initialStoreConfig.footer.titleBtnTextColor
+          titleBtnTextColor: (r.footer?.titleBtnTextColor ?? b.footer?.titleBtnTextColor) || initialStoreConfig.footer.titleBtnTextColor,
+          customPopups: { ...(b.footer?.customPopups || {}), ...(r.footer?.customPopups || {}) }
         }
       };
     };
@@ -11108,6 +11112,11 @@
       const [sizeGuideTab, setSizeGuideTab] = useState("clothing"); // "clothing", "ring", "bangle", "calc"
       const [sizeCalcInput, setSizeCalcInput] = useState("");
 
+      // Footer Popup Modal State (Information, Support, Consumer Policy details)
+      const [activeFooterPopupKey, setActiveFooterPopupKey] = useState(null);
+      const [footerTrackOrderInput, setFooterTrackOrderInput] = useState("");
+      const [footerPopupEditKey, setFooterPopupEditKey] = useState("about_us");
+
       // Home Page Sections Management Helpers
       const saveHomeSections = (nextList) => {
         try { localStorage.setItem("sajgoj_store_home_sections_customized", "1"); } catch (e) {}
@@ -16691,57 +16700,126 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </div>
               </main>
               
-              {/* Storefront Footer (Liquid Glass + Side-by-Side Deep-Sky Title Card Buttons + Red/Black Bottom Cards) */}
+              {/* Storefront Footer (Liquid Glass + 3 Side-by-Side Deep-Sky Columns: Information | Support | Consumer Policy) */}
               {(() => {
                 const ftr = config.footer || initialStoreConfig.footer;
                 const titleBtnBgStart = ftr.titleBtnBg || "#075985";
                 const titleBtnBgEnd = ftr.titleBtnBgEnd || "#0284c7";
                 const titleBtnText = ftr.titleBtnTextColor || "#f8fafc";
-                const contactHeading = ftr.contactTitle || "Contact Info";
-                const servicesHeading = ftr.servicesTitle || "সেবাসমূহ";
+                const infoHeading = ftr.infoSectionTitle || "Information";
+                const supportHeading = ftr.supportSectionTitle || "Support";
+                const policyHeading = ftr.policySectionTitle || "Consumer Policy";
                 const titleBtnStyle = {
                   background: `linear-gradient(135deg, ${titleBtnBgStart} 0%, ${titleBtnBgEnd} 100%)`,
                   color: titleBtnText
                 };
+                const infoLinks = [
+                  { key: "about_us", label: "About us" },
+                  { key: "contact_us", label: "Contact us" },
+                  { key: "terms_conditions", label: "Terms & Conditions" },
+                  { key: "privacy_policy", label: "Privacy Policy" }
+                ];
+                const supportLinks = [
+                  { key: "order_tracking", label: "Order Tracking" },
+                  { key: "payment", label: "Payment" },
+                  { key: "shipping", label: "Shipping" },
+                  { key: "faq", label: "FAQ" }
+                ];
+                const policyLinks = [
+                  { key: "refund_policy", label: "Refund Policy" },
+                  { key: "exchange", label: "Exchange" },
+                  { key: "cancellation", label: "Cancellation" },
+                  { key: "extra_discount", label: "Extra Discount" }
+                ];
                 return (
-              <footer className="liquid-glass-hero text-[#000000] py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl">
-                <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-7 sm:gap-8">
-                  <div className="col-span-2 md:col-span-1 space-y-3">
+              <footer className="liquid-glass-hero text-[#000000] py-10 px-3 sm:px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl">
+                <div className="max-w-7xl mx-auto space-y-6 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-6 items-start">
+                  {/* Brand Block */}
+                  <div className="lg:col-span-3 space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="w-9 h-9 rounded-full cta-dark-pill font-black text-xl flex items-center justify-center shrink-0">S</div>
                       <h4 className="font-black text-lg text-[#000000]">{config.storeName}</h4>
                     </div>
                     <p className="text-xs text-[#000000] font-semibold leading-relaxed">{ftr.about}</p>
                   </div>
-                  <div className="col-span-1 min-w-0">
-                    <h5
-                      className="inline-flex items-center justify-center font-black text-[11px] sm:text-xs tracking-wider mb-3 px-3 py-1.5 rounded-xl shadow-md border border-sky-200/60"
-                      style={titleBtnStyle}
-                    >
-                      {contactHeading}
-                    </h5>
-                    <div className="space-y-1.5 text-[11px] sm:text-xs text-[#000000] font-semibold leading-relaxed">
-                      <p className="break-words">📞 {config.phone}</p>
-                      <p className="break-words">💬 WhatsApp: {config.whatsapp}</p>
-                      <p className="break-all sm:break-words">✉️ {config.email}</p>
-                      <p className="break-words">📍 {config.address}</p>
+
+                  {/* 3 Side-by-Side Columns: (1) Information | (2) Support | (3) Consumer Policy */}
+                  <div className="lg:col-span-6 grid grid-cols-3 gap-2 sm:gap-4 items-start">
+                    {/* 1. Information */}
+                    <div className="min-w-0">
+                      <h5
+                        className="inline-flex items-center justify-center font-black text-[10px] sm:text-xs tracking-wide mb-2.5 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-md border border-sky-200/60 max-w-full text-center leading-tight"
+                        style={titleBtnStyle}
+                      >
+                        {infoHeading}
+                      </h5>
+                      <ul className="space-y-1">
+                        {infoLinks.map(item => (
+                          <li key={item.key}>
+                            <button
+                              type="button"
+                              onClick={() => setActiveFooterPopupKey(item.key)}
+                              className="w-full text-left flex items-start gap-1 text-[10.5px] sm:text-xs text-[#000000] font-bold hover:text-[#0369a1] hover:underline py-1 cursor-pointer transition leading-snug break-words"
+                            >
+                              <span className="text-[9px] mt-0.5 shrink-0 opacity-80">▪</span>
+                              <span className="min-w-0">{item.label}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* 2. Support */}
+                    <div className="min-w-0 border-l border-slate-400/35 pl-2 sm:pl-3.5">
+                      <h5
+                        className="inline-flex items-center justify-center font-black text-[10px] sm:text-xs tracking-wide mb-2.5 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-md border border-sky-200/60 max-w-full text-center leading-tight"
+                        style={titleBtnStyle}
+                      >
+                        {supportHeading}
+                      </h5>
+                      <ul className="space-y-1">
+                        {supportLinks.map(item => (
+                          <li key={item.key}>
+                            <button
+                              type="button"
+                              onClick={() => setActiveFooterPopupKey(item.key)}
+                              className="w-full text-left flex items-start gap-1 text-[10.5px] sm:text-xs text-[#000000] font-bold hover:text-[#0369a1] hover:underline py-1 cursor-pointer transition leading-snug break-words"
+                            >
+                              <span className="text-[9px] mt-0.5 shrink-0 opacity-80">▪</span>
+                              <span className="min-w-0">{item.label}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* 3. Consumer Policy */}
+                    <div className="min-w-0 border-l border-slate-400/35 pl-2 sm:pl-3.5">
+                      <h5
+                        className="inline-flex items-center justify-center font-black text-[10px] sm:text-xs tracking-wide mb-2.5 px-2 sm:px-3 py-1.5 rounded-xl shadow-md border border-sky-200/60 max-w-full text-center leading-tight"
+                        style={titleBtnStyle}
+                      >
+                        {policyHeading}
+                      </h5>
+                      <ul className="space-y-1">
+                        {policyLinks.map(item => (
+                          <li key={item.key}>
+                            <button
+                              type="button"
+                              onClick={() => setActiveFooterPopupKey(item.key)}
+                              className="w-full text-left flex items-start gap-1 text-[10.5px] sm:text-xs text-[#000000] font-bold hover:text-[#0369a1] hover:underline py-1 cursor-pointer transition leading-snug break-words"
+                            >
+                              <span className="text-[9px] mt-0.5 shrink-0 opacity-80">▪</span>
+                              <span className="min-w-0">{item.label}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
-                  <div className="col-span-1 min-w-0 border-l border-slate-400/35 pl-3 sm:pl-4 md:border-l-0 md:pl-0">
-                    <h5
-                      className="inline-flex items-center justify-center font-black text-[11px] sm:text-xs tracking-wider mb-3 px-3 py-1.5 rounded-xl shadow-md border border-sky-200/60"
-                      style={titleBtnStyle}
-                    >
-                      {servicesHeading}
-                    </h5>
-                    <ul className="text-[11px] sm:text-xs space-y-1.5 text-[#000000] font-semibold leading-relaxed">
-                      <li>• রিটার্ন ও রিফান্ড পলিসি ({config?.returnPolicyDays || 7} দিন)</li>
-                      <li>• ক্যাশ অন ডেলিভারি সুবিধা</li>
-                      <li>• সারা দেশে হোম ডেলিভারি</li>
-                      <li>• ১০০% প্রিমিয়াম কোয়ালিটি নিশ্চয়তা</li>
-                    </ul>
-                  </div>
-                  <div className="col-span-2 md:col-span-1">
+
+                  {/* Payment Method & Social Links */}
+                  <div className="lg:col-span-3">
                     <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">পেমেন্ট মেথড</h5>
                     <div className="flex flex-wrap gap-2 text-xs font-bold">
                       {ftr.bkash && <span className="bg-[#e2136e] keep-white-text px-2.5 py-1 rounded">bKash</span>}
@@ -16751,8 +16829,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {ftr.visa && <span className="bg-[#1e3a8a] keep-white-text px-2.5 py-1 rounded">Visa / Mastercard</span>}
                     </div>
                     <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold text-[#000000]">
-                      {ftr.fb && <a href={ftr.fb} target="_blank" className="hover:underline">🌐 Facebook</a>}
-                      {ftr.insta && <a href={ftr.insta} target="_blank" className="hover:underline">📸 Instagram</a>}
+                      {ftr.fb && <a href={ftr.fb} target="_blank" rel="noreferrer" className="hover:underline">🌐 Facebook</a>}
+                      {ftr.insta && <a href={ftr.insta} target="_blank" rel="noreferrer" className="hover:underline">📸 Instagram</a>}
                     </div>
                   </div>
                 </div>
@@ -24924,22 +25002,31 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   {/* Footer Settings */}
                   <div className="text-slate-900 p-5 bg-rose-50/55 rounded-3xl border border-rose-200/80 space-y-3">
                     <h4 className="font-bold text-sm text-[#7a1c2b] uppercase tracking-wider">৬. ফুটার সেটিংস ও পেমেন্ট মেথড</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                       <div>
-                        <label className="text-[11px] font-bold text-[#7a1c2b]">প্রথম কলাম শিরোনাম</label>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">১ম কলাম টাইটেল</label>
                         <input
                           type="text"
-                          value={config.footer.contactTitle || "Contact Info"}
-                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, contactTitle: e.target.value } })}
+                          value={config.footer.infoSectionTitle || "Information"}
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, infoSectionTitle: e.target.value } })}
                           className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none mt-1 focus:border-[#dc2626]"
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-[#7a1c2b]">দ্বিতীয় কলাম শিরোনাম</label>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">২য় কলাম টাইটেল</label>
                         <input
                           type="text"
-                          value={config.footer.servicesTitle || "সেবাসমূহ"}
-                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, servicesTitle: e.target.value } })}
+                          value={config.footer.supportSectionTitle || "Support"}
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, supportSectionTitle: e.target.value } })}
+                          className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none mt-1 focus:border-[#dc2626]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-[#7a1c2b]">৩য় কলাম টাইটেল</label>
+                        <input
+                          type="text"
+                          value={config.footer.policySectionTitle || "Consumer Policy"}
+                          onChange={(e) => setConfig({ ...config, footer: { ...config.footer, policySectionTitle: e.target.value } })}
                           className="w-full bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1.5 text-xs outline-none mt-1 focus:border-[#dc2626]"
                         />
                       </div>
@@ -24979,6 +25066,43 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <span className="text-[10px] font-mono text-slate-700">{config.footer.titleBtnTextColor || "#f8fafc"}</span>
                         </div>
                       </div>
+                    </div>
+                    {/* Custom Popup Text Override Editor */}
+                    <div className="p-3 rounded-2xl bg-white/80 border border-rose-200 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="text-[11px] font-black text-[#7a1c2b]">📝 ফুটার পপ-আপ কনটেন্ট কাস্টমাইজ (ঐচ্ছিক)</label>
+                        <select
+                          value={footerPopupEditKey}
+                          onChange={(e) => setFooterPopupEditKey(e.target.value)}
+                          className="bg-white border border-slate-300 text-slate-900 rounded-full px-3 py-1 text-xs font-bold outline-none focus:border-[#dc2626]"
+                        >
+                          <option value="about_us">Information → About us</option>
+                          <option value="contact_us">Information → Contact us</option>
+                          <option value="terms_conditions">Information → Terms & Conditions</option>
+                          <option value="privacy_policy">Information → Privacy Policy</option>
+                          <option value="order_tracking">Support → Order Tracking</option>
+                          <option value="payment">Support → Payment</option>
+                          <option value="shipping">Support → Shipping</option>
+                          <option value="faq">Support → FAQ</option>
+                          <option value="refund_policy">Consumer Policy → Refund Policy</option>
+                          <option value="exchange">Consumer Policy → Exchange</option>
+                          <option value="cancellation">Consumer Policy → Cancellation</option>
+                          <option value="extra_discount">Consumer Policy → Extra Discount</option>
+                        </select>
+                      </div>
+                      <textarea
+                        rows="2"
+                        placeholder="খালি রাখলে স্টোরের ডিফল্ট বিস্তারিত লেখা দেখাবে। কাস্টম নোট যোগ করতে চাইলে এখানে লিখুন..."
+                        value={(config.footer.customPopups && config.footer.customPopups[footerPopupEditKey]) || ""}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          footer: {
+                            ...config.footer,
+                            customPopups: { ...(config.footer.customPopups || {}), [footerPopupEditKey]: e.target.value }
+                          }
+                        })}
+                        className="w-full bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-2xl p-2.5 text-xs outline-none focus:border-[#dc2626]"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-[#7a1c2b]">ফুটার পরিচিতি (About Store)</label>
@@ -25380,6 +25504,378 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </div>
             </div>
           )}
+
+          {/* ========================================================= */}
+          {/* FOOTER INFO / SUPPORT / CONSUMER POLICY POPUP MODAL       */}
+          {/* ========================================================= */}
+          {activeFooterPopupKey && (() => {
+            const ftr = config.footer || initialStoreConfig.footer;
+            const customNote = ftr.customPopups && ftr.customPopups[activeFooterPopupKey] ? String(ftr.customPopups[activeFooterPopupKey]).trim() : "";
+            const returnDays = config?.returnPolicyDays || 7;
+            const titleBtnBgStart = ftr.titleBtnBg || "#075985";
+            const titleBtnBgEnd = ftr.titleBtnBgEnd || "#0284c7";
+            const titleBtnText = ftr.titleBtnTextColor || "#f8fafc";
+            const cleanWa = String(config.whatsapp || config.phone || "").replace(/[^0-9]/g, "");
+            const waUrl = cleanWa ? `https://wa.me/${cleanWa.startsWith("0") ? "88" + cleanWa : cleanWa}` : "#";
+
+            const trackedOrderMatch = footerTrackOrderInput.trim()
+              ? orders.find(o => String(o.id || "").toLowerCase() === footerTrackOrderInput.trim().toLowerCase())
+              : null;
+
+            const popupCatalog = {
+              about_us: {
+                section: ftr.infoSectionTitle || "Information",
+                icon: "✨",
+                title: "About Us",
+                subtitle: `${config.storeName || "SAJGOJ FASHION"} সম্পর্কে জানুন`,
+                blocks: [
+                  { heading: "আমাদের পরিচয়", text: ftr.about || "আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি, কুর্তি ও রাজকীয় জুয়েলারি কালেকশনের বিশ্বস্ত ঠিকানা।" },
+                  { heading: "কেন আমাদের থেকে কিনবেন?", list: ["১০০% খাঁটি ও মানসম্মত প্রিমিয়াম কালেকশন", "ছবির সাথে বাস্তব পণ্যের শতভাগ মিল", "দ্রুততম সারাদেশে হোম ডেলিভারি সুবিধা", "আন্তরিক কাস্টমার সাপোর্ট ও সহজ রিটার্ন"] },
+                  { heading: "শোরুম ঠিকানা", text: `📍 ${config.address}` }
+                ]
+              },
+              contact_us: {
+                section: ftr.infoSectionTitle || "Information",
+                icon: "📞",
+                title: "Contact Us",
+                subtitle: "আমাদের সাথে সরাসরি যোগাযোগ ও হেল্পলাইন তথ্য",
+                isContact: true,
+                blocks: [
+                  { heading: "কাস্টমার সার্ভিস সময়", text: "প্রতিদিন সকাল ১০:০০টা থেকে রাত ১০:০০টা পর্যন্ত (সপ্তাহে ৭ দিন)।" }
+                ]
+              },
+              terms_conditions: {
+                section: ftr.infoSectionTitle || "Information",
+                icon: "📜",
+                title: "Terms & Conditions",
+                subtitle: "স্টোর ব্যবহার ও কেনাকাটার শর্তাবলী",
+                blocks: [
+                  { heading: "১. অর্ডার ও মূল্য নীতি", text: "সাইটে প্রদর্শিত প্রতিটি পণ্যের মূল্য বাংলাদেশের টাকায় (৳) নির্ধারিত। অর্ডার কনফার্ম করার পর মূল্য পরিবর্তন হয় না।" },
+                  { heading: "২. প্রোডাক্ট ডেলিভারি ও যাচাই", text: "ডেলিভারি ম্যানের সামনে পণ্য খুলে দেখে যাচাই করে রিসিভ করার অনুরোধ করা হচ্ছে। কোনো সমস্যা থাকলে তাৎক্ষণিক আমাদের হেল্পলাইনে জানাবেন।" },
+                  { heading: "৩. পণ্যের রঙ ও বিবরণ", text: "ডিভাইস ডিসপ্লে ও আলোর তারতম্যের কারণে পণ্যের রঙে সামান্য (৫% পর্যন্ত) পার্থক্য হতে পারে।" },
+                  { heading: "৪. মেধাস্বত্ব ও নিরাপত্তা", text: `${config.storeName || "SAJGOJ FASHION"}-এর সকল ছবি, লোগো ও কনটেন্ট সংরক্ষিত। অনুমতি ছাড়া বাণিজ্যিক ব্যবহার নিষিদ্ধ।` }
+                ]
+              },
+              privacy_policy: {
+                section: ftr.infoSectionTitle || "Information",
+                icon: "🔒",
+                title: "Privacy Policy",
+                subtitle: "আপনার ব্যক্তিগত তথ্যের সর্বোচ্চ সুরক্ষা নিশ্চয়তা",
+                blocks: [
+                  { heading: "তথ্য সংগ্রহ ও ব্যবহার", text: "অর্ডার ডেলিভারি ও কাস্টমার সাপোর্ট দেওয়ার জন্য শুধুমাত্র আপনার নাম, মোবাইল নম্বর এবং ডেলিভারি ঠিকানা সংগ্রহ করা হয়।" },
+                  { heading: "তথ্যের গোপনীয়তা", text: "আপনার কোনো ব্যক্তিগত তথ্য কখনোই কোনো তৃতীয় পক্ষ বা মার্কেটিং কোম্পানির কাছে বিক্রি বা শেয়ার করা হয় না। কেবল ডেলিভারির প্রয়োজনে বিশ্বস্ত কুরিয়ার পার্টনারকে ঠিকানা দেওয়া হয়।" },
+                  { heading: "নিরাপদ অ্যাকাউন্ট", text: "আপনি যেকোনো সময় প্রোফাইল থেকে আপনার তথ্য আপডেট বা সংশোধন করতে পারবেন।" }
+                ]
+              },
+              order_tracking: {
+                section: ftr.supportSectionTitle || "Support",
+                icon: "📦",
+                title: "Order Tracking",
+                subtitle: "আপনার অর্ডারের বর্তমান অবস্থা সহজেই জানুন",
+                isTracking: true,
+                blocks: [
+                  { heading: "অর্ডার প্রসেসিং ধাপসমূহ", list: ["১. Pending: অর্ডারটি সফলভাবে গৃহীত হয়েছে এবং যাচাই চলছে।", "২. Confirmed: অর্ডার কনফার্ম করে প্যাকিং করা হচ্ছে।", "৩. Shipped: কুরিয়ারে হস্তান্তর করা হয়েছে, শীঘ্রই ডেলিভারি হবে।", "৪. Delivered: পণ্য সফলভাবে ডেলিভারি সম্পন্ন হয়েছে।"] }
+                ]
+              },
+              payment: {
+                section: ftr.supportSectionTitle || "Support",
+                icon: "💳",
+                title: "Payment Methods",
+                subtitle: "সহজ, দ্রুত ও ১০০% নিরাপদ পেমেন্ট মাধ্যমসমূহ",
+                isPayment: true,
+                blocks: [
+                  { heading: "নিরাপদ লেনদেন নির্দেশিকা", list: ["ক্যাশ অন ডেলিভারি (COD)-তে পণ্য হাতে পেয়ে মূল্য পরিশোধের সুবিধা রয়েছে।", "bKash / Nagad / Rocket-এ পেমেন্ট করার সময় সঠিক ট্রানজেকশন আইডি সংরক্ষণ করুন।", "অনলাইন পেমেন্ট সম্পূর্ণ সুরক্ষিত ও ভেরিফাইড।"] }
+                ]
+              },
+              shipping: {
+                section: ftr.supportSectionTitle || "Support",
+                icon: "🚚",
+                title: "Shipping & Delivery",
+                subtitle: "সারা বাংলাদেশে দ্রুততম ও বিশ্বস্ত হোম ডেলিভারি",
+                blocks: [
+                  { heading: "ডেলিভারি সময়সীমা", list: ["ঢাকার ভেতরে: অর্ডার কনফার্ম হওয়ার ২৪ থেকে ৪৮ ঘণ্টার মধ্যে ডেলিভারি।", "ঢাকার বাইরে (সারাদেশ): ২ থেকে ৪ কর্মদিবসের মধ্যে হোম ডেলিভারি।"] },
+                  { heading: "প্যাকেজিং ও কুরিয়ার", text: "প্রতিটি শাড়ি ও গহনা যত্নসহকারে ড্যামেজ-প্রুফ বক্সে প্যাক করে Steadfast / Pathao কুরিয়ারের মাধ্যমে পাঠানো হয়।" }
+                ]
+              },
+              faq: {
+                section: ftr.supportSectionTitle || "Support",
+                icon: "❓",
+                title: "Frequently Asked Questions (FAQ)",
+                subtitle: "ক্রেতাদের সাধারণ কিছু প্রশ্ন ও উত্তর",
+                faqs: [
+                  { q: "অর্ডার করার কত দিনের মধ্যে পণ্য হাতে পাব?", a: "ঢাকার মধ্যে ২৪–৪৮ ঘণ্টায় এবং ঢাকার বাইরে সারাদেশে ২–৪ কর্মদিবসে হোম ডেলিভারি দেওয়া হয়।" },
+                  { q: "পণ্য ডেলিভারি ম্যানের সামনে চেক করে নেওয়া যাবে?", a: "হ্যাঁ! ডেলিভারি ম্যানের সামনে পার্সেল খুলে পণ্যের গুণগত মান দেখে রিসিভ করতে পারবেন।" },
+                  { q: "ক্যাশ অন ডেলিভারি সুবিধা আছে কি?", a: "জি, সারাদেশেই সম্পূর্ণ ক্যাশ অন ডেলিভারিতে অর্ডার করতে পারবেন।" },
+                  { q: "ভাউচার বা BOGO অফার কীভাবে ব্যবহার করব?", a: "স্টোরফ্রন্টের ভাউচার সেকশন থেকে 'Collect All' ক্লিক করে অথবা কার্টে কুপন কোড বসিয়ে সাথে সাথে ডিসকাউন্ট পাবেন।" }
+                ]
+              },
+              refund_policy: {
+                section: ftr.policySectionTitle || "Consumer Policy",
+                icon: "💰",
+                title: "Refund Policy",
+                subtitle: `${returnDays} দিনের সহজ রিটার্ন ও রিফান্ড নিশ্চয়তা`,
+                blocks: [
+                  { heading: "রিফান্ডের শর্তাবলী", list: [`পণ্য হাতে পাওয়ার ${returnDays} দিনের মধ্যে রিটার্ন আবেদন করতে হবে।`, "ভুল পণ্য, রঙ/সাইজ ভিন্ন হলে বা ড্যামেজ পাওয়া গেলে সম্পূর্ণ রিফান্ড বা রিপ্লেসমেন্ট পাবেন।", "পণ্যটি অবশ্যই অব্যবহৃত ও অরিজিনাল ট্যাগ/প্যাকেজিংসহ থাকতে হবে।"] },
+                  { heading: "রিফান্ড প্রসেস সময়", text: "রিটার্ন পণ্য আমাদের ওয়্যারহাউসে যাচাই হওয়ার ২৪–৭২ ঘণ্টার মধ্যে bKash, Nagad বা ব্যাংক অ্যাকাউন্টে টাকা ফেরত পাঠানো হয়।" }
+                ]
+              },
+              exchange: {
+                section: ftr.policySectionTitle || "Consumer Policy",
+                icon: "🔄",
+                title: "Exchange Policy",
+                subtitle: "পছন্দমতো সাইজ বা পণ্য পরিবর্তনের সহজ নিয়ম",
+                blocks: [
+                  { heading: "কখন এক্সচেঞ্জ করতে পারবেন?", list: [`ডেলিভারি পাওয়ার ${returnDays} দিনের মধ্যে সাইজ, কালার বা ডিজাইন পরিবর্তনের জন্য আবেদন করা যাবে।`, "ত্রুটিপূর্ণ পণ্যের ক্ষেত্রে কোনো অতিরিক্ত ডেলিভারি চার্জ ছাড়াই এক্সচেঞ্জ করে দেওয়া হয়।"] },
+                  { heading: "এক্সচেঞ্জ করার উপায়", text: `আপনার অর্ডার নম্বরসহ আমাদের WhatsApp (${config.whatsapp}) অথবা প্রোফাইলের 'রিটার্ন / এক্সচেঞ্জ' বাটনে রিকোয়েস্ট পাঠান।` }
+                ]
+              },
+              cancellation: {
+                section: ftr.policySectionTitle || "Consumer Policy",
+                icon: "🚫",
+                title: "Order Cancellation",
+                subtitle: "অর্ডার বাতিলের সহজ নিয়মাবলী",
+                blocks: [
+                  { heading: "কখন অর্ডার বাতিল করা যাবে?", list: ["অর্ডারটি কুরিয়ারে হস্তান্তর (Shipped) হওয়ার আগ পর্যন্ত যেকোনো সময় কোনো চার্জ ছাড়াই বাতিল করা যাবে।", "পার্সেল কুরিয়ারে বের হয়ে গেলে হেল্পলাইনে যোগাযোগ করে সহায়তা নিতে পারবেন।"] },
+                  { heading: "বাতিল করার মাধ্যম", text: `সরাসরি ${config.phone} নম্বরে কল করে অথবা WhatsApp-এ অর্ডার নম্বর জানিয়ে দিন।` }
+                ]
+              },
+              extra_discount: {
+                section: ftr.policySectionTitle || "Consumer Policy",
+                icon: "🎁",
+                title: "Extra Discount & Offers",
+                subtitle: "সাশ্রয়ী কেনাকাটার বিশেষ সুযোগসমূহ",
+                isDiscount: true,
+                blocks: [
+                  { heading: "অতিরিক্ত ছাড়ের উপায়সমূহ", list: ["Buy 2 Get 1 (BOGO): নির্ধারিত পণ্যে ২টি কিনলে ১টি সম্পূর্ণ ফ্রি!", "Collect Voucher: হোম পেজের ভাউচার স্ট্রিপ থেকে অতিরিক্ত ডিসকাউন্ট ভাউচার সংগ্রহ করুন।", "Combo Packs: কম্বো প্যাকেজে একসাথে কিনলে বিশেষ ছাড়।", "VIP Loyalty Points: প্রতিটি অর্ডারে রিওয়ার্ড পয়েন্ট জমে যা পরবর্তী অর্ডারে ছাড় হিসেবে ব্যবহার করা যায়।"] }
+                ]
+              }
+            };
+
+            const activeData = popupCatalog[activeFooterPopupKey] || popupCatalog.about_us;
+            return (
+              <div
+                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
+                onClick={() => setActiveFooterPopupKey(null)}
+              >
+                <div
+                  className="bg-white rounded-3xl w-full max-w-xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 border border-sky-200 shadow-2xl space-y-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Modal Header */}
+                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-md shrink-0"
+                        style={{ background: `linear-gradient(135deg, ${titleBtnBgStart} 0%, ${titleBtnBgEnd} 100%)`, color: titleBtnText }}
+                      >
+                        {activeData.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <span
+                          className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full mb-1"
+                          style={{ background: `linear-gradient(135deg, ${titleBtnBgStart} 0%, ${titleBtnBgEnd} 100%)`, color: titleBtnText }}
+                        >
+                          {activeData.section}
+                        </span>
+                        <h3 className="font-black text-base sm:text-lg text-slate-900 leading-tight">{activeData.title}</h3>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">{activeData.subtitle}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveFooterPopupKey(null)}
+                      className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:text-black hover:bg-slate-200 transition shrink-0 cursor-pointer"
+                      aria-label="বন্ধ করুন"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Admin Custom Note if configured */}
+                  {customNote && (
+                    <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-xs sm:text-sm text-slate-800 font-semibold leading-relaxed whitespace-pre-line">
+                      {customNote}
+                    </div>
+                  )}
+
+                  {/* Contact Us Details Card (Moved from previous Contact Info) */}
+                  {activeData.isContact && (
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <a
+                          href={`tel:${config.phone}`}
+                          className="p-3 rounded-2xl bg-sky-50/80 border border-sky-200 hover:bg-sky-100 transition flex items-center gap-2.5"
+                        >
+                          <span className="text-lg">📞</span>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-sky-800 uppercase">হটলাইন / ফোন</p>
+                            <p className="text-xs font-black text-slate-900 break-words">{config.phone}</p>
+                          </div>
+                        </a>
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-2.5"
+                        >
+                          <span className="text-lg">💬</span>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-emerald-800 uppercase">WhatsApp সাপোর্ট</p>
+                            <p className="text-xs font-black text-slate-900 break-words">{config.whatsapp}</p>
+                          </div>
+                        </a>
+                        <a
+                          href={`mailto:${config.email}`}
+                          className="p-3 rounded-2xl bg-indigo-50/80 border border-indigo-200 hover:bg-indigo-100 transition flex items-center gap-2.5"
+                        >
+                          <span className="text-lg">✉️</span>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-indigo-800 uppercase">ইমেইল ঠিকানা</p>
+                            <p className="text-xs font-black text-slate-900 break-all">{config.email}</p>
+                          </div>
+                        </a>
+                        <div className="p-3 rounded-2xl bg-rose-50/80 border border-rose-200 flex items-center gap-2.5">
+                          <span className="text-lg">📍</span>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-rose-800 uppercase">শোরুম / ঠিকানা</p>
+                            <p className="text-xs font-black text-slate-900 break-words">{config.address}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {ftr.fb && <a href={ftr.fb} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold hover:brightness-110">🌐 Facebook</a>}
+                        {ftr.insta && <a href={ftr.insta} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-pink-600 text-white text-xs font-bold hover:brightness-110">📸 Instagram</a>}
+                        {ftr.youtube && <a href={ftr.youtube} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-bold hover:brightness-110">▶️ YouTube</a>}
+                        {ftr.tiktok && <a href={ftr.tiktok} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:brightness-110">🎵 TikTok</a>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Order Tracking Lookup */}
+                  {activeData.isTracking && (
+                    <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 space-y-2.5">
+                      <label className="text-xs font-black text-sky-900 block">অর্ডার আইডি দিয়ে স্ট্যাটাস চেক করুন:</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={footerTrackOrderInput}
+                          onChange={(e) => setFooterTrackOrderInput(e.target.value)}
+                          placeholder="যেমন: ORD-1001"
+                          className="flex-1 bg-white border border-sky-300 text-slate-900 rounded-full px-3.5 py-2 text-xs outline-none focus:border-sky-600"
+                        />
+                        {currentUser ? (
+                          <button
+                            type="button"
+                            onClick={() => { setActiveFooterPopupKey(null); setProfileTab("orders"); setIsProfileModalOpen(true); }}
+                            className="px-3.5 py-2 rounded-full text-xs font-black text-white shadow cursor-pointer shrink-0"
+                            style={{ background: `linear-gradient(135deg, ${titleBtnBgStart} 0%, ${titleBtnBgEnd} 100%)` }}
+                          >
+                            আমার অর্ডারসমূহ
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { setActiveFooterPopupKey(null); setAuthMode("login"); setIsAuthModalOpen(true); }}
+                            className="px-3.5 py-2 rounded-full text-xs font-black text-white shadow cursor-pointer shrink-0"
+                            style={{ background: `linear-gradient(135deg, ${titleBtnBgStart} 0%, ${titleBtnBgEnd} 100%)` }}
+                          >
+                            লগইন করুন
+                          </button>
+                        )}
+                      </div>
+                      {footerTrackOrderInput.trim() && (
+                        trackedOrderMatch ? (
+                          <div className="p-2.5 rounded-xl bg-white border border-emerald-200 flex items-center justify-between gap-2 text-xs">
+                            <span className="font-bold text-slate-800">অর্ডার #{trackedOrderMatch.id}</span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black">
+                              {trackedOrderMatch.status || "Pending"}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] font-semibold text-rose-700">এই অর্ডার আইডি খুঁজে পাওয়া যায়নি। সঠিক অর্ডার নম্বর দিন অথবা হেল্পলাইনে যোগাযোগ করুন।</p>
+                        )
+                      )}
+                    </div>
+                  )}
+
+                  {/* Active Payment Methods Grid */}
+                  {activeData.isPayment && (
+                    <div className="flex flex-wrap gap-2">
+                      {ftr.bkash && <span className="bg-[#e2136e] keep-white-text px-3 py-1.5 rounded-xl text-xs font-black shadow-xs">bKash</span>}
+                      {ftr.nagad && <span className="bg-[#f7941d] keep-white-text px-3 py-1.5 rounded-xl text-xs font-black shadow-xs">Nagad</span>}
+                      {ftr.rocket && <span className="bg-[#8c3494] keep-white-text px-3 py-1.5 rounded-xl text-xs font-black shadow-xs">Rocket</span>}
+                      {ftr.cod && <span className="bg-emerald-700 keep-white-text px-3 py-1.5 rounded-xl text-xs font-black shadow-xs">Cash on Delivery</span>}
+                      {ftr.visa && <span className="bg-[#1e3a8a] keep-white-text px-3 py-1.5 rounded-xl text-xs font-black shadow-xs">Visa / Mastercard</span>}
+                    </div>
+                  )}
+
+                  {/* Standard Content Blocks */}
+                  {Array.isArray(activeData.blocks) && activeData.blocks.map((blk, bIdx) => (
+                    <div key={bIdx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-1.5">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900">{blk.heading}</h4>
+                      {blk.text && <p className="text-xs text-slate-700 font-medium leading-relaxed">{blk.text}</p>}
+                      {Array.isArray(blk.list) && (
+                        <ul className="space-y-1 text-xs text-slate-700 font-medium leading-relaxed">
+                          {blk.list.map((li, lIdx) => (
+                            <li key={lIdx} className="flex items-start gap-1.5">
+                              <span className="text-sky-700 font-black">•</span>
+                              <span>{li}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* FAQ Items */}
+                  {Array.isArray(activeData.faqs) && (
+                    <div className="space-y-2.5">
+                      {activeData.faqs.map((fq, fIdx) => (
+                        <div key={fIdx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                          <p className="text-xs sm:text-sm font-black text-sky-900">প্রশ্ন: {fq.q}</p>
+                          <p className="text-xs text-slate-700 font-medium leading-relaxed">উত্তর: {fq.a}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Modal Footer Actions */}
+                  <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                    {activeData.isDiscount ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveFooterPopupKey(null);
+                          const el = document.getElementById("products-section");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="px-4 py-2 rounded-full text-xs font-black text-white shadow cursor-pointer"
+                        style={{ background: `linear-gradient(135deg, ${titleBtnBgStart} 0%, ${titleBtnBgEnd} 100%)` }}
+                      >
+                        🎁 অফার ও পণ্য দেখুন
+                      </button>
+                    ) : (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2 rounded-full text-xs font-bold bg-emerald-600 text-white shadow hover:brightness-110"
+                      >
+                        💬 WhatsApp সাপোর্ট
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setActiveFooterPopupKey(null)}
+                      className="px-4 py-2 rounded-full text-xs font-bold bg-slate-100 border border-slate-300 text-slate-800 hover:bg-slate-200 cursor-pointer"
+                    >
+                      বন্ধ করুন
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ========================================================= */}
           {/* RING & BANGLE SIZE GUIDE MODAL (আংটি ও চুড়ির সাইজ গাইড) */}
