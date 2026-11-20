@@ -312,6 +312,8 @@ class MainActivity : ComponentActivity() {
                     homeSections = homeSections,
                     reels = reels,
                     combos = combos,
+                    orders = orders,
+                    coupons = coupons,
                     cartItemCount = cartItems.sumOf { it.quantity },
                     selectedCategory = selectedCategory,
                     searchQuery = searchQuery,

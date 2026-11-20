@@ -167,8 +167,15 @@ fun AdminSystemSettingsHub(
           modifier = Modifier.testTag("settings_subtab_GENERAL")
         )
         SettingsSubTabPill(
-          label = "পেমেন্ট ও পিক্সেল",
+          label = "পেমেন্ট মেথড",
           icon = Icons.Outlined.Payments,
+          selected = selectedSubTab == "PAYMENTS",
+          onClick = { selectedSubTab = "PAYMENTS" },
+          modifier = Modifier.testTag("settings_subtab_PAYMENTS")
+        )
+        SettingsSubTabPill(
+          label = "পিক্সেল ও ট্র্যাকিং",
+          icon = Icons.Outlined.Analytics,
           selected = selectedSubTab == "INTEGRATIONS",
           onClick = { selectedSubTab = "INTEGRATIONS" },
           modifier = Modifier.testTag("settings_subtab_INTEGRATIONS")
@@ -207,6 +214,19 @@ fun AdminSystemSettingsHub(
           config = config,
           onSaveConfig = onSaveConfig
         )
+
+        "PAYMENTS" -> Column(
+          modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+          verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+          PaymentMethodsToggleSection(
+            config = config,
+            onSaveConfig = onSaveConfig
+          )
+          Spacer(modifier = Modifier.height(12.dp))
+        }
 
         "INTEGRATIONS" -> PaymentAndPixelSettingsSection(
           config = config,
@@ -492,11 +512,6 @@ private fun PaymentAndPixelSettingsSection(
       .verticalScroll(rememberScrollState()),
     verticalArrangement = Arrangement.spacedBy(12.dp)
   ) {
-    PaymentMethodsToggleSection(
-      config = config,
-      onSaveConfig = onSaveConfig
-    )
-
     SettingsSectionCard(
       title = "Meta / Facebook Pixel ট্র্যাকিং",
       subtitle = "ইভেন্ট কনভার্সন ও এডস ট্র্যাকিং কনফিগারেশন",

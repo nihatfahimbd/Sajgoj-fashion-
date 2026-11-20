@@ -71,9 +71,11 @@ import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamPriceBorder
 import com.example.ui.theme.CreamSurface
+import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.NavyBlueCardEnd
 import com.example.ui.theme.ReelsRedBadge
+import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.parseColorHex
 import kotlinx.coroutines.delay
 
@@ -208,6 +210,7 @@ private val designPresets = listOf(
   )
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PaymentMethodsToggleSection(
   config: StoreConfig,
@@ -259,20 +262,20 @@ fun PaymentMethodsToggleSection(
             ) {
               Icon(
                 imageVector = Icons.Outlined.CreditCard,
-                contentDescription = null,
+                contentDescription = "পেমেন্ট মেথড কন্ট্রোল",
                 tint = Color.White,
                 modifier = Modifier.size(20.dp)
               )
             }
             Column {
               Text(
-                text = "পেমেন্ট মেথড কন্ট্রোল",
+                text = "পেমেন্ট মেথড সেটিংস",
                 fontSize = 14.5.sp,
                 fontWeight = FontWeight.Black,
                 color = Color.White
               )
               Text(
-                text = "স্টোরফ্রন্ট ফুটার ও চেকআউটে লাইভ সিঙ্ক",
+                text = "টগল করলেই স্টোরফ্রন্ট ফুটারে লাইভ আপডেট",
                 fontSize = 11.sp,
                 color = Color.White.copy(alpha = 0.9f)
               )
@@ -299,6 +302,74 @@ fun PaymentMethodsToggleSection(
         modifier = Modifier.padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
+        // Quick Presets Row (48.dp min touch targets)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFECFDF5),
+            border = BorderStroke(1.dp, Color(0xFF6EE7B7)),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+              .clip(RoundedCornerShape(12.dp))
+              .clickable {
+                onSaveConfig(
+                  config.copy(
+                    bkashEnabled = true,
+                    nagadEnabled = true,
+                    rocketEnabled = true,
+                    visaEnabled = true,
+                    codEnabled = true
+                  )
+                )
+              }
+              .testTag("payment_enable_all_btn")
+          ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+              Text(
+                text = "✓ সব চালু করুন",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF047857)
+              )
+            }
+          }
+
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFF8FAFC),
+            border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+              .clip(RoundedCornerShape(12.dp))
+              .clickable {
+                onSaveConfig(
+                  config.copy(
+                    bkashEnabled = false,
+                    nagadEnabled = false,
+                    rocketEnabled = false,
+                    visaEnabled = false,
+                    codEnabled = true
+                  )
+                )
+              }
+              .testTag("payment_cod_only_btn")
+          ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+              Text(
+                text = "শুধু COD রাখুন",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = AdminInkPrimary
+              )
+            }
+          }
+        }
+
         PaymentMethodToggleRow(
           label = "bKash",
           subtitle = "বিকাশ মোবাইল পেমেন্ট ব্যাজ",
@@ -324,6 +395,14 @@ fun PaymentMethodsToggleSection(
           onToggle = { enabled -> onSaveConfig(config.copy(rocketEnabled = enabled)) }
         )
         PaymentMethodToggleRow(
+          label = "Visa / Mastercard",
+          subtitle = "কার্ড পেমেন্ট সাপোর্ট ব্যাজ",
+          badgeColor = Color(0xFF1E3A8A),
+          checked = config.visaEnabled,
+          testTag = "payment_toggle_visa",
+          onToggle = { enabled -> onSaveConfig(config.copy(visaEnabled = enabled)) }
+        )
+        PaymentMethodToggleRow(
           label = "Cash on Delivery",
           subtitle = "হাতে পেয়ে মূল্য পরিশোধ (COD)",
           badgeColor = Color(0xFF0D9488),
@@ -331,14 +410,118 @@ fun PaymentMethodsToggleSection(
           testTag = "payment_toggle_cod",
           onToggle = { enabled -> onSaveConfig(config.copy(codEnabled = enabled)) }
         )
-        PaymentMethodToggleRow(
-          label = "Visa / Mastercard",
-          subtitle = "কার্ড পেমেন্ট সাপোর্ট ব্যাজ",
-          badgeColor = Color(0xFF2563EB),
-          checked = config.visaEnabled,
-          testTag = "payment_toggle_visa",
-          onToggle = { enabled -> onSaveConfig(config.copy(visaEnabled = enabled)) }
-        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Instant Live Store Footer Preview
+        Surface(
+          shape = RoundedCornerShape(14.dp),
+          color = CreamSurface,
+          border = BorderStroke(1.2.dp, BorderGold),
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("payment_footer_live_preview")
+        ) {
+          Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "লাইভ স্টোর ফুটার প্রিভিউ (পেমেন্ট মেথড)",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = RoyalMaroon
+              )
+              Surface(
+                shape = RoundedCornerShape(50),
+                color = Color(0xFFDCFCE7)
+              ) {
+                Text(
+                  text = "লাইভ সিঙ্ক",
+                  fontSize = 9.5.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = Color(0xFF166534),
+                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                )
+              }
+            }
+
+            if (enabledGateways == 0) {
+              Text(
+                text = "⚠️ সব পেমেন্ট মেথড বন্ধ আছে। ফুটারে প্রদর্শনের জন্য অন্তত ১টি চালু করুন।",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFBE123C)
+              )
+            } else {
+              FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                if (config.bkashEnabled) {
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(8.dp))
+                      .background(Color(0xFFE2136E))
+                      .padding(horizontal = 8.dp, vertical = 3.dp)
+                  ) {
+                    Text(text = "bKash", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                  }
+                }
+                if (config.nagadEnabled) {
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(8.dp))
+                      .background(Color(0xFFF6921E))
+                      .padding(horizontal = 8.dp, vertical = 3.dp)
+                  ) {
+                    Text(text = "Nagad", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                  }
+                }
+                if (config.rocketEnabled) {
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(8.dp))
+                      .background(Color(0xFF8C3494))
+                      .padding(horizontal = 8.dp, vertical = 3.dp)
+                  ) {
+                    Text(text = "Rocket", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                  }
+                }
+                if (config.codEnabled) {
+                  Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, BorderGold)
+                  ) {
+                    Text(
+                      text = "Cash on Delivery",
+                      color = DarkEspresso,
+                      fontSize = 10.sp,
+                      fontWeight = FontWeight.Bold,
+                      modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                  }
+                }
+                if (config.visaEnabled) {
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(8.dp))
+                      .background(Color(0xFF1E3A8A))
+                      .padding(horizontal = 8.dp, vertical = 3.dp)
+                  ) {
+                    Text(text = "Visa / Mastercard", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

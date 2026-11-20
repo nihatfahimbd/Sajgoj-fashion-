@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,17 +27,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,17 +61,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.data.model.BannerItem
 import com.example.data.model.Category
 import com.example.data.model.ComboPack
+import com.example.data.model.Coupon
 import com.example.data.model.HomeSectionConfig
+import com.example.data.model.Order
 import com.example.data.model.Product
 import com.example.data.model.ReelItem
 import com.example.data.model.StoreConfig
@@ -116,6 +125,8 @@ fun StorefrontScreen(
   homeSections: List<HomeSectionConfig> = emptyList(),
   reels: List<ReelItem> = emptyList(),
   combos: List<ComboPack> = emptyList(),
+  orders: List<Order> = emptyList(),
+  coupons: List<Coupon> = emptyList(),
   cartItemCount: Int = 0,
   selectedCategory: String = "All",
   searchQuery: String = "",
@@ -144,6 +155,7 @@ fun StorefrontScreen(
   var activeReelForPlayback by remember { mutableStateOf<ReelItem?>(null) }
   var allProductsInlineCat by remember { mutableStateOf("All") }
   var wishlistIds by remember { mutableStateOf(setOf<String>()) }
+  var activeFooterTopic by remember { mutableStateOf<String?>(null) }
   val design = config.design
   val toggleWishlist: (String) -> Unit = { pid ->
     wishlistIds = if (wishlistIds.contains(pid)) wishlistIds - pid else wishlistIds + pid
@@ -586,7 +598,10 @@ fun StorefrontScreen(
 
       // Storefront Footer
       item(key = "storefront_footer") {
-        StorefrontFooterCard(config = config)
+        StorefrontFooterCard(
+          config = config,
+          onOpenTopic = { topic -> activeFooterTopic = topic }
+        )
       }
     }
 
@@ -687,6 +702,17 @@ fun StorefrontScreen(
         onLikeReel = onLikeReel,
         onAddToCart = onAddToCart,
         onProductClick = onProductClick
+      )
+    }
+
+    if (activeFooterTopic != null) {
+      FooterPolicyInfoDialog(
+        initialTopic = activeFooterTopic!!,
+        config = config,
+        orders = orders,
+        coupons = coupons,
+        onDismiss = { activeFooterTopic = null },
+        onOpenWhatsApp = { openWhatsApp() }
       )
     }
   }
@@ -1449,7 +1475,10 @@ private fun EmptySearchResultBox() {
 }
 
 @Composable
-private fun StorefrontFooterCard(config: StoreConfig) {
+private fun StorefrontFooterCard(
+  config: StoreConfig,
+  onOpenTopic: (String) -> Unit = {}
+) {
   Column(
     modifier = Modifier
       .fillMaxWidth()
@@ -1489,6 +1518,51 @@ private fun StorefrontFooterCard(config: StoreConfig) {
     }
 
     Spacer(modifier = Modifier.height(14.dp))
+    HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
+    Spacer(modifier = Modifier.height(12.dp))
+
+    // (1) Information, (2) Support, (3) Consumer Policy Columns
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalAlignment = Alignment.Top
+    ) {
+      FooterLinkColumn(
+        title = "Information",
+        items = listOf(
+          "about" to "About us",
+          "contact" to "Contact us",
+          "terms" to "Terms & Conditions",
+          "privacy" to "Privacy Policy"
+        ),
+        onItemClick = onOpenTopic,
+        modifier = Modifier.weight(1f)
+      )
+      FooterLinkColumn(
+        title = "Support",
+        items = listOf(
+          "tracking" to "Order Tracking",
+          "payment" to "Payment",
+          "shipping" to "Shipping",
+          "faq" to "FAQ"
+        ),
+        onItemClick = onOpenTopic,
+        modifier = Modifier.weight(1f)
+      )
+      FooterLinkColumn(
+        title = "Consumer Policy",
+        items = listOf(
+          "refund" to "Refund Policy",
+          "exchange" to "Exchange",
+          "cancellation" to "Cancellation",
+          "discount" to "Extra Discount"
+        ),
+        onItemClick = onOpenTopic,
+        modifier = Modifier.weight(1f)
+      )
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
     HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
     Spacer(modifier = Modifier.height(10.dp))
 
@@ -1572,6 +1646,336 @@ private fun StorefrontFooterCard(config: StoreConfig) {
       textAlign = TextAlign.Center,
       modifier = Modifier.fillMaxWidth()
     )
+  }
+}
+
+@Composable
+private fun FooterLinkColumn(
+  title: String,
+  items: List<Pair<String, String>>,
+  onItemClick: (String) -> Unit,
+  modifier: Modifier = Modifier
+) {
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Text(
+      text = title,
+      fontSize = 11.5.sp,
+      fontWeight = FontWeight.Bold,
+      color = AntiqueGold,
+      maxLines = 1,
+      overflow = TextOverflow.Ellipsis
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    items.forEach { (key, label) ->
+      Text(
+        text = "▪ $label",
+        fontSize = 10.5.sp,
+        color = CreamSurface,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(6.dp))
+          .clickable { onItemClick(key) }
+          .padding(vertical = 5.dp)
+          .testTag("footer_link_$key")
+      )
+    }
+  }
+}
+
+@Composable
+private fun FooterPolicyInfoDialog(
+  initialTopic: String,
+  config: StoreConfig,
+  orders: List<Order>,
+  coupons: List<Coupon>,
+  onDismiss: () -> Unit,
+  onOpenWhatsApp: () -> Unit
+) {
+  val context = LocalContext.current
+  var selectedTopic by remember(initialTopic) { mutableStateOf(initialTopic) }
+  var trackingQuery by remember { mutableStateOf("") }
+
+  val topics = listOf(
+    "about" to "About us",
+    "contact" to "Contact us",
+    "terms" to "Terms & Conditions",
+    "privacy" to "Privacy Policy",
+    "tracking" to "Order Tracking",
+    "payment" to "Payment",
+    "shipping" to "Shipping",
+    "faq" to "FAQ",
+    "refund" to "Refund Policy",
+    "exchange" to "Exchange",
+    "cancellation" to "Cancellation",
+    "discount" to "Extra Discount"
+  )
+  val currentTitle = topics.find { it.first == selectedTopic }?.second ?: "Store Info"
+
+  Dialog(onDismissRequest = onDismiss) {
+    Surface(
+      shape = RoundedCornerShape(24.dp),
+      color = Color.White,
+      border = BorderStroke(1.dp, BorderGold),
+      modifier = Modifier
+        .fillMaxWidth()
+        .heightIn(max = 580.dp)
+    ) {
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(16.dp)
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = config.storeName,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold,
+              color = AntiqueGoldDark
+            )
+            Text(
+              text = currentTitle,
+              fontSize = 17.sp,
+              fontWeight = FontWeight.Black,
+              color = RoyalMaroon
+            )
+          }
+          IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
+            Icon(imageVector = Icons.Default.Close, contentDescription = "বন্ধ করুন", tint = DarkEspresso)
+          }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+          horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+          topics.forEach { (key, label) ->
+            val isOn = key == selectedTopic
+            Surface(
+              shape = RoundedCornerShape(16.dp),
+              color = if (isOn) RoyalMaroon else CreamSurface,
+              border = BorderStroke(1.dp, if (isOn) RoyalMaroon else BorderGold),
+              modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { selectedTopic = key }
+            ) {
+              Text(
+                text = label,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isOn) Color.White else RoyalMaroon,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+              )
+            }
+          }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Column(
+          modifier = Modifier
+            .weight(1f, fill = false)
+            .verticalScroll(rememberScrollState()),
+          verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          when (selectedTopic) {
+            "about" -> {
+              Text(
+                text = "${config.storeName} — আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। আমাদের প্রতিটি পণ্য গুণগত মান যাচাই করে সরাসরি ক্রেতার হাতে পৌঁছে দেওয়া হয়।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 18.sp
+              )
+            }
+            "contact" -> {
+              Text(text = "📞 হটলাইন: ${config.phone}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+              Text(text = "💬 WhatsApp: ${config.whatsapp}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+              Text(text = "📍 শোরুম: ${config.address}", fontSize = 12.sp, color = DarkEspresso)
+              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                  onClick = {
+                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${config.phone}"))
+                    context.startActivity(intent)
+                  },
+                  colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                  modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                  Text("কল করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                  onClick = onOpenWhatsApp,
+                  colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
+                  modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                  Text("WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+              }
+            }
+            "terms" -> {
+              Text(
+                text = "• অর্ডার কনফার্ম করতে সঠিক নাম, মোবাইল নম্বর ও ঠিকানা প্রদান আবশ্যক।\n• স্টক প্রাপ্যতা অনুযায়ী ডেলিভারি নিশ্চিত করা হয়।\n• যেকোনো ভুয়া অর্ডার বা অপব্যবহারের ক্ষেত্রে স্টোর কর্তৃপক্ষ অর্ডার বাতিলের অধিকার সংরক্ষণ করে।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "privacy" -> {
+              Text(
+                text = "• ক্রেতার নাম, ফোন নম্বর ও ডেলিভারি ঠিকানা শুধুমাত্র অর্ডার প্রক্রিয়াকরণ ও কাস্টমার কেয়ারের জন্য ব্যবহার করা হয়।\n• ব্যক্তিগত তথ্য কোনো তৃতীয় পক্ষের কাছে বিক্রি বা শেয়ার করা হয় না।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "tracking" -> {
+              OutlinedTextField(
+                value = trackingQuery,
+                onValueChange = { trackingQuery = it },
+                label = { Text("অর্ডার ID, ট্র্যাকিং কোড বা ফোন নম্বর") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+              )
+              val q = trackingQuery.trim().lowercase()
+              val matched = if (q.isBlank()) emptyList() else orders.filter {
+                it.id.lowercase().contains(q) ||
+                  it.phone.lowercase().contains(q) ||
+                  it.trackingId.lowercase().contains(q)
+              }
+              if (q.isBlank()) {
+                Text(
+                  text = "অর্ডার ID বা ফোন নম্বর লিখে আপনার পার্সেলের বর্তমান অবস্থা দেখুন।",
+                  fontSize = 12.sp,
+                  color = AntiqueGoldDark
+                )
+              } else if (matched.isEmpty()) {
+                Text(
+                  text = "\"$trackingQuery\" দিয়ে কোনো অর্ডার পাওয়া যায়নি।",
+                  fontSize = 12.sp,
+                  color = RoyalMaroon,
+                  fontWeight = FontWeight.Bold
+                )
+              } else {
+                matched.forEach { ord ->
+                  Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = CreamSurface,
+                    border = BorderStroke(1.dp, BorderGold),
+                    modifier = Modifier.fillMaxWidth()
+                  ) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                      Text(text = "#${ord.id} • ${ord.status}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+                      Text(text = "ক্রেতা: ${ord.customerName} • মোট: ৳${ord.total}", fontSize = 12.sp, color = DarkEspresso)
+                      if (ord.trackingId.isNotBlank()) {
+                        Text(text = "🚚 ট্র্যাকিং ID: ${ord.trackingId}", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            "payment" -> {
+              Text(
+                text = "উপলব্ধ পেমেন্ট মাধ্যম: ${listOfNotNull(
+                  if (config.bkashEnabled) "bKash" else null,
+                  if (config.nagadEnabled) "Nagad" else null,
+                  if (config.rocketEnabled) "Rocket" else null,
+                  if (config.codEnabled) "Cash on Delivery" else null,
+                  if (config.visaEnabled) "Visa / Mastercard" else null
+                ).joinToString(", ")}।\n\nসারা দেশে পণ্য হাতে পেয়ে ক্যাশ অন ডেলিভারিতে মূল্য পরিশোধ করা যায়।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "shipping" -> {
+              Text(
+                text = "🚚 ঢাকার ভেতরে ডেলিভারি চার্জ: ৳৭০ (১-২ কার্যদিবস)\n📦 ঢাকার বাইরে ডেলিভারি চার্জ: ৳১৩০ (২-৪ কার্যদিবস)\n🎁 ২০০০+ টাকার অর্ডারে ফ্রি হোম ডেলিভারি ও ${config.returnPolicyDays} দিনের রিটার্ন সুবিধা!",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 20.sp
+              )
+            }
+            "faq" -> {
+              Text(
+                text = "প্রশ্ন: ডেলিভারি ম্যানের সামনে পণ্য চেক করা যাবে?\nউত্তর: হ্যাঁ, ডেলিভারি ম্যানের সামনেই যাচাই করে নিতে পারবেন।\n\nপ্রশ্ন: সাইজ বা ডিজাইন পরিবর্তন করা যাবে?\nউত্তর: হ্যাঁ, ৭ দিনের মধ্যে সহজ এক্সচেঞ্জ সুবিধা আছে।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "refund" -> {
+              Text(
+                text = "• ডেলিভারি পাওয়ার ৭ দিনের মধ্যে ত্রুটিপূর্ণ বা ভুল পণ্যে ১০০% রিফান্ড সুবিধা পাওয়া যাবে।\n• রিটার্ন যাচাইয়ের পর ২-৩ কর্মদিবসে bKash/Nagad/ব্যাংকে অর্থ ফেরত দেওয়া হয়।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "exchange" -> {
+              Text(
+                text = "• ডেলিভারির ৭ দিনের মধ্যে সাইজ বা কালার পরিবর্তনের জন্য হটলাইন (${config.phone}) বা WhatsApp-এ যোগাযোগ করুন।\n• আমাদের ভুলের কারণে এক্সচেঞ্জ হলে ডেলিভারি চার্জ ফ্রি।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "cancellation" -> {
+              Text(
+                text = "• কুরিয়ারে পার্সেল পাঠানোর আগে যেকোনো সময় অর্ডার বাতিল করা যাবে।\n• অর্ডার বাতিলের জন্য দ্রুত হটলাইন বা WhatsApp-এ অর্ডার ID জানান।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "discount" -> {
+              val active = coupons.filter { it.isActive }
+              if (active.isEmpty()) {
+                Text(
+                  text = "বর্তমানে Buy 2 Get 1 এবং ভাউচার ডিসকাউন্ট কার্ড থেকে অতিরিক্ত ছাড় উপভোগ করতে পারবেন!",
+                  fontSize = 12.5.sp,
+                  color = DarkEspresso
+                )
+              } else {
+                active.forEach { cp ->
+                  Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = CreamSurface,
+                    border = BorderStroke(1.dp, BorderGold),
+                    modifier = Modifier.fillMaxWidth()
+                  ) {
+                    Row(
+                      modifier = Modifier.padding(10.dp),
+                      horizontalArrangement = Arrangement.SpaceBetween,
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      Column {
+                        Text(text = cp.code, fontSize = 13.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+                        Text(
+                          text = if (cp.type == "%" || cp.type.equals("percent", ignoreCase = true)) "${cp.value}% ছাড়" else "৳${cp.value} ছাড়",
+                          fontSize = 11.5.sp,
+                          color = DarkEspresso
+                        )
+                      }
+                      Text(text = "সক্রিয় ✓", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 

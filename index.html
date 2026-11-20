@@ -1879,6 +1879,658 @@
       }
     }
 
+    // =========================================================
+    // HASH ROUTER & ORDER TRACKING COMPONENT (Dedicated Route)
+    // =========================================================
+    const HashRouterContext = React.createContext({
+      path: "/",
+      params: {},
+      navigate: () => {}
+    });
+
+    function parseHashRoutePath(rawHash) {
+      const cleaned = String(rawHash || "").replace(/^#/, "").trim();
+      if (!cleaned || ["admin", "login", "backend"].includes(cleaned.toLowerCase())) {
+        return "/";
+      }
+      if (cleaned.startsWith("/")) {
+        return cleaned.replace(/\/+$/, "") || "/";
+      }
+      if (cleaned.toLowerCase().startsWith("order-tracking")) {
+        return "/" + cleaned.replace(/\/+$/, "");
+      }
+      return "/";
+    }
+
+    function matchHashRoute(pattern, actualPath) {
+      if (!pattern) return null;
+      const normPattern = pattern === "/" ? "/" : pattern.replace(/\/+$/, "");
+      const normActual = actualPath === "/" ? "/" : actualPath.replace(/\/+$/, "");
+      if (normPattern === normActual) return {};
+      const pSegs = normPattern.split("/").filter(Boolean);
+      const aSegs = normActual.split("/").filter(Boolean);
+      if (pSegs.length !== aSegs.length) return null;
+      const params = {};
+      for (let i = 0; i < pSegs.length; i++) {
+        if (pSegs[i].startsWith(":")) {
+          params[pSegs[i].slice(1)] = decodeURIComponent(aSegs[i]);
+        } else if (pSegs[i].toLowerCase() !== aSegs[i].toLowerCase()) {
+          return null;
+        }
+      }
+      return params;
+    }
+
+    function HashRouter({ children }) {
+      const [path, setPath] = React.useState(() => {
+        try {
+          return parseHashRoutePath(window.location.hash);
+        } catch (e) {
+          return "/";
+        }
+      });
+
+      React.useEffect(() => {
+        const handleHashChange = () => {
+          setPath(parseHashRoutePath(window.location.hash));
+        };
+        window.addEventListener("hashchange", handleHashChange);
+        return () => window.removeEventListener("hashchange", handleHashChange);
+      }, []);
+
+      const navigate = React.useCallback((to) => {
+        const target = !to || to === "/" ? "/" : (to.startsWith("/") ? to : "/" + to);
+        try {
+          if (target === "/") {
+            window.location.hash = "";
+          } else {
+            window.location.hash = "#" + target;
+          }
+        } catch (e) {}
+        setPath(target);
+        try {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (e) {}
+      }, []);
+
+      const ctxValue = React.useMemo(() => ({ path, params: {}, navigate }), [path, navigate]);
+
+      return (
+        <HashRouterContext.Provider value={ctxValue}>
+          {children}
+        </HashRouterContext.Provider>
+      );
+    }
+
+    function useHashRouter() {
+      return React.useContext(HashRouterContext);
+    }
+
+    function Route({ path, element }) {
+      return element || null;
+    }
+
+    function Routes({ children }) {
+      const parent = useHashRouter();
+      const childList = React.Children.toArray(children);
+      for (let i = 0; i < childList.length; i++) {
+        const child = childList[i];
+        if (!React.isValidElement(child)) continue;
+        const routePath = child.props?.path;
+        const matchedParams = matchHashRoute(routePath, parent.path);
+        if (matchedParams !== null) {
+          return (
+            <HashRouterContext.Provider value={{ ...parent, params: matchedParams }}>
+              {child.props.element}
+            </HashRouterContext.Provider>
+          );
+        }
+      }
+      return null;
+    }
+
+    function OrderTracking({
+      orders = [],
+      products = [],
+      config = {},
+      currentUser = null,
+      onBackToStore = () => {},
+      onOpenMyOrders = () => {},
+      notify = () => {}
+    }) {
+      const { params, navigate } = useHashRouter();
+      const initialOrderId = params?.orderId || "";
+      const [searchInput, setSearchInput] = React.useState(initialOrderId);
+      const [submittedQuery, setSubmittedQuery] = React.useState(initialOrderId);
+      const [cloudOrderMatch, setCloudOrderMatch] = React.useState(null);
+      const [isSearchingCloud, setIsSearchingCloud] = React.useState(false);
+
+      React.useEffect(() => {
+        if (params?.orderId) {
+          setSearchInput(params.orderId);
+          setSubmittedQuery(params.orderId);
+        }
+      }, [params?.orderId]);
+
+      const localMatch = React.useMemo(() => {
+        const q = (submittedQuery || "").trim().toLowerCase();
+        if (!q) return null;
+        return (orders || []).find(o =>
+          String(o.id || "").toLowerCase() === q ||
+          String(o.trackingId || "").toLowerCase() === q ||
+          String(o.id || "").toLowerCase().includes(q) ||
+          String(o.trackingId || "").toLowerCase().includes(q) ||
+          String(o.phone || o.customerPhone || "").replace(/[^0-9]/g, "").endsWith(q.replace(/[^0-9]/g, "")) && q.replace(/[^0-9]/g, "").length >= 6
+        ) || null;
+      }, [orders, submittedQuery]);
+
+      React.useEffect(() => {
+        const q = (submittedQuery || "").trim();
+        if (!q || localMatch || !firestoreDb) {
+          setCloudOrderMatch(null);
+          setIsSearchingCloud(false);
+          return;
+        }
+        let cancelled = false;
+        setIsSearchingCloud(true);
+        (async () => {
+          try {
+            const directSnap = await firestoreDb.collection("orders").doc(q.toUpperCase()).get();
+            if (!cancelled && directSnap.exists) {
+              setCloudOrderMatch({ id: directSnap.id, ...directSnap.data() });
+              setIsSearchingCloud(false);
+              return;
+            }
+            const byIdSnap = await firestoreDb.collection("orders").where("id", "==", q.toUpperCase()).limit(1).get();
+            if (!cancelled && !byIdSnap.empty) {
+              const d = byIdSnap.docs[0];
+              setCloudOrderMatch({ id: d.id, ...d.data() });
+              setIsSearchingCloud(false);
+              return;
+            }
+            const byTrackSnap = await firestoreDb.collection("orders").where("trackingId", "==", q).limit(1).get();
+            if (!cancelled && !byTrackSnap.empty) {
+              const d = byTrackSnap.docs[0];
+              setCloudOrderMatch({ id: d.id, ...d.data() });
+              setIsSearchingCloud(false);
+              return;
+            }
+            if (!cancelled) setCloudOrderMatch(null);
+          } catch (e) {
+            if (!cancelled) setCloudOrderMatch(null);
+          } finally {
+            if (!cancelled) setIsSearchingCloud(false);
+          }
+        })();
+        return () => { cancelled = true; };
+      }, [submittedQuery, localMatch]);
+
+      const activeOrder = localMatch || cloudOrderMatch;
+
+      const handleSearchSubmit = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        const trimmed = (searchInput || "").trim();
+        setSubmittedQuery(trimmed);
+        if (trimmed) {
+          navigate("/order-tracking/" + encodeURIComponent(trimmed));
+        } else {
+          navigate("/order-tracking");
+        }
+      };
+
+      const handleSelectQuickOrder = (orderId) => {
+        setSearchInput(orderId);
+        setSubmittedQuery(orderId);
+        navigate("/order-tracking/" + encodeURIComponent(orderId));
+      };
+
+      const quickSuggestionOrders = React.useMemo(() => {
+        if (currentUser?.phone) {
+          const userNorm = String(currentUser.phone).replace(/[^0-9]/g, "").slice(-10);
+          const own = (orders || []).filter(o =>
+            String(o.phone || o.customerPhone || "").replace(/[^0-9]/g, "").endsWith(userNorm)
+          );
+          if (own.length > 0) return own.slice(0, 4);
+        }
+        return (orders || []).slice(0, 3);
+      }, [orders, currentUser]);
+
+      const shippingStages = [
+        { key: "Pending", icon: "📝", title: "অর্ডার গৃহীত (Order Placed)", desc: "আপনার অর্ডার সফলভাবে সিস্টেমে রেকর্ড করা হয়েছে।" },
+        { key: "Confirmed", icon: "✅", title: "অর্ডার কনফার্মড (Confirmed)", desc: "অ্যাডমিন টিম অর্ডার যাচাই করে অনুমোদন দিয়েছে।" },
+        { key: "Processing", icon: "📦", title: "প্যাকেজিং ও প্রসেসিং (Processing)", desc: "মান যাচাই ও নিরাপদ প্যাকেজিং কার্যক্রম চলছে।" },
+        { key: "Shipped", icon: "🚚", title: "কুরিয়ারে প্রেরণ (In Transit)", desc: "পার্সেল কুরিয়ার পার্টনারের মাধ্যমে আপনার গন্তব্যের পথে রয়েছে।" },
+        { key: "Delivered", icon: "🏠", title: "ডেলিভারি সম্পন্ন (Delivered)", desc: "পার্সেল সফলভাবে ক্রেতার হাতে পৌঁছে দেওয়া হয়েছে।" }
+      ];
+
+      const getStageIndex = (status) => {
+        const s = String(status || "Pending").toLowerCase();
+        if (s.includes("deliver")) return 4;
+        if (s.includes("ship") || s.includes("transit") || s.includes("courier")) return 3;
+        if (s.includes("process") || s.includes("pack")) return 2;
+        if (s.includes("confirm") || s.includes("accept")) return 1;
+        return 0;
+      };
+
+      const isCancelled = activeOrder && String(activeOrder.status || "").toLowerCase().includes("cancel");
+      const currentStageIdx = activeOrder ? getStageIndex(activeOrder.status) : 0;
+      const isDhaka = activeOrder && /dhaka|ঢাকা/i.test(String(activeOrder.district || ""));
+      const estimatedEta = isDhaka ? "১–২ কার্যদিবস (Dhaka Metro)" : "২–৪ কার্যদিবস (Nationwide)";
+      const courierName = activeOrder?.courier && activeOrder.courier !== "None"
+        ? activeOrder.courier
+        : (activeOrder?.trackingId ? "Steadfast / Pathao Express" : "সাজগোজ এক্সপ্রেস ডেলিভারি");
+
+      const shippingEvents = React.useMemo(() => {
+        if (!activeOrder) return [];
+        const events = [];
+        const baseDate = activeOrder.date || new Date().toISOString().slice(0, 10);
+        if (isCancelled) {
+          events.push({
+            time: baseDate,
+            title: "অর্ডার বাতিল করা হয়েছে (Order Cancelled)",
+            detail: "এই অর্ডারটি বাতিল হিসেবে চিহ্নিত হয়েছে। কোনো সাহায্যের জন্য হেল্পলাইনে যোগাযোগ করুন।",
+            done: true,
+            isError: true
+          });
+        } else {
+          if (currentStageIdx >= 4) {
+            events.push({
+              time: "সর্বশেষ আপডেট",
+              title: "সফলভাবে ডেলিভারি সম্পন্ন হয়েছে",
+              detail: `${activeOrder.district || "গন্তব্য"} এলাকায় পার্সেল হস্তান্তর করা হয়েছে।`,
+              done: true
+            });
+          }
+          if (currentStageIdx >= 3) {
+            events.push({
+              time: activeOrder.trackingId ? `TRK: ${activeOrder.trackingId}` : baseDate,
+              title: `${courierName} কুরিয়ারে হ্যান্ডওভার`,
+              detail: `ডেলিভারি হাবের উদ্দেশ্যে পার্সেল ডিসপ্যাচ সম্পন্ন হয়েছে (${estimatedEta})।`,
+              done: true
+            });
+          }
+          if (currentStageIdx >= 2) {
+            events.push({
+              time: baseDate,
+              title: "কোয়ালিটি চেক ও প্যাকেজিং সম্পন্ন",
+              detail: "প্রোডাক্ট যাচাই করে সিলড প্যাকেজিং ও ইনভয়েস সংযুক্ত করা হয়েছে।",
+              done: true
+            });
+          }
+          if (currentStageIdx >= 1) {
+            events.push({
+              time: baseDate,
+              title: "অর্ডার কনফার্মেশন সম্পন্ন",
+              detail: `পেমেন্ট মাধ্যম (${activeOrder.paymentMethod || "COD"}) সহ অর্ডার অনুমোদিত হয়েছে।`,
+              done: true
+            });
+          }
+          events.push({
+            time: baseDate,
+            title: "নতুন অর্ডার রিসিভড",
+            detail: `অর্ডার #${activeOrder.id} সফলভাবে সাজগোজ ফ্যাশনে প্লেস করা হয়েছে।`,
+            done: true
+          });
+        }
+        return events;
+      }, [activeOrder, isCancelled, currentStageIdx, courierName, estimatedEta]);
+
+      return (
+        <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-6 space-y-5 animate-fadeIn">
+          {/* Top Breadcrumb Navigation */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={onBackToStore}
+              className="red-black-tab px-4 py-2 rounded-full text-xs sm:text-sm font-black inline-flex items-center gap-2 cursor-pointer shadow-xs active:scale-95"
+            >
+              <span>←</span>
+              <span>স্টোরফ্রন্টে ফিরে যান</span>
+            </button>
+            <div className="flex items-center gap-2">
+              {currentUser && (
+                <button
+                  type="button"
+                  onClick={onOpenMyOrders}
+                  className="cta-dark-pill px-4 py-2 rounded-full text-xs font-bold cursor-pointer"
+                >
+                  📦 আমার সকল অর্ডার
+                </button>
+              )}
+              <span className="px-3 py-1.5 rounded-full bg-white/80 border border-white text-[11px] font-black text-[#000000]">
+                #/order-tracking
+              </span>
+            </div>
+          </div>
+
+          {/* Search Hero Card */}
+          <section className="liquid-glass-hero rounded-3xl p-5 sm:p-8 border border-white/80 shadow-xl space-y-5 text-[#000000]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl cta-dark-pill flex items-center justify-center text-2xl shadow-md shrink-0">
+                  📦
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#000000]">
+                    অর্ডার ট্র্যাকিং (Order Tracking)
+                  </h2>
+                  <p className="text-xs sm:text-sm font-semibold text-[#000000]/80">
+                    আপনার Order ID দিয়ে অর্ডারের বর্তমান অবস্থা ও কুরিয়ার শিপিং আপডেট দেখুন
+                  </p>
+                </div>
+              </div>
+              <span className="self-start sm:self-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-black">
+                ● লাইভ সিঙ্ক সক্রিয়
+              </span>
+            </div>
+
+            <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-2.5">
+              <div className="relative flex-1">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base">🔍</span>
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="আপনার Order ID লিখুন (যেমন: ORD-1001, ORD-1002) বা Tracking Code..."
+                  className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-white border-2 border-white focus:border-[#7a1c2b] text-sm font-bold text-[#000000] shadow-inner outline-none transition"
+                  aria-label="Search order by Order ID"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchInput("");
+                      setSubmittedQuery("");
+                      navigate("/order-tracking");
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-black flex items-center justify-center cursor-pointer"
+                    title="পরিষ্কার করুন"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="cta-dark-pill px-6 py-3.5 rounded-2xl text-sm font-black shadow-lg hover:brightness-110 transition active:scale-95 cursor-pointer whitespace-nowrap"
+              >
+                অর্ডার ট্র্যাক করুন →
+              </button>
+            </form>
+
+            {/* Quick Suggestion Chips */}
+            {quickSuggestionOrders.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] font-black text-[#000000]/75">
+                  {currentUser ? "আপনার সাম্প্রতিক অর্ডার:" : "উদাহরণ / সাম্প্রতিক Order ID:"}
+                </span>
+                {quickSuggestionOrders.map(o => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => handleSelectQuickOrder(o.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-black transition cursor-pointer border ${
+                      submittedQuery.toUpperCase() === String(o.id).toUpperCase()
+                        ? "bg-[#7a1c2b] text-white border-[#7a1c2b]"
+                        : "bg-white/90 text-[#000000] border-white hover:bg-rose-50"
+                    }`}
+                  >
+                    #{o.id}
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Search Results Section */}
+          {isSearchingCloud ? (
+            <div className="liquid-glass-surface rounded-3xl p-10 text-center space-y-3 border border-white/80">
+              <div className="w-10 h-10 border-4 border-[#7a1c2b] border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-sm font-black text-[#000000]">ক্লাউড সার্ভার থেকে অর্ডারের তথ্য যাচাই করা হচ্ছে...</p>
+            </div>
+          ) : !submittedQuery ? (
+            <div className="liquid-glass-surface rounded-3xl p-6 sm:p-8 border border-white/80 grid sm:grid-cols-3 gap-4 text-center">
+              <div className="bg-white/85 rounded-2xl p-4 border border-white space-y-1.5">
+                <span className="text-2xl block">🧾</span>
+                <h4 className="font-black text-sm text-[#000000]">১. Order ID লিখুন</h4>
+                <p className="text-xs text-gray-600 font-medium">অর্ডার কনফার্মেশন ইনভয়েস বা SMS থেকে পাওয়া Order ID (যেমন ORD-1002) দিন।</p>
+              </div>
+              <div className="bg-white/85 rounded-2xl p-4 border border-white space-y-1.5">
+                <span className="text-2xl block">🚚</span>
+                <h4 className="font-black text-sm text-[#000000]">২. লাইভ শিপিং স্ট্যাটাস</h4>
+                <p className="text-xs text-gray-600 font-medium">প্যাকেজিং থেকে কুরিয়ার বুকিং ও ডেলিভারির প্রতিটি ধাপ লাইভ দেখতে পাবেন।</p>
+              </div>
+              <div className="bg-white/85 rounded-2xl p-4 border border-white space-y-1.5">
+                <span className="text-2xl block">💬</span>
+                <h4 className="font-black text-sm text-[#000000]">৩. তাৎক্ষণিক সহায়তা</h4>
+                <p className="text-xs text-gray-600 font-medium">যেকোনো পরিবর্তনের জন্য অর্ডার ID সহ সরাসরি WhatsApp বা হটলাইনে যুক্ত হন।</p>
+              </div>
+            </div>
+          ) : !activeOrder ? (
+            <div className="bg-white rounded-3xl p-8 text-center border-2 border-rose-200 shadow-lg space-y-3">
+              <span className="text-4xl block">🔎</span>
+              <h3 className="text-lg font-black text-rose-800">
+                "{submittedQuery}" দিয়ে কোনো অর্ডার পাওয়া যায়নি
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto">
+                অনুগ্রহ করে আপনার Order ID (যেমন: ORD-1001), কুরিয়ার ট্র্যাকিং কোড অথবা অর্ডারের সঠিক মোবাইল নম্বরটি যাচাই করে আবার চেষ্টা করুন।
+              </p>
+              <div className="pt-2 flex flex-wrap justify-center gap-2">
+                <a
+                  href={`https://wa.me/${String(config.whatsapp || config.phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`হ্যালো, আমি আমার অর্ডার (${submittedQuery}) সম্পর্কে জানতে চাই।`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 rounded-full bg-emerald-600 text-white text-xs font-bold"
+                >
+                  💬 WhatsApp সাপোর্ট
+                </a>
+                <a
+                  href={`tel:${config.phone}`}
+                  className="px-4 py-2 rounded-full bg-[#7a1c2b] text-white text-xs font-bold"
+                >
+                  📞 হটলাইন: {config.phone}
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {/* Order Overview + Status Header Card */}
+              <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[#f3e2d0] shadow-xl space-y-6">
+                <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-gray-100">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-3 py-1 rounded-full bg-[#7a1c2b] text-white text-xs font-black tracking-wide">
+                        #{activeOrder.id}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-black border ${
+                        isCancelled
+                          ? "bg-rose-100 text-rose-800 border-rose-300"
+                          : currentStageIdx >= 4
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                          : "bg-amber-100 text-amber-900 border-amber-300"
+                      }`}>
+                        {isCancelled ? "✖ বাতিল (Cancelled)" : `● ${activeOrder.status || "Pending"}`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 font-semibold pt-1">
+                      📅 অর্ডার তারিখ: {activeOrder.date || "সাম্প্রতিক"} • 💳 পেমেন্ট: {activeOrder.paymentMethod || "Cash on Delivery"}
+                    </p>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <p className="text-[11px] font-bold text-gray-500 uppercase">মোট বিল (Total Payable)</p>
+                    <p className="text-2xl font-black text-[#7a1c2b] tabular-nums">৳{activeOrder.total}</p>
+                  </div>
+                </div>
+
+                {/* 5-Stage Visual Shipping Progress Bar */}
+                {isCancelled ? (
+                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center gap-3 text-rose-900">
+                    <span className="text-2xl">⚠️</span>
+                    <div>
+                      <h4 className="font-black text-sm">এই অর্ডারটি বাতিল করা হয়েছে</h4>
+                      <p className="text-xs text-rose-700 mt-0.5">ভুলবশত বাতিল হলে অথবা পুনরায় অর্ডার করতে চাইলে আমাদের হেল্পলাইনে যোগাযোগ করুন।</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs font-black text-[#2c1810]">
+                      <span>শিপিং অগ্রগতি (Order Progress)</span>
+                      <span className="text-[#7a1c2b]">{Math.round(((currentStageIdx + 1) / shippingStages.length) * 100)}% সম্পন্ন</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2.5">
+                      {shippingStages.map((stage, idx) => {
+                        const isDone = idx <= currentStageIdx;
+                        const isCurrent = idx === currentStageIdx;
+                        return (
+                          <div
+                            key={stage.key}
+                            className={`rounded-2xl p-3 border transition ${
+                              isCurrent
+                                ? "bg-rose-50 border-[#7a1c2b] shadow-sm ring-2 ring-[#7a1c2b]/15"
+                                : isDone
+                                ? "bg-emerald-50/70 border-emerald-300"
+                                : "bg-gray-50 border-gray-200 opacity-65"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-lg">{stage.icon}</span>
+                              <span className={`w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center ${
+                                isDone ? "bg-emerald-600 text-white" : "bg-gray-200 text-gray-500"
+                              }`}>
+                                {isDone ? "✓" : idx + 1}
+                              </span>
+                            </div>
+                            <p className="text-xs font-black text-[#000000] leading-snug">{stage.title}</p>
+                            <p className="text-[10.5px] text-gray-600 mt-1 leading-snug">{stage.desc}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Shipping Details + Chronological Updates Grid */}
+                <div className="grid md:grid-cols-2 gap-4 pt-2">
+                  {/* Left: Courier & Delivery Address */}
+                  <div className="bg-[#fff8f0] rounded-2xl p-4 border border-[#f3e2d0] space-y-3">
+                    <h4 className="font-black text-sm text-[#7a1c2b] flex items-center gap-2">
+                      <span>🚚</span>
+                      <span>ডেলিভারি ও কুরিয়ার তথ্য</span>
+                    </h4>
+                    <div className="space-y-1.5 text-xs text-[#2c1810]">
+                      <p><strong>ক্রেতা:</strong> {activeOrder.customer || activeOrder.customerName || "সম্মানিত ক্রেতা"}</p>
+                      <p><strong>মোবাইল:</strong> {activeOrder.phone || activeOrder.customerPhone || "প্রযোজ্য নয়"}</p>
+                      <p><strong>ঠিকানা:</strong> {[activeOrder.address, activeOrder.thana, activeOrder.district].filter(Boolean).join(", ") || "বাংলাদেশ"}</p>
+                      <p><strong>কুরিয়ার সার্ভিস:</strong> {courierName}</p>
+                      <p><strong>সম্ভাব্য ডেলিভারি:</strong> {estimatedEta}</p>
+                    </div>
+                    {activeOrder.trackingId && (
+                      <div className="bg-white rounded-xl p-2.5 border border-[#d4a574]/50 flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500">কুরিয়ার ট্র্যাকিং কোড</p>
+                          <p className="font-mono font-black text-xs text-indigo-800">{activeOrder.trackingId}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(activeOrder.trackingId);
+                            notify(`ট্র্যাকিং কোড "${activeOrder.trackingId}" কপি হয়েছে!`);
+                          }}
+                          className="px-3 py-1 rounded-lg bg-[#7a1c2b] text-white text-[11px] font-bold cursor-pointer"
+                        >
+                          কপি
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Detailed Shipping Timeline Updates */}
+                  <div className="bg-[#fff8f0] rounded-2xl p-4 border border-[#f3e2d0] space-y-3">
+                    <h4 className="font-black text-sm text-[#7a1c2b] flex items-center gap-2">
+                      <span>🕒</span>
+                      <span>বিস্তারিত শিপিং আপডেট (Shipping Updates)</span>
+                    </h4>
+                    <div className="space-y-3">
+                      {shippingEvents.map((ev, i) => (
+                        <div key={i} className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <span className={`w-3 h-3 rounded-full mt-1 shrink-0 ${
+                              ev.isError ? "bg-rose-600" : i === 0 ? "bg-[#7a1c2b] ring-4 ring-rose-200" : "bg-emerald-600"
+                            }`}></span>
+                            {i < shippingEvents.length - 1 && <span className="w-0.5 flex-1 bg-[#d4a574]/40 my-1"></span>}
+                          </div>
+                          <div className="pb-2">
+                            <p className="text-[10px] font-mono font-bold text-[#b8956a]">{ev.time}</p>
+                            <p className="text-xs font-black text-[#2c1810]">{ev.title}</p>
+                            <p className="text-[11px] text-gray-600 leading-snug">{ev.detail}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ordered Items & Price Summary */}
+                <div className="border-t border-gray-100 pt-4 space-y-3">
+                  <h4 className="font-black text-sm text-[#2c1810]">🛍️ অর্ডারকৃত পণ্যসমূহ ({(activeOrder.items || []).length}টি)</h4>
+                  <div className="space-y-2">
+                    {(activeOrder.items || []).map((item, idx) => {
+                      const prod = (products || []).find(p => String(p.id) === String(item.productId));
+                      const img = prod?.images?.[0] || item.sourceUrl || "";
+                      return (
+                        <div key={idx} className="flex items-center justify-between gap-3 bg-gray-50 rounded-2xl p-2.5 border border-gray-100">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {img ? (
+                              <img src={img} alt={item.name} className="w-11 h-11 rounded-xl object-cover border border-white shadow-xs shrink-0" />
+                            ) : (
+                              <div className="w-11 h-11 rounded-xl bg-rose-100 flex items-center justify-center text-lg shrink-0">👗</div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-xs font-black text-[#000000] truncate">{item.name}</p>
+                              <p className="text-[11px] text-gray-500 font-semibold">
+                                পরিমাণ: {item.qty || item.quantity || 1} × ৳{item.price}
+                                {item.color ? ` • ${item.color}` : ""}
+                                {item.size ? ` • ${item.size}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-black text-[#7a1c2b] shrink-0">
+                            ৳{(item.price || 0) * (item.qty || item.quantity || 1)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-gray-600">
+                    <span>
+                      সাবটোটাল: <strong>৳{activeOrder.subtotal ?? activeOrder.total}</strong> • ডেলিভারি: <strong>৳{activeOrder.deliveryCharge ?? 0}</strong>
+                      {activeOrder.discount ? <> • ছাড়: <strong className="text-emerald-700">-৳{activeOrder.discount}</strong></> : null}
+                    </span>
+                    <div className="flex gap-2">
+                      <a
+                        href={`https://wa.me/${String(config.whatsapp || config.phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`হ্যালো সাজগোজ, আমার অর্ডার #${activeOrder.id} এর আপডেট জানতে চাই।`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3.5 py-1.5 rounded-full bg-emerald-600 text-white font-bold text-xs"
+                      >
+                        💬 WhatsApp সহায়তা
+                      </a>
+                      <a
+                        href={`tel:${config.phone}`}
+                        className="px-3.5 py-1.5 rounded-full bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] font-bold text-xs"
+                      >
+                        📞 কল করুন
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      );
+    }
+
     function App() {
       // Helper to sanitize photoUrl so unwanted default generated avatar images (like ui-avatars "0" icon) are never used
       const sanitizePhotoUrl = (url) => {
@@ -2876,6 +3528,10 @@
           unsubHomeSections();
         };
       }, []);
+
+      // HashRouter integration
+      const { path: hashPath, navigate: navigateHash } = useHashRouter();
+      const isOrderTrackingRoute = hashPath === "/order-tracking" || hashPath.startsWith("/order-tracking/");
 
       // Navigation & Toast State
       const [activeTab, setActiveTab] = useState(() => {
@@ -9928,6 +10584,8 @@
       const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
       const [sizeGuideTab, setSizeGuideTab] = useState("clothing"); // "clothing", "ring", "bangle", "calc"
       const [sizeCalcInput, setSizeCalcInput] = useState("");
+      const [footerInfoTopic, setFooterInfoTopic] = useState(null);
+      const [footerTrackQuery, setFooterTrackQuery] = useState("");
 
       // Home Page Sections Management Helpers
       const saveHomeSections = (nextList) => {
@@ -10073,12 +10731,19 @@
       };
 
       const updateFooterPaymentToggle = async (methodKey, enabledVal) => {
-        const nextConfig = mergeStoreConfig(config, {
-          footer: { ...(config?.footer || {}), [methodKey]: enabledVal }
+        let updatedConfigSnapshot = null;
+        setConfig(prev => {
+          const base = prev || initialStoreConfig;
+          const next = mergeStoreConfig(base, {
+            footer: { ...(base?.footer || {}), [methodKey]: Boolean(enabledVal) }
+          });
+          updatedConfigSnapshot = next;
+          setStored("config", next);
+          return next;
         });
-        setConfig(nextConfig);
-        setStored("config", nextConfig);
-        await syncDocToCloud("config", "store", nextConfig);
+        if (updatedConfigSnapshot) {
+          await syncDocToCloud("config", "store", updatedConfigSnapshot);
+        }
         const labels = {
           bkash: "bKash",
           nagad: "Nagad",
@@ -10087,6 +10752,26 @@
           visa: "Visa / Mastercard"
         };
         notify(`${labels[methodKey] || methodKey} ফুটারে ${enabledVal ? "চালু (ON)" : "বন্ধ (OFF)"} করা হয়েছে! ✅`);
+      };
+
+      const bulkUpdateFooterPayments = async (enableAll) => {
+        let updatedConfigSnapshot = null;
+        setConfig(prev => {
+          const base = prev || initialStoreConfig;
+          const patch = enableAll
+            ? { bkash: true, nagad: true, rocket: true, visa: true, cod: true }
+            : { bkash: false, nagad: false, rocket: false, visa: false, cod: true };
+          const next = mergeStoreConfig(base, {
+            footer: { ...(base?.footer || {}), ...patch }
+          });
+          updatedConfigSnapshot = next;
+          setStored("config", next);
+          return next;
+        });
+        if (updatedConfigSnapshot) {
+          await syncDocToCloud("config", "store", updatedConfigSnapshot);
+        }
+        notify(enableAll ? "সকল ৫টি পেমেন্ট মেথড স্টোর ফুটারে চালু করা হয়েছে! ✅" : "শুধুমাত্র Cash on Delivery (COD) চালু রাখা হয়েছে! ✅");
       };
 
       const updateDesignField = (patch) => {
@@ -10129,40 +10814,78 @@
       const renderPaymentMethodsToggleCard = () => {
         const ftr = config?.footer || initialStoreConfig.footer;
         const methods = [
-          { key: "bkash", label: "bKash", sub: "মোবাইল পেমেন্ট ব্যাজ", bg: "#e2136e" },
-          { key: "nagad", label: "Nagad", sub: "ডিজিটাল ওয়ালেট ব্যাজ", bg: "#f7941d" },
-          { key: "rocket", label: "Rocket", sub: "ডাচ-বাংলা মোবাইল ব্যাংকিং", bg: "#8c3494" },
-          { key: "cod", label: "Cash on Delivery", sub: "ডেলিভারির সময় নগদ পেমেন্ট", bg: "#047857" },
-          { key: "visa", label: "Visa / Mastercard", sub: "কার্ড পেমেন্ট ব্যাজ", bg: "#1e3a8a" }
+          { key: "bkash", label: "bKash", sub: "বিকাশ মোবাইল ওয়ালেট পেমেন্ট", bg: "#e2136e", footerBgClass: "bg-[#e2136e]" },
+          { key: "nagad", label: "Nagad", sub: "নগদ ডিজিটাল ওয়ালেট পেমেন্ট", bg: "#f7941d", footerBgClass: "bg-[#f7941d]" },
+          { key: "rocket", label: "Rocket", sub: "ডাচ-বাংলা রকেট ব্যাংকিং", bg: "#8c3494", footerBgClass: "bg-[#8c3494]" },
+          { key: "visa", label: "Visa / Mastercard", sub: "ডেবিট ও ক্রেডিট কার্ড পেমেন্ট", bg: "#1e3a8a", footerBgClass: "bg-[#1e3a8a]" },
+          { key: "cod", label: "Cash on Delivery", sub: "ডেলিভারির সময় হাতে পেয়ে পরিশোধ (COD)", bg: "#047857", footerBgClass: "bg-emerald-700" }
         ];
+        const isMethodOn = (k) => (k === "visa" ? ftr[k] !== false : Boolean(ftr[k]));
+        const enabledMethods = methods.filter((m) => isMethodOn(m.key));
+        const enabledCount = enabledMethods.length;
         return (
-          <div className="text-white p-5 bg-[#14070a]/85 rounded-3xl border border-emerald-500/35 space-y-4 shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="text-white p-5 sm:p-6 bg-[#14070a]/90 rounded-3xl border border-emerald-500/40 space-y-5 shadow-lg">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div>
-                <h4 className="font-black text-sm sm:text-base text-emerald-300 flex items-center gap-2">
-                  <span>💳</span>
-                  <span>পেমেন্ট মেথড কন্ট্রোল (Storefront Footer)</span>
-                </h4>
-                <p className="text-[11px] text-slate-300 mt-0.5">
-                  এখান থেকে যেকোনো পেমেন্ট মেথড ON/OFF করলে সাথে সাথে স্টোরফ্রন্টের ফুটারে আপডেট হবে এবং স্থায়ীভাবে সেভ থাকবে।
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="font-black text-base sm:text-lg text-emerald-300 flex items-center gap-2">
+                    <span>💳</span>
+                    <span>পেমেন্ট মেথড সেটিংস (Payment Methods)</span>
+                  </h4>
+                  <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-400/50 text-emerald-300">
+                    {enabledCount}/5 সক্রিয়
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-1">
+                  যেকোনো পেমেন্ট মেথডের সুইচ ON/OFF করলে তাৎক্ষণিকভাবে স্টোরফ্রন্টের ফুটারে আপডেট হবে এবং স্থায়ীভাবে সেভ থাকবে।
                 </p>
               </div>
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 self-start sm:self-center">
-                তাৎক্ষণিক ফুটার সিঙ্ক ⚡
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => bulkUpdateFooterPayments(true)}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-600/90 hover:bg-emerald-500 text-white transition cursor-pointer"
+                >
+                  ✓ সব চালু করুন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => bulkUpdateFooterPayments(false)}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 transition cursor-pointer"
+                >
+                  শুধু COD রাখুন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("Storefront");
+                    setTimeout(() => {
+                      const el = document.getElementById("storefront-footer");
+                      if (el) el.scrollIntoView({ behavior: "smooth", block: "end" });
+                    }, 120);
+                  }}
+                  className="px-3.5 py-1.5 rounded-full text-[11px] font-black bg-white text-[#7a1c2b] hover:bg-rose-100 transition cursor-pointer shadow-xs"
+                >
+                  লাইভ ফুটার দেখুন ↗
+                </button>
+              </div>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {methods.map((m) => {
-                const isOn = m.key === "visa" ? ftr[m.key] !== false : Boolean(ftr[m.key]);
+                const isOn = isMethodOn(m.key);
                 return (
                   <button
                     key={m.key}
                     type="button"
+                    role="switch"
+                    aria-checked={isOn}
+                    aria-label={`${m.label} টগল`}
                     onClick={() => updateFooterPaymentToggle(m.key, !isOn)}
-                    className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+                    className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between gap-2.5 cursor-pointer min-h-[68px] ${
                       isOn
-                        ? "bg-black/60 border-emerald-500/50 shadow-sm"
-                        : "bg-black/35 border-red-900/35 opacity-75"
+                        ? "bg-black/65 border-emerald-400/60 shadow-sm hover:border-emerald-300"
+                        : "bg-black/35 border-red-900/35 opacity-75 hover:opacity-100"
                     }`}
                   >
                     <div className="min-w-0">
@@ -10172,18 +10895,56 @@
                       >
                         {m.label}
                       </span>
-                      <p className="text-[10px] text-slate-300 mt-1 truncate">{m.sub}</p>
+                      <p className="text-[10px] text-slate-300 mt-1.5 truncate">{m.sub}</p>
                     </div>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black shrink-0 ${
-                        isOn ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-200"
-                      }`}
-                    >
-                      {isOn ? "ON" : "OFF"}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          isOn ? "bg-emerald-500" : "bg-slate-600"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                            isOn ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </span>
+                      <span className={`text-[9px] font-black ${isOn ? "text-emerald-300" : "text-slate-400"}`}>
+                        {isOn ? "ON" : "OFF"}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
+            </div>
+
+            {/* Instant Live Store Footer Preview */}
+            <div className="rounded-2xl bg-gradient-to-br from-[#fff8f0] via-white to-[#fce7f3] text-[#000000] p-4 border-2 border-emerald-400/50 shadow-inner space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 pb-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#7a1c2b] flex items-center gap-1.5">
+                  <span>👁️</span>
+                  <span>লাইভ স্টোর ফুটার প্রিভিউ (পেমেন্ট মেথড)</span>
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  তাৎক্ষণিক সিঙ্ক ⚡
+                </span>
+              </div>
+              {enabledMethods.length === 0 ? (
+                <p className="text-xs font-bold text-rose-700 py-1">
+                  ⚠️ বর্তমানে সবগুলো পেমেন্ট মেথড বন্ধ রয়েছে। স্টোর ফুটারে প্রদর্শনের জন্য অন্তত ১টি চালু করুন।
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2 text-xs font-bold">
+                  {enabledMethods.map((m) => (
+                    <span key={m.key} className={`${m.footerBgClass} text-white px-2.5 py-1 rounded shadow-xs`}>
+                      {m.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="text-[11px] font-semibold text-black/75">
+                সারা দেশে নিরাপদ ক্যাশ অন ডেলিভারি ও ডিজিটাল পেমেন্ট সুবিধা।
+              </p>
             </div>
           </div>
         );
@@ -12696,7 +13457,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
               
               {/* Logo & Store Title: Strictly 1 line for Store Name & 1 line for Tagline */}
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 shrink" onClick={() => setActiveTab("Storefront")}>
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 shrink" onClick={() => { setActiveTab("Storefront"); if (isOrderTrackingRoute) navigateHash("/"); }}>
                 {config.logo ? (
                   <img src={config.logo} alt="Logo" className="w-9 h-9 sm:w-11 sm:h-11 object-cover rounded-full border-2 border-white shrink-0 shadow-md" />
                 ) : (
@@ -12903,6 +13664,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                     <button
                       type="button"
+                      onClick={() => navigateHash(isOrderTrackingRoute ? "/" : "/order-tracking")}
+                      className={`hidden md:flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition active:scale-95 cursor-pointer ${isOrderTrackingRoute ? "red-black-tab-active" : "red-black-tab"}`}
+                      title="Order ID দিয়ে অর্ডার ট্র্যাক করুন"
+                    >
+                      <span>📦</span>
+                      <span>অর্ডার ট্র্যাক</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setIsSizeGuideOpen(true)}
                       className="hidden md:flex items-center gap-1 red-black-tab px-3 py-1.5 rounded-full text-xs transition active:scale-95 cursor-pointer"
                       title="আংটি ও চুড়ির মাপের ভিজ্যুয়াল গাইড"
@@ -13013,7 +13784,38 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           {/* ========================================================= */}
           {activeTab === "Storefront" && (
             <div className="flex-1 flex flex-col">
-              {/* Storefront Main View */}
+              {isOrderTrackingRoute ? (
+                <Routes>
+                  <Route
+                    path="/order-tracking"
+                    element={
+                      <OrderTracking
+                        orders={orders}
+                        products={products}
+                        config={config}
+                        currentUser={currentUser}
+                        onBackToStore={() => navigateHash("/")}
+                        onOpenMyOrders={() => { setProfileTab("orders"); setIsProfileModalOpen(true); }}
+                        notify={notify}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/order-tracking/:orderId"
+                    element={
+                      <OrderTracking
+                        orders={orders}
+                        products={products}
+                        config={config}
+                        currentUser={currentUser}
+                        onBackToStore={() => navigateHash("/")}
+                        onOpenMyOrders={() => { setProfileTab("orders"); setIsProfileModalOpen(true); }}
+                        notify={notify}
+                      />
+                    }
+                  />
+                </Routes>
+              ) : (
               <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-5">
                 <div className="space-y-1.5 sm:space-y-2.5 animate-fadeIn">
                 {/* Mobile Compact Search Strip: [সকল ক্যাটাগরী ▾] [🏠] [🔍 Short Search + 🎙️ + 🖼️ + 📷 স্ক্যান] */}
@@ -14338,46 +15140,126 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 })()}
               </div>
               </main>
-              
-              {/* Storefront Footer (Liquid Glass + Red/Black Bottom Cards) */}
-              <footer className="liquid-glass-hero text-[#000000] py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-                  <div className="space-y-3">
+              )}
+
+              {/* Storefront Footer (Liquid Glass + 3 Policy/Support Columns + Red/Black Bottom Cards) */}
+              <footer id="storefront-footer" className="liquid-glass-hero text-[#000000] py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-7">
+                  {/* Brand & Direct Contact */}
+                  <div className="space-y-3 lg:col-span-1">
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-full cta-dark-pill font-black text-xl flex items-center justify-center">S</div>
-                      <h4 className="font-black text-lg text-[#000000]">{config.storeName}</h4>
+                      <div className="w-9 h-9 rounded-full cta-dark-pill font-black text-xl flex items-center justify-center shrink-0">S</div>
+                      <h4 className="font-black text-lg text-[#000000] truncate">{config.storeName}</h4>
                     </div>
                     <p className="text-xs text-[#000000] font-semibold leading-relaxed">{config.footer.about}</p>
+                    <div className="pt-1 space-y-1 text-xs text-[#000000] font-semibold">
+                      <p>📞 {config.phone}</p>
+                      <p>💬 WhatsApp: {config.whatsapp}</p>
+                      <p>✉️ {config.email}</p>
+                      <p>📍 {config.address}</p>
+                    </div>
+                    <div className="pt-1 flex flex-wrap gap-3 text-xs font-black text-[#000000]">
+                      {config.footer.fb && <a href={config.footer.fb} target="_blank" rel="noreferrer" className="hover:underline">🌐 Facebook</a>}
+                      {config.footer.insta && <a href={config.footer.insta} target="_blank" rel="noreferrer" className="hover:underline">📸 Instagram</a>}
+                      {config.footer.youtube && <a href={config.footer.youtube} target="_blank" rel="noreferrer" className="hover:underline">▶️ YouTube</a>}
+                    </div>
                   </div>
+
+                  {/* (1) Information */}
                   <div>
-                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">যোগাযোগ ও হেল্পলাইন</h5>
-                    <p className="text-xs text-[#000000] font-semibold">📞 {config.phone}</p>
-                    <p className="text-xs text-[#000000] font-semibold mt-1">💬 WhatsApp: {config.whatsapp}</p>
-                    <p className="text-xs text-[#000000] font-semibold mt-1">✉️ {config.email}</p>
-                    <p className="text-xs text-[#000000] font-semibold mt-1">📍 {config.address}</p>
-                  </div>
-                  <div>
-                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">কাস্টমার কেয়ার</h5>
-                    <ul className="text-xs space-y-1.5 text-[#000000] font-semibold">
-                      <li>• রিটার্ন ও রিফান্ড পলিসি (৭ দিন)</li>
-                      <li>• ক্যাশ অন ডেলিভারি সুবিধা</li>
-                      <li>• সারা দেশে হোম ডেলিভারি</li>
-                      <li>• ১০০% প্রিমিয়াম কোয়ালিটি নিশ্চয়তা</li>
+                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15">Information</h5>
+                    <ul className="text-xs space-y-2 text-[#000000] font-bold">
+                      {[
+                        { key: "about", label: "About us" },
+                        { key: "contact", label: "Contact us" },
+                        { key: "terms", label: "Terms & Conditions" },
+                        { key: "privacy", label: "Privacy Policy" }
+                      ].map(item => (
+                        <li key={item.key}>
+                          <button
+                            type="button"
+                            onClick={() => setFooterInfoTopic(item.key)}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7a1c2b] hover:translate-x-0.5 transition text-left cursor-pointer"
+                          >
+                            <span className="text-[10px]">▪</span>
+                            <span>{item.label}</span>
+                          </button>
+                        </li>
+                      ))}
                     </ul>
                   </div>
+
+                  {/* (2) Support */}
                   <div>
-                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3">পেমেন্ট মেথড</h5>
+                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15">Support</h5>
+                    <ul className="text-xs space-y-2 text-[#000000] font-bold">
+                      {[
+                        { key: "tracking", label: "Order Tracking" },
+                        { key: "payment", label: "Payment" },
+                        { key: "shipping", label: "Shipping" },
+                        { key: "faq", label: "FAQ" }
+                      ].map(item => (
+                        <li key={item.key}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (item.key === "tracking") {
+                                setFooterInfoTopic(null);
+                                navigateHash("/order-tracking");
+                              } else {
+                                setFooterInfoTopic(item.key);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7a1c2b] hover:translate-x-0.5 transition text-left cursor-pointer"
+                          >
+                            <span className="text-[10px]">▪</span>
+                            <span>{item.label}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* (3) Consumer Policy */}
+                  <div>
+                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15">Consumer Policy</h5>
+                    <ul className="text-xs space-y-2 text-[#000000] font-bold">
+                      {[
+                        { key: "refund", label: "Refund Policy" },
+                        { key: "exchange", label: "Exchange" },
+                        { key: "cancellation", label: "Cancellation" },
+                        { key: "discount", label: "Extra Discount" }
+                      ].map(item => (
+                        <li key={item.key}>
+                          <button
+                            type="button"
+                            onClick={() => setFooterInfoTopic(item.key)}
+                            className="inline-flex items-center gap-1.5 hover:text-[#7a1c2b] hover:translate-x-0.5 transition text-left cursor-pointer"
+                          >
+                            <span className="text-[10px]">▪</span>
+                            <span>{item.label}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Payment Methods */}
+                  <div>
+                    <h5 className="font-black text-sm text-[#000000] uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15">পেমেন্ট মেথড</h5>
                     <div className="flex flex-wrap gap-2 text-xs font-bold">
                       {config.footer.bkash && <span className="bg-[#e2136e] keep-white-text px-2.5 py-1 rounded">bKash</span>}
                       {config.footer.nagad && <span className="bg-[#f7941d] keep-white-text px-2.5 py-1 rounded">Nagad</span>}
                       {config.footer.rocket && <span className="bg-[#8c3494] keep-white-text px-2.5 py-1 rounded">Rocket</span>}
                       {config.footer.cod && <span className="bg-emerald-700 keep-white-text px-2.5 py-1 rounded">Cash on Delivery</span>}
-                      {config.footer.visa && <span className="bg-[#1e3a8a] keep-white-text px-2.5 py-1 rounded">Visa / Mastercard</span>}
+                      {config.footer.visa !== false && <span className="bg-[#1e3a8a] keep-white-text px-2.5 py-1 rounded">Visa / Mastercard</span>}
+                      {!config.footer.bkash && !config.footer.nagad && !config.footer.rocket && !config.footer.cod && config.footer.visa === false && (
+                        <span className="text-[11px] font-semibold text-[#000000]/70">অর্ডার কনফার্মের সময় পেমেন্ট মেথড নির্ধারিত হবে।</span>
+                      )}
                     </div>
-                    <div className="mt-4 flex gap-3 text-sm font-bold text-[#000000]">
-                      {config.footer.fb && <a href={config.footer.fb} target="_blank" className="hover:underline">🌐 Facebook</a>}
-                      {config.footer.insta && <a href={config.footer.insta} target="_blank" className="hover:underline">📸 Instagram</a>}
-                    </div>
+                    <p className="text-[11px] font-semibold text-[#000000]/80 mt-3 leading-relaxed">
+                      সারা দেশে নিরাপদ ক্যাশ অন ডেলিভারি ও ডিজিটাল পেমেন্ট সুবিধা।
+                    </p>
                   </div>
                 </div>
                 {/* 🚚 4 TRUST BADGES IN 1 LINE AS RED BACKGROUND + BLACK TEXT BOTTOM CARDS */}
@@ -14711,13 +15593,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 {
                   id: "SEOSettings",
                   label: "সিস্টেম ও ইন্টিগ্রেশন",
-                  subLabel: "SEO, Courier API, Pixel & Backup",
+                  subLabel: "SEO, Payment Methods, Courier API & Backup",
                   icon: "⚙️",
                   badge: "Cloud",
                   badgeTone: "cyan",
-                  isActive: ["SEOSettings", "SEO", "SEOMetaTags", "Courier", "Pixel", "Backup"].includes(activeTab),
+                  isActive: ["SEOSettings", "SEO", "SEOMetaTags", "PaymentSettings", "Courier", "Pixel", "Backup"].includes(activeTab),
                   onClick: () => {
-                    if (!["SEOSettings", "SEO", "SEOMetaTags", "Courier", "Pixel", "Backup"].includes(activeTab)) {
+                    if (!["SEOSettings", "SEO", "SEOMetaTags", "PaymentSettings", "Courier", "Pixel", "Backup"].includes(activeTab)) {
                       setActiveTab("SEOSettings");
                     }
                   }
@@ -15231,7 +16113,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               { id: "General", label: "🎨 ব্র্যান্ড, লোগো ও কালার" },
                               { id: "Banners", label: `🖼️ ব্যানার স্লাইডার (${banners.length})` },
                               { id: "Header", label: `📢 নোটিশ বার (${config.announcement?.enabled ? "চালু" : "বন্ধ"})` },
-                              { id: "Footer", label: "📄 ফুটার ও সোশ্যাল লিংক" }
+                              { id: "Footer", label: "📄 ফুটার ও সোশ্যাল লিংক" },
+                              { id: "PaymentSettings", label: "💳 পেমেন্ট মেথড" }
                             ].map(pill => {
                               const isOn = activeTab === pill.id || (pill.id === "General" && activeTab === "Settings");
                               return (
@@ -15251,11 +16134,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         )}
 
                         {/* CONTEXTUAL MASTER HUB SUB-NAV: SYSTEM & INTEGRATION HUB */}
-                        {["SEOSettings", "SEO", "SEOMetaTags", "Courier", "Pixel", "Backup"].includes(activeTab) && (
+                        {["SEOSettings", "SEO", "SEOMetaTags", "PaymentSettings", "Courier", "Pixel", "Backup"].includes(activeTab) && (
                           <div className="liquid-glass-surface rounded-2xl p-2 flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs font-bold v2-animate-in">
                             <span className="text-[11px] font-black text-[#000000] px-2.5 whitespace-nowrap">⚙️ সিস্টেম ও ইন্টিগ্রেশন হাব:</span>
                             {[
                               { id: "SEOSettings", label: "🔍 SEO Settings" },
+                              { id: "PaymentSettings", label: "💳 পেমেন্ট মেথড" },
                               { id: "Courier", label: "🚚 কুরিয়ার API" },
                               { id: "Pixel", label: "📈 ফেসবুক পিক্সেল" },
                               { id: "Backup", label: "💾 ডাটাবেজ ব্যাকআপ ও সিঙ্ক" }
@@ -21749,6 +22633,44 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             )}
 
             {/* ========================================================= */}
+            {/* 10.9 DEDICATED PAYMENT METHODS SETTINGS SECTION */}
+            {/* ========================================================= */}
+            {activeTab === "PaymentSettings" && (
+              <div className="text-white bg-black/55 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-emerald-500/35 space-y-6 shadow-lg animate-fadeIn">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("Dashboard")}
+                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-red-900/50 bg-[#1a0a0e]/80 text-rose-200 hover:bg-[#dc2626] hover:text-white transition flex items-center gap-1 shadow-xs cursor-pointer"
+                      title="ড্যাশবোর্ডে ফিরে যান"
+                    >
+                      ← ড্যাশবোর্ড
+                    </button>
+                    <div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                        <span>💳</span>
+                        <span>পেমেন্ট মেথড সেটিংস</span>
+                      </h3>
+                      <p className="text-xs text-slate-300 mt-1">
+                        bKash, Nagad, Rocket, Visa/Mastercard ও Cash on Delivery টগল করুন — স্টোর ফুটারে সাথে সাথেই দেখা যাবে।
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("Footer")}
+                    className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-black/60 border border-red-900/45 text-rose-200 hover:bg-red-950/70 transition cursor-pointer"
+                  >
+                    📄 পূর্ণ ফুটার সেটিংস ›
+                  </button>
+                </div>
+
+                {renderPaymentMethodsToggleCard()}
+              </div>
+            )}
+
+            {/* ========================================================= */}
             {/* 11. THEME & STORE CUSTOMIZATION */}
             {/* ========================================================= */}
             {(activeTab === "General" || activeTab === "Settings" || activeTab === "Header" || activeTab === "Footer") && (
@@ -22199,24 +23121,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
 
                     <div className="pt-2">
-                      <p className="text-xs font-bold text-rose-200 mb-2">ফুটার পেমেন্ট ব্যাজ টগল:</p>
-                      <div className="flex flex-wrap gap-4 text-xs text-slate-200">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.bkash} onChange={(e) => updateFooterPaymentToggle("bkash", e.target.checked)} className="accent-red-500" /> bKash
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.nagad} onChange={(e) => updateFooterPaymentToggle("nagad", e.target.checked)} className="accent-red-500" /> Nagad
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.rocket} onChange={(e) => updateFooterPaymentToggle("rocket", e.target.checked)} className="accent-red-500" /> Rocket
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.cod} onChange={(e) => updateFooterPaymentToggle("cod", e.target.checked)} className="accent-red-500" /> Cash on Delivery
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" checked={config.footer.visa !== false} onChange={(e) => updateFooterPaymentToggle("visa", e.target.checked)} className="accent-red-500" /> Visa / Mastercard
-                        </label>
-                      </div>
+                      {renderPaymentMethodsToggleCard()}
                     </div>
                   </div>
 
@@ -22537,6 +23442,301 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </div>
             </div>
           )}
+
+          {/* ========================================================= */}
+          {/* FOOTER INFO / SUPPORT / CONSUMER POLICY & TRACKING MODAL */}
+          {/* ========================================================= */}
+          {footerInfoTopic && (() => {
+            const topicMeta = {
+              about: { icon: "👑", title: "About us — আমাদের সম্পর্কে", group: "Information" },
+              contact: { icon: "📞", title: "Contact us — যোগাযোগ", group: "Information" },
+              terms: { icon: "📜", title: "Terms & Conditions — শর্তাবলী", group: "Information" },
+              privacy: { icon: "🔒", title: "Privacy Policy — গোপনীয়তা নীতি", group: "Information" },
+              tracking: { icon: "📦", title: "Order Tracking — অর্ডার ট্র্যাকিং", group: "Support" },
+              payment: { icon: "💳", title: "Payment — পেমেন্ট তথ্য", group: "Support" },
+              shipping: { icon: "🚚", title: "Shipping — ডেলিভারি চার্জ ও সময়", group: "Support" },
+              faq: { icon: "❓", title: "FAQ — সাধারণ জিজ্ঞাসা", group: "Support" },
+              refund: { icon: "💰", title: "Refund Policy — রিফান্ড নীতিমালা", group: "Consumer Policy" },
+              exchange: { icon: "🔄", title: "Exchange — প্রোডাক্ট পরিবর্তন", group: "Consumer Policy" },
+              cancellation: { icon: "✖️", title: "Cancellation — অর্ডার বাতিল", group: "Consumer Policy" },
+              discount: { icon: "🎁", title: "Extra Discount — কুপন ও বিশেষ ছাড়", group: "Consumer Policy" }
+            };
+            const activeMeta = topicMeta[footerInfoTopic] || topicMeta.about;
+            const qTrack = footerTrackQuery.trim().toLowerCase();
+            const trackedOrders = qTrack
+              ? (orders || []).filter(o =>
+                  String(o.id || "").toLowerCase().includes(qTrack) ||
+                  String(o.trackingId || "").toLowerCase().includes(qTrack) ||
+                  String(o.phone || o.customerPhone || "").toLowerCase().includes(qTrack)
+                )
+              : [];
+            const activeCoupons = (coupons || []).filter(c => c.active !== false);
+            const activeVouchersList = (vouchers || []).filter(v => v.active !== false);
+
+            return (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+                <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 border border-[#f3e2d0] shadow-2xl space-y-5 text-[#2c1810]">
+                  <div className="flex justify-between items-start pb-3 border-b border-[#f3e2d0]">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl sm:text-3xl">{activeMeta.icon}</span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-[#b8956a]">{activeMeta.group}</p>
+                        <h3 className="font-black text-base sm:text-lg text-[#7a1c2b]">{activeMeta.title}</h3>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFooterInfoTopic(null)}
+                      className="w-8 h-8 rounded-full bg-[#fff8f0] border border-[#f3e2d0] flex items-center justify-center font-bold text-gray-500 hover:text-black hover:bg-gray-100 transition cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Quick Topic Switcher Pills */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(topicMeta).map(([k, m]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setFooterInfoTopic(k)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition cursor-pointer border ${
+                          footerInfoTopic === k
+                            ? "bg-[#7a1c2b] text-white border-[#7a1c2b]"
+                            : "bg-[#fff8f0] text-[#7a1c2b] border-[#f3e2d0] hover:bg-rose-50"
+                        }`}
+                      >
+                        {m.title.split(" — ")[0]}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Topic Body */}
+                  <div className="space-y-4 text-xs sm:text-sm leading-relaxed">
+                    {footerInfoTopic === "about" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2">
+                        <h4 className="font-black text-[#7a1c2b] text-base">{config.storeName}</h4>
+                        <p className="text-gray-700 font-medium">{config.footer.about}</p>
+                        <p className="text-gray-600 text-xs">
+                          আমাদের প্রতিটি শাড়ি, জুয়েলারি ও ফ্যাশন কালেকশন সর্বোচ্চ মান যাচাই করে সরাসরি ক্রেতার হাতে পৌঁছে দেওয়া হয়।
+                        </p>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "contact" && (
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-1.5">
+                          <p className="font-black text-[#7a1c2b]">📞 হটলাইন ও WhatsApp</p>
+                          <p className="font-bold">হটলাইন: {config.phone}</p>
+                          <p className="font-bold">WhatsApp: {config.whatsapp}</p>
+                          <div className="flex gap-2 pt-2">
+                            <a href={`tel:${config.phone}`} className="px-3 py-1.5 rounded-full bg-[#7a1c2b] text-white text-xs font-bold">কল করুন</a>
+                            <a href={`https://wa.me/${String(config.whatsapp || config.phone || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold">WhatsApp</a>
+                          </div>
+                        </div>
+                        <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-1.5">
+                          <p className="font-black text-[#7a1c2b]">📍 শোরুম ও ইমেইল</p>
+                          <p className="font-bold">ইমেইল: {config.email}</p>
+                          <p className="text-gray-700 font-medium">{config.address}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "terms" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">
+                        <p>• {config.storeName} থেকে অর্ডার কনফার্ম করার সময় সঠিক নাম, মোবাইল নম্বর ও ঠিকানা প্রদান করা আবশ্যক।</p>
+                        <p>• স্টক ও প্রাপ্যতা সাপেক্ষে সকল অর্ডার প্রক্রিয়াকরণ করা হয় এবং পণ্যের রঙ আলোর তারতম্যে সামান্য ভিন্ন দেখাতে পারে।</p>
+                        <p>• যেকোনো ভুয়া অর্ডার বা অপব্যবহারের ক্ষেত্রে স্টোর কর্তৃপক্ষ অর্ডার বাতিল করার অধিকার সংরক্ষণ করে।</p>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "privacy" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">
+                        <p>• আপনার নাম, মোবাইল নম্বর, ঠিকানা ও অর্ডার তথ্য শুধুমাত্র ডেলিভারি ও কাস্টমার সার্ভিস প্রদানের জন্য ব্যবহৃত হয়।</p>
+                        <p>• ক্রেতার ব্যক্তিগত তথ্য তৃতীয় কোনো মার্কেটিং সংস্থার কাছে বিক্রি বা শেয়ার করা হয় না।</p>
+                        <p>• কুরিয়ার পার্টনার (Steadfast / Pathao) শুধুমাত্র পার্সেল পৌঁছে দেওয়ার জন্য ডেলিভারি তথ্য ব্যবহার করে।</p>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "tracking" && (
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={footerTrackQuery}
+                            onChange={(e) => setFooterTrackQuery(e.target.value)}
+                            placeholder="অর্ডার ID (যেমন ORD-1002), ট্র্যাকিং কোড বা ফোন নম্বর লিখুন..."
+                            className="flex-1 px-4 py-2.5 rounded-2xl border border-[#d4a574] bg-[#fff8f0] text-xs sm:text-sm outline-none focus:border-[#7a1c2b]"
+                          />
+                          {footerTrackQuery && (
+                            <button type="button" onClick={() => setFooterTrackQuery("")} className="px-3 rounded-2xl bg-gray-100 text-xs font-bold">✕</button>
+                          )}
+                        </div>
+                        {!qTrack ? (
+                          <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] text-xs text-gray-600 space-y-2">
+                            <p>আপনার অর্ডার ID, কুরিয়ার ট্র্যাকিং কোড অথবা অর্ডারের মোবাইল নম্বর লিখে লাইভ অবস্থান দেখুন।</p>
+                            {currentUser && (
+                              <button
+                                type="button"
+                                onClick={() => { setFooterInfoTopic(null); setProfileTab("orders"); setIsProfileModalOpen(true); }}
+                                className="px-3.5 py-1.5 rounded-full bg-[#7a1c2b] text-white font-bold text-xs"
+                              >
+                                আমার অর্ডার হিস্ট্রি খুলুন →
+                              </button>
+                            )}
+                          </div>
+                        ) : trackedOrders.length === 0 ? (
+                          <div className="bg-rose-50 p-4 rounded-2xl border border-rose-200 text-xs text-rose-800 font-semibold">
+                            "{footerTrackQuery}" দিয়ে কোনো অর্ডার খুঁজে পাওয়া যায়নি। সঠিক অর্ডার ID বা ফোন নম্বর দিয়ে আবার চেষ্টা করুন।
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5 max-h-60 overflow-y-auto">
+                            {trackedOrders.map(ord => (
+                              <div key={ord.id} className="bg-[#fff8f0] p-3.5 rounded-2xl border border-[#d4a574]/50 space-y-1.5 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-black text-[#7a1c2b]">#{ord.id}</span>
+                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[11px]">{ord.status || "Pending"}</span>
+                                </div>
+                                <p className="font-semibold text-gray-700">ক্রেতা: {ord.customer || ord.customerName} • মোট: ৳{ord.total}</p>
+                                {ord.trackingId && <p className="font-mono text-[11px] text-indigo-700 font-bold">🚚 ট্র্যাকিং কোড: {ord.trackingId}</p>}
+                                <p className="text-[11px] text-gray-500">তারিখ: {ord.date || "সাম্প্রতিক"} • পেমেন্ট: {ord.paymentMethod || "COD"}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "payment" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-3">
+                        <p className="font-bold text-gray-800">আমাদের স্টোরে উপলব্ধ নিরাপদ পেমেন্ট মাধ্যমসমূহ:</p>
+                        <div className="flex flex-wrap gap-2 text-xs font-bold">
+                          {config.footer.bkash && <span className="bg-[#e2136e] text-white px-3 py-1 rounded-full">bKash</span>}
+                          {config.footer.nagad && <span className="bg-[#f7941d] text-white px-3 py-1 rounded-full">Nagad</span>}
+                          {config.footer.rocket && <span className="bg-[#8c3494] text-white px-3 py-1 rounded-full">Rocket</span>}
+                          {config.footer.cod && <span className="bg-emerald-700 text-white px-3 py-1 rounded-full">Cash on Delivery (COD)</span>}
+                          {config.footer.visa !== false && <span className="bg-[#1e3a8a] text-white px-3 py-1 rounded-full">Visa / Mastercard</span>}
+                        </div>
+                        <p className="text-xs text-gray-600">• সারা দেশে ক্যাশ অন ডেলিভারিতে পণ্য হাতে পেয়ে মূল্য পরিশোধের সুবিধা রয়েছে।</p>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "shipping" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">
+                        <p>🚚 <strong>ঢাকার ভেতরে ডেলিভারি চার্জ:</strong> ৳{config.deliveryDhaka ?? 70} (১-২ কার্যদিবস)</p>
+                        <p>📦 <strong>ঢাকার বাইরে ডেলিভারি চার্জ:</strong> ৳{config.deliveryOutsideDhaka ?? 130} (২-৪ কার্যদিবস)</p>
+                        {config.freeDeliveryThreshold ? (
+                          <p className="text-emerald-700 font-bold">🎁 ফ্রি ডেলিভারি: ৳{config.freeDeliveryThreshold}+ টাকার অর্ডারে ডেলিভারি সম্পূর্ণ ফ্রি!</p>
+                        ) : null}
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "faq" && (
+                      <div className="space-y-2.5 text-xs sm:text-sm">
+                        <div className="bg-[#fff8f0] p-3.5 rounded-2xl border border-[#f3e2d0]">
+                          <p className="font-black text-[#7a1c2b]">প্রশ্ন: ডেলিভারি ম্যানের সামনে পণ্য চেক করা যাবে?</p>
+                          <p className="text-gray-700 mt-1">উত্তর: হ্যাঁ, ডেলিভারি ম্যানের উপস্থিতিতেই প্যাকেট খুলে পণ্য যাচাই করে পেমেন্ট করতে পারবেন।</p>
+                        </div>
+                        <div className="bg-[#fff8f0] p-3.5 rounded-2xl border border-[#f3e2d0]">
+                          <p className="font-black text-[#7a1c2b]">প্রশ্ন: ডেলিভারি হতে কত দিন সময় লাগে?</p>
+                          <p className="text-gray-700 mt-1">উত্তর: ঢাকার ভেতরে সাধারণত ১-২ দিন এবং ঢাকার বাইরে ২-৪ কর্মদিবস সময় লাগে।</p>
+                        </div>
+                        <div className="bg-[#fff8f0] p-3.5 rounded-2xl border border-[#f3e2d0]">
+                          <p className="font-black text-[#7a1c2b]">প্রশ্ন: সাইজ বা ডিজাইনে সমস্যা হলে পরিবর্তন করা যাবে?</p>
+                          <p className="text-gray-700 mt-1">উত্তর: হ্যাঁ, {config?.returnPolicyDays || 7} দিনের মধ্যে সহজ এক্সচেঞ্জ ও রিটার্ন সুবিধা রয়েছে।</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "refund" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">
+                        <p>• ডেলিভারি পাওয়ার <strong>{config?.returnPolicyDays || 7} দিনের</strong> মধ্যে ত্রুটিপূর্ণ, ভুল বা ক্ষতিগ্রস্ত পণ্যে ১০০% রিফান্ড সুবিধা পাওয়া যাবে।</p>
+                        <p>• পণ্য অবশ্যই অব্যবহৃত, ট্যাগ ও অরিজিনাল প্যাকেজিং অক্ষত থাকতে হবে।</p>
+                        <p>• রিটার্ন যাচাইয়ের পর ২-৩ কর্মদিবসের মধ্যে bKash / Nagad / ব্যাংক অ্যাকাউন্টে রিফান্ড পাঠানো হয়।</p>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "exchange" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">
+                        <p>• সাইজ বা কালার পরিবর্তনের জন্য ডেলিভারির <strong>{config?.returnPolicyDays || 7} দিনের</strong> মধ্যে আমাদের হটলাইন ({config.phone}) বা WhatsApp-এ যোগাযোগ করুন।</p>
+                        <p>• আমাদের পক্ষ থেকে ভুল পণ্য পাঠানো হলে এক্সচেঞ্জ ডেলিভারি চার্জ সম্পূর্ণ ফ্রি।</p>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "cancellation" && (
+                      <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">
+                        <p>• কুরিয়ারে পার্সেল হস্তান্তরের (Shipped) আগে যেকোনো সময় অর্ডার বাতিল করা যাবে।</p>
+                        <p>• অর্ডার বাতিল করতে অনুগ্রহ করে অর্ডার ID সহ হটলাইন ({config.phone}) বা WhatsApp-এ দ্রুত মেসেজ দিন।</p>
+                      </div>
+                    )}
+
+                    {footerInfoTopic === "discount" && (
+                      <div className="space-y-3">
+                        <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2">
+                          <p className="font-black text-[#7a1c2b]">🏷️ সক্রিয় কুপন ও এক্সট্রা ডিসকাউন্ট অফার</p>
+                          {activeCoupons.length === 0 && activeVouchersList.length === 0 ? (
+                            <p className="text-xs text-gray-600">বর্তমানে সক্রিয় কুপন দেখতে ভাগ্যচাকা স্পিন করুন অথবা VIP মেম্বারশিপ ব্যবহার করুন।</p>
+                          ) : (
+                            <div className="grid sm:grid-cols-2 gap-2">
+                              {activeCoupons.map(cp => (
+                                <div key={cp.id} className="bg-white p-3 rounded-xl border border-rose-200 flex items-center justify-between gap-2">
+                                  <div>
+                                    <p className="font-mono font-black text-[#7a1c2b] text-xs">{cp.code}</p>
+                                    <p className="text-[11px] text-gray-600">
+                                      {cp.type === "percent" ? `${cp.discount}% ছাড়` : `৳${cp.discount} ছাড়`}
+                                      {cp.minOrder ? ` (সর্বনিম্ন ৳${cp.minOrder})` : ""}
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => { navigator.clipboard?.writeText(cp.code); notify(`কুপন কোড "${cp.code}" কপি হয়েছে!`); }}
+                                    className="px-2.5 py-1 rounded-lg bg-[#7a1c2b] text-white text-[11px] font-bold cursor-pointer"
+                                  >
+                                    কপি
+                                  </button>
+                                </div>
+                              ))}
+                              {activeVouchersList.map(v => (
+                                <div key={v.id} className="bg-white p-3 rounded-xl border border-amber-200 flex items-center justify-between gap-2">
+                                  <div>
+                                    <p className="font-mono font-black text-amber-800 text-xs">{v.code}</p>
+                                    <p className="text-[11px] text-gray-600">{v.title || `৳${v.amount} ভাউচার`}</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => { navigator.clipboard?.writeText(v.code); notify(`ভাউচার "${v.code}" কপি হয়েছে!`); }}
+                                    className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-bold cursor-pointer"
+                                  >
+                                    কপি
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { setFooterInfoTopic(null); setIsSpinWheelOpen(true); }}
+                            className="px-4 py-2 rounded-full bg-gradient-to-r from-[#7a1c2b] to-[#991b1b] text-white text-xs font-bold cursor-pointer"
+                          >
+                            🎡 ভাগ্যচাকা স্পিন করে ছাড় জিতুন
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setFooterInfoTopic(null); setIsVipClubModalOpen(true); }}
+                            className="px-4 py-2 rounded-full bg-[#fff8f0] border border-[#d4a574] text-[#7a1c2b] text-xs font-bold cursor-pointer"
+                          >
+                            👑 VIP ক্লাব ও পয়েন্ট
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ========================================================= */}
           {/* RING & BANGLE SIZE GUIDE MODAL (আংটি ও চুড়ির সাইজ গাইড) */}
@@ -31510,7 +32710,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
       );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App /></ErrorBoundary>);
+    ReactDOM.createRoot(document.getElementById("root")).render(
+      <ErrorBoundary>
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </ErrorBoundary>
+    );
   </script>
 </body>
 </html>
