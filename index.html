@@ -1452,11 +1452,17 @@
       email: "contact@sajgoj.com",
       phone: "018051198888",
       address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
+      showGoogleMap: true,
+      googleMapQuery: "Eastern Plaza, Hatirpool, Dhaka-1205",
+      googleMapUrl: "https://www.google.com/maps/search/?api=1&query=Eastern+Plaza%2C+Hatirpool%2C+Dhaka-1205",
       deliveryInsideDhaka: 60,
       deliveryOutsideDhaka: 120,
       freeDeliveryThreshold: 2000,
       returnPolicyDays: 7, // Default return window in days (e.g. 3, 7, 10, 14 days)
       returnPolicyEnabled: true,
+      smsGatewayDeviceEnabled: false,
+      smsAutoSendOnOrderStatus: false,
+      smsDelaySeconds: 4,
       announcement: { 
         text: "🔥 Eid Special: ২০০০ টাকার অর্ডারে সারা দেশে ডেলিভারি সম্পূর্ণ ফ্রি!", 
         enabled: true 
@@ -2120,6 +2126,41 @@
         ? activeOrder.courier
         : (activeOrder?.trackingId ? "Steadfast / Pathao Express" : "সাজগোজ এক্সপ্রেস ডেলিভারি");
 
+      const [smsRequestedOrderIds, setSmsRequestedOrderIds] = React.useState({});
+      const [desktopSmsFallbackInfo, setDesktopSmsFallbackInfo] = React.useState(null);
+
+      const handleNotifyViaSms = () => {
+        if (!activeOrder) return;
+        const rawPhone = String(config.phone || config.whatsapp || "018051198888").replace(/[^0-9+]/g, "");
+        const customerPhone = activeOrder.phone || activeOrder.customerPhone || "";
+        const prefilledMsg = `Notify me via SMS — সাজগোজ অর্ডার #${activeOrder.id}${
+          activeOrder.trackingId ? ` (ট্র্যাকিং: ${activeOrder.trackingId})` : ""
+        } | বর্তমান অবস্থা: ${activeOrder.status || "Pending"}${
+          customerPhone ? ` | ক্রেতার নম্বর: ${customerPhone}` : ""
+        }`;
+        const ua = typeof navigator !== "undefined" ? (navigator.userAgent || "") : "";
+        const isMobileDevice =
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+          (typeof window !== "undefined" && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1 && window.innerWidth <= 900);
+
+        setSmsRequestedOrderIds(prev => ({ ...prev, [activeOrder.id]: true }));
+
+        if (isMobileDevice) {
+          const isIos = /iPhone|iPad|iPod/i.test(ua);
+          const sep = isIos ? "&" : "?";
+          const smsIntentUrl = `sms:${rawPhone}${sep}body=${encodeURIComponent(prefilledMsg)}`;
+          setDesktopSmsFallbackInfo(null);
+          notify("📱 SMS অ্যাপ ওপেন করা হচ্ছে — প্রি-ফিল্ড মেসেজটি সেন্ড করুন!");
+          window.location.href = smsIntentUrl;
+        } else {
+          if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(prefilledMsg).catch(() => {});
+          }
+          setDesktopSmsFallbackInfo({ phone: rawPhone, message: prefilledMsg });
+          notify("📱 SMS ইন্টেন্ট মোবাইল ডিভাইসে চালু হয় — ডেস্কটপের জন্য মেসেজ কপি করা হয়েছে!");
+        }
+      };
+
       const shippingEvents = React.useMemo(() => {
         if (!activeOrder) return [];
         const events = [];
@@ -2506,7 +2547,20 @@
                       সাবটোটাল: <strong>৳{activeOrder.subtotal ?? activeOrder.total}</strong> • ডেলিভারি: <strong>৳{activeOrder.deliveryCharge ?? 0}</strong>
                       {activeOrder.discount ? <> • ছাড়: <strong className="text-emerald-700">-৳{activeOrder.discount}</strong></> : null}
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleNotifyViaSms}
+                        data-testid="notify-via-sms-btn"
+                        className={`px-3.5 py-1.5 rounded-full font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                          smsRequestedOrderIds[activeOrder.id]
+                            ? "bg-indigo-700 text-white"
+                            : "bg-[#0f294a] hover:bg-[#1e3a8a] text-white"
+                        }`}
+                      >
+                        <span>📩</span>
+                        <span>Notify me via SMS</span>
+                      </button>
                       <a
                         href={`https://wa.me/${String(config.whatsapp || config.phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`হ্যালো সাজগোজ, আমার অর্ডার #${activeOrder.id} এর আপডেট জানতে চাই।`)}`}
                         target="_blank"
@@ -2523,6 +2577,26 @@
                       </a>
                     </div>
                   </div>
+                  {desktopSmsFallbackInfo && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-3 text-xs text-indigo-950 space-y-1 animate-fadeIn">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-black">📱 মোবাইল SMS প্রি-ফিল্ড তথ্য (নম্বর: {desktopSmsFallbackInfo.phone})</span>
+                        <button
+                          type="button"
+                          onClick={() => setDesktopSmsFallbackInfo(null)}
+                          className="text-indigo-700 font-bold cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <p className="text-[11px] font-medium text-indigo-900 bg-white/90 rounded-xl p-2 border border-indigo-100 select-all">
+                        {desktopSmsFallbackInfo.message}
+                      </p>
+                      <p className="text-[10px] text-indigo-700 font-semibold">
+                        মোবাইল ব্রাউজার থেকে বাটনে ক্লিক করলে সরাসরি SMS অ্যাপ ওপেন হয়ে এই মেসেজটি লোড হবে।
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -2782,6 +2856,12 @@
       const [seo, setSeo] = useState(() => getStored("seo", initialSeoConfig));
       const [loyalty, setLoyalty] = useState(() => getStored("loyalty", initialLoyaltyConfig));
       const [loyaltyCustomerMap, setLoyaltyCustomerMap] = useState(() => getStored("loyalty_customers", {}));
+      const [smsQueue, setSmsQueue] = useState(() => getStored("sms_queue", []));
+      const [smsComposePhones, setSmsComposePhones] = useState("");
+      const [smsComposeMessage, setSmsComposeMessage] = useState("প্রিয় {name}, SAJGOJ FASHION-এ চলছে স্পেশাল ২০% ছাড় ও ফ্রি ডেলিভারি! আজই আপনার পছন্দের শাড়ি ও জুয়েলারি অর্ডার করুন।");
+      const [smsSelectedCustomers, setSmsSelectedCustomers] = useState([]);
+      const [smsHubSubTab, setSmsHubSubTab] = useState("compose");
+      const [smsQueueFilter, setSmsQueueFilter] = useState("all");
 
       // Robust normalized list of categories for Daraz-style horizontal slider
       const displayCategories = useMemo(() => {
@@ -3526,6 +3606,42 @@
           unsubPixel();
           unsubSeo();
           unsubHomeSections();
+        };
+      }, []);
+
+      // 14. Admin-only Real-time SIM SMS Gateway Queue Subscription
+      useEffect(() => {
+        if (!firestoreDb) return;
+        let isMounted = true;
+        let unsubSms = null;
+
+        const attachSmsListener = (user) => {
+          if (unsubSms) {
+            try { unsubSms(); } catch (e) {}
+            unsubSms = null;
+          }
+          const email = (user?.email || "").trim().toLowerCase();
+          if (user && email === "nihatfahimbd@gmail.com" && user.emailVerified) {
+            unsubSms = firestoreDb.collection("sms_queue").onSnapshot((snapshot) => {
+              if (!isMounted) return;
+              const list = [];
+              snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+              list.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+              setSmsQueue(list);
+              setStored("sms_queue", list);
+            }, (err) => console.warn("SMS queue sync note:", err?.code || err));
+          }
+        };
+
+        const authInstance = firebaseAuth || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth() : null);
+        let unsubAuth = null;
+        if (authInstance && typeof authInstance.onAuthStateChanged === "function") {
+          unsubAuth = authInstance.onAuthStateChanged((user) => attachSmsListener(user));
+        }
+        return () => {
+          isMounted = false;
+          if (unsubSms) try { unsubSms(); } catch (e) {}
+          if (unsubAuth) try { unsubAuth(); } catch (e) {}
         };
       }, []);
 
@@ -6493,17 +6609,40 @@
                           <span className="font-black text-[#000000]">৳{c.totalSpent.toLocaleString()}</span>
                           <span className="text-[10px] text-[#000000] font-bold ml-1">({c.ordersCount}টি)</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOrderPhoneFilter(c.phone === "N/A" ? "" : c.phone);
-                            setActiveTab("Orders");
-                            setAdminOrderSubTab("all_orders");
-                          }}
-                          className="cta-dark-pill px-3 py-1.5 rounded-xl font-bold text-[11px] transition cursor-pointer"
-                        >
-                          অর্ডার হিস্ট্রি →
-                        </button>
+                        <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => openPlaySafeSmsIntent(c.phone, `প্রিয় ${c.name || "গ্রাহক"}, ${config.storeName || "SAJGOJ FASHION"} থেকে শুভেচ্ছা! নতুন কালেকশন দেখতে ভিজিট করুন।`)}
+                            className="bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition cursor-pointer"
+                            title="ডিফল্ট SMS অ্যাপ খুলুন (Play-Safe)"
+                          >
+                            📩 SMS
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => enqueueSmsToCloud({
+                              phone: c.phone,
+                              customerName: c.name || "",
+                              message: `প্রিয় ${c.name || "সম্মানিত গ্রাহক"}, ${config.storeName || "SAJGOJ FASHION"}-এ আপনার জন্য রয়েছে স্পেশাল অফার!`,
+                              type: "custom"
+                            })}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition cursor-pointer"
+                            title="মোবাইল SIM Gateway কিউতে পাঠান"
+                          >
+                            📲 SIM কিউ
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOrderPhoneFilter(c.phone === "N/A" ? "" : c.phone);
+                              setActiveTab("Orders");
+                              setAdminOrderSubTab("all_orders");
+                            }}
+                            className="cta-dark-pill px-3 py-1.5 rounded-xl font-bold text-[11px] transition cursor-pointer"
+                          >
+                            অর্ডার হিস্ট্রি →
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -10754,6 +10893,21 @@
         notify(`${labels[methodKey] || methodKey} ফুটারে ${enabledVal ? "চালু (ON)" : "বন্ধ (OFF)"} করা হয়েছে! ✅`);
       };
 
+      const getStoreMapUrls = (cfg) => {
+        const targetCfg = cfg || config || initialStoreConfig;
+        const rawQuery = String(targetCfg.googleMapQuery || targetCfg.address || "Eastern Plaza, Hatirpool, Dhaka-1205").trim();
+        const encodedQuery = encodeURIComponent(rawQuery);
+        const customUrl = String(targetCfg.googleMapUrl || "").trim();
+        const embedSrc = customUrl.includes("/maps/embed")
+          ? customUrl
+          : `https://maps.google.com/maps?q=${encodedQuery}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+        const openUrl = customUrl.startsWith("http")
+          ? customUrl
+          : `https://www.google.com/maps/search/?api=1&query=${encodedQuery}`;
+        const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedQuery}`;
+        return { rawQuery, embedSrc, openUrl, directionsUrl };
+      };
+
       const bulkUpdateFooterPayments = async (enableAll) => {
         let updatedConfigSnapshot = null;
         setConfig(prev => {
@@ -12821,8 +12975,18 @@
       const dispatchCourier = (orderId, provider) => {
         const prefix = provider === "Steadfast" ? "ST-" : "PTH-" ;
         const tracking = prefix + Math.floor(100000 + Math.random() * 900000);
+        const existingOrder = (ordersRef.current || orders).find(o => o.id === orderId);
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "Shipped", trackingId: tracking } : o));
         syncDocToCloud("orders", orderId, { status: "Shipped", trackingId: tracking });
+        if (config?.smsAutoSendOnOrderStatus && existingOrder && existingOrder.phone) {
+          enqueueSmsToCloud({
+            phone: existingOrder.phone,
+            customerName: existingOrder.customer || existingOrder.customerName || "",
+            message: buildOrderSmsText({ ...existingOrder, status: "Shipped", trackingId: tracking }),
+            orderId: existingOrder.id,
+            type: "status_update"
+          }, { silent: true });
+        }
         notify(`অর্ডার #${orderId} সফলভাবে ${provider}-এ বুকিং করা হয়েছে! ট্র্যাকিং ID: ${tracking}`);
       };
 
@@ -12868,6 +13032,15 @@
           }
         }
 
+        if (existingOrder && config?.smsAutoSendOnOrderStatus && existingOrder.phone && newStatus !== existingOrder.status) {
+          enqueueSmsToCloud({
+            phone: existingOrder.phone,
+            customerName: existingOrder.customer || existingOrder.customerName || "",
+            message: buildOrderSmsText({ ...existingOrder, status: newStatus }),
+            orderId: existingOrder.id,
+            type: "status_update"
+          }, { silent: true });
+        }
         // When order is Delivered: Automatically record payment received in POS!
         if (newStatus === "Delivered") {
           const target = deliveredOrder || orders.find(o => o.id === orderId);
@@ -13088,6 +13261,198 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         } catch(e) {
           notify("মেসেজ কপি করা যায়নি");
         }
+      };
+
+      // Dual-Mode SIM Gateway & Play-Safe 1-Click SMS Helpers
+      const normalizeSmsPhone = (raw) => {
+        const cleaned = String(raw || "").trim().replace(/[\s\-()]+/g, "");
+        if (!cleaned) return "";
+        if (cleaned.startsWith("+880")) return cleaned;
+        if (cleaned.startsWith("880") && cleaned.length >= 13) return `+${cleaned}`;
+        if (cleaned.startsWith("01") && cleaned.length === 11) return `+88${cleaned}`;
+        return cleaned;
+      };
+
+      const isValidSmsPhone = (raw) => {
+        const digits = String(raw || "").replace(/\D/g, "");
+        return digits.length >= 7 && digits.length <= 15;
+      };
+
+      const estimateSmsPartsWeb = (text) => {
+        const str = String(text || "");
+        if (!str) return 0;
+        const isUnicode = /[^\x00-\x7F]/.test(str);
+        const singleLimit = isUnicode ? 70 : 160;
+        const multiLimit = isUnicode ? 67 : 153;
+        return str.length <= singleLimit ? 1 : Math.floor((str.length - 1) / multiLimit) + 1;
+      };
+
+      const buildOrderSmsText = (order) => {
+        if (!order) return "";
+        const brand = (config?.storeName || "SAJGOJ FASHION").trim();
+        const name = (order.customer || order.customerName || "সম্মানিত গ্রাহক").trim();
+        const total = order.total || 0;
+        const trackingPart = order.trackingId ? ` ট্র্যাকিং: ${order.trackingId}।` : "";
+        const status = String(order.status || "Pending");
+        if (status === "Pending") {
+          return `আসসালামু আলাইকুম ${name}, ${brand}-এ আপনার অর্ডার #${order.id} (৳${total}) রিসিভ হয়েছে। শীঘ্রই কনফার্ম করা হবে।`;
+        }
+        if (status === "Confirmed") {
+          return `প্রিয় ${name}, আপনার অর্ডার #${order.id} (৳${total}) কনফার্ম করা হয়েছে! প্যাকিং চলছে। ধন্যবাদ - ${brand}`;
+        }
+        if (status === "Processing") {
+          return `প্রিয় ${name}, আপনার অর্ডার #${order.id} এখন প্যাকিং ও প্রসেসিং পর্যায়ে রয়েছে। - ${brand}`;
+        }
+        if (status === "Shipped") {
+          return `প্রিয় ${name}, আপনার অর্ডার #${order.id} কুরিয়ারে পাঠানো হয়েছে!${trackingPart} দ্রুত ডেলিভারি পাবেন। - ${brand}`;
+        }
+        if (status === "Delivered") {
+          return `প্রিয় ${name}, আপনার অর্ডার #${order.id} সফলভাবে ডেলিভারি সম্পন্ন হয়েছে! কেনাকাটার জন্য ধন্যবাদ - ${brand}`;
+        }
+        if (status === "Cancelled") {
+          return `প্রিয় ${name}, আপনার অর্ডার #${order.id} বাতিল করা হয়েছে। সহায়তার জন্য কল করুন - ${brand}`;
+        }
+        return `প্রিয় ${name}, আপনার অর্ডার #${order.id} (৳${total}) স্ট্যাটাস: ${status}।${trackingPart} - ${brand}`;
+      };
+
+      const openPlaySafeSmsIntent = (rawPhone, message) => {
+        const phone = normalizeSmsPhone(rawPhone);
+        if (!isValidSmsPhone(phone)) {
+          notify("⚠️ সঠিক মোবাইল নম্বর পাওয়া যায়নি।");
+          return false;
+        }
+        const msg = String(message || "").trim();
+        const ua = navigator.userAgent || "";
+        const isIOS = /iPhone|iPad|iPod/i.test(ua);
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+        const sep = isIOS ? "&" : "?";
+        const smsHref = `sms:${phone}${msg ? `${sep}body=${encodeURIComponent(msg)}` : ""}`;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText && msg) {
+            navigator.clipboard.writeText(msg).catch(() => {});
+          }
+        } catch (e) {}
+        if (isMobile) {
+          window.location.href = smsHref;
+          notify(`📩 ${phone} নম্বরে SMS অ্যাপ ওপেন হচ্ছে...`);
+        } else {
+          try {
+            window.open(smsHref, "_self");
+          } catch (e) {}
+          notify(`📩 SMS লিঙ্ক ট্রিগার ও মেসেজ কপি হয়েছে (${phone})! মোবাইল ব্রাউজারে সরাসরি SMS অ্যাপ খুলবে।`);
+        }
+        return true;
+      };
+
+      const enqueueSmsToCloud = ({ phone, customerName = "", message, orderId = "", type = "custom", channel = "sim_gateway" }, opts = {}) => {
+        const normalized = normalizeSmsPhone(phone);
+        const trimmedMsg = String(message || "").trim();
+        if (!isValidSmsPhone(normalized) || !trimmedMsg) {
+          if (!opts.silent) notify("⚠️ সঠিক মোবাইল নম্বর ও মেসেজ দিন।");
+          return null;
+        }
+        const now = Date.now();
+        const item = {
+          id: `sms_${now}_${Math.floor(100 + Math.random() * 899)}`,
+          phone: normalized,
+          customerName: String(customerName || "").trim().slice(0, 80),
+          message: trimmedMsg.slice(0, 1000),
+          orderId: String(orderId || "").trim().slice(0, 60),
+          type,
+          status: "pending",
+          channel,
+          createdAt: now,
+          updatedAt: now,
+          sentAt: 0,
+          sentByDevice: "",
+          errorReason: ""
+        };
+        setSmsQueue(prev => {
+          const next = [item, ...prev.slice(0, 199)];
+          setStored("sms_queue", next);
+          return next;
+        });
+        syncDocToCloud("sms_queue", item.id, item);
+        if (!opts.silent) notify(`📲 ${normalized} নম্বরের SMS মোবাইল SIM Gateway কিউতে যোগ হয়েছে!`);
+        return item;
+      };
+
+      const enqueueBulkSmsToCloud = (recipients, messageTemplate, type = "bulk_promo") => {
+        const brand = (config?.storeName || "SAJGOJ FASHION").trim();
+        const seen = new Set();
+        const created = [];
+        const baseNow = Date.now();
+        recipients.forEach((rec, idx) => {
+          const phone = normalizeSmsPhone(rec.phone);
+          const name = String(rec.name || "").trim();
+          if (!isValidSmsPhone(phone) || seen.has(phone)) return;
+          seen.add(phone);
+          const body = String(messageTemplate || "")
+            .replace(/\{name\}/g, name || "সম্মানিত গ্রাহক")
+            .replace(/\{store\}/g, brand)
+            .trim()
+            .slice(0, 1000);
+          if (!body) return;
+          const item = {
+            id: `sms_${baseNow}_${idx}_${Math.floor(100 + Math.random() * 899)}`,
+            phone,
+            customerName: name.slice(0, 80),
+            message: body,
+            orderId: "",
+            type,
+            status: "pending",
+            channel: "sim_gateway",
+            createdAt: baseNow + idx,
+            updatedAt: baseNow + idx,
+            sentAt: 0,
+            sentByDevice: "",
+            errorReason: ""
+          };
+          created.push(item);
+          syncDocToCloud("sms_queue", item.id, item);
+        });
+        if (created.length > 0) {
+          setSmsQueue(prev => {
+            const next = [...created, ...prev].slice(0, 200);
+            setStored("sms_queue", next);
+            return next;
+          });
+          notify(`🚀 মোট ${created.length} জন গ্রাহকের Bulk SMS মোবাইল SIM কিউতে পাঠানো হয়েছে!`);
+        } else {
+          notify("⚠️ কোনো সঠিক মোবাইল নম্বর পাওয়া যায়নি।");
+        }
+        return created.length;
+      };
+
+      const retrySmsQueueItemWeb = (smsId) => {
+        const now = Date.now();
+        setSmsQueue(prev => {
+          const next = prev.map(it => it.id === smsId ? { ...it, status: "pending", channel: "sim_gateway", errorReason: "", updatedAt: now } : it);
+          setStored("sms_queue", next);
+          return next;
+        });
+        syncDocToCloud("sms_queue", smsId, { status: "pending", channel: "sim_gateway", errorReason: "", updatedAt: now });
+        notify("🔄 SMS পুনরায় কিউতে যোগ হয়েছে!");
+      };
+
+      const deleteSmsQueueItemWeb = (smsId) => {
+        setSmsQueue(prev => {
+          const next = prev.filter(it => it.id !== smsId);
+          setStored("sms_queue", next);
+          return next;
+        });
+        deleteDocFromCloud("sms_queue", smsId);
+      };
+
+      const clearCompletedSmsQueueWeb = () => {
+        const doneIds = (smsQueue || []).filter(it => it.status === "sent" || it.status === "cancelled").map(it => it.id);
+        setSmsQueue(prev => {
+          const next = prev.filter(it => it.status !== "sent" && it.status !== "cancelled");
+          setStored("sms_queue", next);
+          return next;
+        });
+        doneIds.forEach(id => deleteDocFromCloud("sms_queue", id));
+        notify("🧹 সম্পন্ন হওয়া SMS লগ মুছে ফেলা হয়েছে।");
       };
 
       // Real XML Sitemap Generator for Google Search Console & SEO indexing
@@ -15142,8 +15507,71 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               </main>
               )}
 
+              {/* Interactive Storefront Google Map Location Section */}
+              {config.showGoogleMap !== false && (() => {
+                const { embedSrc, openUrl, directionsUrl } = getStoreMapUrls(config);
+                return (
+                  <section id="storefront-google-map" className="max-w-7xl mx-auto px-3 sm:px-4 mt-12">
+                    <div className="liquid-glass-surface rounded-3xl p-5 sm:p-7 shadow-xl border border-white/75 text-[#000000]">
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                        <div className="lg:col-span-5 space-y-3.5">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#7a1c2b] border border-rose-300 text-[11px] font-black uppercase tracking-wider">
+                            <span>📍</span>
+                            <span>Google Map Location</span>
+                          </span>
+                          <h3 className="text-xl sm:text-2xl font-black text-[#000000]">
+                            আমাদের শোরুমে সরাসরি আসুন
+                          </h3>
+                          <p className="text-xs sm:text-sm font-bold text-[#000000]/85 leading-relaxed">
+                            {config.storeName} — {config.address}
+                          </p>
+                          <div className="bg-white/75 rounded-2xl p-3.5 border border-black/10 space-y-1.5 text-xs font-semibold text-[#000000]">
+                            <p>🕒 খোলা থাকে: প্রতিদিন সকাল ১০:০০ – রাত ০৯:৩০</p>
+                            <p>📞 হটলাইন: {config.phone}</p>
+                            <p>💬 WhatsApp: {config.whatsapp}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2.5 pt-1">
+                            <a
+                              href={openUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="cta-dark-pill px-4 py-2.5 rounded-full text-xs font-black inline-flex items-center gap-1.5 shadow-md hover:opacity-95 transition"
+                            >
+                              <span>🗺️</span>
+                              <span>গুগল ম্যাপে খুলুন</span>
+                            </a>
+                            <a
+                              href={directionsUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="red-black-tab px-4 py-2.5 rounded-full text-xs font-black inline-flex items-center gap-1.5 shadow-sm transition"
+                            >
+                              <span>🧭</span>
+                              <span>ডিরেকশন নিন</span>
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="lg:col-span-7">
+                          <div className="rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-white/80">
+                            <iframe
+                              title="Store Google Map Location"
+                              src={embedSrc}
+                              loading="lazy"
+                              allowFullScreen
+                              referrerPolicy="no-referrer-when-downgrade"
+                              className="w-full h-64 sm:h-72 border-0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                );
+              })()}
+
               {/* Storefront Footer (Liquid Glass + 3 Policy/Support Columns + Red/Black Bottom Cards) */}
-              <footer id="storefront-footer" className="liquid-glass-hero text-[#000000] py-10 px-4 mt-16 sm:mx-4 sm:mb-4 sm:rounded-3xl">
+              <footer id="storefront-footer" className="liquid-glass-hero text-[#000000] py-10 px-4 mt-12 sm:mx-4 sm:mb-4 sm:rounded-3xl">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-7">
                   {/* Brand & Direct Contact */}
                   <div className="space-y-3 lg:col-span-1">
@@ -15157,6 +15585,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <p>💬 WhatsApp: {config.whatsapp}</p>
                       <p>✉️ {config.email}</p>
                       <p>📍 {config.address}</p>
+                      <div className="pt-1">
+                        <a
+                          href={getStoreMapUrls(config).openUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-black text-[#7a1c2b] hover:underline"
+                        >
+                          <span>🗺️ Google Map লোকেশন দেখুন ↗</span>
+                        </a>
+                      </div>
                     </div>
                     <div className="pt-1 flex flex-wrap gap-3 text-xs font-black text-[#000000]">
                       {config.footer.fb && <a href={config.footer.fb} target="_blank" rel="noreferrer" className="hover:underline">🌐 Facebook</a>}
@@ -15564,6 +16002,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       setActiveTab("Customers");
                     }
                   }
+                },
+                {
+                  id: "SMSGateway",
+                  label: "SIM SMS ও বাল্ক হাব",
+                  subLabel: "Personal SIM + 1-Click Play-Safe",
+                  icon: "📲",
+                  badge: smsQueue.filter(s => s.status === "pending" || s.status === "sending").length > 0
+                    ? `${smsQueue.filter(s => s.status === "pending" || s.status === "sending").length} কিউ`
+                    : (config?.smsGatewayDeviceEnabled ? "SIM চালু" : "প্রস্তুত"),
+                  badgeTone: config?.smsGatewayDeviceEnabled ? "emerald" : "cyan",
+                  isActive: activeTab === "SMSGateway",
+                  onClick: () => setActiveTab("SMSGateway")
                 },
                 {
                   id: "HomePageSetting",
@@ -16084,7 +16534,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             {[
                               { id: "Customers", label: "👥 কাস্টমার ডাটাবেস (CRM)" },
                               { id: "Loyalty", label: "👑 মেম্বারশিপ ও VIP ক্লাব" },
-                              { id: "Reviews", label: "⭐ কাস্টমার রিভিউ", count: reviews.length }
+                              { id: "Reviews", label: "⭐ কাস্টমার রিভিউ", count: reviews.length },
+                              { id: "SMSGateway", label: "📲 বাল্ক ও SIM SMS" }
                             ].map(pill => (
                               <button
                                 key={pill.id}
@@ -16134,7 +16585,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         )}
 
                         {/* CONTEXTUAL MASTER HUB SUB-NAV: SYSTEM & INTEGRATION HUB */}
-                        {["SEOSettings", "SEO", "SEOMetaTags", "PaymentSettings", "Courier", "Pixel", "Backup"].includes(activeTab) && (
+                        {["SEOSettings", "SEO", "SEOMetaTags", "PaymentSettings", "Courier", "Pixel", "SMSGateway", "Backup"].includes(activeTab) && (
                           <div className="liquid-glass-surface rounded-2xl p-2 flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs font-bold v2-animate-in">
                             <span className="text-[11px] font-black text-[#000000] px-2.5 whitespace-nowrap">⚙️ সিস্টেম ও ইন্টিগ্রেশন হাব:</span>
                             {[
@@ -16142,6 +16593,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               { id: "PaymentSettings", label: "💳 পেমেন্ট মেথড" },
                               { id: "Courier", label: "🚚 কুরিয়ার API" },
                               { id: "Pixel", label: "📈 ফেসবুক পিক্সেল" },
+                              { id: "SMSGateway", label: "📲 SIM SMS গেটওয়ে" },
                               { id: "Backup", label: "💾 ডাটাবেজ ব্যাকআপ ও সিঙ্ক" }
                             ].map(pill => {
                               const isOn = activeTab === pill.id || (pill.id === "SEOSettings" && (activeTab === "SEO" || activeTab === "SEOMetaTags"));
@@ -18295,6 +18747,30 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   <span>💬</span>
                                   <span>WhatsApp</span>
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openPlaySafeSmsIntent(o.phone, buildOrderSmsText(o))}
+                                  className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+                                  title="১-ক্লিক ডিফল্ট SMS অ্যাপ (Play-Safe)"
+                                >
+                                  <span>📩</span>
+                                  <span>১-ক্লিক SMS</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => enqueueSmsToCloud({
+                                    phone: o.phone,
+                                    customerName: o.customer || o.customerName || "",
+                                    message: buildOrderSmsText(o),
+                                    orderId: o.id,
+                                    type: "order_alert"
+                                  })}
+                                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+                                  title="ব্যক্তিগত মোবাইল SIM Gateway কিউতে পাঠান"
+                                >
+                                  <span>📲</span>
+                                  <span>SIM কিউ SMS</span>
+                                </button>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
@@ -18590,16 +19066,25 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <div className="text-white bg-[#14070a]/75 p-3 rounded-2xl border border-red-900/35">
                             <p className="font-bold text-sm text-white">{o.customer}</p>
                             <p className="text-slate-300 mt-1 font-mono">📞 {o.phone}</p>
-                            <div className="flex gap-2 mt-2">
+                            <div className="flex flex-wrap gap-1.5 mt-2">
                               <a href={`tel:${o.phone}`} className="bg-black/60 border border-emerald-500/40 px-2.5 py-1 rounded-full text-[11px] font-bold text-emerald-300 hover:bg-emerald-950/60">
                                 📞 কল করুন
                               </a>
                               <button 
+                                type="button"
                                 onClick={() => shareOrderToWhatsApp(o)} 
                                 className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs flex items-center gap-1 transition"
                                 title="হোয়াটসঅ্যাপে বিস্তারিত পাঠান"
                               >
                                 💬 WhatsApp
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openPlaySafeSmsIntent(o.phone, buildOrderSmsText(o))}
+                                className="bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs flex items-center gap-1 transition"
+                                title="১-ক্লিক Play-Safe SMS পাঠান"
+                              >
+                                📩 SMS
                               </button>
                             </div>
                           </div>
@@ -18722,6 +19207,30 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             >
                               <span>💬</span>
                               <span>Share to WhatsApp</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openPlaySafeSmsIntent(o.phone, buildOrderSmsText(o))}
+                              className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-full text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+                              title="ডিফল্ট মেসেজ অ্যাপে ১-ক্লিক SMS পাঠান"
+                            >
+                              <span>📩</span>
+                              <span>১-ক্লিক SMS</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => enqueueSmsToCloud({
+                                phone: o.phone,
+                                customerName: o.customer || o.customerName || "",
+                                message: buildOrderSmsText(o),
+                                orderId: o.id,
+                                type: "order_alert"
+                              })}
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+                              title="ব্যক্তিগত মোবাইল SIM Gateway কিউতে পাঠান"
+                            >
+                              <span>📲</span>
+                              <span>SIM কিউ SMS</span>
                             </button>
                             <button 
                               onClick={() => printInvoiceWindow(o)}
@@ -22671,6 +23180,421 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             )}
 
             {/* ========================================================= */}
+            {/* 10.95 SIM SMS GATEWAY & BULK SMS HUB (MODE 1 + MODE 2) */}
+            {/* ========================================================= */}
+            {activeTab === "SMSGateway" && (() => {
+              const crmMap = {};
+              (orders || []).forEach(ord => {
+                const ph = normalizeSmsPhone(ord.phone);
+                if (!isValidSmsPhone(ph)) return;
+                if (!crmMap[ph]) {
+                  crmMap[ph] = {
+                    phone: ph,
+                    name: ord.customer || ord.customerName || "সম্মানিত গ্রাহক",
+                    totalSpent: 0,
+                    lastStatus: ord.status || "Pending"
+                  };
+                }
+                crmMap[ph].totalSpent += Number(ord.total) || 0;
+              });
+              const crmList = Object.values(crmMap);
+
+              const manualRecipients = String(smsComposePhones || "")
+                .split(/[\n,;]+/)
+                .map(p => normalizeSmsPhone(p))
+                .filter(p => isValidSmsPhone(p))
+                .map(p => ({ phone: p, name: "" }));
+
+              const selectedCrmRecipients = crmList
+                .filter(c => smsSelectedCustomers.includes(c.phone))
+                .map(c => ({ phone: c.phone, name: c.name }));
+
+              const mergedMap = {};
+              selectedCrmRecipients.forEach(r => { mergedMap[r.phone] = r; });
+              manualRecipients.forEach(r => { if (!mergedMap[r.phone]) mergedMap[r.phone] = r; });
+              const combinedRecipients = Object.values(mergedMap);
+
+              const pendingSmsCnt = (smsQueue || []).filter(s => s.status === "pending" || s.status === "sending").length;
+              const sentSmsCnt = (smsQueue || []).filter(s => s.status === "sent").length;
+              const failedSmsCnt = (smsQueue || []).filter(s => s.status === "failed").length;
+              const smsCharCnt = String(smsComposeMessage || "").length;
+              const smsIsUnicode = /[^\x00-\x7F]/.test(String(smsComposeMessage || ""));
+              const smsEstParts = estimateSmsPartsWeb(smsComposeMessage);
+
+              const smsTemplates = [
+                { title: "✅ অর্ডার কনফার্মেশন", text: "প্রিয় {name}, {store}-এ আপনার অর্ডারটি কনফার্ম হয়েছে! শীঘ্রই কুরিয়ারে পাঠানো হবে।" },
+                { title: "🎉 ঈদ / ফ্ল্যাশ অফার (Bulk)", text: "প্রিয় {name}, {store}-এ চলছে স্পেশাল ২০% ছাড় ও ফ্রি ডেলিভারি! আজই পছন্দের শাড়ি ও জুয়েলারি অর্ডার করুন।" },
+                { title: "✨ নতুন কালেকশন (Bulk)", text: "হ্যালো {name}! আমাদের নতুন ব্রাইডাল ও জামদানি কালেকশন স্টকে এসেছে। ভিজিট করুন {store}!" },
+                { title: "🚚 কুরিয়ার রিমাইন্ডার", text: "প্রিয় {name}, আপনার পার্সেলটি ডেলিভারির জন্য কুরিয়ারে পাঠানো হয়েছে। অনুগ্রহ করে ফোন সচল রাখুন। - {store}" }
+              ];
+
+              const filteredQueueWeb = (smsQueue || []).filter(item =>
+                smsQueueFilter === "all" ? true : item.status === smsQueueFilter
+              );
+
+              return (
+                <div className="text-white bg-black/55 backdrop-blur-xl p-5 sm:p-8 rounded-3xl border border-cyan-500/35 space-y-6 shadow-lg animate-fadeIn">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("Dashboard")}
+                        className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-red-900/50 bg-[#1a0a0e]/80 text-rose-200 hover:bg-[#dc2626] hover:text-white transition flex items-center gap-1 cursor-pointer"
+                      >
+                        ← ড্যাশবোর্ড
+                      </button>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                          <span>📲</span>
+                          <span>SIM SMS গেটওয়ে ও বাল্ক SMS হাব</span>
+                        </h3>
+                        <p className="text-xs text-slate-300 mt-1">
+                          মোড ১: আপনার পার্সোনাল অ্যান্ড্রয়েড ফোনের SIM দিয়ে স্বয়ংক্রিয়/বাল্ক SMS • মোড ২: Play-Store সেফ ১-ক্লিক SMS
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                      <span className={`px-3 py-1 rounded-full border ${config?.smsGatewayDeviceEnabled ? "bg-emerald-950/70 border-emerald-500/50 text-emerald-300" : "bg-slate-900/70 border-slate-600 text-slate-300"}`}>
+                        {config?.smsGatewayDeviceEnabled ? "🟢 মোবাইল SIM Gateway সক্রিয়" : "⚪ মোবাইল অ্যাপ চালু রাখুন"}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-amber-950/70 border border-amber-500/40 text-amber-200">
+                        ⏳ পেন্ডিং: {pendingSmsCnt}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-200">
+                        ✅ সফল: {sentSmsCnt}
+                      </span>
+                      {failedSmsCnt > 0 && (
+                        <span className="px-3 py-1 rounded-full bg-rose-950/70 border border-rose-500/40 text-rose-200">
+                          ❌ ব্যর্থ: {failedSmsCnt}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Mode 1 & Mode 2 Quick Settings Strip */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-[#14070a]/80 border border-emerald-500/35 rounded-2xl p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h4 className="font-bold text-sm text-emerald-300 flex items-center gap-1.5">
+                            <span>📱</span>
+                            <span>মোড ১: পার্সোনাল SIM Gateway অটো-সিঙ্ক</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                            এই ব্রাউজার থেকে পাঠানো যেকোনো সিঙ্গেল বা বাল্ক SMS ক্লাউড কিউতে (<code className="text-amber-300">sms_queue</code>) যাবে এবং আপনার কানেক্টেড অ্যান্ড্রয়েড অ্যাডমিন অ্যাপটি সিম কার্ড দিয়ে পাঠিয়ে দেবে।
+                          </p>
+                        </div>
+                      </div>
+                      <label className="flex items-center justify-between gap-3 bg-black/45 p-3 rounded-xl border border-white/10 cursor-pointer">
+                        <div>
+                          <span className="text-xs font-bold text-white block">অর্ডার কনফার্ম / কুরিয়ারে অটো SMS কিউ</span>
+                          <span className="text-[10px] text-slate-400">স্ট্যাটাস বদলালেই কাস্টমারের নম্বরে অটো কিউ তৈরি হবে</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(config?.smsAutoSendOnOrderStatus)}
+                          onChange={(e) => {
+                            const updated = { ...config, smsAutoSendOnOrderStatus: e.target.checked };
+                            setConfig(updated);
+                            setStored("config", updated);
+                            syncDocToCloud("config", "store", { smsAutoSendOnOrderStatus: e.target.checked });
+                            notify(e.target.checked ? "✅ অর্ডার স্ট্যাটাসে অটো SIM SMS কিউ চালু হয়েছে!" : "অটো SMS কিউ বন্ধ করা হয়েছে।");
+                          }}
+                          className="w-5 h-5 accent-emerald-500 cursor-pointer"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="bg-[#14070a]/80 border border-sky-500/35 rounded-2xl p-4 space-y-2">
+                      <h4 className="font-bold text-sm text-sky-300 flex items-center gap-1.5">
+                        <span>🛡️</span>
+                        <span>মোড ২: Play Store পলিসি-সেফ ১-ক্লিক SMS</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        পাবলিক কাস্টমার অ্যাপ Play Store-এ পাবলিশ করার জন্য আলাদা কোনো <code className="text-sky-300">SEND_SMS</code> পারমিশন ছাড়াই <b>"📩 ১-ক্লিক SMS"</b> বাটন ফোনের ডিফল্ট মেসেজ অ্যাপ ওপেন করে (শতভাগ Google Play অনুমোদিত)।
+                      </p>
+                      <div className="text-[11px] bg-sky-950/50 border border-sky-500/30 rounded-xl p-2.5 text-sky-200">
+                        💡 মোবাইল ব্রাউজার থেকে নিচের <b>"📩 ১-ক্লিক SMS খুলুন"</b> চাপলেই সরাসরি সিমের ডিফল্ট মেসেজ অ্যাপে নম্বর ও লেখা রেডি হয়ে যাবে।
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sub-tab Switcher */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSmsHubSubTab("compose")}
+                      className={`px-4 py-2 rounded-full text-xs font-bold transition cursor-pointer ${smsHubSubTab === "compose" ? "bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white shadow" : "bg-black/50 border border-red-900/40 text-slate-300 hover:text-white"}`}
+                    >
+                      ✍️ বাল্ক ও সিঙ্গেল SMS পাঠান
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSmsHubSubTab("queue")}
+                      className={`px-4 py-2 rounded-full text-xs font-bold transition cursor-pointer ${smsHubSubTab === "queue" ? "bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white shadow" : "bg-black/50 border border-red-900/40 text-slate-300 hover:text-white"}`}
+                    >
+                      📋 লাইভ ক্লাউড কিউ ও স্ট্যাটাস ({(smsQueue || []).length})
+                    </button>
+                  </div>
+
+                  {smsHubSubTab === "compose" ? (
+                    <div className="bg-[#14070a]/75 border border-red-900/35 rounded-2xl p-5 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold text-rose-200 mb-2">📌 কুইক টেমপ্লেট (<code className="text-amber-300">{`{name}`}</code> অটোমেটিক কাস্টমারের নাম বসাবে):</p>
+                        <div className="flex flex-wrap gap-2">
+                          {smsTemplates.map((tpl, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setSmsComposeMessage(tpl.text)}
+                              className="px-3 py-1.5 rounded-xl bg-black/55 border border-sky-500/40 text-sky-200 hover:bg-sky-900/50 text-xs font-bold transition cursor-pointer"
+                            >
+                              {tpl.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {crmList.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-200">
+                              👥 কাস্টমার ডাটাবেস থেকে বাছাই করুন ({smsSelectedCustomers.length}/{crmList.length}):
+                            </span>
+                            <div className="flex flex-wrap gap-1.5 text-[11px]">
+                              <button
+                                type="button"
+                                onClick={() => setSmsSelectedCustomers(crmList.map(c => c.phone))}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-bold cursor-pointer"
+                              >
+                                সকল সিলেক্ট
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSmsSelectedCustomers(crmList.filter(c => c.lastStatus === "Pending" || c.lastStatus === "Confirmed").map(c => c.phone))}
+                                className="px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-500/40 text-amber-300 font-bold cursor-pointer"
+                              >
+                                পেন্ডিং অর্ডার
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSmsSelectedCustomers(crmList.filter(c => c.totalSpent >= 5000).map(c => c.phone))}
+                                className="px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-500/40 text-purple-300 font-bold cursor-pointer"
+                              >
+                                👑 VIP (৫০০০৳+)
+                              </button>
+                              {smsSelectedCustomers.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSmsSelectedCustomers([])}
+                                  className="px-2.5 py-1 rounded-lg bg-rose-950/70 border border-rose-500/40 text-rose-300 font-bold cursor-pointer"
+                                >
+                                  ক্লিয়ার
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-black/35 rounded-xl border border-white/10">
+                            {crmList.slice(0, 50).map(cust => {
+                              const isSel = smsSelectedCustomers.includes(cust.phone);
+                              return (
+                                <button
+                                  key={cust.phone}
+                                  type="button"
+                                  onClick={() => setSmsSelectedCustomers(prev => isSel ? prev.filter(p => p !== cust.phone) : [...prev, cust.phone])}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                                    isSel ? "bg-sky-600 border-sky-400 text-white" : "bg-black/60 border-white/15 text-slate-300 hover:border-sky-500/40"
+                                  }`}
+                                >
+                                  {isSel ? "✓ " : ""}{cust.name} ({cust.phone.slice(-8)})
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                            📞 ম্যানুয়াল ফোন নম্বর (কমা বা নতুন লাইনে একাধিক নম্বর লিখুন)
+                          </label>
+                          <textarea
+                            rows="4"
+                            value={smsComposePhones}
+                            onChange={(e) => setSmsComposePhones(e.target.value)}
+                            placeholder={"017XXXXXXXX\n018XXXXXXXX, 019XXXXXXXX"}
+                            className="w-full p-3 bg-black/55 border border-red-900/40 rounded-xl text-xs text-white focus:border-sky-400 outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                            ✉️ SMS মেসেজ লিখুন
+                          </label>
+                          <textarea
+                            rows="4"
+                            value={smsComposeMessage}
+                            onChange={(e) => setSmsComposeMessage(e.target.value)}
+                            placeholder="আপনার SMS মেসেজ লিখুন..."
+                            className="w-full p-3 bg-black/55 border border-red-900/40 rounded-xl text-xs text-white focus:border-sky-400 outline-none"
+                          />
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1.5">
+                            <span>মোট প্রাপক: <b className="text-emerald-300">{combinedRecipients.length} জন</b></span>
+                            <span>{smsCharCnt} অক্ষর • {smsIsUnicode ? "বাংলা/Unicode" : "ASCII"} • ≈{smsEstParts} SMS</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (combinedRecipients.length === 0) {
+                              notify("⚠️ অন্তত ১টি মোবাইল নম্বর সিলেক্ট বা লিখুন।");
+                              return;
+                            }
+                            if (!String(smsComposeMessage || "").trim()) {
+                              notify("⚠️ SMS মেসেজ খালি রাখা যাবে না।");
+                              return;
+                            }
+                            if (combinedRecipients.length === 1) {
+                              const rec = combinedRecipients[0];
+                              const txt = String(smsComposeMessage)
+                                .replace(/\{name\}/g, rec.name || "সম্মানিত গ্রাহক")
+                                .replace(/\{store\}/g, config?.storeName || "SAJGOJ FASHION");
+                              enqueueSmsToCloud({
+                                phone: rec.phone,
+                                customerName: rec.name,
+                                message: txt,
+                                type: "custom"
+                              });
+                            } else {
+                              enqueueBulkSmsToCloud(combinedRecipients, smsComposeMessage, "bulk_promo");
+                            }
+                          }}
+                          className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white rounded-full text-xs font-bold shadow-lg flex items-center gap-2 cursor-pointer"
+                        >
+                          <span>📲</span>
+                          <span>
+                            {combinedRecipients.length > 1
+                              ? `${combinedRecipients.length} জনে মোবাইল SIM Gateway কিউতে পাঠান (Bulk)`
+                              : "মোবাইল SIM Gateway কিউতে যোগ করুন"}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (combinedRecipients.length === 0) {
+                              notify("⚠️ ১-ক্লিক SMS-এর জন্য ১টি নম্বর দিন।");
+                              return;
+                            }
+                            const rec = combinedRecipients[0];
+                            const txt = String(smsComposeMessage)
+                              .replace(/\{name\}/g, rec.name || "সম্মানিত গ্রাহক")
+                              .replace(/\{store\}/g, config?.storeName || "SAJGOJ FASHION");
+                            openPlaySafeSmsIntent(rec.phone, txt);
+                          }}
+                          className="px-5 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-full text-xs font-bold shadow flex items-center gap-2 cursor-pointer"
+                        >
+                          <span>📩</span>
+                          <span>১-ক্লিক ব্রাউজার SMS খুলুন (Play-Safe)</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { id: "all", label: `সব (${(smsQueue || []).length})` },
+                            { id: "pending", label: `⏳ পেন্ডিং (${pendingSmsCnt})` },
+                            { id: "sent", label: `✅ সফল (${sentSmsCnt})` },
+                            { id: "failed", label: `❌ ব্যর্থ (${failedSmsCnt})` }
+                          ].map(f => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => setSmsQueueFilter(f.id)}
+                              className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer ${smsQueueFilter === f.id ? "bg-sky-600 text-white" : "bg-black/50 border border-white/15 text-slate-300"}`}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={clearCompletedSmsQueueWeb}
+                          className="px-3.5 py-1.5 bg-rose-950/60 border border-rose-500/40 text-rose-200 hover:bg-rose-900 rounded-full text-xs font-bold cursor-pointer"
+                        >
+                          🧹 সম্পন্ন মুছুন
+                        </button>
+                      </div>
+
+                      {filteredQueueWeb.length === 0 ? (
+                        <div className="bg-black/40 border border-white/10 rounded-2xl p-8 text-center text-slate-300 text-sm">
+                          এই ফিল্টারে কোনো SMS নেই।
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+                          {filteredQueueWeb.map(item => (
+                            <div key={item.id} className="bg-[#14070a]/80 border border-red-900/35 rounded-2xl p-4 space-y-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                  <span className="font-mono font-bold text-sm text-white">{item.phone}</span>
+                                  {item.customerName && <span className="text-xs text-rose-200 ml-2">• {item.customerName}</span>}
+                                  {item.orderId && <span className="text-xs text-sky-300 ml-2 font-bold">অর্ডার #{item.orderId}</span>}
+                                </div>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                  item.status === "sent" ? "bg-emerald-950/70 text-emerald-300 border border-emerald-500/40" :
+                                  item.status === "failed" ? "bg-rose-950/70 text-rose-300 border border-rose-500/40" :
+                                  "bg-amber-950/70 text-amber-300 border border-amber-500/40"
+                                }`}>
+                                  {item.status === "sent" ? "✅ সফল" : item.status === "failed" ? "❌ ব্যর্থ" : item.status === "sending" ? "📤 পাঠানো হচ্ছে" : "⏳ পেন্ডিং"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-200 bg-black/40 p-2.5 rounded-xl border border-white/10">{item.message}</p>
+                              {item.errorReason && <p className="text-[11px] text-rose-300 font-bold">কারণ: {item.errorReason}</p>}
+                              {item.sentByDevice && <p className="text-[10px] text-slate-400">ডিভাইস: {item.sentByDevice}</p>}
+                              <div className="flex flex-wrap items-center gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openPlaySafeSmsIntent(item.phone, item.message)}
+                                  className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded-full text-[11px] font-bold cursor-pointer"
+                                >
+                                  📩 ১-ক্লিক Send
+                                </button>
+                                {(item.status === "failed" || item.status === "pending") && (
+                                  <button
+                                    type="button"
+                                    onClick={() => retrySmsQueueItemWeb(item.id)}
+                                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-[11px] font-bold cursor-pointer"
+                                  >
+                                    🔄 পুনরায় কিউ
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSmsQueueItemWeb(item.id)}
+                                  className="px-2.5 py-1 text-rose-300 hover:text-white text-[11px] font-bold cursor-pointer"
+                                >
+                                  🗑️ মুছুন
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ========================================================= */}
             {/* 11. THEME & STORE CUSTOMIZATION */}
             {/* ========================================================= */}
             {(activeTab === "General" || activeTab === "Settings" || activeTab === "Header" || activeTab === "Footer") && (
@@ -23066,6 +23990,71 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         onChange={(e) => setConfig({ ...config, address: e.target.value })}
                         className="w-full bg-black/50 border border-red-900/45 text-white placeholder-slate-400 rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-red-500" 
                       />
+                    </div>
+
+                    {/* Google Map Location Settings */}
+                    <div className="mt-3 p-4 rounded-2xl bg-black/45 border border-emerald-500/35 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
+                            <span>📍</span>
+                            <span>Google Map লোকেশন সেটিংস</span>
+                          </p>
+                          <p className="text-[11px] text-slate-300">
+                            শোরুমের পিন লোকেশন বা Google Maps শেয়ার লিংক যুক্ত করলে স্টোরফ্রন্ট ও কন্টাক্ট পেজে লাইভ ম্যাপ দেখাবে।
+                          </p>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs font-bold text-emerald-200 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={config.showGoogleMap !== false}
+                            onChange={(e) => setConfig({ ...config, showGoogleMap: e.target.checked })}
+                            className="w-4 h-4 accent-emerald-500"
+                          />
+                          স্টোরফ্রন্টে ম্যাপ দেখান
+                        </label>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-rose-200">Google Map পিন লোকেশন / কো-অর্ডিনেট (Address বা Lat,Lng)</label>
+                            <button
+                              type="button"
+                              onClick={() => setConfig({ ...config, googleMapQuery: config.address })}
+                              className="text-[10px] font-bold text-emerald-300 hover:underline cursor-pointer"
+                            >
+                              ঠিকানা থেকে কপি
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="যেমন: Eastern Plaza, Hatirpool, Dhaka অথবা 23.7465, 90.3911"
+                            value={config.googleMapQuery ?? ""}
+                            onChange={(e) => setConfig({ ...config, googleMapQuery: e.target.value })}
+                            className="w-full bg-black/60 border border-red-900/45 text-white placeholder-slate-400 rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-emerald-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-rose-200">Google Maps শেয়ার লিংক (ঐচ্ছিক URL)</label>
+                          <input
+                            type="url"
+                            placeholder="https://maps.app.goo.gl/... বা https://www.google.com/maps/..."
+                            value={config.googleMapUrl ?? ""}
+                            onChange={(e) => setConfig({ ...config, googleMapUrl: e.target.value })}
+                            className="w-full bg-black/60 border border-red-900/45 text-white placeholder-slate-400 rounded-full px-4 py-2 text-xs outline-none mt-1 focus:border-emerald-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl overflow-hidden border border-white/15 bg-black/50">
+                        <iframe
+                          title="Admin Google Map Preview"
+                          src={getStoreMapUrls(config).embedSrc}
+                          loading="lazy"
+                          className="w-full h-44 border-0"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -23523,24 +24512,43 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
                     )}
 
-                    {footerInfoTopic === "contact" && (
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-1.5">
-                          <p className="font-black text-[#7a1c2b]">📞 হটলাইন ও WhatsApp</p>
-                          <p className="font-bold">হটলাইন: {config.phone}</p>
-                          <p className="font-bold">WhatsApp: {config.whatsapp}</p>
-                          <div className="flex gap-2 pt-2">
-                            <a href={`tel:${config.phone}`} className="px-3 py-1.5 rounded-full bg-[#7a1c2b] text-white text-xs font-bold">কল করুন</a>
-                            <a href={`https://wa.me/${String(config.whatsapp || config.phone || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold">WhatsApp</a>
+                    {footerInfoTopic === "contact" && (() => {
+                      const { embedSrc, openUrl, directionsUrl } = getStoreMapUrls(config);
+                      return (
+                        <div className="space-y-3">
+                          <div className="grid sm:grid-cols-2 gap-3">
+                            <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-1.5">
+                              <p className="font-black text-[#7a1c2b]">📞 হটলাইন ও WhatsApp</p>
+                              <p className="font-bold">হটলাইন: {config.phone}</p>
+                              <p className="font-bold">WhatsApp: {config.whatsapp}</p>
+                              <div className="flex flex-wrap gap-2 pt-2">
+                                <a href={`tel:${config.phone}`} className="px-3 py-1.5 rounded-full bg-[#7a1c2b] text-white text-xs font-bold">কল করুন</a>
+                                <a href={`https://wa.me/${String(config.whatsapp || config.phone || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold">WhatsApp</a>
+                              </div>
+                            </div>
+                            <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-1.5">
+                              <p className="font-black text-[#7a1c2b]">📍 শোরুম ও Google Map</p>
+                              <p className="font-bold">ইমেইল: {config.email}</p>
+                              <p className="text-gray-700 font-medium">{config.address}</p>
+                              <div className="flex flex-wrap gap-2 pt-1.5">
+                                <a href={openUrl} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-[#0f294a] text-white text-xs font-bold">🗺️ ম্যাপে খুলুন</a>
+                                <a href={directionsUrl} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full bg-rose-700 text-white text-xs font-bold">🧭 ডিরেকশন</a>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="rounded-2xl overflow-hidden border border-[#f3e2d0] shadow-sm">
+                            <iframe
+                              title="Contact Modal Google Map"
+                              src={embedSrc}
+                              loading="lazy"
+                              allowFullScreen
+                              referrerPolicy="no-referrer-when-downgrade"
+                              className="w-full h-52 border-0"
+                            />
                           </div>
                         </div>
-                        <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-1.5">
-                          <p className="font-black text-[#7a1c2b]">📍 শোরুম ও ইমেইল</p>
-                          <p className="font-bold">ইমেইল: {config.email}</p>
-                          <p className="text-gray-700 font-medium">{config.address}</p>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {footerInfoTopic === "terms" && (
                       <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">

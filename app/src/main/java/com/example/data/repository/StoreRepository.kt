@@ -21,12 +21,14 @@ import com.example.data.model.ProductReview
 import com.example.data.model.ReelItem
 import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
+import com.example.data.model.SmsQueueItem
 import com.example.data.model.StoreConfig
 import com.example.data.model.StoreDesignConfig
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.data.sync.InventorySyncService
 import com.example.data.sync.LocalInventoryStorageSync
+import com.example.sms.SmsHelper
 import com.example.firebase.GoogleAuthHelper
 import com.example.firebase.OperationType
 import com.example.firebase.handleFirestoreError
@@ -695,6 +697,9 @@ class StoreRepository(private val context: Context) {
   private val _returns = MutableStateFlow<List<ReturnRecord>>(initialReturns)
   val returns: StateFlow<List<ReturnRecord>> = _returns.asStateFlow()
 
+  private val _smsQueue = MutableStateFlow<List<SmsQueueItem>>(loadSmsQueueFromPrefs())
+  val smsQueue: StateFlow<List<SmsQueueItem>> = _smsQueue.asStateFlow()
+
   private val firestore: FirebaseFirestore? by lazy {
     try {
       GoogleAuthHelper.createFirestore(context)
@@ -705,6 +710,7 @@ class StoreRepository(private val context: Context) {
 
   private var ordersListener: ListenerRegistration? = null
   private var returnsListener: ListenerRegistration? = null
+  private var smsQueueListener: ListenerRegistration? = null
 
   private fun currentAuthUid(): String? = try {
     Firebase.auth.currentUser?.uid
@@ -917,6 +923,8 @@ class StoreRepository(private val context: Context) {
     ordersListener = null
     returnsListener?.remove()
     returnsListener = null
+    smsQueueListener?.remove()
+    smsQueueListener = null
 
     val db = firestore ?: return
     if (user == null) {
@@ -1054,6 +1062,40 @@ class StoreRepository(private val context: Context) {
           persistLocalSyncSnapshot()
         }
       )
+
+      smsQueueListener = db.collection("sms_queue").addSnapshotListener { snapshot, error ->
+        if (error != null) {
+          handleFirestoreError(error, OperationType.LIST, "sms_queue")
+          return@addSnapshotListener
+        }
+        if (snapshot != null) {
+          val remoteItems = snapshot.documents.mapNotNull { doc ->
+            try {
+              SmsQueueItem(
+                id = doc.getString("id") ?: doc.id,
+                phone = doc.getString("phone") ?: return@mapNotNull null,
+                customerName = doc.getString("customerName") ?: "",
+                message = doc.getString("message") ?: return@mapNotNull null,
+                orderId = doc.getString("orderId") ?: "",
+                type = doc.getString("type") ?: "custom",
+                status = doc.getString("status") ?: "pending",
+                channel = doc.getString("channel") ?: "sim_gateway",
+                createdAt = (doc.getLong("createdAt") ?: System.currentTimeMillis()),
+                updatedAt = (doc.getLong("updatedAt") ?: System.currentTimeMillis()),
+                sentAt = (doc.getLong("sentAt") ?: 0L),
+                sentByDevice = doc.getString("sentByDevice") ?: "",
+                errorReason = doc.getString("errorReason") ?: ""
+              )
+            } catch (_: Exception) {
+              null
+            }
+          }
+          val localOnly = _smsQueue.value.filter { local -> remoteItems.none { it.id == local.id } }
+          val merged = (remoteItems + localOnly).sortedByDescending { it.createdAt }
+          _smsQueue.value = merged
+          saveSmsQueueToPrefs(merged)
+        }
+      }
     } else {
       inventorySyncService.stopListening()
     }
@@ -1460,6 +1502,19 @@ class StoreRepository(private val context: Context) {
         handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
       }
     }
+    if (_storeConfig.value.smsAutoSendOnOrderStatus) {
+      val updatedOrder = _orders.value.find { it.id == orderId }
+      if (updatedOrder != null && SmsHelper.isValidPhone(updatedOrder.phone)) {
+        enqueueSms(
+          phone = updatedOrder.phone,
+          customerName = updatedOrder.customerName,
+          message = SmsHelper.buildOrderStatusSms(updatedOrder, _storeConfig.value.storeName),
+          orderId = updatedOrder.id,
+          type = "status_update",
+          channel = "sim_gateway"
+        )
+      }
+    }
   }
 
   fun dispatchToCourier(orderId: String, provider: String): String {
@@ -1481,6 +1536,19 @@ class StoreRepository(private val context: Context) {
         }
       } catch (e: Exception) {
         handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+      }
+    }
+    if (_storeConfig.value.smsAutoSendOnOrderStatus) {
+      val updatedOrder = _orders.value.find { it.id == orderId }
+      if (updatedOrder != null && SmsHelper.isValidPhone(updatedOrder.phone)) {
+        enqueueSms(
+          phone = updatedOrder.phone,
+          customerName = updatedOrder.customerName,
+          message = SmsHelper.buildOrderStatusSms(updatedOrder, _storeConfig.value.storeName),
+          orderId = updatedOrder.id,
+          type = "status_update",
+          channel = "sim_gateway"
+        )
       }
     }
     return tracking
@@ -1800,12 +1868,18 @@ class StoreRepository(private val context: Context) {
         whatsapp = o.optString("whatsapp", defCfg.whatsapp),
         email = o.optString("email", defCfg.email),
         address = o.optString("address", defCfg.address),
+        showGoogleMap = o.optBoolean("showGoogleMap", defCfg.showGoogleMap),
+        googleMapQuery = o.optString("googleMapQuery", defCfg.googleMapQuery),
+        googleMapUrl = o.optString("googleMapUrl", defCfg.googleMapUrl),
         bkashEnabled = o.optBoolean("bkashEnabled", defCfg.bkashEnabled),
         nagadEnabled = o.optBoolean("nagadEnabled", defCfg.nagadEnabled),
         rocketEnabled = o.optBoolean("rocketEnabled", defCfg.rocketEnabled),
         codEnabled = o.optBoolean("codEnabled", defCfg.codEnabled),
         visaEnabled = o.optBoolean("visaEnabled", defCfg.visaEnabled),
         returnPolicyDays = o.optInt("returnPolicyDays", defCfg.returnPolicyDays),
+        smsGatewayDeviceEnabled = o.optBoolean("smsGatewayDeviceEnabled", defCfg.smsGatewayDeviceEnabled),
+        smsAutoSendOnOrderStatus = o.optBoolean("smsAutoSendOnOrderStatus", defCfg.smsAutoSendOnOrderStatus),
+        smsDelaySeconds = o.optInt("smsDelaySeconds", defCfg.smsDelaySeconds).coerceIn(2, 15),
         design = design
       )
     } catch (_: Exception) {
@@ -1868,12 +1942,18 @@ class StoreRepository(private val context: Context) {
       put("whatsapp", config.whatsapp)
       put("email", config.email)
       put("address", config.address)
+      put("showGoogleMap", config.showGoogleMap)
+      put("googleMapQuery", config.googleMapQuery)
+      put("googleMapUrl", config.googleMapUrl)
       put("bkashEnabled", config.bkashEnabled)
       put("nagadEnabled", config.nagadEnabled)
       put("rocketEnabled", config.rocketEnabled)
       put("codEnabled", config.codEnabled)
       put("visaEnabled", config.visaEnabled)
       put("returnPolicyDays", config.returnPolicyDays)
+      put("smsGatewayDeviceEnabled", config.smsGatewayDeviceEnabled)
+      put("smsAutoSendOnOrderStatus", config.smsAutoSendOnOrderStatus)
+      put("smsDelaySeconds", config.smsDelaySeconds.coerceIn(2, 15))
       put("design", dObj)
     }
     prefs.edit().putString("sajgoj_store_config", root.toString()).apply()
@@ -1882,6 +1962,239 @@ class StoreRepository(private val context: Context) {
   fun updateStoreConfig(config: StoreConfig) {
     _storeConfig.value = config
     saveStoreConfigToPrefs(config)
+  }
+
+  // -------------------- SMS GATEWAY QUEUE MANAGEMENT --------------------
+
+  private fun loadSmsQueueFromPrefs(): List<SmsQueueItem> {
+    val raw = prefs.getString("sajgoj_sms_queue", null) ?: return emptyList()
+    return try {
+      val arr = JSONArray(raw)
+      buildList {
+        for (i in 0 until arr.length()) {
+          val o = arr.optJSONObject(i) ?: continue
+          val phone = o.optString("phone", "")
+          val msg = o.optString("message", "")
+          if (phone.isBlank() || msg.isBlank()) continue
+          add(
+            SmsQueueItem(
+              id = o.optString("id", "SMS-$i"),
+              phone = phone,
+              customerName = o.optString("customerName", ""),
+              message = msg,
+              orderId = o.optString("orderId", ""),
+              type = o.optString("type", "custom"),
+              status = o.optString("status", "pending"),
+              channel = o.optString("channel", "sim_gateway"),
+              createdAt = o.optLong("createdAt", System.currentTimeMillis()),
+              updatedAt = o.optLong("updatedAt", System.currentTimeMillis()),
+              sentAt = o.optLong("sentAt", 0L),
+              sentByDevice = o.optString("sentByDevice", ""),
+              errorReason = o.optString("errorReason", "")
+            )
+          )
+        }
+      }.sortedByDescending { it.createdAt }
+    } catch (_: Exception) {
+      emptyList()
+    }
+  }
+
+  private fun saveSmsQueueToPrefs(list: List<SmsQueueItem>) {
+    val arr = JSONArray()
+    list.take(200).forEach { s ->
+      arr.put(
+        JSONObject().apply {
+          put("id", s.id)
+          put("phone", s.phone)
+          put("customerName", s.customerName)
+          put("message", s.message)
+          put("orderId", s.orderId)
+          put("type", s.type)
+          put("status", s.status)
+          put("channel", s.channel)
+          put("createdAt", s.createdAt)
+          put("updatedAt", s.updatedAt)
+          put("sentAt", s.sentAt)
+          put("sentByDevice", s.sentByDevice)
+          put("errorReason", s.errorReason)
+        }
+      )
+    }
+    prefs.edit().putString("sajgoj_sms_queue", arr.toString()).apply()
+  }
+
+  fun enqueueSms(
+    phone: String,
+    customerName: String = "",
+    message: String,
+    orderId: String = "",
+    type: String = "custom",
+    channel: String = "sim_gateway"
+  ): SmsQueueItem? {
+    val normalizedPhone = SmsHelper.normalizePhone(phone)
+    val cleanMsg = message.trim().take(1000)
+    if (!SmsHelper.isValidPhone(normalizedPhone) || cleanMsg.isEmpty()) return null
+    val now = System.currentTimeMillis()
+    val safeType = if (type in setOf("order_alert", "status_update", "bulk_promo", "custom")) type else "custom"
+    val safeChannel = if (channel in setOf("sim_gateway", "intent_manual")) channel else "sim_gateway"
+    val item = SmsQueueItem(
+      id = "SMS-${now}-${Random.nextInt(100, 999)}",
+      phone = normalizedPhone.take(30),
+      customerName = customerName.trim().take(120),
+      message = cleanMsg,
+      orderId = orderId.trim().take(128),
+      type = safeType,
+      status = "pending",
+      channel = safeChannel,
+      createdAt = now,
+      updatedAt = now,
+      sentAt = 0L,
+      sentByDevice = "",
+      errorReason = ""
+    )
+    val next = (listOf(item) + _smsQueue.value).sortedByDescending { it.createdAt }
+    _smsQueue.value = next
+    saveSmsQueueToPrefs(next)
+
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("sms_queue")?.document(item.id)?.set(
+          mapOf(
+            "id" to item.id,
+            "phone" to item.phone,
+            "customerName" to item.customerName,
+            "message" to item.message,
+            "orderId" to item.orderId,
+            "type" to item.type,
+            "status" to item.status,
+            "channel" to item.channel,
+            "createdAt" to item.createdAt,
+            "updatedAt" to item.updatedAt,
+            "sentAt" to item.sentAt,
+            "sentByDevice" to item.sentByDevice,
+            "errorReason" to item.errorReason
+          )
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.CREATE, "sms_queue/${item.id}")
+        }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.CREATE, "sms_queue/${item.id}")
+      }
+    }
+    return item
+  }
+
+  fun enqueueBulkSms(
+    recipients: List<Pair<String, String>>,
+    messageTemplate: String,
+    type: String = "bulk_promo"
+  ): Int {
+    val storeName = _storeConfig.value.storeName
+    val uniqueRecipients = recipients
+      .map { (name, phone) -> name.trim() to SmsHelper.normalizePhone(phone) }
+      .filter { (_, phone) -> SmsHelper.isValidPhone(phone) }
+      .distinctBy { (_, phone) -> phone }
+    var count = 0
+    uniqueRecipients.forEach { (name, phone) ->
+      val body = SmsHelper.formatTemplate(
+        template = messageTemplate,
+        customerName = name,
+        storeName = storeName
+      )
+      if (enqueueSms(
+          phone = phone,
+          customerName = name,
+          message = body,
+          orderId = "",
+          type = type,
+          channel = "sim_gateway"
+        ) != null
+      ) {
+        count++
+      }
+    }
+    return count
+  }
+
+  fun updateSmsQueueStatus(
+    smsId: String,
+    status: String,
+    channel: String? = null,
+    sentByDevice: String = "",
+    errorReason: String = ""
+  ) {
+    val safeStatus = if (status in setOf("pending", "sending", "sent", "failed", "cancelled")) status else "pending"
+    val now = System.currentTimeMillis()
+    val next = _smsQueue.value.map { item ->
+      if (item.id != smsId) item
+      else item.copy(
+        status = safeStatus,
+        channel = channel ?: item.channel,
+        updatedAt = now,
+        sentAt = if (safeStatus == "sent") now else item.sentAt,
+        sentByDevice = if (sentByDevice.isNotBlank()) sentByDevice.take(120) else item.sentByDevice,
+        errorReason = errorReason.take(300)
+      )
+    }
+    _smsQueue.value = next
+    saveSmsQueueToPrefs(next)
+
+    if (isVerifiedAdmin()) {
+      try {
+        val updates = mutableMapOf<String, Any>(
+          "status" to safeStatus,
+          "updatedAt" to now,
+          "errorReason" to errorReason.take(300)
+        )
+        if (channel != null && channel in setOf("sim_gateway", "intent_manual")) {
+          updates["channel"] = channel
+        }
+        if (safeStatus == "sent") {
+          updates["sentAt"] = now
+        }
+        if (sentByDevice.isNotBlank()) {
+          updates["sentByDevice"] = sentByDevice.take(120)
+        }
+        firestore?.collection("sms_queue")?.document(smsId)?.update(updates)
+          ?.addOnFailureListener { e ->
+            handleFirestoreError(e, OperationType.UPDATE, "sms_queue/$smsId")
+          }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.UPDATE, "sms_queue/$smsId")
+      }
+    }
+  }
+
+  fun deleteSmsQueueItem(smsId: String) {
+    val next = _smsQueue.value.filterNot { it.id == smsId }
+    _smsQueue.value = next
+    saveSmsQueueToPrefs(next)
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("sms_queue")?.document(smsId)?.delete()
+          ?.addOnFailureListener { e ->
+            handleFirestoreError(e, OperationType.DELETE, "sms_queue/$smsId")
+          }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.DELETE, "sms_queue/$smsId")
+      }
+    }
+  }
+
+  fun clearCompletedSmsQueue() {
+    val toRemove = _smsQueue.value.filter { it.status == "sent" || it.status == "cancelled" }
+    val next = _smsQueue.value.filterNot { it.status == "sent" || it.status == "cancelled" }
+    _smsQueue.value = next
+    saveSmsQueueToPrefs(next)
+    if (isVerifiedAdmin()) {
+      toRemove.forEach { item ->
+        try {
+          firestore?.collection("sms_queue")?.document(item.id)?.delete()
+        } catch (_: Exception) {
+        }
+      }
+    }
   }
 
   fun updateCourierConfig(config: CourierConfig) {

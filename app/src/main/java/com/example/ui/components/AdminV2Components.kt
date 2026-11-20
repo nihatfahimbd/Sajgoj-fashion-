@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,6 +68,7 @@ private fun adminTabIcon(tab: AdminTab): ImageVector = when (tab) {
   AdminTab.PRODUCTS -> Icons.Default.Inventory2
   AdminTab.ORDERS -> Icons.Default.LocalShipping
   AdminTab.MARKETING -> Icons.Default.Campaign
+  AdminTab.SMS_GATEWAY -> Icons.Default.Sms
   AdminTab.SETTINGS -> Icons.Default.Settings
 }
 
@@ -84,6 +86,7 @@ fun AdminV2SidebarContent(
     AdminTab.PRODUCTS,
     AdminTab.ORDERS,
     AdminTab.MARKETING,
+    AdminTab.SMS_GATEWAY,
     AdminTab.SETTINGS
   )
 

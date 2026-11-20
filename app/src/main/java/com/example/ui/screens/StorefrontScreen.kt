@@ -1,7 +1,11 @@
 package com.example.ui.screens
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -66,6 +70,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.data.model.BannerItem
@@ -593,6 +598,13 @@ fun StorefrontScreen(
               }
             }
           }
+        }
+      }
+
+      // Interactive Storefront Google Map Location Section
+      if (config.showGoogleMap) {
+        item(key = "storefront_google_map") {
+          StorefrontGoogleMapCard(config = config)
         }
       }
 
@@ -1511,10 +1523,29 @@ private fun StorefrontFooterCard(
 
     Spacer(modifier = Modifier.height(4.dp))
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
-      Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = AntiqueGold, modifier = Modifier.size(14.dp))
+    val context = LocalContext.current
+    var showMapPreviewDialog by remember { mutableStateOf(false) }
+
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      modifier = Modifier
+        .clip(RoundedCornerShape(8.dp))
+        .clickable { showMapPreviewDialog = true }
+        .padding(vertical = 4.dp)
+        .testTag("footer_google_map_link")
+    ) {
+      Icon(imageVector = Icons.Default.LocationOn, contentDescription = "গুগল ম্যাপ লোকেশন", tint = AntiqueGold, modifier = Modifier.size(14.dp))
       Spacer(modifier = Modifier.width(6.dp))
-      Text(text = config.address, fontSize = 11.sp, color = CreamSurface, maxLines = 1)
+      Text(text = "${config.address} (ম্যাপ দেখুন ›)", fontSize = 11.sp, color = CreamSurface, maxLines = 2)
+    }
+
+    if (showMapPreviewDialog) {
+      StoreGoogleMapDialog(
+        config = config,
+        onDismiss = { showMapPreviewDialog = false },
+        onOpenExternalMap = { openStoreGoogleMap(context, config, directions = false) },
+        onOpenDirections = { openStoreGoogleMap(context, config, directions = true) }
+      )
     }
 
     Spacer(modifier = Modifier.height(14.dp))
@@ -1808,16 +1839,38 @@ private fun FooterPolicyInfoDialog(
                     context.startActivity(intent)
                   },
                   colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-                  modifier = Modifier.heightIn(min = 48.dp)
+                  modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
                   Text("কল করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Button(
                   onClick = onOpenWhatsApp,
                   colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                  modifier = Modifier.heightIn(min = 48.dp)
+                  modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
                   Text("WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+              }
+              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                  onClick = { openStoreGoogleMap(context, config, directions = false) },
+                  colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                  modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .testTag("contact_dialog_open_map_btn")
+                ) {
+                  Text("🗺️ গুগল ম্যাপ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                  onClick = { openStoreGoogleMap(context, config, directions = true) },
+                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E)),
+                  modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .testTag("contact_dialog_directions_btn")
+                ) {
+                  Text("🧭 ডিরেকশন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
               }
             }
@@ -1872,11 +1925,40 @@ private fun FooterPolicyInfoDialog(
                     border = BorderStroke(1.dp, BorderGold),
                     modifier = Modifier.fillMaxWidth()
                   ) {
-                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                       Text(text = "#${ord.id} • ${ord.status}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
                       Text(text = "ক্রেতা: ${ord.customerName} • মোট: ৳${ord.total}", fontSize = 12.sp, color = DarkEspresso)
                       if (ord.trackingId.isNotBlank()) {
                         Text(text = "🚚 ট্র্যাকিং ID: ${ord.trackingId}", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+                      }
+                      Spacer(modifier = Modifier.height(2.dp))
+                      Button(
+                        onClick = {
+                          val smsMsg = "Notify me via SMS — সাজগোজ অর্ডার #${ord.id}" +
+                            (if (ord.trackingId.isNotBlank()) " (ট্র্যাকিং: ${ord.trackingId})" else "") +
+                            " | বর্তমান অবস্থা: ${ord.status} | ক্রেতার নম্বর: ${ord.phone}"
+                          val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("smsto:${config.phone}")
+                            putExtra("sms_body", smsMsg)
+                          }
+                          try {
+                            context.startActivity(smsIntent)
+                          } catch (_: Exception) {
+                            Toast.makeText(context, "SMS অ্যাপ পাওয়া যায়নি", Toast.LENGTH_SHORT).show()
+                          }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .heightIn(min = 48.dp)
+                          .testTag("order_tracking_sms_btn_${ord.id}")
+                      ) {
+                        Text(
+                          text = "📩 Notify me via SMS",
+                          fontSize = 11.5.sp,
+                          fontWeight = FontWeight.Bold
+                        )
                       }
                     }
                   }
@@ -2028,4 +2110,274 @@ private fun StorefrontCatalogSortBar(
     }
   }
 }
+
+private fun resolveStoreMapQuery(config: StoreConfig): String =
+  config.googleMapQuery.trim().ifBlank { config.address.trim().ifBlank { "Eastern Plaza, Hatirpool, Dhaka-1205" } }
+
+private fun buildStoreMapOpenUrl(config: StoreConfig): String {
+  val custom = config.googleMapUrl.trim()
+  if (custom.startsWith("http")) return custom
+  return "https://www.google.com/maps/search/?api=1&query=${Uri.encode(resolveStoreMapQuery(config))}"
+}
+
+private fun buildStoreMapDirectionsUrl(config: StoreConfig): String =
+  "https://www.google.com/maps/dir/?api=1&destination=${Uri.encode(resolveStoreMapQuery(config))}"
+
+private fun buildStoreMapEmbedUrl(config: StoreConfig): String =
+  "https://maps.google.com/maps?q=${Uri.encode(resolveStoreMapQuery(config))}&t=&z=16&ie=UTF8&iwloc=&output=embed"
+
+private fun openStoreGoogleMap(context: Context, config: StoreConfig, directions: Boolean) {
+  val url = if (directions) buildStoreMapDirectionsUrl(config) else buildStoreMapOpenUrl(config)
+  try {
+    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+  } catch (_: Exception) {
+    Toast.makeText(context, "Google Map খোলা সম্ভব হয়নি", Toast.LENGTH_SHORT).show()
+  }
+}
+
+@Composable
+private fun StorefrontGoogleMapCard(
+  config: StoreConfig
+) {
+  val context = LocalContext.current
+  var showLiveMapDialog by remember { mutableStateOf(false) }
+
+  Surface(
+    shape = RoundedCornerShape(18.dp),
+    color = Color.White,
+    border = BorderStroke(1.2.dp, BorderGold),
+    shadowElevation = 2.dp,
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(top = 12.dp)
+      .testTag("storefront_google_map_card")
+  ) {
+    Column(
+      modifier = Modifier.padding(14.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        Box(
+          modifier = Modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+              Brush.linearGradient(
+                listOf(RoyalMaroon, NavyBlue)
+              )
+            ),
+          contentAlignment = Alignment.Center
+        ) {
+          Icon(
+            imageVector = Icons.Default.LocationOn,
+            contentDescription = "শোরুম গুগল ম্যাপ লোকেশন",
+            tint = AntiqueGold,
+            modifier = Modifier.size(24.dp)
+          )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "📍 Google Map Location — আমাদের শোরুম",
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Black,
+            color = RoyalMaroon
+          )
+          Text(
+            text = config.address,
+            fontSize = 11.5.sp,
+            color = DarkEspresso,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+          )
+        }
+      }
+
+      Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = CreamSurface,
+        border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.8f)),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(
+          modifier = Modifier.padding(10.dp),
+          verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+          Text(
+            text = "🕒 প্রতিদিন সকাল ১০:০০ – রাত ০৯:৩০ • হটলাইন: ${config.phone}",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkEspresso
+          )
+          Text(
+            text = "🗺️ পিন: ${resolveStoreMapQuery(config)}",
+            fontSize = 10.5.sp,
+            color = AntiqueGoldDark,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+          )
+        }
+      }
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Button(
+          onClick = { showLiveMapDialog = true },
+          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+          shape = RoundedCornerShape(12.dp),
+          contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+          modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)
+            .testTag("storefront_live_map_btn")
+        ) {
+          Text("লাইভ ম্যাপ", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+        Button(
+          onClick = { openStoreGoogleMap(context, config, directions = false) },
+          colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+          shape = RoundedCornerShape(12.dp),
+          contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+          modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)
+            .testTag("storefront_open_gmaps_btn")
+        ) {
+          Text("গুগল ম্যাপ ↗", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+        Button(
+          onClick = { openStoreGoogleMap(context, config, directions = true) },
+          colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
+          shape = RoundedCornerShape(12.dp),
+          contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+          modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)
+            .testTag("storefront_directions_btn")
+        ) {
+          Text("ডিরেকশন", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+      }
+    }
+  }
+
+  if (showLiveMapDialog) {
+    StoreGoogleMapDialog(
+      config = config,
+      onDismiss = { showLiveMapDialog = false },
+      onOpenExternalMap = { openStoreGoogleMap(context, config, directions = false) },
+      onOpenDirections = { openStoreGoogleMap(context, config, directions = true) }
+    )
+  }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun StoreGoogleMapDialog(
+  config: StoreConfig,
+  onDismiss: () -> Unit,
+  onOpenExternalMap: () -> Unit,
+  onOpenDirections: () -> Unit
+) {
+  val embedUrl = remember(config.googleMapQuery, config.address) { buildStoreMapEmbedUrl(config) }
+
+  Dialog(onDismissRequest = onDismiss) {
+    Surface(
+      shape = RoundedCornerShape(20.dp),
+      color = CreamBackground,
+      border = BorderStroke(1.2.dp, BorderGold),
+      modifier = Modifier
+        .fillMaxWidth()
+        .testTag("store_google_map_dialog")
+    ) {
+      Column(
+        modifier = Modifier.padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = "📍 ${config.storeName}",
+              fontSize = 14.sp,
+              fontWeight = FontWeight.Black,
+              color = RoyalMaroon
+            )
+            Text(
+              text = config.address,
+              fontSize = 11.sp,
+              color = DarkEspresso,
+              maxLines = 2,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+          IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.size(48.dp)
+          ) {
+            Icon(imageVector = Icons.Default.Close, contentDescription = "বন্ধ করুন", tint = RoyalMaroon)
+          }
+        }
+
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, BorderGold, RoundedCornerShape(14.dp))
+        ) {
+          AndroidView(
+            factory = { ctx ->
+              WebView(ctx).apply {
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                webViewClient = WebViewClient()
+                loadUrl(embedUrl)
+              }
+            },
+            update = { webView ->
+              if (webView.url != embedUrl) {
+                webView.loadUrl(embedUrl)
+              }
+            },
+            modifier = Modifier.fillMaxSize()
+          )
+        }
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Button(
+            onClick = onOpenExternalMap,
+            colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+          ) {
+            Text("গুগল ম্যাপ অ্যাপে খুলুন", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+          }
+          Button(
+            onClick = onOpenDirections,
+            colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+          ) {
+            Text("🧭 ডিরেকশন নিন", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+          }
+        }
+      }
+    }
+  }
+}
+
 

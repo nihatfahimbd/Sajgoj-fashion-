@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -106,11 +107,14 @@ import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ReturnRecord
+import com.example.data.model.SmsQueueItem
 import com.example.data.model.StoreConfig
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.firebase.AuthUserSummary
 import com.example.firebase.BOOTSTRAPPED_ADMIN_EMAIL
+import com.example.sms.SimSmsGatewayManager
+import com.example.sms.SmsHelper
 import com.example.ui.AdminTab
 import com.example.ui.components.AdminAmberGradEnd
 import com.example.ui.components.AdminAmberGradStart
@@ -145,6 +149,7 @@ import com.example.ui.components.AdminV2SkySoft
 import com.example.ui.components.AdminV2TopBar
 import com.example.ui.components.AdminVibrantHeroCard
 import com.example.ui.components.AdminQrScannerDialog
+import com.example.ui.components.AdminSmsGatewayHub
 import com.example.ui.components.AppImage
 import com.example.ui.components.DailyRevenueTrendChartCard
 import com.example.ui.components.GlossyAdminCard
@@ -231,6 +236,16 @@ fun AdminDashboardScreen(
   onGoogleSignOut: () -> Unit = {},
   aiInsightsState: AiTaskState<String> = AiTaskState.Idle,
   onGenerateAiInsights: () -> Unit = {},
+  smsQueue: List<SmsQueueItem> = emptyList(),
+  isProcessingSmsQueue: Boolean = false,
+  smsGatewayLastLog: String = "স্ট্যান্ডবাই",
+  onEnqueueSingleSms: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
+  onEnqueueBulkSms: (List<Pair<String, String>>, String, String) -> Unit = { _, _, _ -> },
+  onProcessPendingSmsNow: () -> Unit = {},
+  onRetrySmsItem: (String) -> Unit = {},
+  onMarkSmsSentViaIntent: (String) -> Unit = {},
+  onDeleteSmsItem: (String) -> Unit = {},
+  onClearCompletedSms: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -545,7 +560,11 @@ fun AdminDashboardScreen(
             },
             onUpdateCourierConfig = onUpdateCourierConfig,
             onOpenQrScanner = { showQrScannerDialog = true },
-            onShowToast = onShowToast
+            onShowToast = onShowToast,
+            onEnqueueOrderSms = { order ->
+              val msg = SmsHelper.buildOrderStatusSms(order, storeConfig.storeName)
+              onEnqueueSingleSms(order.phone, order.customerName, msg, order.id, "order_alert")
+            }
           )
         }
 
@@ -559,6 +578,25 @@ fun AdminDashboardScreen(
             onAddBannerClick = { showBannerDialog = true },
             onToggleBanner = onToggleBanner,
             onDeleteBanner = onDeleteBanner
+          )
+        }
+
+        AdminTab.SMS_GATEWAY -> {
+          AdminSmsGatewayHub(
+            storeConfig = storeConfig,
+            orders = orders,
+            smsQueue = smsQueue,
+            isProcessingSmsQueue = isProcessingSmsQueue,
+            smsGatewayLastLog = smsGatewayLastLog,
+            onUpdateStoreConfig = onUpdateStoreConfig,
+            onEnqueueSingleSms = onEnqueueSingleSms,
+            onEnqueueBulkSms = onEnqueueBulkSms,
+            onProcessPendingSmsNow = onProcessPendingSmsNow,
+            onRetrySmsItem = onRetrySmsItem,
+            onMarkSmsSentViaIntent = onMarkSmsSentViaIntent,
+            onDeleteSmsItem = onDeleteSmsItem,
+            onClearCompletedSms = onClearCompletedSms,
+            onShowToast = onShowToast
           )
         }
 
@@ -1805,8 +1843,10 @@ fun AdminOrdersHub(
   onViewReturnSlip: (ReturnRecord) -> Unit,
   onUpdateCourierConfig: (CourierConfig) -> Unit,
   onOpenQrScanner: () -> Unit = {},
-  onShowToast: (String) -> Unit
+  onShowToast: (String) -> Unit,
+  onEnqueueOrderSms: (Order) -> Unit = {}
 ) {
+  val context = LocalContext.current
   var selectedOrderSubTab by remember { mutableStateOf("NEW_ORDERS") }
   val pendingOrders = remember(orders) { orders.filter { it.status.equals("Pending", ignoreCase = true) } }
   val shippedOrders = remember(orders) { orders.filter { it.status.equals("Shipped", ignoreCase = true) } }
@@ -2163,10 +2203,47 @@ fun AdminOrdersHub(
                     colors = ButtonDefaults.buttonColors(containerColor = AdminV2IceSurface, contentColor = AdminV2CyanDeep),
                     border = BorderStroke(1.dp, AdminCardBorderWarm),
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .heightIn(min = 48.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)
                   ) {
                     Text(text = "📄 ইনভয়েস মেমো দেখুন ও প্রিন্ট", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                  }
+
+                  Spacer(modifier = Modifier.height(6.dp))
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                  ) {
+                    OutlinedButton(
+                      onClick = {
+                        val msg = SmsHelper.buildOrderStatusSms(order, storeConfig.storeName)
+                        SimSmsGatewayManager.launchPlaySafeSmsIntent(context, order.phone, msg)
+                      },
+                      border = BorderStroke(1.dp, AdminV2CyanDeep),
+                      shape = RoundedCornerShape(10.dp),
+                      modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .testTag("order_sms_intent_${order.id}")
+                    ) {
+                      Icon(imageVector = Icons.Default.Sms, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(14.dp))
+                      Spacer(modifier = Modifier.width(4.dp))
+                      Text(text = "📩 ১-ক্লিক SMS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
+                    }
+
+                    Button(
+                      onClick = { onEnqueueOrderSms(order) },
+                      colors = ButtonDefaults.buttonColors(containerColor = AdminV2Emerald, contentColor = Color.White),
+                      shape = RoundedCornerShape(10.dp),
+                      modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .testTag("order_sms_queue_${order.id}")
+                    ) {
+                      Text(text = "📲 SIM কিউ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
                   }
                 }
               }
@@ -2187,11 +2264,13 @@ fun AdminOrdersHub(
       "ALL_ORDERS" -> {
         AdminOrdersTab(
           orders = orders,
+          storeName = storeConfig.storeName,
           onUpdateStatus = onUpdateStatus,
           onDispatchCourier = onDispatchCourier,
           onViewInvoice = onViewInvoice,
           onOpenShippingLabel = onOpenShippingLabel,
-          onOpenReturn = { onOpenReturn(it) }
+          onOpenReturn = { onOpenReturn(it) },
+          onEnqueueOrderSms = onEnqueueOrderSms
         )
       }
 
@@ -2528,12 +2607,15 @@ fun AdminSettingsHub(
 @Composable
 fun AdminOrdersTab(
   orders: List<Order>,
+  storeName: String = "SAJGOJ FASHION",
   onUpdateStatus: (String, String) -> Unit,
   onDispatchCourier: (String, String) -> Unit,
   onViewInvoice: (Order) -> Unit,
   onOpenShippingLabel: (Order) -> Unit = {},
-  onOpenReturn: (Order) -> Unit
+  onOpenReturn: (Order) -> Unit,
+  onEnqueueOrderSms: (Order) -> Unit = {}
 ) {
+  val context = LocalContext.current
   val statuses = listOf("Pending", "Confirmed", "Shipped", "Delivered", "Cancelled")
   var selectedStatusFilter by remember { mutableStateOf("All") }
   var phoneSearchQuery by remember { mutableStateOf("") }
@@ -2860,6 +2942,42 @@ fun AdminOrdersTab(
                 Icon(imageVector = Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(text = "🏷️ শিপিং লেবেল তৈরি ও প্রিন্ট (QR সহ)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              OutlinedButton(
+                onClick = {
+                  val msg = SmsHelper.buildOrderStatusSms(order, storeName)
+                  SimSmsGatewayManager.launchPlaySafeSmsIntent(context, order.phone, msg)
+                },
+                border = BorderStroke(1.dp, AdminV2CyanDeep),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .heightIn(min = 48.dp)
+                  .testTag("all_order_sms_intent_${order.id}")
+              ) {
+                Icon(imageVector = Icons.Default.Sms, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(15.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = "📩 ১-ক্লিক SMS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
+              }
+
+              Button(
+                onClick = { onEnqueueOrderSms(order) },
+                colors = ButtonDefaults.buttonColors(containerColor = AdminV2Emerald, contentColor = Color.White),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .heightIn(min = 48.dp)
+                  .testTag("all_order_sms_queue_${order.id}")
+              ) {
+                Text(text = "📲 SIM কিউ SMS", fontSize = 11.sp, fontWeight = FontWeight.Bold)
               }
             }
           }

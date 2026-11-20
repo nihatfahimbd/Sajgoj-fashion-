@@ -24,6 +24,7 @@ import com.example.data.model.Product
 import com.example.data.model.ProductReview
 import com.example.data.model.ReelItem
 import com.example.data.model.ReturnRecord
+import com.example.data.model.SmsQueueItem
 import com.example.data.model.StoreConfig
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
@@ -31,6 +32,7 @@ import com.example.data.repository.StoreRepository
 import com.example.firebase.AuthUserSummary
 import com.example.firebase.GoogleAuthHelper
 import com.example.firebase.GoogleAuthHelper.authStateFlow
+import com.example.sms.SimSmsGatewayManager
 import com.example.util.VisualImageSearchHelper
 import com.example.util.VisualSearchAnalysis
 import com.google.firebase.Firebase
@@ -100,6 +102,7 @@ enum class AdminTab(val title: String, val icon: String) {
   PRODUCTS("প্রোডাক্ট", "👗"),
   ORDERS("অর্ডার", "📦"),
   MARKETING("মার্কেটিং", "🎁"),
+  SMS_GATEWAY("SMS গেটওয়ে", "📲"),
   SETTINGS("সেটিংস", "⚙️")
 }
 
@@ -124,6 +127,13 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val syncEvents: StateFlow<List<InventorySyncEvent>> = repository.syncEvents
   val syncHealth: StateFlow<SyncHealthState> = repository.syncHealth
   val syncErrorLogs: StateFlow<List<SyncErrorLog>> = repository.syncErrorLogs
+  val smsQueue: StateFlow<List<SmsQueueItem>> = repository.smsQueue
+
+  private val _isProcessingSmsQueue = MutableStateFlow(false)
+  val isProcessingSmsQueue: StateFlow<Boolean> = _isProcessingSmsQueue.asStateFlow()
+
+  private val _smsGatewayLastLog = MutableStateFlow("স্ট্যান্ডবাই (SIM Gateway প্রস্তুত)")
+  val smsGatewayLastLog: StateFlow<String> = _smsGatewayLastLog.asStateFlow()
 
   // UI State
   private val _currentScreen = MutableStateFlow(AppScreen.STOREFRONT)
@@ -196,6 +206,21 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       }
     } catch (_: Exception) {
       // Safe fallback in isolated JVM unit test environments without FirebaseApp initialization
+    }
+
+    // Automatic Personal SIM SMS Gateway background queue processor (when toggled ON + SEND_SMS permission granted)
+    viewModelScope.launch {
+      combine(repository.smsQueue, repository.storeConfig) { queue, cfg ->
+        cfg to queue.filter { it.status == "pending" && it.channel == "sim_gateway" }
+      }.collectLatest { (cfg, pendingSimItems) ->
+        if (cfg.smsGatewayDeviceEnabled &&
+          pendingSimItems.isNotEmpty() &&
+          SimSmsGatewayManager.hasSendSmsPermission(getApplication()) &&
+          !_isProcessingSmsQueue.value
+        ) {
+          processPendingSmsQueueInternal(requireGatewaySwitch = true)
+        }
+      }
     }
   }
 
@@ -705,6 +730,134 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   fun likeReel(reelId: String) {
     repository.likeReel(reelId)
+  }
+
+  // -------------------- SMS GATEWAY ACTIONS --------------------
+
+  fun enqueueSingleSms(
+    phone: String,
+    customerName: String = "",
+    message: String,
+    orderId: String = "",
+    type: String = "custom"
+  ): SmsQueueItem? {
+    val item = repository.enqueueSms(
+      phone = phone,
+      customerName = customerName,
+      message = message,
+      orderId = orderId,
+      type = type,
+      channel = "sim_gateway"
+    )
+    if (item != null) {
+      emitToast("📲 ${item.phone} নম্বরের SMS কিউতে যুক্ত হয়েছে!")
+    } else {
+      emitToast("⚠️ সঠিক মোবাইল নম্বর এবং মেসেজ লিখুন।")
+    }
+    return item
+  }
+
+  fun enqueueBulkSms(
+    recipients: List<Pair<String, String>>,
+    messageTemplate: String,
+    type: String = "bulk_promo"
+  ): Int {
+    val count = repository.enqueueBulkSms(recipients, messageTemplate, type)
+    if (count > 0) {
+      emitToast("🚀 মোট $count জন গ্রাহকের জন্য Bulk SMS কিউ তৈরি হয়েছে!")
+    } else {
+      emitToast("⚠️ কোনো সঠিক মোবাইল নম্বর পাওয়া যায়নি।")
+    }
+    return count
+  }
+
+  fun processPendingSmsNow() {
+    if (!SimSmsGatewayManager.hasSendSmsPermission(getApplication())) {
+      emitToast("⚠️ প্রথমে সিম থেকে SMS পাঠানোর অনুমতি (SEND_SMS) দিন।")
+      return
+    }
+    viewModelScope.launch {
+      processPendingSmsQueueInternal(requireGatewaySwitch = false)
+    }
+  }
+
+  private suspend fun processPendingSmsQueueInternal(requireGatewaySwitch: Boolean) {
+    if (_isProcessingSmsQueue.value) return
+    _isProcessingSmsQueue.value = true
+    var sentCount = 0
+    var failCount = 0
+    try {
+      while (true) {
+        val cfg = repository.storeConfig.value
+        if (requireGatewaySwitch && !cfg.smsGatewayDeviceEnabled) break
+        if (!SimSmsGatewayManager.hasSendSmsPermission(getApplication())) {
+          _smsGatewayLastLog.value = "⚠️ SEND_SMS পারমিশন না থাকায় পাঠানো থামানো হয়েছে"
+          break
+        }
+        val nextItem = repository.smsQueue.value
+          .filter { it.status == "pending" && it.channel == "sim_gateway" }
+          .minByOrNull { it.createdAt } ?: break
+
+        repository.updateSmsQueueStatus(nextItem.id, status = "sending")
+        _smsGatewayLastLog.value = "📤 SIM দিয়ে পাঠানো হচ্ছে → ${nextItem.phone}"
+
+        val sendResult = withContext(kotlinx.coroutines.Dispatchers.IO) {
+          SimSmsGatewayManager.sendViaSim(getApplication(), nextItem.phone, nextItem.message)
+        }
+        sendResult.onSuccess { parts ->
+          sentCount++
+          val dev = SimSmsGatewayManager.deviceModelLabel()
+          repository.updateSmsQueueStatus(
+            smsId = nextItem.id,
+            status = "sent",
+            sentByDevice = "$dev (${parts}p)"
+          )
+          _smsGatewayLastLog.value = "✅ পাঠানো সম্পন্ন → ${nextItem.phone}"
+        }.onFailure { err ->
+          failCount++
+          repository.updateSmsQueueStatus(
+            smsId = nextItem.id,
+            status = "failed",
+            errorReason = err.localizedMessage ?: "SIM Send ব্যর্থ"
+          )
+          _smsGatewayLastLog.value = "❌ ব্যর্থ → ${nextItem.phone}: ${err.localizedMessage ?: ""}"
+        }
+
+        val hasMore = repository.smsQueue.value.any { it.status == "pending" && it.channel == "sim_gateway" }
+        if (hasMore) {
+          val delayMs = cfg.smsDelaySeconds.coerceIn(2, 15) * 1000L
+          kotlinx.coroutines.delay(delayMs)
+        }
+      }
+    } finally {
+      _isProcessingSmsQueue.value = false
+      if (sentCount > 0 || failCount > 0) {
+        emitToast("📲 SIM SMS প্রসেসিং শেষ: $sentCount টি সফল${if (failCount > 0) ", $failCount টি ব্যর্থ" else ""}")
+      }
+    }
+  }
+
+  fun retrySmsQueueItem(smsId: String) {
+    repository.updateSmsQueueStatus(smsId, status = "pending", channel = "sim_gateway", errorReason = "")
+    emitToast("🔄 SMS পুনরায় কিউতে যোগ করা হয়েছে।")
+  }
+
+  fun markSmsSentViaPlaySafeIntent(smsId: String) {
+    repository.updateSmsQueueStatus(
+      smsId = smsId,
+      status = "sent",
+      channel = "intent_manual",
+      sentByDevice = "Play-Safe SMS App Intent"
+    )
+  }
+
+  fun deleteSmsQueueItem(smsId: String) {
+    repository.deleteSmsQueueItem(smsId)
+  }
+
+  fun clearCompletedSmsQueue() {
+    repository.clearCompletedSmsQueue()
+    emitToast("🧹 সম্পন্ন হওয়া SMS লগ পরিষ্কার করা হয়েছে।")
   }
 
   fun emitToast(msg: String) {

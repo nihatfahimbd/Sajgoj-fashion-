@@ -190,12 +190,18 @@ data class StoreConfig(
   val whatsapp: String = "+8801805119888",
   val email: String = "contact@sajgoj.com",
   val address: String = "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
+  val showGoogleMap: Boolean = true,
+  val googleMapQuery: String = "Eastern Plaza, Hatirpool, Dhaka-1205",
+  val googleMapUrl: String = "https://www.google.com/maps/search/?api=1&query=Eastern+Plaza%2C+Hatirpool%2C+Dhaka-1205",
   val bkashEnabled: Boolean = true,
   val nagadEnabled: Boolean = true,
   val rocketEnabled: Boolean = true,
   val codEnabled: Boolean = true,
   val visaEnabled: Boolean = true,
   val returnPolicyDays: Int = 7,
+  val smsGatewayDeviceEnabled: Boolean = false,
+  val smsAutoSendOnOrderStatus: Boolean = false,
+  val smsDelaySeconds: Int = 4,
   val design: StoreDesignConfig = StoreDesignConfig()
 )
 
@@ -333,5 +339,28 @@ data class SyncHealthState(
   val posProductCount: Int = 0,
   val inSyncCount: Int = 0,
   val driftCount: Int = 0
+)
+
+data class SmsQueueItem(
+  val id: String,
+  val phone: String,
+  val customerName: String = "",
+  val message: String,
+  val orderId: String = "",
+  val type: String = "custom", // order_alert, status_update, bulk_promo, custom
+  val status: String = "pending", // pending, sending, sent, failed, cancelled
+  val channel: String = "sim_gateway", // sim_gateway, intent_manual
+  val createdAt: Long = System.currentTimeMillis(),
+  val updatedAt: Long = System.currentTimeMillis(),
+  val sentAt: Long = 0L,
+  val sentByDevice: String = "",
+  val errorReason: String = ""
+)
+
+data class SmsTemplate(
+  val id: String,
+  val title: String,
+  val type: String,
+  val body: String
 )
 

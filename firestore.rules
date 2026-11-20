@@ -197,6 +197,22 @@ service cloud.firestore {
         (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
     }
 
+    function isValidSmsQueueItem(data) {
+      return (!('id' in data) || (data.id is string && isValidId(data.id))) &&
+        data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 30 &&
+        (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 120)) &&
+        data.message is string && data.message.size() >= 1 && data.message.size() <= 1000 &&
+        (!('orderId' in data) || (data.orderId is string && data.orderId.size() <= 128)) &&
+        (!('type' in data) || (data.type is string && data.type in ['order_alert', 'status_update', 'bulk_promo', 'custom'])) &&
+        data.status is string && data.status in ['pending', 'sending', 'sent', 'failed', 'cancelled'] &&
+        (!('channel' in data) || (data.channel is string && data.channel in ['sim_gateway', 'intent_manual'])) &&
+        (!('sentByDevice' in data) || (data.sentByDevice is string && data.sentByDevice.size() <= 120)) &&
+        (!('errorReason' in data) || (data.errorReason is string && data.errorReason.size() <= 300)) &&
+        data.createdAt is int && data.createdAt >= 0 &&
+        data.updatedAt is int && data.updatedAt >= 0 &&
+        (!('sentAt' in data) || (data.sentAt is int && data.sentAt >= 0));
+    }
+
     // 4. Collection Security Rules
 
     // Public catalog: anyone may browse products; only verified admin may create/update/delete
@@ -408,6 +424,33 @@ service cloud.firestore {
     match /admins/{adminUid} {
       allow get: if isValidId(adminUid) && isSignedIn() && (request.auth.uid == adminUid || isAdmin());
       allow list, create, update, delete: if false;
+    }
+
+    // SMS Gateway Queue (contains customer phone PII): strictly verified-admin only
+    match /sms_queue/{smsId} {
+      allow get: if isValidId(smsId) && isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isAdmin() &&
+        isValidId(smsId) &&
+        incoming().keys().hasAll(['phone', 'message', 'status', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly([
+          'id', 'phone', 'customerName', 'message', 'orderId', 'type',
+          'status', 'channel', 'createdAt', 'updatedAt', 'sentAt',
+          'sentByDevice', 'errorReason'
+        ]) &&
+        isValidSmsQueueItem(incoming());
+
+      allow update: if isAdmin() &&
+        isValidId(smsId) &&
+        isValidSmsQueueItem(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'status', 'channel', 'updatedAt', 'sentAt', 'sentByDevice',
+          'errorReason', 'message', 'phone', 'customerName'
+        ]);
+
+      allow delete: if isAdmin() && isValidId(smsId);
     }
   }
 }

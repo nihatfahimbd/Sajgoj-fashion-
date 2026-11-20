@@ -165,6 +165,27 @@
         "timestamp": { "type": "number" }
       },
       "required": ["productId", "previousStock", "newStock", "source", "timestamp"]
+    },
+    "SmsQueueItem": {
+      "title": "SmsQueueItem",
+      "description": "Admin-only SMS gateway queue item synchronized between Web Admin and Personal Android SIM Gateway",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "phone": { "type": "string" },
+        "customerName": { "type": "string" },
+        "message": { "type": "string" },
+        "orderId": { "type": "string" },
+        "type": { "type": "string", "enum": ["order_alert", "status_update", "bulk_promo", "custom"] },
+        "status": { "type": "string", "enum": ["pending", "sending", "sent", "failed", "cancelled"] },
+        "channel": { "type": "string", "enum": ["sim_gateway", "intent_manual"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "sentAt": { "type": "number" },
+        "sentByDevice": { "type": "string" },
+        "errorReason": { "type": "string" }
+      },
+      "required": ["phone", "message", "status", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -199,6 +220,10 @@
     "/inventory_sync_events/{eventId}": {
       "schema": "InventorySyncEvent",
       "description": "Immutable inventory bidirectional sync audit log (admin read and create)"
+    },
+    "/sms_queue/{smsId}": {
+      "schema": "SmsQueueItem",
+      "description": "Admin-only SMS queue for Personal Android SIM Gateway and 1-click SMS logs"
     }
   }
 }

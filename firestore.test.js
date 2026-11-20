@@ -342,3 +342,59 @@ test("returns, pos_inventory, and inventory_sync_events: strictly verified-admin
   await assertFails(admDb.collection("inventory_sync_events").doc("SYNC-1").update({ newStock: 99 }));
   await assertFails(admDb.collection("inventory_sync_events").doc("SYNC-1").delete());
 });
+
+// ---------------------------------------------------------------------------
+// 5. SMS Gateway Queue (`sms_queue`) — Strictly verified-admin only
+// ---------------------------------------------------------------------------
+test("sms_queue: admin creates, updates status, and deletes; non-admin & invalid status rejected", async () => {
+  const unauthDb = testEnv.unauthenticatedContext().firestore();
+  const aliceDb = customerCtx(CUSTOMER_UID).firestore();
+  const admDb = adminCtx().firestore();
+
+  const validSms = {
+    id: "SMS-1001",
+    phone: "01712345678",
+    customerName: "ফাতেমা আক্তার",
+    message: "আপনার অর্ডার #ORD-1001 নিশ্চিত হয়েছে! - SAJGOJ FASHION",
+    orderId: "ORD-1001",
+    type: "order_alert",
+    status: "pending",
+    channel: "sim_gateway",
+    createdAt: 1729500001000,
+    updatedAt: 1729500001000,
+    sentAt: 0,
+    sentByDevice: "",
+    errorReason: "",
+  };
+
+  // Non-admin & unauthenticated denied
+  await assertFails(unauthDb.collection("sms_queue").doc("SMS-1001").set(validSms));
+  await assertFails(aliceDb.collection("sms_queue").doc("SMS-1001").set(validSms));
+  await assertFails(aliceDb.collection("sms_queue").get());
+
+  // Verified admin creates valid queue item
+  await assertSucceeds(admDb.collection("sms_queue").doc("SMS-1001").set(validSms));
+  await assertSucceeds(admDb.collection("sms_queue").get());
+
+  // Invalid status rejected
+  await assertFails(
+    admDb.collection("sms_queue").doc("SMS-1001").update({
+      status: "hacked_status",
+      updatedAt: 1729500002000,
+    })
+  );
+
+  // Admin SIM gateway marks SMS as sent
+  await assertSucceeds(
+    admDb.collection("sms_queue").doc("SMS-1001").update({
+      status: "sent",
+      sentAt: 1729500003000,
+      updatedAt: 1729500003000,
+      sentByDevice: "Pixel Phone",
+    })
+  );
+
+  // Admin can clean up sent queue entry
+  await assertSucceeds(admDb.collection("sms_queue").doc("SMS-1001").delete());
+});
+

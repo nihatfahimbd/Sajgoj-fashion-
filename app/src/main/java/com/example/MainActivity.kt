@@ -129,6 +129,9 @@ class MainActivity : ComponentActivity() {
         val isAuthBusy by viewModel.isAuthBusy.collectAsStateWithLifecycle()
         val aiStylistState by viewModel.aiStylistState.collectAsStateWithLifecycle()
         val aiAdminInsightsState by viewModel.aiAdminInsightsState.collectAsStateWithLifecycle()
+        val smsQueue by viewModel.smsQueue.collectAsStateWithLifecycle()
+        val isProcessingSmsQueue by viewModel.isProcessingSmsQueue.collectAsStateWithLifecycle()
+        val smsGatewayLastLog by viewModel.smsGatewayLastLog.collectAsStateWithLifecycle()
 
         var showVoiceFallbackDialog by remember { mutableStateOf(false) }
         var voiceFallbackInput by remember { mutableStateOf("") }
@@ -393,7 +396,21 @@ class MainActivity : ComponentActivity() {
                     onGoogleSignInAdmin = { viewModel.signInWithGoogle(context, unlockAdminIfVerified = true) },
                     onGoogleSignOut = { viewModel.signOutGoogle(context) },
                     aiInsightsState = aiAdminInsightsState,
-                    onGenerateAiInsights = { viewModel.generateAdminStoreInsights() }
+                    onGenerateAiInsights = { viewModel.generateAdminStoreInsights() },
+                    smsQueue = smsQueue,
+                    isProcessingSmsQueue = isProcessingSmsQueue,
+                    smsGatewayLastLog = smsGatewayLastLog,
+                    onEnqueueSingleSms = { phone, custName, msg, ordId, type ->
+                      viewModel.enqueueSingleSms(phone, custName, msg, ordId, type)
+                    },
+                    onEnqueueBulkSms = { recipients, template, type ->
+                      viewModel.enqueueBulkSms(recipients, template, type)
+                    },
+                    onProcessPendingSmsNow = { viewModel.processPendingSmsNow() },
+                    onRetrySmsItem = { viewModel.retrySmsQueueItem(it) },
+                    onMarkSmsSentViaIntent = { viewModel.markSmsSentViaPlaySafeIntent(it) },
+                    onDeleteSmsItem = { viewModel.deleteSmsQueueItem(it) },
+                    onClearCompletedSms = { viewModel.clearCompletedSmsQueue() }
                   )
                 }
               }

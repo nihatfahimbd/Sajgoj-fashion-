@@ -3,6 +3,9 @@ package com.example.ui.components
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -274,6 +277,9 @@ private fun GeneralStoreSettingsSection(
   var whatsapp by remember(config.whatsapp) { mutableStateOf(config.whatsapp) }
   var email by remember(config.email) { mutableStateOf(config.email) }
   var address by remember(config.address) { mutableStateOf(config.address) }
+  var showGoogleMap by remember(config.showGoogleMap) { mutableStateOf(config.showGoogleMap) }
+  var googleMapQuery by remember(config.googleMapQuery) { mutableStateOf(config.googleMapQuery) }
+  var googleMapUrl by remember(config.googleMapUrl) { mutableStateOf(config.googleMapUrl) }
   var savedSuccess by remember { mutableStateOf(false) }
 
   LaunchedEffect(savedSuccess) {
@@ -457,6 +463,107 @@ private fun GeneralStoreSettingsSection(
         colors = adminOutlinedTextFieldColors(),
         modifier = Modifier.fillMaxWidth()
       )
+
+      Spacer(modifier = Modifier.height(6.dp))
+
+      // Google Map Location Sub-Panel
+      val context = LocalContext.current
+      Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = Color(0xFFF0FDF4),
+        border = BorderStroke(1.dp, Color(0xFF86EFAC)),
+        modifier = Modifier
+          .fillMaxWidth()
+          .testTag("settings_google_map_panel")
+      ) {
+        Column(
+          modifier = Modifier.padding(12.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = "📍 Google Map লোকেশন",
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF166534)
+              )
+              Text(
+                text = "স্টোরফ্রন্ট ও কন্ট্যাক্ট পেজে শোরুমের লাইভ ম্যাপ দেখাবে",
+                fontSize = 10.sp,
+                color = AdminInkMuted
+              )
+            }
+            Switch(
+              checked = showGoogleMap,
+              onCheckedChange = { showGoogleMap = it },
+              colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AccentGreen),
+              modifier = Modifier.testTag("settings_show_google_map_switch")
+            )
+          }
+
+          OutlinedTextField(
+            value = googleMapQuery,
+            onValueChange = { googleMapQuery = it },
+            label = { Text("ম্যাপ পিন ঠিকানা বা Lat,Lng") },
+            placeholder = { Text("Eastern Plaza, Hatirpool, Dhaka") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("settings_google_map_query_input")
+          )
+
+          OutlinedTextField(
+            value = googleMapUrl,
+            onValueChange = { googleMapUrl = it },
+            label = { Text("Google Maps শেয়ার লিংক (ঐচ্ছিক)") },
+            placeholder = { Text("https://maps.app.goo.gl/...") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = adminOutlinedTextFieldColors(),
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("settings_google_map_url_input")
+          )
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            OutlinedButton(
+              onClick = { googleMapQuery = address },
+              modifier = Modifier
+                .weight(1f)
+                .heightIn(min = 48.dp)
+            ) {
+              Text("ঠিকানা কপি", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(
+              onClick = {
+                val target = googleMapUrl.trim().takeIf { it.startsWith("http") }
+                  ?: "https://www.google.com/maps/search/?api=1&query=${Uri.encode(googleMapQuery.ifBlank { address })}"
+                try {
+                  context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target)))
+                } catch (_: Exception) {
+                  Toast.makeText(context, "ম্যাপ লিংক খুলতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
+                }
+              },
+              modifier = Modifier
+                .weight(1f)
+                .heightIn(min = 48.dp)
+                .testTag("settings_test_google_map_btn")
+            ) {
+              Text("ম্যাপ টেস্ট ↗", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+          }
+        }
+      }
     }
 
     // Unified Vibrant Gradient Save CTA with White Text
@@ -474,7 +581,10 @@ private fun GeneralStoreSettingsSection(
             phone = phone.trim(),
             whatsapp = whatsapp.trim(),
             email = email.trim(),
-            address = address.trim()
+            address = address.trim(),
+            showGoogleMap = showGoogleMap,
+            googleMapQuery = googleMapQuery.trim().ifBlank { address.trim() },
+            googleMapUrl = googleMapUrl.trim()
           )
         )
         savedSuccess = true
