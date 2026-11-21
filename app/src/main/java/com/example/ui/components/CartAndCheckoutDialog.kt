@@ -159,8 +159,17 @@ fun CartAndCheckoutDialog(
   var couponCodeInput by remember { mutableStateOf("") }
   var appliedCoupon by remember { mutableStateOf<Coupon?>(null) }
 
-  // Calculations using StoreConfig ShippingInfo rules
-  val subtotal = cartItems.sumOf { it.product.price * it.quantity }
+  // B2G1 Eligibility Tracking & Calculations
+  val b2g1Cfg = storeConfig.b2g1
+  val eligibleIdSet = remember(b2g1Cfg.eligibleProductIds) { b2g1Cfg.eligibleProductIds.toSet() }
+  val isB2G1Active = b2g1Cfg.enabled && eligibleIdSet.isNotEmpty()
+  val eligiblePaidQty = remember(cartItems, eligibleIdSet) {
+    cartItems.filter { !it.isFreeGift && eligibleIdSet.contains(it.product.id) }.sumOf { it.quantity }
+  }
+  val hasFreeGiftInCart = remember(cartItems) { cartItems.any { it.isFreeGift } }
+
+  // Calculations using StoreConfig ShippingInfo rules (free gifts cost 0)
+  val subtotal = cartItems.filterNot { it.isFreeGift }.sumOf { it.product.price * it.quantity }
   val deliveryCharge = BangladeshLocations.calculateShippingFee(
     subtotal = subtotal,
     district = selectedDistrict,
@@ -323,15 +332,72 @@ fun CartAndCheckoutDialog(
               }
             } else {
               Column(modifier = Modifier.padding(16.dp)) {
+                // B2G1 Progress Banner inside Cart (ONLY shown when B2G1 is enabled, products selected, AND at least 1 eligible item or gift is in cart)
+                if (isB2G1Active && (eligiblePaidQty > 0 || hasFreeGiftInCart)) {
+                  val minReq = b2g1Cfg.minItems.coerceAtLeast(1)
+                  val unlocked = eligiblePaidQty >= minReq && hasFreeGiftInCart
+                  val remaining = (minReq - eligiblePaidQty).coerceAtLeast(0)
+                  Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (unlocked) Color(0xFFECFDF5) else Color(0xFFFFF8E1),
+                    border = BorderStroke(1.dp, if (unlocked) AccentGreen else BorderGold),
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .padding(bottom = 10.dp)
+                      .testTag("cart_b2g1_progress_card")
+                  ) {
+                    Row(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                      horizontalArrangement = Arrangement.SpaceBetween,
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                          text = if (unlocked) "🎉 অভিনন্দন! ফ্রি প্রোডাক্ট যুক্ত হয়েছে" else "🎁 Buy 2 Get 1 অফার চলমান",
+                          fontSize = 11.5.sp,
+                          fontWeight = FontWeight.Black,
+                          color = if (unlocked) Color(0xFF047857) else DarkEspresso
+                        )
+                        Text(
+                          text = if (unlocked) {
+                            "অর্ডার কনফার্ম করলে ফ্রি গিফটসহ ৩টি পণ্যের স্টক সমন্বয় হবে।"
+                          } else {
+                            "আরো ${remaining}টি নির্বাচিত পণ্য নিলেই ফ্রি উপহার কার্টে যুক্ত হবে!"
+                          },
+                          fontSize = 10.sp,
+                          color = if (unlocked) Color(0xFF065F46) else AntiqueGoldDark
+                        )
+                      }
+                      Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (unlocked) AccentGreen else RoyalMaroon
+                      ) {
+                        Text(
+                          text = "${eligiblePaidQty.coerceAtMost(minReq)}/$minReq",
+                          fontSize = 10.sp,
+                          fontWeight = FontWeight.Black,
+                          color = Color.White,
+                          modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                      }
+                    }
+                  }
+                }
+
                 // Cart items listing
                 cartItems.forEach { item ->
                   Card(
                     modifier = Modifier
                       .fillMaxWidth()
-                      .padding(vertical = 4.dp),
+                      .padding(vertical = 4.dp)
+                      .testTag(if (item.isFreeGift) "cart_free_gift_item" else "cart_item_${item.product.id}"),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = CreamBackground),
-                    border = BorderStroke(1.dp, BorderGold)
+                    colors = CardDefaults.cardColors(
+                      containerColor = if (item.isFreeGift) Color(0xFFECFDF5) else CreamBackground
+                    ),
+                    border = BorderStroke(1.dp, if (item.isFreeGift) AccentGreen else BorderGold)
                   ) {
                     Row(
                       modifier = Modifier
@@ -350,6 +416,21 @@ fun CartAndCheckoutDialog(
                       Spacer(modifier = Modifier.width(10.dp))
 
                       Column(modifier = Modifier.weight(1f)) {
+                        if (item.isFreeGift) {
+                          Surface(
+                            shape = RoundedCornerShape(50),
+                            color = AccentGreen,
+                            modifier = Modifier.padding(bottom = 3.dp)
+                          ) {
+                            Text(
+                              text = "🎁 ফ্রি উপহার (Buy 2 Get 1)",
+                              fontSize = 9.sp,
+                              fontWeight = FontWeight.Black,
+                              color = Color.White,
+                              modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                            )
+                          }
+                        }
                         Text(
                           text = item.product.name,
                           fontSize = 13.sp,
@@ -358,12 +439,34 @@ fun CartAndCheckoutDialog(
                           maxLines = 1,
                           overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                          text = "${item.product.price} ৳ / পিস",
-                          fontSize = 11.sp,
-                          color = AntiqueGoldDark,
-                          fontWeight = FontWeight.Medium
-                        )
+                        if (item.isFreeGift) {
+                          Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                          ) {
+                            Text(
+                              text = "০ ৳ (ফ্রি)",
+                              fontSize = 11.5.sp,
+                              color = Color(0xFF047857),
+                              fontWeight = FontWeight.Black
+                            )
+                            if (item.originalPrice > 0) {
+                              Text(
+                                text = "${item.originalPrice} ৳",
+                                fontSize = 10.sp,
+                                color = Color.Gray,
+                                textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                              )
+                            }
+                          }
+                        } else {
+                          Text(
+                            text = "${item.product.price} ৳ / পিস",
+                            fontSize = 11.sp,
+                            color = AntiqueGoldDark,
+                            fontWeight = FontWeight.Medium
+                          )
+                        }
 
                         // Variant Badges (Color, Size, Kids Age)
                         val hasVariants = item.selectedColor.isNotBlank() ||
@@ -427,42 +530,52 @@ fun CartAndCheckoutDialog(
                           }
                         }
 
-                        // Quantity controls
-                        Row(
-                          verticalAlignment = Alignment.CenterVertically,
-                          horizontalArrangement = Arrangement.spacedBy(4.dp),
-                          modifier = Modifier.padding(top = 4.dp)
-                        ) {
-                          Box(
-                            modifier = Modifier
-                              .size(28.dp)
-                              .clip(CircleShape)
-                              .background(Color.White)
-                              .border(1.dp, BorderGold, CircleShape)
-                              .clickable { onUpdateQty(item.itemKey, -1) },
-                            contentAlignment = Alignment.Center
+                        if (!item.isFreeGift) {
+                          // Quantity controls
+                          Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(top = 4.dp)
                           ) {
-                            Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(14.dp))
-                          }
+                            Box(
+                              modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .border(1.dp, BorderGold, CircleShape)
+                                .clickable { onUpdateQty(item.itemKey, -1) },
+                              contentAlignment = Alignment.Center
+                            ) {
+                              Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(14.dp))
+                            }
 
+                            Text(
+                              text = item.quantity.toString(),
+                              fontSize = 12.sp,
+                              fontWeight = FontWeight.Bold,
+                              modifier = Modifier.padding(horizontal = 6.dp)
+                            )
+
+                            Box(
+                              modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .border(1.dp, BorderGold, CircleShape)
+                                .clickable { onUpdateQty(item.itemKey, 1) },
+                              contentAlignment = Alignment.Center
+                            ) {
+                              Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(14.dp))
+                            }
+                          }
+                        } else {
                           Text(
-                            text = item.quantity.toString(),
-                            fontSize = 12.sp,
+                            text = "✓ অটো-সিলেক্টেড • ১ পিস",
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp)
+                            color = Color(0xFF047857),
+                            modifier = Modifier.padding(top = 4.dp)
                           )
-
-                          Box(
-                            modifier = Modifier
-                              .size(28.dp)
-                              .clip(CircleShape)
-                              .background(Color.White)
-                              .border(1.dp, BorderGold, CircleShape)
-                              .clickable { onUpdateQty(item.itemKey, 1) },
-                            contentAlignment = Alignment.Center
-                          ) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(14.dp))
-                          }
                         }
                       }
 
@@ -472,10 +585,10 @@ fun CartAndCheckoutDialog(
                         modifier = Modifier.padding(start = 6.dp)
                       ) {
                         Text(
-                          text = "${item.product.price * item.quantity} ৳",
+                          text = if (item.isFreeGift) "০ ৳" else "${item.product.price * item.quantity} ৳",
                           fontSize = 14.sp,
                           fontWeight = FontWeight.Bold,
-                          color = RoyalMaroon
+                          color = if (item.isFreeGift) Color(0xFF047857) else RoyalMaroon
                         )
                         IconButton(
                           onClick = { onRemoveItem(item.itemKey) },

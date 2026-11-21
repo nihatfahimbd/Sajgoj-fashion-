@@ -100,9 +100,17 @@ data class CartItem(
   val quantity: Int,
   val selectedColor: String = "",
   val selectedSize: String = "",
-  val selectedAgeGroup: String = ""
+  val selectedAgeGroup: String = "",
+  val isFreeGift: Boolean = false,
+  val freeGiftOriginId: String = "",
+  val originalPrice: Int = 0
 ) {
-  val itemKey: String get() = "${product.id}_${selectedColor}_${selectedSize}_${selectedAgeGroup}"
+  val itemKey: String
+    get() = if (isFreeGift) {
+      "FREE_GIFT_${product.id}"
+    } else {
+      "${product.id}_${selectedColor}_${selectedSize}_${selectedAgeGroup}"
+    }
 }
 
 data class OrderItem(
@@ -112,7 +120,9 @@ data class OrderItem(
   val price: Int,
   val color: String = "",
   val size: String = "",
-  val ageGroup: String = ""
+  val ageGroup: String = "",
+  val isFreeGift: Boolean = false,
+  val freeGiftOriginId: String = ""
 )
 
 data class Order(
@@ -260,6 +270,15 @@ fun defaultShippingOptions(): List<ShippingOptionItem> = listOf(
   )
 )
 
+data class B2G1Config(
+  val enabled: Boolean = true,
+  val title: String = "Buy 2 Get 1 Free অফার",
+  val subtitle: String = "নির্বাচিত ২টি পণ্য কার্টে নিলেই পাচ্ছেন ১টি প্রিমিয়াম উপহার একদম ফ্রি!",
+  val minItems: Int = 2,
+  val freeProductId: String = "p4",
+  val eligibleProductIds: List<String> = emptyList()
+)
+
 data class StoreConfig(
   val storeName: String = "SAJGOJ FASHION",
   val tagline: String = "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
@@ -282,7 +301,8 @@ data class StoreConfig(
   val smsAutoSendOnOrderStatus: Boolean = false,
   val smsDelaySeconds: Int = 4,
   val design: StoreDesignConfig = StoreDesignConfig(),
-  val shippingInfo: ShippingInfoConfig = ShippingInfoConfig()
+  val shippingInfo: ShippingInfoConfig = ShippingInfoConfig(),
+  val b2g1: B2G1Config = B2G1Config()
 )
 
 data class CourierConfig(

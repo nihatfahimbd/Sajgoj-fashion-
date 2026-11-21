@@ -318,6 +318,7 @@ class MainActivity : ComponentActivity() {
                     orders = orders,
                     coupons = coupons,
                     cartItemCount = cartItems.sumOf { it.quantity },
+                    cartItems = cartItems,
                     selectedCategory = selectedCategory,
                     searchQuery = searchQuery,
                     sortOption = sortOption,
@@ -422,6 +423,8 @@ class MainActivity : ComponentActivity() {
                 ProductDetailDialog(
                   product = selectedProduct!!,
                   reviews = productReviews,
+                  storeConfig = storeConfig,
+                  allProducts = allProducts,
                   onDismiss = { viewModel.closeProductDetail() },
                   onAddToCart = { prod, qty, color, size, ageGroup ->
                     viewModel.addToCart(prod, qty, color, size, ageGroup)

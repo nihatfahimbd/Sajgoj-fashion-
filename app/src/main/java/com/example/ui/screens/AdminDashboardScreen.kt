@@ -584,6 +584,10 @@ fun AdminDashboardScreen(
           AdminMarketingHub(
             coupons = coupons,
             banners = banners,
+            storeConfig = storeConfig,
+            products = products,
+            onUpdateStoreConfig = onUpdateStoreConfig,
+            onShowToast = onShowToast,
             onAddCouponClick = { showCouponDialog = true },
             onToggleCoupon = onToggleCoupon,
             onDeleteCoupon = onDeleteCoupon,
@@ -2528,6 +2532,10 @@ fun AdminShippingLabelsTab(
 fun AdminMarketingHub(
   coupons: List<Coupon>,
   banners: List<BannerItem>,
+  storeConfig: StoreConfig = StoreConfig(),
+  products: List<Product> = emptyList(),
+  onUpdateStoreConfig: (StoreConfig) -> Unit = {},
+  onShowToast: (String) -> Unit = {},
   onAddCouponClick: () -> Unit,
   onToggleCoupon: (String) -> Unit,
   onDeleteCoupon: (String) -> Unit,
@@ -2535,7 +2543,7 @@ fun AdminMarketingHub(
   onToggleBanner: (String) -> Unit,
   onDeleteBanner: (String) -> Unit
 ) {
-  var selectedSubTab by remember { mutableStateOf("COUPONS") }
+  var selectedSubTab by remember { mutableStateOf("B2G1") }
 
   Column(modifier = Modifier.fillMaxSize()) {
     Row(
@@ -2545,26 +2553,28 @@ fun AdminMarketingHub(
     ) {
       Column {
         Text(text = "মার্কেটিং ও অফার হাব", fontSize = 16.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
-        Text(text = "কুপন কোড ও প্রমোশনাল ব্যানার স্লাইডার", fontSize = 11.5.sp, color = AdminInkMuted)
+        Text(text = "Buy 2 Get 1 অফার, কুপন কোড ও প্রমোশনাল ব্যানার", fontSize = 11.5.sp, color = AdminInkMuted)
       }
     }
 
     Spacer(modifier = Modifier.height(10.dp))
 
     Row(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier
+        .fillMaxWidth()
+        .horizontalScroll(rememberScrollState()),
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       val tabs = listOf(
-        Pair("COUPONS", "🎟️ কুপন কোড (${coupons.size})"),
+        Pair("B2G1", "🎁 Buy 2 Get 1 (${storeConfig.b2g1.eligibleProductIds.size})"),
+        Pair("COUPONS", "🎟️ কুপন (${coupons.size})"),
         Pair("BANNERS", "🖼️ ব্যানার (${banners.size})")
       )
       tabs.forEach { (key, label) ->
         GlossySegmentPill(
           label = label,
           selected = selectedSubTab == key,
-          onClick = { selectedSubTab = key },
-          modifier = Modifier.weight(1f)
+          onClick = { selectedSubTab = key }
         )
       }
     }
@@ -2572,6 +2582,14 @@ fun AdminMarketingHub(
     Spacer(modifier = Modifier.height(10.dp))
 
     when (selectedSubTab) {
+      "B2G1" -> {
+        com.example.ui.components.AdminB2G1Hub(
+          storeConfig = storeConfig,
+          products = products,
+          onSaveStoreConfig = onUpdateStoreConfig,
+          onShowToast = onShowToast
+        )
+      }
       "COUPONS" -> {
         AdminCouponsTab(
           coupons = coupons,

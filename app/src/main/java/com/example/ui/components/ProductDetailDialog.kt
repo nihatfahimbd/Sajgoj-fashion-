@@ -69,6 +69,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
+import com.example.data.model.StoreConfig
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
@@ -81,6 +82,8 @@ import com.example.ui.theme.RoyalMaroon
 fun ProductDetailDialog(
   product: Product,
   reviews: List<ProductReview> = emptyList(),
+  storeConfig: StoreConfig = StoreConfig(),
+  allProducts: List<Product> = emptyList(),
   onDismiss: () -> Unit,
   onAddToCart: (Product, Int, String, String, String) -> Unit,
   onAddReview: (rating: Int, customerName: String, comment: String) -> Unit = { _, _, _ -> },
@@ -384,6 +387,59 @@ fun ProductDetailDialog(
             color = AntiqueGoldDark,
             fontWeight = FontWeight.Medium
           )
+
+          // Show Buy 2 Get 1 Free banner ONLY when Admin explicitly selected this product
+          val isEligibleB2G1 = storeConfig.b2g1.enabled && storeConfig.b2g1.eligibleProductIds.contains(product.id)
+          if (isEligibleB2G1) {
+            val giftProd = allProducts.find { it.id == storeConfig.b2g1.freeProductId }
+            Spacer(modifier = Modifier.height(10.dp))
+            Surface(
+              shape = RoundedCornerShape(14.dp),
+              color = Color(0xFF047857),
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("product_detail_b2g1_banner")
+            ) {
+              Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+              ) {
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Text(
+                    text = "🎁 ${storeConfig.b2g1.title} প্রযোজ্য",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
+                  )
+                  Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color.White
+                  ) {
+                    Text(
+                      text = "FREE GIFT",
+                      fontSize = 9.5.sp,
+                      fontWeight = FontWeight.Black,
+                      color = Color(0xFF047857),
+                      modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                  }
+                }
+                Text(
+                  text = if (giftProd != null) {
+                    "নির্বাচিত ${storeConfig.b2g1.minItems.coerceAtLeast(1)}টি পণ্য কার্টে নিলে পাচ্ছেন \"${giftProd.name}\" একদম ফ্রি!"
+                  } else {
+                    storeConfig.b2g1.subtitle
+                  },
+                  fontSize = 11.sp,
+                  color = Color(0xFFECFDF5)
+                )
+              }
+            }
+          }
 
           Spacer(modifier = Modifier.height(12.dp))
 

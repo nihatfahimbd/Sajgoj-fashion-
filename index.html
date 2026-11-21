@@ -1470,9 +1470,10 @@
       b2g1: {
         enabled: true,
         title: "Buy 2 Get 1 Free অফার",
-        subtitle: "যেকোনো ২টি পণ্য কার্টে নিলেই পাচ্ছেন ১টি প্রিমিয়াম উপহার একদম ফ্রি!",
+        subtitle: "নির্বাচিত ২টি পণ্য কার্টে নিলেই পাচ্ছেন ১টি প্রিমিয়াম উপহার একদম ফ্রি!",
         minItems: 2,
         freeProductId: "p4",
+        eligibleProductIds: [],
         badgeText: "🎁 ২টি কিনলে ১টি ফ্রি"
       },
       header: { 
@@ -1625,12 +1626,19 @@
         }
         mergedShipping.shippingRateVersion = 2;
       }
+      const mergedB2g1 = { ...initialStoreConfig.b2g1, ...(b.b2g1 || {}), ...(r.b2g1 || {}) };
+      if (!Array.isArray(mergedB2g1.eligibleProductIds)) {
+        mergedB2g1.eligibleProductIds = [];
+      }
+      if (typeof mergedB2g1.subtitle === "string" && mergedB2g1.subtitle.includes("যেকোনো ২টি পণ্য")) {
+        mergedB2g1.subtitle = initialStoreConfig.b2g1.subtitle;
+      }
       return {
         ...initialStoreConfig,
         ...b,
         ...r,
         announcement: { ...initialStoreConfig.announcement, ...(b.announcement || {}), ...(r.announcement || {}) },
-        b2g1: { ...initialStoreConfig.b2g1, ...(b.b2g1 || {}), ...(r.b2g1 || {}) },
+        b2g1: mergedB2g1,
         header: { ...initialStoreConfig.header, ...(b.header || {}), ...(r.header || {}) },
         design: { ...initialStoreConfig.design, ...(b.design || {}), ...(r.design || {}) },
         footer: { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) },
@@ -11847,6 +11855,8 @@
       const comboImgFileRef = useRef(null);
 
       // Buy 2 Get 1 Free (B2G1) Admin Search & Category Filter States
+      const [b2g1EligibleSearch, setB2g1EligibleSearch] = useState("");
+      const [b2g1EligibleCategoryFilter, setB2g1EligibleCategoryFilter] = useState("All");
       const [b2g1ProductSearch, setB2g1ProductSearch] = useState("");
       const [b2g1CategoryFilter, setB2g1CategoryFilter] = useState("All");
 
@@ -12087,6 +12097,48 @@
           await deleteDocFromCloud("reels", reelId);
           notify("রিলস সফলভাবে ডিলিট করা হয়েছে! 🗑️");
         }
+      };
+
+      const getB2g1EligibleIds = (cfg = config) => (
+        Array.isArray(cfg?.b2g1?.eligibleProductIds) ? cfg.b2g1.eligibleProductIds : []
+      );
+
+      const isProductEligibleForB2g1 = (product, cfg = config) => {
+        if (!product || !cfg?.b2g1?.enabled) return false;
+        return getB2g1EligibleIds(cfg).includes(product.id);
+      };
+
+      const handleToggleB2g1EligibleProduct = async (product) => {
+        const currentIds = getB2g1EligibleIds(config);
+        const exists = currentIds.includes(product.id);
+        const nextIds = exists
+          ? currentIds.filter(id => id !== product.id)
+          : [...currentIds, product.id];
+        const updatedB2g1 = {
+          ...(config.b2g1 || {}),
+          eligibleProductIds: nextIds
+        };
+        const updatedConfig = { ...config, b2g1: updatedB2g1 };
+        setConfig(updatedConfig);
+        setStored("config", updatedConfig);
+        await syncDocToCloud("config", "store", updatedConfig);
+        notify(
+          exists
+            ? `"${product.name}" কে Buy 2 Get 1 Free তালিকা থেকে সরানো হয়েছে।`
+            : `✅ "${product.name}" কে Buy 2 Get 1 Free অফারে যুক্ত করা হয়েছে!`
+        );
+      };
+
+      const handleClearB2g1EligibleProducts = async () => {
+        const updatedB2g1 = {
+          ...(config.b2g1 || {}),
+          eligibleProductIds: []
+        };
+        const updatedConfig = { ...config, b2g1: updatedB2g1 };
+        setConfig(updatedConfig);
+        setStored("config", updatedConfig);
+        await syncDocToCloud("config", "store", updatedConfig);
+        notify("Buy 2 Get 1 Free অফার প্রোডাক্ট তালিকা খালি করা হয়েছে।");
       };
 
       // Buy 2 Get 1 Free (B2G1) Free Product Selection Handler
@@ -12941,21 +12993,29 @@
         }).filter(Boolean));
       };
 
-      // Automatic Buy 2 Get 1 Free (B2G1) Gift Synchronization in Cart
+      // Automatic Buy 2 Get 1 Free (B2G1) Gift Synchronization in Cart (ONLY for Admin-selected eligible products)
       useEffect(() => {
-        const isB2g1Active = Boolean(config?.b2g1?.enabled);
-        const minRequired = Number(config?.b2g1?.minItems) || 2;
-        const freeProdId = config?.b2g1?.freeProductId || "p4";
-        const freeProd = products.find(p => p.id === freeProdId);
+        const eligibleIds = Array.isArray(config?.b2g1?.eligibleProductIds) ? config.b2g1.eligibleProductIds : [];
+        const isB2g1Active = Boolean(config?.b2g1?.enabled) && eligibleIds.length > 0;
+        const minRequired = Math.max(1, Number(config?.b2g1?.minItems) || 2);
+        const freeProdId = config?.b2g1?.freeProductId || "";
+        const freeProd = freeProdId ? products.find(p => p.id === freeProdId) : null;
 
         const paidItems = cart.filter(it => !it.isFreeGift);
-        const totalPaidQty = paidItems.reduce((sum, it) => sum + (it.qty || 1), 0);
+        const eligiblePaidQty = paidItems
+          .filter(it => eligibleIds.includes(it.id) || eligibleIds.includes(it.productId))
+          .reduce((sum, it) => sum + (it.qty || 1), 0);
+        const paidQtyOfFreeProd = freeProd
+          ? paidItems.filter(it => it.id === freeProd.id).reduce((sum, it) => sum + (it.qty || 1), 0)
+          : 0;
+        const hasFreeGiftStock = freeProd ? (Number(freeProd.stock) || 0) >= (paidQtyOfFreeProd + 1) : false;
         const existingGift = cart.find(it => it.isFreeGift);
 
-        if (isB2g1Active && freeProd && totalPaidQty >= minRequired) {
+        if (isB2g1Active && freeProd && eligiblePaidQty >= minRequired && hasFreeGiftStock) {
           if (!existingGift || existingGift.freeGiftOriginId !== freeProd.id) {
             const freeGiftItem = {
               id: "free_gift_" + freeProd.id,
+              productId: freeProd.id,
               name: freeProd.name,
               price: 0,
               originalPrice: freeProd.price,
@@ -12969,11 +13029,16 @@
             };
             setCart(prev => [...prev.filter(it => !it.isFreeGift), freeGiftItem]);
           }
-        } else if ((!isB2g1Active || totalPaidQty < minRequired || !freeProd) && existingGift) {
+        } else if (existingGift) {
           setCart(prev => prev.filter(it => !it.isFreeGift));
         }
       }, [cart, config?.b2g1, products]);
 
+      const b2g1EligibleIds = getB2g1EligibleIds(config);
+      const isB2g1OfferReady = Boolean(config?.b2g1?.enabled) && b2g1EligibleIds.length > 0;
+      const eligiblePaidCartQty = cart
+        .filter(item => !item.isFreeGift && (b2g1EligibleIds.includes(item.id) || b2g1EligibleIds.includes(item.productId)))
+        .reduce((sum, item) => sum + (item.qty || 1), 0);
       const paidCartQty = cart.filter(item => !item.isFreeGift).reduce((sum, item) => sum + (item.qty || 1), 0);
       const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
       const isDhaka = checkoutForm.district.includes("ঢাকা") || checkoutForm.district.includes("Dhaka");
@@ -14412,8 +14477,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             </header>
           )}
 
-          {/* Buy 2 Get 1 Free Promo Strip (Storefront only) */}
-          {activeTab === "Storefront" && config?.b2g1?.enabled && (
+          {/* Buy 2 Get 1 Free Promo Strip (Storefront only - shown only when Admin has selected eligible products) */}
+          {activeTab === "Storefront" && isB2g1OfferReady && (
             <div
               className={`${sfDesign.useCustomHeaderColors ? "" : "red-black-bottom-card"} py-2.5 px-4 sm:mx-4 sm:mt-2 sm:rounded-2xl border border-white/60 shadow-sm`}
               style={sfDesign.useCustomHeaderColors ? { background: sfDesign.b2g1Bg, color: sfDesign.b2g1TextColor } : undefined}
@@ -14422,16 +14487,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 <div className="flex items-center gap-2 overflow-hidden">
                   <span className="text-base sm:text-lg animate-bounce flex-shrink-0">🎁</span>
                   <span className="font-black whitespace-nowrap" style={sfDesign.useCustomHeaderColors ? { color: sfDesign.b2g1TextColor } : undefined}>{config.b2g1.title || "Buy 2 Get 1 Free"}:</span>
-                  <span className="truncate font-semibold" style={sfDesign.useCustomHeaderColors ? { color: sfDesign.b2g1TextColor } : undefined}>{config.b2g1.subtitle || "যেকোনো ২টি পণ্য কার্টে নিলেই ১টি উপহার সম্পূর্ণ ফ্রি!"}</span>
-                  {products.find(p => p.id === (config.b2g1.freeProductId || "p4")) && (
+                  <span className="truncate font-semibold" style={sfDesign.useCustomHeaderColors ? { color: sfDesign.b2g1TextColor } : undefined}>{config.b2g1.subtitle || "নির্বাচিত ২টি পণ্য কার্টে নিলেই ১টি উপহার সম্পূর্ণ ফ্রি!"}</span>
+                  {products.find(p => p.id === config?.b2g1?.freeProductId) && (
                     <span className="hidden md:inline-block bg-white/75 border border-white px-2.5 py-0.5 rounded-full font-black text-[11px] text-[#000000] whitespace-nowrap">
-                      উপহার: {products.find(p => p.id === (config.b2g1.freeProductId || "p4")).name} (০ ৳)
+                      উপহার: {products.find(p => p.id === config?.b2g1?.freeProductId).name} (০ ৳)
                     </span>
                   )}
                 </div>
                 <button 
                   onClick={() => {
-                    const el = document.getElementById("products-section");
+                    const el = document.getElementById("home-block-b2g1_offers") || document.getElementById("products-section");
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`${sfDesign.useCustomHeaderColors ? "" : "cta-dark-pill"} text-[11px] font-black px-3.5 py-1.5 rounded-full transition whitespace-nowrap flex-shrink-0 cursor-pointer border border-white/30`}
@@ -14727,6 +14792,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <span>🎁</span>
                               <span>BOGO</span>
                             </span>
+                          ) : isProductEligibleForB2g1(p) ? (
+                            <span className="absolute top-1.5 right-1.5 bg-emerald-700 text-white text-[8px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full shadow flex items-center gap-0.5">
+                              <span>🎁</span>
+                              <span>২+১ ফ্রি</span>
+                            </span>
                           ) : p.isHotSale ? (
                             <span className="absolute top-1.5 right-1.5 cta-dark-pill text-[8px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">
                               🔥 HOT
@@ -15017,12 +15087,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     }
 
                     if (sec.type === "b2g1_offers") {
-                      const bogoList = webProducts.filter(p => p.bogo || p.isB2G1 || p.id === config?.b2g1?.freeProductId);
-                      const merged = [...pinnedProducts];
-                      bogoList.forEach(p => { if (!merged.some(m => m.id === p.id)) merged.push(p); });
-                      if (merged.length < 6) {
-                        webProducts.forEach(p => { if (!merged.some(m => m.id === p.id)) merged.push(p); });
-                      }
+                      if (!isB2g1OfferReady) return [];
+                      const eligibleSet = new Set(b2g1EligibleIds);
+                      const eligibleList = webProducts.filter(p => eligibleSet.has(p.id));
+                      const merged = [];
+                      pinnedProducts.forEach(p => { if (eligibleSet.has(p.id)) merged.push(p); });
+                      eligibleList.forEach(p => { if (!merged.some(m => m.id === p.id)) merged.push(p); });
                       return merged;
                     }
 
@@ -15136,15 +15206,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
 
                         {/* Live B2G1 Offer Strip inside Buy 2 Get 1 Block */}
-                        {sec.type === "b2g1_offers" && (
+                        {sec.type === "b2g1_offers" && isB2g1OfferReady && (
                           <div className="bg-white/85 border border-rose-200 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 text-[10px] sm:text-xs font-extrabold text-[#000000]">
                             <span className="truncate">
-                              {totalCartQty >= 2
-                                ? "🎉 অভিনন্দন! আপনার Buy 2 Get 1 ফ্রি গিফট আনলক হয়েছে!"
-                                : `🎁 যেকোনো ২টি পণ্য নিলেই ১টি ফ্রি! (${totalCartQty}/২টি কার্টে)`}
+                              {eligiblePaidCartQty >= (Number(config?.b2g1?.minItems) || 2)
+                                ? "🎉 অভিনন্দন! নির্বাচিত পণ্যে Buy 2 Get 1 ফ্রি গিফট আনলক হয়েছে!"
+                                : `🎁 এই তালিকা থেকে ${Number(config?.b2g1?.minItems) || 2}টি পণ্য নিলেই ১টি ফ্রি! (${eligiblePaidCartQty}/${Number(config?.b2g1?.minItems) || 2}টি কার্টে)`}
                             </span>
                             <span className="cta-dark-pill text-[9px] px-2 py-0.5 rounded-full shrink-0">
-                              {totalCartQty >= 2 ? "FREE UNLOCKED" : "২+১ অফার"}
+                              {eligiblePaidCartQty >= (Number(config?.b2g1?.minItems) || 2) ? "FREE UNLOCKED" : "২+১ অফার"}
                             </span>
                           </div>
                         )}
@@ -15560,15 +15630,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               </span>
                             )}
                           </button>
-                          {config.b2g1?.enabled && (
+                          {isB2g1OfferReady && (
                             <button
                               onClick={() => {
-                                notify(`🎉 Buy 2 Get 1 Free অফার: যেকোনো ২টি প্রোডাক্ট কার্টে নিলেই ১টি ফ্রি উপহার আনলক হবে!`);
+                                const el = document.getElementById("home-block-b2g1_offers");
+                                if (el) {
+                                  el.scrollIntoView({ behavior: 'smooth' });
+                                } else {
+                                  notify(`🎁 Buy 2 Get 1 Free: নির্বাচিত ${b2g1EligibleIds.length}টি পণ্যের যেকোনো ২টি নিলেই ১টি ফ্রি উপহার!`);
+                                }
                               }}
                               className="red-black-tab px-5 py-2.5 rounded-2xl text-xs sm:text-sm transition flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer"
                             >
                               <span className="text-base">🎁</span>
-                              <span>২টি কিনলে ১টি ফ্রি অফার</span>
+                              <span>২টি কিনলে ১টি ফ্রি ({b2g1EligibleIds.length})</span>
                               <span className="cta-dark-pill text-[10px] px-2 py-0.5 rounded-full font-black">Free Gift</span>
                             </button>
                           )}
@@ -17446,7 +17521,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <span className="text-2xl">🎁</span>
                         <h3 className="text-xl sm:text-2xl font-bold text-[#000000]">Buy 2 Get 1 Free অফার ম্যানেজমেন্ট</h3>
                       </div>
-                      <p className="text-xs text-[#000000] font-medium mt-0.5">যেকোনো ২টি পণ্য অর্ডারে কাস্টমার যে প্রোডাক্টটি সম্পূর্ণ ফ্রি উপহার পাবেন তা এখান থেকে সিলেক্ট করুন</p>
+                      <p className="text-xs text-[#000000] font-medium mt-0.5">শুধুমাত্র আপনার খুঁজে নির্বাচন করা প্রোডাক্টগুলোতেই Buy 2 Get 1 Free কার্যকর হবে (অন্য প্রোডাক্টে নয়)</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -17469,23 +17544,176 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 </div>
 
-                {/* Spotlight: Currently Selected Free Gift */}
+                {/* Step 1: Search & Select Eligible ("Buy 2") Products */}
+                <div className="liquid-glass-surface p-6 rounded-3xl shadow-sm space-y-4">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div>
+                      <h4 className="font-bold text-lg text-[#000000] flex items-center gap-2">
+                        <span>1️⃣</span>
+                        <span>অফারভুক্ত প্রোডাক্ট খুঁজে নির্বাচন করুন (কিনতে হবে: {Number(config.b2g1?.minItems) || 2}টি)</span>
+                      </h4>
+                      <p className="text-xs text-[#000000] font-medium">
+                        শুধুমাত্র নিচের নির্বাচিত প্রোডাক্টগুলোতেই ওয়েবসাইটে Buy 2 Get 1 Free অফার দেখাবে ও কাজ করবে ({b2g1EligibleIds.length}টি নির্বাচিত)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <input
+                        type="text"
+                        value={b2g1EligibleSearch}
+                        onChange={(e) => setB2g1EligibleSearch(e.target.value)}
+                        placeholder="অফার প্রোডাক্ট খুঁজুন (নাম / SKU)..."
+                        className="w-full md:w-64 bg-white/95 text-[#000000] placeholder-gray-600 border border-black/15 rounded-full px-4 py-2 text-xs outline-none focus:border-[#dc2626]"
+                      />
+                      {b2g1EligibleIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearB2g1EligibleProducts}
+                          className="px-3 py-2 rounded-full bg-rose-100 text-rose-800 hover:bg-rose-200 text-[11px] font-bold whitespace-nowrap cursor-pointer"
+                        >
+                          সব সরান
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Selected Eligible Products Summary Chips */}
+                  {b2g1EligibleIds.length > 0 ? (
+                    <div className="bg-emerald-50/90 border border-emerald-300 rounded-2xl p-3 space-y-2">
+                      <p className="text-xs font-extrabold text-emerald-900">
+                        ✅ নির্বাচিত Buy 2 Get 1 Free প্রোডাক্ট ({b2g1EligibleIds.length} টি):
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {b2g1EligibleIds.map(pid => {
+                          const ep = products.find(pr => pr.id === pid);
+                          if (!ep) return null;
+                          return (
+                            <span key={pid} className="inline-flex items-center gap-1.5 bg-white border border-emerald-400 text-emerald-950 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs">
+                              <span className="truncate max-w-[160px]">{ep.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleB2g1EligibleProduct(ep)}
+                                className="text-rose-600 hover:text-rose-800 font-black cursor-pointer"
+                                title="তালিকা থেকে সরান"
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 text-xs font-bold text-amber-900">
+                      ⚠️ এখনও কোনো প্রোডাক্ট Buy 2 Get 1 Free-এর জন্য সিলেক্ট করা হয়নি। নিচ থেকে খুঁজে "+ অফারে যুক্ত করুন" চাপুন।
+                    </div>
+                  )}
+
+                  {/* Category Filter Pills for Eligible Products */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide text-xs">
+                    <button
+                      onClick={() => setB2g1EligibleCategoryFilter("All")}
+                      className={`px-3 py-1 rounded-full whitespace-nowrap transition font-bold ${
+                        b2g1EligibleCategoryFilter === "All" ? "red-black-tab-active" : "red-black-tab"
+                      }`}
+                    >
+                      সকল ক্যাটাগরি ({products.length})
+                    </button>
+                    {categories.map(cat => (
+                      <button
+                        key={`elig-${cat.id}`}
+                        onClick={() => setB2g1EligibleCategoryFilter(cat.name)}
+                        className={`px-3 py-1 rounded-full whitespace-nowrap transition font-bold flex items-center gap-1 ${
+                          b2g1EligibleCategoryFilter === cat.name ? "red-black-tab-active" : "red-black-tab"
+                        }`}
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Eligible Product Selection Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[420px] overflow-y-auto pr-1">
+                    {products
+                      .filter(p => {
+                        const q = b2g1EligibleSearch.trim().toLowerCase();
+                        const matchesSearch = !q || (p.name || "").toLowerCase().includes(q) || (p.sku || "").toLowerCase().includes(q);
+                        const matchesCat = b2g1EligibleCategoryFilter === "All" ? true : p.category === b2g1EligibleCategoryFilter;
+                        return matchesSearch && matchesCat;
+                      })
+                      .map(p => {
+                        const isEligible = b2g1EligibleIds.includes(p.id);
+                        return (
+                          <div
+                            key={`elig-card-${p.id}`}
+                            className={`red-black-photo-card p-3.5 rounded-2xl transition-all duration-200 flex flex-col justify-between ${
+                              isEligible ? "ring-2 ring-emerald-600 bg-emerald-50/40" : ""
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={p.images?.[0] || imgSharee}
+                                alt={p.name}
+                                className="w-14 h-14 rounded-xl object-cover border border-white/80 flex-shrink-0"
+                                onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-[10px] bg-white/85 text-[#000000] px-2 py-0.5 rounded-full font-bold truncate">
+                                    {p.category}
+                                  </span>
+                                  {isEligible && (
+                                    <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                                      B2G1 ✓
+                                    </span>
+                                  )}
+                                </div>
+                                <h5 className="font-bold text-xs text-[#000000] mt-1 truncate" title={p.name}>{p.name}</h5>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="font-extrabold text-xs text-[#000000]">{p.price} ৳</span>
+                                  <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-white/80 text-[#000000]">
+                                    স্টক: {p.stock} টি
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-2.5 pt-2 border-t border-black/15">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleB2g1EligibleProduct(p)}
+                                className={`w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow transition active:scale-95 cursor-pointer ${
+                                  isEligible
+                                    ? "bg-emerald-700 hover:bg-rose-700 text-white"
+                                    : "cta-dark-pill"
+                                }`}
+                              >
+                                <span>{isEligible ? "✓ অফারে যুক্ত আছে (সরাতে ট্যাপ করুন)" : "+ Buy 2 Get 1-এ যুক্ত করুন"}</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {/* Step 2 Spotlight: Currently Selected Free Gift */}
                 {(() => {
-                  const selectedFreeProd = products.find(p => p.id === (config.b2g1?.freeProductId || "p4"));
+                  const selectedFreeProd = products.find(p => p.id === config.b2g1?.freeProductId);
                   return (
                     <div className="liquid-glass-surface rounded-3xl p-6 shadow-sm">
                       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl">🌟</span>
+                          <span className="text-2xl">2️⃣</span>
                           <div>
-                            <h4 className="font-extrabold text-base sm:text-lg text-[#000000]">বর্তমানে নির্বাচিত ফ্রি উপহার প্রোডাক্ট</h4>
-                            <p className="text-xs text-[#000000] font-medium">কাস্টমার কার্টে যেকোনো ২টি আইটেম যুক্ত করলেই এই গিফট প্রোডাক্টটি ০ টাকায় যোগ হবে</p>
+                            <h4 className="font-extrabold text-base sm:text-lg text-[#000000]">ফ্রি উপহার (Get 1 Free) — নির্বাচিত ২টি পণ্য যোগ করলে যে প্রোডাক্ট ফ্রি পাবেন</h4>
+                            <p className="text-xs text-[#000000] font-medium">২টি অফারভুক্ত প্রোডাক্ট কার্টে যোগ করার পর এই প্রোডাক্টটি ০ টাকায় অটো সিলেক্ট হবে এবং ৩টি প্রোডাক্টেরই স্টক কমবে</p>
                           </div>
                         </div>
                         <span className={`text-xs px-3 py-1 rounded-full font-black ${
-                          config.b2g1?.enabled ? 'red-black-tab-active' : 'red-black-tab'
+                          isB2g1OfferReady ? 'red-black-tab-active' : 'red-black-tab'
                         }`}>
-                          {config.b2g1?.enabled ? "✓ অফার লাইভ আছে" : "অফার বন্ধ"}
+                          {isB2g1OfferReady ? "✓ অফার লাইভ আছে" : (config.b2g1?.enabled ? "প্রোডাক্ট সিলেক্ট বাকি" : "অফার বন্ধ")}
                         </span>
                       </div>
 
@@ -17518,19 +17746,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </div>
                           <div className="bg-white/80 p-3 rounded-2xl text-center sm:text-right flex-shrink-0">
                             <p className="text-[11px] text-[#000000] font-bold">নিচের তালিকা থেকে যেকোনো</p>
-                            <p className="text-[11px] text-[#000000] font-bold">প্রোডাক্ট ১ ক্লিকে পরিবর্তন করতে পারেন</p>
+                            <p className="text-[11px] text-[#000000] font-bold">ফ্রি উপহার ১ ক্লিকে পরিবর্তন করুন</p>
                           </div>
                         </div>
                       ) : (
                         <div className="red-black-bottom-card p-6 rounded-2xl text-center text-xs font-bold text-[#000000]">
-                          ⚠️ কোনো ফ্রি প্রোডাক্ট এখনও নির্বাচিত হয়নি। নিচের প্রোডাক্ট তালিকা থেকে একটি প্রোডাক্ট পছন্দ করুন!
+                          ⚠️ কোনো ফ্রি প্রোডাক্ট এখনও নির্বাচিত হয়নি। নিচের তালিকা থেকে একটি ফ্রি উপহার প্রোডাক্ট পছন্দ করুন!
                         </div>
                       )}
                     </div>
                   );
                 })()}
 
-                {/* Product Picker Section */}
+                {/* Free Gift Product Picker Section */}
                 <div className="liquid-glass-surface p-6 rounded-3xl shadow-sm space-y-5">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                     <div>
@@ -17538,7 +17766,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <span>🛍️</span>
                         <span>ফ্রি উপহার হিসেবে প্রোডাক্ট নির্বাচন করুন</span>
                       </h4>
-                      <p className="text-xs text-[#000000] font-medium">আপনার ক্যাটালগের যেকোনো প্রোডাক্টে "ফ্রি উপহার হিসেবে সিলেক্ট করুন" বাটনে চাপুন</p>
+                      <p className="text-xs text-[#000000] font-medium">ক্যাটালগ থেকে খুঁজে "এটি ফ্রি উপহার হিসেবে সিলেক্ট করুন" বাটনে চাপুন</p>
                     </div>
 
                     {/* Search Input */}
@@ -17547,7 +17775,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         type="text"
                         value={b2g1ProductSearch}
                         onChange={(e) => setB2g1ProductSearch(e.target.value)}
-                        placeholder="প্রোডাক্ট নাম বা SKU দিয়ে খুঁজুন..."
+                        placeholder="ফ্রি উপহার খুঁজুন (নাম বা SKU)..."
                         className="w-full bg-white/95 text-[#000000] placeholder-gray-600 border border-black/15 rounded-full px-4 py-2 text-xs outline-none focus:border-[#dc2626]"
                       />
                     </div>
@@ -17581,8 +17809,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     ))}
                   </div>
 
-                  {/* Products Grid for Selection */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Products Grid for Free Gift Selection */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[380px] overflow-y-auto pr-1">
                     {products
                       .filter(p => {
                         const matchesSearch = p.name.toLowerCase().includes(b2g1ProductSearch.toLowerCase()) || p.sku.toLowerCase().includes(b2g1ProductSearch.toLowerCase());
@@ -17590,7 +17818,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         return matchesSearch && matchesCat;
                       })
                       .map(p => {
-                        const isCurrentlySelected = (config.b2g1?.freeProductId || "p4") === p.id;
+                        const isCurrentlySelected = config.b2g1?.freeProductId === p.id;
                         return (
                           <div 
                             key={p.id}
@@ -17658,7 +17886,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   
                   <div className="grid sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <label className="font-semibold text-[#000000]">নূন্যতম পেইড আইটেম সংখ্যা (কার্টে কয়টি প্রোডাক্ট থাকতে হবে)</label>
+                      <label className="font-semibold text-[#000000]">নূন্যতম অফারভুক্ত আইটেম সংখ্যা (কার্টে কয়টি নির্বাচিত প্রোডাক্ট থাকতে হবে)</label>
                       <input 
                         type="number"
                         min="1"
@@ -17674,7 +17902,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         placeholder="2"
                         className="w-full bg-white/95 text-[#000000] border border-black/15 rounded-full px-4 py-2.5 outline-none mt-1 focus:border-[#dc2626]"
                       />
-                      <p className="text-[10px] text-[#000000] mt-1">ডিফল্ট: ২ (২টি কিনলে ১টি ফ্রি)</p>
+                      <p className="text-[10px] text-[#000000] mt-1">ডিফল্ট: ২ (নির্বাচিত ২টি কিনলে ১টি ফ্রি, মোট ৩টি স্টক থেকে কমবে)</p>
                     </div>
 
                     <div>
@@ -17694,7 +17922,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <label className="font-semibold text-[#000000]">অফার সাবটাইটেল / নোটিশ টেক্সট</label>
                       <input 
                         type="text"
-                        value={config.b2g1?.subtitle || "যেকোনো ২টি পণ্য কার্টে নিলেই পাচ্ছেন ১টি উপহার একদম ফ্রি!"}
+                        value={config.b2g1?.subtitle || "নির্বাচিত ২টি পণ্য কার্টে নিলেই পাচ্ছেন ১টি উপহার একদম ফ্রি!"}
                         onChange={(e) => setConfig({
                           ...config,
                           b2g1: { ...(config.b2g1 || {}), subtitle: e.target.value }
@@ -26449,21 +26677,21 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {/* Buy 2 Get 1 Free Cart Offer Progress / Unlock Banner */}
-                  {config?.b2g1?.enabled && (
+                  {/* Buy 2 Get 1 Free Cart Offer Progress / Unlock Banner (ONLY when Admin has selected eligible products) */}
+                  {isB2g1OfferReady && (
                     <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 shadow-xs">
                       <div className="flex items-center justify-between text-xs font-bold text-[#7a1c2b] mb-1.5">
                         <span className="flex items-center gap-1.5">
                           <span>🎁</span>
                           <span>{config.b2g1.title || "Buy 2 Get 1 Free অফার"}</span>
                         </span>
-                        {paidCartQty >= (config.b2g1.minItems || 2) ? (
+                        {eligiblePaidCartQty >= (Number(config.b2g1.minItems) || 2) ? (
                           <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
                             ✓ ফ্রি গিফট আনলকড!
                           </span>
                         ) : (
                           <span className="text-[11px] text-amber-900 font-bold bg-amber-100 px-2 py-0.5 rounded-full">
-                            {paidCartQty}/{config.b2g1.minItems || 2} টি যোগ হয়েছে
+                            {eligiblePaidCartQty}/{Number(config.b2g1.minItems) || 2} টি অফার পণ্য
                           </span>
                         )}
                       </div>
@@ -26472,20 +26700,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <div className="w-full bg-amber-200/60 rounded-full h-2 overflow-hidden mb-1.5">
                         <div 
                           className={`h-full transition-all duration-500 rounded-full ${
-                            paidCartQty >= (config.b2g1.minItems || 2) ? 'bg-emerald-500 w-full' : 'bg-[#7a1c2b]'
+                            eligiblePaidCartQty >= (Number(config.b2g1.minItems) || 2) ? 'bg-emerald-500 w-full' : 'bg-[#7a1c2b]'
                           }`}
-                          style={{ width: `${Math.min(100, (paidCartQty / (config.b2g1.minItems || 2)) * 100)}%` }}
+                          style={{ width: `${Math.min(100, (eligiblePaidCartQty / (Number(config.b2g1.minItems) || 2)) * 100)}%` }}
                         ></div>
                       </div>
 
                       <p className="text-[11px] text-gray-700 leading-tight">
-                        {paidCartQty >= (config.b2g1.minItems || 2) ? (
+                        {eligiblePaidCartQty >= (Number(config.b2g1.minItems) || 2) ? (
                           <span>
-                            🎉 অভিনন্দন! আপনার কার্টে যুক্ত হয়েছে ফ্রি উপহার: <strong className="text-emerald-800">{products.find(p => p.id === (config.b2g1.freeProductId || "p4"))?.name || "প্রিমিয়াম গিফট"}</strong> (০ ৳)!
+                            🎉 অভিনন্দন! অফারভুক্ত {Number(config.b2g1.minItems) || 2}টি পণ্য যোগ করায় ফ্রি উপহার সিলেক্ট হয়েছে: <strong className="text-emerald-800">{products.find(p => p.id === config?.b2g1?.freeProductId)?.name || "নির্বাচিত গিফট"}</strong> (০ ৳)!
                           </span>
                         ) : (
                           <span>
-                            ⚡ আর মাত্র <strong>{(config.b2g1.minItems || 2) - paidCartQty}টি</strong> যেকোনো পণ্য যোগ করলেই পাবেন ফ্রি উপহার: <strong>{products.find(p => p.id === (config.b2g1.freeProductId || "p4"))?.name || "প্রিমিয়াম গিফট"}</strong>!
+                            ⚡ অফারভুক্ত আরও <strong>{(Number(config.b2g1.minItems) || 2) - eligiblePaidCartQty}টি</strong> নির্বাচিত পণ্য যোগ করলেই পাবেন ফ্রি উপহার: <strong>{products.find(p => p.id === config?.b2g1?.freeProductId)?.name || "নির্বাচিত গিফট"}</strong>!
                           </span>
                         )}
                       </p>
@@ -31062,7 +31290,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </p>
                         </div>
                       )}
-                      {!viewProduct.bogo && config.b2g1?.enabled && (
+                      {!viewProduct.bogo && isProductEligibleForB2g1(viewProduct) && (
                         <div className="mt-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-3.5 rounded-2xl shadow-md space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="font-extrabold text-xs sm:text-sm flex items-center gap-1.5">
@@ -31074,7 +31302,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             </span>
                           </div>
                           <p className="text-[11px] text-emerald-100 leading-tight">
-                            যেকোনো ২টি পণ্য কার্টে নিলেই সাথে পাচ্ছেন ১টি প্রিমিয়াম উপহার একদম ফ্রি!
+                            নির্বাচিত অফারের {Number(config?.b2g1?.minItems) || 2}টি পণ্য কার্টে যোগ করলেই সাথে পাচ্ছেন "{products.find(p => p.id === config?.b2g1?.freeProductId)?.name || "নির্বাচিত উপহার"}" একদম ফ্রি!
                           </p>
                         </div>
                       )}
@@ -33802,10 +34030,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   webProducts.filter(p => p.isHotSale).forEach(p => { if (!sectionItems.some(m => m.id === p.id)) sectionItems.push(p); });
                 } else if (sec.type === "best_deals") {
                   webProducts.filter(p => p.isBestDeal).forEach(p => { if (!sectionItems.some(m => m.id === p.id)) sectionItems.push(p); });
+                } else if (sec.type === "b2g1_offers") {
+                  sectionItems = sectionItems.filter(p => b2g1EligibleIds.includes(p.id));
+                  webProducts.filter(p => b2g1EligibleIds.includes(p.id)).forEach(p => { if (!sectionItems.some(m => m.id === p.id)) sectionItems.push(p); });
                 } else if (sec.type === "category_products" && sec.categoryName) {
                   webProducts.filter(p => p.category === sec.categoryName).forEach(p => { if (!sectionItems.some(m => m.id === p.id)) sectionItems.push(p); });
                 }
-                webProducts.forEach(p => { if (!sectionItems.some(m => m.id === p.id)) sectionItems.push(p); });
+                if (sec.type !== "b2g1_offers") {
+                  webProducts.forEach(p => { if (!sectionItems.some(m => m.id === p.id)) sectionItems.push(p); });
+                }
 
                 const sortedItems = [...sectionItems].sort((a, b) => {
                   if (collectionSortBy === "price_asc") return (Number(a.price) || 0) - (Number(b.price) || 0);

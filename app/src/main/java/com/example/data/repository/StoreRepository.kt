@@ -73,7 +73,7 @@ class StoreRepository(private val context: Context) {
       sizes = listOf("Free Size"),
       isHotSale = true,
       isBestDeal = true,
-      isB2G1 = true,
+      isB2G1 = false,
       createdAt = 1729500001000L
     ),
     Product(
@@ -90,7 +90,7 @@ class StoreRepository(private val context: Context) {
       colors = listOf("রয়্যাল গোল্ডেন", "অ্যান্টিক গোল্ড", "রুবী রেড"),
       isHotSale = true,
       isBestDeal = true,
-      isB2G1 = true,
+      isB2G1 = false,
       createdAt = 1729500002000L
     ),
     Product(
@@ -123,7 +123,7 @@ class StoreRepository(private val context: Context) {
       colors = listOf("রুবী রেড", "পান্না সবুজ", "রয়েল ব্লু"),
       isHotSale = true,
       isBestDeal = true,
-      isB2G1 = true,
+      isB2G1 = false,
       createdAt = 1729500004000L
     ),
     Product(
@@ -156,7 +156,7 @@ class StoreRepository(private val context: Context) {
       description = "রঙিন এনামেল কারুকাজ সমৃদ্ধ ঐতিহ্যবাহী মীনাকারি কানের দুল ও নোলক। উৎসবের সাজে দেবে এক রাজকীয় মাত্রা।",
       isHotSale = true,
       isBestDeal = true,
-      isB2G1 = true,
+      isB2G1 = false,
       createdAt = 1729500006000L
     ),
     Product(
@@ -213,7 +213,7 @@ class StoreRepository(private val context: Context) {
       ageGroups = listOf("১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৫-৬ বছর"),
       isHotSale = true,
       isBestDeal = true,
-      isB2G1 = true,
+      isB2G1 = false,
       createdAt = 1729500009000L
     ),
     Product(
@@ -252,7 +252,7 @@ class StoreRepository(private val context: Context) {
       sizes = listOf("Free Size"),
       isHotSale = false,
       isBestDeal = true,
-      isB2G1 = true,
+      isB2G1 = false,
       createdAt = 1729500011000L
     ),
     Product(
@@ -329,7 +329,7 @@ class StoreRepository(private val context: Context) {
       sizes = listOf("2.4", "2.6", "2.8"),
       isHotSale = true,
       isBestDeal = true,
-      isB2G1 = true,
+      isB2G1 = false,
       createdAt = 1729500015000L
     )
   )
@@ -400,7 +400,7 @@ class StoreRepository(private val context: Context) {
     HomeSectionConfig(id = "new_products", type = "new_products", title = "নতুন প্রোডাক্ট", subtitle = "নতুন আপলোড হওয়া প্রোডাক্ট", icon = "✨", badge = "NEW", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
     HomeSectionConfig(id = "hot_sale", type = "hot_sale", title = "Hot Sale", subtitle = "হট সেল প্রোডাক্ট ডিসপ্লে", icon = "🔥", badge = "HOT 🔥", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, productIds = listOf("p9", "p6", "p5", "p4", "p2", "p1", "p13", "p15"), maxItems = 12),
     HomeSectionConfig(id = "combo_packs", type = "combo_packs", title = "কম্বো প্যাক", subtitle = "বান্ডেল কিনে বিশাল সেভ করুন", icon = "🎁", badge = "COMBO", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
-    HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", subtitle = "যেকোনো ২টি নিলেই ১টি ফ্রি", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, productIds = listOf("p1", "p2", "p4", "p6", "p9", "p11", "p15"), maxItems = 12),
+    HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", subtitle = "নির্বাচিত ২টি পণ্য নিলেই ১টি ফ্রি", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, productIds = listOf("p1", "p2", "p4", "p6", "p9", "p11", "p15"), maxItems = 12),
     HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", columnsPerRow = 3, rowCount = 2, displayStyle = "grid", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6", "p9", "p10", "p11", "p12"), maxItems = 6),
     HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "Product Reels", subtitle = "পন্যের ভিডিও দেখে অর্ডার করুন", icon = "🎬", badge = "", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
     HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "সব ক্যাটাগরির প্রোডাক্ট ডিসপ্লে", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9)
@@ -993,7 +993,9 @@ class StoreRepository(private val context: Context) {
                 price = (m["price"] as? Number)?.toInt() ?: 0,
                 color = m["color"]?.toString() ?: "",
                 size = m["size"]?.toString() ?: "",
-                ageGroup = m["ageGroup"]?.toString() ?: ""
+                ageGroup = m["ageGroup"]?.toString() ?: "",
+                isFreeGift = (m["isFreeGift"] as? Boolean) ?: false,
+                freeGiftOriginId = m["freeGiftOriginId"]?.toString() ?: ""
               )
             } ?: emptyList()
 
@@ -1151,6 +1153,66 @@ class StoreRepository(private val context: Context) {
     return localStorageSync.loadAndReconcile(initialProducts)
   }
 
+  /**
+   * Synchronizes the Admin-configured Buy 2 Get 1 Free gift item inside the shopping cart.
+   * Only products explicitly selected in StoreConfig.b2g1.eligibleProductIds count toward the threshold.
+   */
+  fun syncB2G1FreeGiftInCart() {
+    val b2g1 = _storeConfig.value.b2g1
+    val eligibleSet = b2g1.eligibleProductIds.filter { it.isNotBlank() }.toSet()
+    val paidItems = _cart.value.filterNot { it.isFreeGift }
+
+    if (!b2g1.enabled || eligibleSet.isEmpty()) {
+      if (_cart.value.any { it.isFreeGift }) {
+        _cart.value = paidItems
+      }
+      return
+    }
+
+    val minRequired = b2g1.minItems.coerceAtLeast(1)
+    val eligiblePaidQty = paidItems
+      .filter { eligibleSet.contains(it.product.id) }
+      .sumOf { it.quantity }
+
+    if (eligiblePaidQty < minRequired) {
+      if (_cart.value.any { it.isFreeGift }) {
+        _cart.value = paidItems
+      }
+      return
+    }
+
+    val freeProd = _products.value.find { it.id == b2g1.freeProductId }
+    if (freeProd == null || freeProd.isDraft) {
+      if (_cart.value.any { it.isFreeGift }) {
+        _cart.value = paidItems
+      }
+      return
+    }
+
+    val paidQtyOfFreeProd = paidItems
+      .filter { it.product.id == freeProd.id }
+      .sumOf { it.quantity }
+
+    if (freeProd.stock < paidQtyOfFreeProd + 1) {
+      if (_cart.value.any { it.isFreeGift }) {
+        _cart.value = paidItems
+      }
+      return
+    }
+
+    val freeGiftItem = CartItem(
+      product = freeProd.copy(price = 0),
+      quantity = 1,
+      selectedColor = freeProd.colors.firstOrNull() ?: "",
+      selectedSize = freeProd.sizes.firstOrNull() ?: "",
+      selectedAgeGroup = freeProd.ageGroups.firstOrNull() ?: "",
+      isFreeGift = true,
+      freeGiftOriginId = freeProd.id,
+      originalPrice = freeProd.price
+    )
+    _cart.value = paidItems + freeGiftItem
+  }
+
   // Cart Operations
   fun addToCart(
     product: Product,
@@ -1162,7 +1224,7 @@ class StoreRepository(private val context: Context) {
     if (product.stock <= 0) return false
     val current = _cart.value.toMutableList()
     val targetKey = "${product.id}_${color}_${size}_${ageGroup}"
-    val index = current.indexOfFirst { it.itemKey == targetKey }
+    val index = current.indexOfFirst { !it.isFreeGift && it.itemKey == targetKey }
     if (index >= 0) {
       val existing = current[index]
       val newQty = (existing.quantity + quantity).coerceAtMost(product.stock)
@@ -1179,6 +1241,7 @@ class StoreRepository(private val context: Context) {
       )
     }
     _cart.value = current
+    syncB2G1FreeGiftInCart()
     return true
   }
 
@@ -1210,6 +1273,13 @@ class StoreRepository(private val context: Context) {
     val index = current.indexOfFirst { it.itemKey == itemKey }
     if (index >= 0) {
       val item = current[index]
+      if (item.isFreeGift) {
+        if (delta < 0) {
+          current.removeAt(index)
+          _cart.value = current
+        }
+        return
+      }
       val newQty = item.quantity + delta
       if (newQty <= 0) {
         current.removeAt(index)
@@ -1218,11 +1288,16 @@ class StoreRepository(private val context: Context) {
         current[index] = item.copy(quantity = newQty.coerceAtMost(maxStock))
       }
       _cart.value = current
+      syncB2G1FreeGiftInCart()
     }
   }
 
   fun removeFromCart(itemKey: String) {
+    val removed = _cart.value.find { it.itemKey == itemKey }
     _cart.value = _cart.value.filterNot { it.itemKey == itemKey }
+    if (removed?.isFreeGift != true) {
+      syncB2G1FreeGiftInCart()
+    }
   }
 
   fun clearCart() {
@@ -1247,7 +1322,7 @@ class StoreRepository(private val context: Context) {
     val cartItems = _cart.value
     if (cartItems.isEmpty()) return null
 
-    val subtotal = cartItems.sumOf { it.product.price * it.quantity }
+    val subtotal = cartItems.filterNot { it.isFreeGift }.sumOf { it.product.price * it.quantity }
     val resolvedDeliveryType = if (deliveryType.equals("Express", ignoreCase = true) &&
       BangladeshLocations.isChandpurDistrict(district)
     ) {
@@ -1290,10 +1365,12 @@ class StoreRepository(private val context: Context) {
           productId = it.product.id,
           name = it.product.name,
           quantity = it.quantity,
-          price = it.product.price,
+          price = if (it.isFreeGift) 0 else it.product.price,
           color = it.selectedColor,
           size = it.selectedSize,
-          ageGroup = it.selectedAgeGroup
+          ageGroup = it.selectedAgeGroup,
+          isFreeGift = it.isFreeGift,
+          freeGiftOriginId = if (it.isFreeGift) it.freeGiftOriginId.ifBlank { it.product.id } else ""
         )
       },
       subtotal = subtotal,
@@ -1314,7 +1391,7 @@ class StoreRepository(private val context: Context) {
       createdAt = nowMs
     )
 
-    // Deduct stock across Storefront + POS Inventory + Firestore in real time
+    // Deduct stock across Storefront + POS Inventory + Firestore in real time (includes all purchased items + free gift item)
     val updatedProducts = inventorySyncService.applySaleStockDeduction(
       products = _products.value,
       items = newOrder.items,
@@ -1346,7 +1423,9 @@ class StoreRepository(private val context: Context) {
             "price" to it.price,
             "color" to it.color,
             "size" to it.size,
-            "ageGroup" to it.ageGroup
+            "ageGroup" to it.ageGroup,
+            "isFreeGift" to it.isFreeGift,
+            "freeGiftOriginId" to it.freeGiftOriginId
           )
         }
 
@@ -2068,6 +2147,31 @@ class StoreRepository(private val context: Context) {
       } else {
         defShip
       }
+      val bObj = o.optJSONObject("b2g1")
+      val defB2G1 = com.example.data.model.B2G1Config()
+      val b2g1 = if (bObj != null) {
+        val eligArr = bObj.optJSONArray("eligibleProductIds")
+        val eligIds = buildList {
+          if (eligArr != null) {
+            for (i in 0 until eligArr.length()) {
+              val pid = eligArr.optString(i).trim()
+              if (pid.isNotBlank() && !contains(pid)) add(pid)
+            }
+          }
+        }
+        val rawSub = bObj.optString("subtitle", defB2G1.subtitle)
+        val cleanSub = if (rawSub.contains("যেকোনো ২টি")) defB2G1.subtitle else rawSub
+        com.example.data.model.B2G1Config(
+          enabled = bObj.optBoolean("enabled", defB2G1.enabled),
+          title = bObj.optString("title", defB2G1.title),
+          subtitle = cleanSub,
+          minItems = bObj.optInt("minItems", defB2G1.minItems).coerceAtLeast(1),
+          freeProductId = bObj.optString("freeProductId", defB2G1.freeProductId),
+          eligibleProductIds = eligIds
+        )
+      } else {
+        defB2G1
+      }
       val defCfg = StoreConfig()
       StoreConfig(
         storeName = o.optString("storeName", defCfg.storeName),
@@ -2091,7 +2195,8 @@ class StoreRepository(private val context: Context) {
         smsAutoSendOnOrderStatus = o.optBoolean("smsAutoSendOnOrderStatus", defCfg.smsAutoSendOnOrderStatus),
         smsDelaySeconds = o.optInt("smsDelaySeconds", defCfg.smsDelaySeconds).coerceIn(2, 15),
         design = design,
-        shippingInfo = shippingInfo
+        shippingInfo = shippingInfo,
+        b2g1 = b2g1
       )
     } catch (_: Exception) {
       StoreConfig()
@@ -2176,6 +2281,14 @@ class StoreRepository(private val context: Context) {
       }
       put("options", optArr)
     }
+    val b2g1Obj = JSONObject().apply {
+      put("enabled", config.b2g1.enabled)
+      put("title", config.b2g1.title)
+      put("subtitle", config.b2g1.subtitle)
+      put("minItems", config.b2g1.minItems.coerceAtLeast(1))
+      put("freeProductId", config.b2g1.freeProductId)
+      put("eligibleProductIds", JSONArray(config.b2g1.eligibleProductIds))
+    }
     val root = JSONObject().apply {
       put("storeName", config.storeName)
       put("tagline", config.tagline)
@@ -2199,13 +2312,26 @@ class StoreRepository(private val context: Context) {
       put("smsDelaySeconds", config.smsDelaySeconds.coerceIn(2, 15))
       put("design", dObj)
       put("shippingInfo", sObj)
+      put("b2g1", b2g1Obj)
     }
     prefs.edit().putString("sajgoj_store_config", root.toString()).apply()
   }
 
   fun updateStoreConfig(config: StoreConfig) {
-    _storeConfig.value = config
-    saveStoreConfigToPrefs(config)
+    val cleanEligible = config.b2g1.eligibleProductIds.filter { it.isNotBlank() }.distinct()
+    val cleanConfig = config.copy(b2g1 = config.b2g1.copy(eligibleProductIds = cleanEligible))
+    _storeConfig.value = cleanConfig
+    saveStoreConfigToPrefs(cleanConfig)
+    // Keep Product.isB2G1 aligned with Admin-selected eligibleProductIds
+    val eligSet = cleanEligible.toSet()
+    if (_products.value.any { it.isB2G1 != eligSet.contains(it.id) }) {
+      _products.value = _products.value.map { p ->
+        val shouldBe = eligSet.contains(p.id)
+        if (p.isB2G1 == shouldBe) p else p.copy(isB2G1 = shouldBe)
+      }
+      persistLocalSyncSnapshot()
+    }
+    syncB2G1FreeGiftInCart()
   }
 
   // -------------------- SMS GATEWAY QUEUE MANAGEMENT --------------------

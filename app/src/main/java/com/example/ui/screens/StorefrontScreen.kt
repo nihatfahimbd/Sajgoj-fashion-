@@ -74,6 +74,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.data.model.BannerItem
+import com.example.data.model.CartItem
 import com.example.data.model.Category
 import com.example.data.model.ComboPack
 import com.example.data.model.Coupon
@@ -133,6 +134,7 @@ fun StorefrontScreen(
   orders: List<Order> = emptyList(),
   coupons: List<Coupon> = emptyList(),
   cartItemCount: Int = 0,
+  cartItems: List<CartItem> = emptyList(),
   selectedCategory: String = "All",
   searchQuery: String = "",
   sortOption: ProductSortOption = ProductSortOption.DEFAULT,
@@ -241,11 +243,12 @@ fun StorefrontScreen(
         if (picked.isNotEmpty()) picked else activeProducts.take(6)
       }
       "b2g1_offers" -> {
-        val idSet = section.productIds.toSet()
-        val pinned = section.productIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
-        val flagged = activeProducts.filter { it.isB2G1 && !idSet.contains(it.id) }
-        val combined = pinned + flagged
-        if (combined.isNotEmpty()) combined else activeProducts.take(6)
+        val b2g1 = config.b2g1
+        if (!b2g1.enabled || b2g1.eligibleProductIds.isEmpty()) {
+          emptyList()
+        } else {
+          b2g1.eligibleProductIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
+        }
       }
       "best_deals" -> {
         val idSet = section.productIds.toSet()
@@ -565,18 +568,29 @@ fun StorefrontScreen(
                   design = design
                 )
               }
+            } else if (section.type == "b2g1_offers" && (!config.b2g1.enabled || config.b2g1.eligibleProductIds.isEmpty())) {
+              // Hide Buy 2 Get 1 section when disabled or no eligible products are selected by Admin
             } else {
               item(key = "sec_${section.id}") {
-                val sectionProducts = remember(products, section, allProductsInlineCat) { resolveSectionProducts(section) }
+                val sectionProducts = remember(products, section, allProductsInlineCat, config.b2g1) { resolveSectionProducts(section) }
                 val isExpanded = expandedSectionIds.contains(section.id)
                 val allProductCategories = remember(products) {
                   products.map { it.category.trim() }.filter { it.isNotBlank() }.distinct()
+                }
+                val eligibleSet = remember(config.b2g1.eligibleProductIds) { config.b2g1.eligibleProductIds.toSet() }
+                val b2g1CartCount = remember(cartItems, eligibleSet) {
+                  cartItems.filter { !it.isFreeGift && eligibleSet.contains(it.product.id) }.sumOf { it.quantity }
+                }
+                val freeGiftName = remember(products, config.b2g1.freeProductId) {
+                  products.find { it.id == config.b2g1.freeProductId }?.name.orEmpty()
                 }
                 StorefrontProductBlockCard(
                   section = section,
                   products = sectionProducts,
                   isExpanded = isExpanded,
-                  cartItemCount = cartItemCount,
+                  cartItemCount = if (section.type == "b2g1_offers") b2g1CartCount else cartItemCount,
+                  b2g1MinItems = config.b2g1.minItems.coerceAtLeast(1),
+                  b2g1FreeGiftName = freeGiftName,
                   allCategoriesList = if (section.type == "all_products") allProductCategories else emptyList(),
                   selectedInlineCategory = allProductsInlineCat,
                   onSelectInlineCategory = { allProductsInlineCat = it },
@@ -740,6 +754,8 @@ private fun StorefrontProductBlockCard(
   products: List<Product>,
   isExpanded: Boolean,
   cartItemCount: Int = 0,
+  b2g1MinItems: Int = 2,
+  b2g1FreeGiftName: String = "",
   allCategoriesList: List<String> = emptyList(),
   selectedInlineCategory: String = "All",
   onSelectInlineCategory: (String) -> Unit = {},
@@ -865,9 +881,9 @@ private fun StorefrontProductBlockCard(
         }
       }
 
-      // Live B2G1 cart progress pill
+      // Live B2G1 cart progress pill (counts strictly Admin-selected eligible items)
       if (section.type == "b2g1_offers") {
-        val unlocked = cartItemCount >= 2
+        val unlocked = cartItemCount >= b2g1MinItems
         Surface(
           shape = RoundedCornerShape(10.dp),
           color = if (unlocked) Color(0xFFECFDF5) else Color(0xFFFFF8E1),
@@ -883,20 +899,24 @@ private fun StorefrontProductBlockCard(
           ) {
             Text(
               text = if (unlocked) {
-                "🎉 অভিনন্দন! Buy 2 Get 1 অফার আনলক হয়েছে!"
+                if (b2g1FreeGiftName.isNotBlank()) "🎉 আনলকড! ফ্রি উপহার: $b2g1FreeGiftName" else "🎉 অভিনন্দন! Buy 2 Get 1 অফার আনলক হয়েছে!"
               } else {
-                "🎁 যেকোনো ২টি নিলেই ১টি ফ্রি!"
+                if (b2g1FreeGiftName.isNotBlank()) "🎁 নির্বাচিত ${b2g1MinItems}টি পণ্য নিলে ফ্রি: $b2g1FreeGiftName" else "🎁 নির্বাচিত ${b2g1MinItems}টি পণ্য নিলেই ১টি ফ্রি!"
               },
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold,
-              color = if (unlocked) Color(0xFF047857) else DarkEspresso
+              color = if (unlocked) Color(0xFF047857) else DarkEspresso,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier = Modifier.weight(1f)
             )
+            Spacer(modifier = Modifier.width(6.dp))
             Surface(
               shape = RoundedCornerShape(8.dp),
               color = if (unlocked) AccentGreen else RoyalMaroon
             ) {
               Text(
-                text = if (unlocked) "✓ ফ্রি আনলকড" else "${cartItemCount.coerceAtMost(2)}/২টি কার্টে",
+                text = if (unlocked) "✓ ফ্রি আনলকড" else "${cartItemCount.coerceAtMost(b2g1MinItems)}/${b2g1MinItems}টি কার্টে",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Black,
                 color = Color.White,
