@@ -864,7 +864,31 @@ class StoreRepository(private val context: Context) {
                 videoType = doc.getString("videoType") ?: "upload",
                 videoUrl = doc.getString("videoUrl") ?: "",
                 videoThumbUrl = doc.getString("videoThumbUrl") ?: "",
-                additionalImages = extraImages
+                additionalImages = extraImages,
+                brand = doc.getString("brand")?.ifBlank { "No Brand" } ?: "No Brand",
+                attributes = (doc.get("attributes") as? Map<*, *>)
+                  ?.entries
+                  ?.mapNotNull { (k, v) ->
+                    val ks = k?.toString()?.trim().orEmpty()
+                    val vs = v?.toString()?.trim().orEmpty()
+                    if (ks.isNotBlank() && vs.isNotBlank()) ks to vs else null
+                  }?.toMap() ?: emptyMap(),
+                isAvailable = doc.getBoolean("isAvailable") ?: true,
+                isDraft = doc.getBoolean("isDraft") ?: false,
+                specialPriceEnabled = doc.getBoolean("specialPriceEnabled") ?: (offerPriceVal > 0),
+                specialPriceStart = doc.getString("specialPriceStart") ?: "",
+                specialPriceEnd = doc.getString("specialPriceEnd") ?: "",
+                shippingWeightKg = doc.getString("shippingWeightKg") ?: "",
+                shippingDimensions = doc.getString("shippingDimensions") ?: "",
+                shippingDangerousGoods = doc.getString("shippingDangerousGoods") ?: "None",
+                shippingExpressChandpur = doc.getBoolean("shippingExpressChandpur") ?: true,
+                shippingNote = doc.getString("shippingNote") ?: "",
+                warrantyType = doc.getString("warrantyType") ?: "No Warranty",
+                warrantyPeriod = doc.getString("warrantyPeriod") ?: "",
+                warrantyPolicy = doc.getString("warrantyPolicy") ?: "",
+                highlights = (doc.get("highlights") as? List<*>)?.mapNotNull { it?.toString()?.trim()?.takeIf { s -> s.isNotEmpty() } } ?: emptyList(),
+                enabledForWeb = doc.getBoolean("enabledForWeb") ?: true,
+                enabledForPos = doc.getBoolean("enabledForPos") ?: true
               )
             } catch (e: Exception) {
               inventorySyncService.recordSyncError(
@@ -1747,6 +1771,25 @@ class StoreRepository(private val context: Context) {
             "videoUrl" to stamped.videoUrl,
             "videoThumbUrl" to stamped.videoThumbUrl,
             "additionalImages" to stamped.additionalImages,
+            "brand" to stamped.brand,
+            "attributes" to stamped.attributes,
+            "isAvailable" to stamped.isAvailable,
+            "isDraft" to stamped.isDraft,
+            "specialPriceEnabled" to stamped.specialPriceEnabled,
+            "specialPriceStart" to stamped.specialPriceStart,
+            "specialPriceEnd" to stamped.specialPriceEnd,
+            "shippingWeightKg" to stamped.shippingWeightKg,
+            "shippingDimensions" to stamped.shippingDimensions,
+            "shippingDangerousGoods" to stamped.shippingDangerousGoods,
+            "shippingExpressChandpur" to stamped.shippingExpressChandpur,
+            "shippingNote" to stamped.shippingNote,
+            "warrantyType" to stamped.warrantyType,
+            "warrantyPeriod" to stamped.warrantyPeriod,
+            "warrantyPolicy" to stamped.warrantyPolicy,
+            "highlights" to stamped.highlights,
+            "enabledForWeb" to stamped.enabledForWeb,
+            "enabledForPos" to stamped.enabledForPos,
+            "sourceUrl" to stamped.sourceUrl,
             "updatedAt" to FieldValue.serverTimestamp()
           )
         )?.addOnFailureListener { e ->
@@ -1818,6 +1861,25 @@ class StoreRepository(private val context: Context) {
             "videoUrl" to stamped.videoUrl,
             "videoThumbUrl" to stamped.videoThumbUrl,
             "additionalImages" to stamped.additionalImages,
+            "brand" to stamped.brand,
+            "attributes" to stamped.attributes,
+            "isAvailable" to stamped.isAvailable,
+            "isDraft" to stamped.isDraft,
+            "specialPriceEnabled" to stamped.specialPriceEnabled,
+            "specialPriceStart" to stamped.specialPriceStart,
+            "specialPriceEnd" to stamped.specialPriceEnd,
+            "shippingWeightKg" to stamped.shippingWeightKg,
+            "shippingDimensions" to stamped.shippingDimensions,
+            "shippingDangerousGoods" to stamped.shippingDangerousGoods,
+            "shippingExpressChandpur" to stamped.shippingExpressChandpur,
+            "shippingNote" to stamped.shippingNote,
+            "warrantyType" to stamped.warrantyType,
+            "warrantyPeriod" to stamped.warrantyPeriod,
+            "warrantyPolicy" to stamped.warrantyPolicy,
+            "highlights" to stamped.highlights,
+            "enabledForWeb" to stamped.enabledForWeb,
+            "enabledForPos" to stamped.enabledForPos,
+            "sourceUrl" to stamped.sourceUrl,
             "updatedAt" to FieldValue.serverTimestamp()
           ),
           SetOptions.merge()

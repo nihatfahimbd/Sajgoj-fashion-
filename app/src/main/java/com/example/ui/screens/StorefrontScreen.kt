@@ -170,8 +170,11 @@ fun StorefrontScreen(
     searchQuery.isNotBlank() ||
     imageSearchState != null ||
     sortOption != ProductSortOption.DEFAULT
-  val sortedDisplayProducts = remember(products, sortOption) {
-    sortStorefrontProducts(products, sortOption)
+  val activeStorefrontProducts = remember(products) {
+    products.filter { !it.isDraft && it.enabledForWeb }
+  }
+  val sortedDisplayProducts = remember(activeStorefrontProducts, sortOption) {
+    sortStorefrontProducts(activeStorefrontProducts, sortOption)
   }
   val activeSections = remember(homeSections) {
     (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).filter { it.enabled }
@@ -223,43 +226,44 @@ fun StorefrontScreen(
   }
 
   fun resolveSectionProducts(section: HomeSectionConfig): List<Product> {
+    val activeProducts = products.filter { !it.isDraft && it.enabledForWeb }
     return when (section.type) {
       "new_products" -> {
-        val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
-        val rest = products
+        val pinned = section.productIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
+        val rest = activeProducts
           .filter { p -> section.productIds.none { it == p.id } }
           .sortedByDescending { it.createdAt }
         (pinned + rest)
       }
       "hot_sale" -> {
         val idSet = section.productIds.toSet()
-        val picked = products.filter { it.isHotSale || idSet.contains(it.id) }
-        if (picked.isNotEmpty()) picked else products.take(6)
+        val picked = activeProducts.filter { it.isHotSale || idSet.contains(it.id) }
+        if (picked.isNotEmpty()) picked else activeProducts.take(6)
       }
       "b2g1_offers" -> {
         val idSet = section.productIds.toSet()
-        val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
-        val flagged = products.filter { it.isB2G1 && !idSet.contains(it.id) }
+        val pinned = section.productIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
+        val flagged = activeProducts.filter { it.isB2G1 && !idSet.contains(it.id) }
         val combined = pinned + flagged
-        if (combined.isNotEmpty()) combined else products.take(6)
+        if (combined.isNotEmpty()) combined else activeProducts.take(6)
       }
       "best_deals" -> {
         val idSet = section.productIds.toSet()
-        val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
-        val dealMarked = products.filter { it.isBestDeal && !idSet.contains(it.id) }
+        val pinned = section.productIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
+        val dealMarked = activeProducts.filter { it.isBestDeal && !idSet.contains(it.id) }
         val chosenIds = (pinned + dealMarked).map { it.id }.toSet()
-        val extras = products.filterNot { chosenIds.contains(it.id) }.sortedByDescending { it.rating }
+        val extras = activeProducts.filterNot { chosenIds.contains(it.id) }.sortedByDescending { it.rating }
         val combined = pinned + dealMarked + extras
-        if (combined.isNotEmpty()) combined else products
+        if (combined.isNotEmpty()) combined else activeProducts
       }
       "all_products" -> {
         // Round-robin interleave across ALL categories so every category appears on first view
         val baseList = if (section.productIds.isNotEmpty()) {
           val idSet = section.productIds.toSet()
-          val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
-          pinned + products.filterNot { idSet.contains(it.id) }
+          val pinned = section.productIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
+          pinned + activeProducts.filterNot { idSet.contains(it.id) }
         } else {
-          val byCategory = products.groupBy { it.category.trim().ifBlank { "অন্যান্য" } }
+          val byCategory = activeProducts.groupBy { it.category.trim().ifBlank { "অন্যান্য" } }
           val buckets = byCategory.values.map { it.toMutableList() }
           buildList {
             var remaining = true
@@ -280,22 +284,22 @@ fun StorefrontScreen(
       "category_products" -> {
         val cat = section.categoryName.trim()
         val byCat = if (cat.isBlank() || cat == "All") {
-          products
+          activeProducts
         } else {
-          products.filter {
+          activeProducts.filter {
             it.category.equals(cat, ignoreCase = true) ||
               it.category.contains(cat, ignoreCase = true) ||
               cat.contains(it.category, ignoreCase = true)
           }
         }
-        val extra = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
+        val extra = section.productIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
         (extra + byCat).distinctBy { it.id }
       }
       "custom_products" -> {
-        val pinned = section.productIds.mapNotNull { pid -> products.find { it.id == pid } }
-        if (pinned.isNotEmpty()) pinned else products.take(6)
+        val pinned = section.productIds.mapNotNull { pid -> activeProducts.find { it.id == pid } }
+        if (pinned.isNotEmpty()) pinned else activeProducts.take(6)
       }
-      else -> products
+      else -> activeProducts
     }
   }
 
@@ -438,7 +442,7 @@ fun StorefrontScreen(
             sortBarInserted = true
             item(key = "storefront_sort_bar") {
               StorefrontCatalogSortBar(
-                productCount = products.size,
+                productCount = activeStorefrontProducts.size,
                 sortOption = sortOption,
                 onSortOptionSelected = onSortOptionSelected
               )
@@ -484,7 +488,7 @@ fun StorefrontScreen(
               sortBarInserted = true
               item(key = "storefront_sort_bar") {
                 StorefrontCatalogSortBar(
-                  productCount = products.size,
+                  productCount = activeStorefrontProducts.size,
                   sortOption = sortOption,
                   onSortOptionSelected = onSortOptionSelected
                 )

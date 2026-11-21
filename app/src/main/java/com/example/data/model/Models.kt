@@ -27,7 +27,25 @@ data class Product(
   val videoType: String = "upload", // "upload", "youtube", "facebook_reels"
   val videoUrl: String = "",
   val videoThumbUrl: String = "",
-  val additionalImages: List<String> = emptyList()
+  val additionalImages: List<String> = emptyList(),
+  val brand: String = "No Brand",
+  val attributes: Map<String, String> = emptyMap(),
+  val isAvailable: Boolean = true,
+  val isDraft: Boolean = false,
+  val specialPriceEnabled: Boolean = false,
+  val specialPriceStart: String = "",
+  val specialPriceEnd: String = "",
+  val shippingWeightKg: String = "",
+  val shippingDimensions: String = "",
+  val shippingDangerousGoods: String = "None",
+  val shippingExpressChandpur: Boolean = true,
+  val shippingNote: String = "",
+  val warrantyType: String = "No Warranty",
+  val warrantyPeriod: String = "",
+  val warrantyPolicy: String = "",
+  val highlights: List<String> = emptyList(),
+  val enabledForWeb: Boolean = true,
+  val enabledForPos: Boolean = true
 )
 
 data class HomeSectionConfig(

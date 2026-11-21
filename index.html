@@ -6022,25 +6022,8 @@
                     setActiveTab("Products");
                     setAdminProductSubTab("list");
                     setEditingProduct(null);
-                    setProductForm({
-                      name: "",
-                      price: "",
-                      offerPrice: "",
-                      stock: 5,
-                      category: categories[0]?.name || "শাড়ি",
-                      images: [],
-                      sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`,
-                      description: "",
-                      sourceUrl: "",
-                      bogo: false,
-                      bogoText: "১টি কিনলে ১টি ফ্রি",
-                      colors: [],
-                      sizes: [],
-                      isHotSale: false,
-                      isBestDeal: false,
-                      enabledForWeb: true,
-                      enabledForPos: true
-                    });
+                    setProductForm(createEmptySellerProductForm(categories[0]?.name || "শাড়ি"));
+                    setProductFormSubEditor(null);
                     setExternalLinkInput("");
                     setImageUrlInput("");
                     setImgLoadStatus("idle");
@@ -7954,21 +7937,8 @@
                         setActiveTab("Products");
                         setAdminProductSubTab("list");
                         setEditingProduct(null);
-                        setProductForm({ 
-                          name: "", 
-                          price: "", 
-                          offerPrice: "",
-                          stock: 5, 
-                          category: categories[0]?.name || "শাড়ি", 
-                          images: [], 
-                          sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
-                          description: "",
-                          sourceUrl: "",
-                          bogo: false,
-                          bogoText: "১টি কিনলে ১টি ফ্রি",
-                          colors: [],
-                          sizes: []
-                        });
+                        setProductForm(createEmptySellerProductForm(categories[0]?.name || "শাড়ি"));
+                        setProductFormSubEditor(null);
                         setExternalLinkInput("");
                         setImageUrlInput("");
                         setImgLoadStatus("idle");
@@ -11708,21 +11678,22 @@
       // Admin Modals & Forms
       const [adminOrderFilter, setAdminOrderFilter] = useState("All");
       const [dashboardProductSearch, setDashboardProductSearch] = useState("");
-      const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-      const [editingProduct, setEditingProduct] = useState(null);
-      const [productForm, setProductForm] = useState({ 
-        name: "", 
-        price: "", 
-        stock: 5, 
-        category: "শাড়ি", 
-        images: [], 
-        sku: "", 
+      const createEmptySellerProductForm = (defaultCat = "শাড়ি") => ({
+        name: "",
+        price: "",
+        offerPrice: "",
+        stock: "",
+        category: defaultCat || "শাড়ি",
+        subCategory: "",
+        images: [],
+        sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`,
         description: "",
         sourceUrl: "",
         bogo: false,
         bogoText: "১টি কিনলে ১টি ফ্রি",
         colors: [],
         sizes: [],
+        ageGroups: [],
         isHotSale: false,
         isBestDeal: false,
         enabledForWeb: true,
@@ -11731,8 +11702,32 @@
         videoType: "upload",
         videoUrl: "",
         videoThumbUrl: "",
-        videoFileName: ""
+        videoFileName: "",
+        brand: "No Brand",
+        attributes: {},
+        isAvailable: true,
+        isDraft: false,
+        specialPriceEnabled: false,
+        specialPriceStart: "",
+        specialPriceEnd: "",
+        shippingWeightKg: "",
+        shippingDimensions: "",
+        shippingDangerousGoods: "None",
+        shippingExpressChandpur: true,
+        shippingNote: "",
+        warrantyType: "No Warranty",
+        warrantyPeriod: "",
+        warrantyPolicy: "",
+        highlights: []
       });
+      const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+      const [editingProduct, setEditingProduct] = useState(null);
+      const [productForm, setProductForm] = useState(() => createEmptySellerProductForm("শাড়ি"));
+      const [productFormSubEditor, setProductFormSubEditor] = useState(null);
+      const [productSubTempKey, setProductSubTempKey] = useState("");
+      const [productSubTempVal, setProductSubTempVal] = useState("");
+      const [productSubHighlightInput, setProductSubHighlightInput] = useState("");
+      const [productSubCustomBrand, setProductSubCustomBrand] = useState("");
       const [mediaViewerState, setMediaViewerState] = useState(null); // { product, activeIndex }
       const [idbVideoUrls, setIdbVideoUrls] = useState({});
       const [isUploadingVideo, setIsUploadingVideo] = useState(false);
@@ -14001,7 +13996,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         const expandedTerms = q ? expandSearchAliases(q) : [];
 
         const list = products.filter(p => {
-          if (p.enabledForWeb === false) return false;
+          if (p.enabledForWeb === false || p.isDraft === true) return false;
 
           let matchesSearch = true;
           if (q) {
@@ -17940,28 +17935,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <button 
                       onClick={() => {
                         setEditingProduct(null);
-                        setProductForm({ 
-                          name: "", 
-                          price: "", 
-                          offerPrice: "",
-                          stock: 5, 
-                          category: categories[0]?.name || "শাড়ি", 
-                          images: [], 
-                          sku: `SAJ-${Math.floor(100 + Math.random() * 900)}`, 
-                          description: "",
-                          sourceUrl: "",
-                          bogo: false,
-                          bogoText: "১টি কিনলে ১টি ফ্রি",
-                          colors: [],
-                          sizes: [],
-                          isHotSale: false,
-                          isBestDeal: false,
-                          videoEnabled: false,
-                          videoType: "upload",
-                          videoUrl: "",
-                          videoThumbUrl: "",
-                          videoFileName: ""
-                        });
+                        setProductForm(createEmptySellerProductForm(categories[0]?.name || "শাড়ি"));
+                        setProductFormSubEditor(null);
                         setExternalLinkInput("");
                         setImageUrlInput("");
                         setImgLoadStatus("idle");
@@ -18578,14 +18553,31 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
                             />
                             <div className="flex-1 min-w-0">
-                              <span className="text-[10px] bg-white/85 text-[#000000] px-2 py-0.5 rounded-full font-bold">
-                                {p.category}
-                              </span>
-                              {p.bogo && (
-                                <span className="cta-dark-pill text-[10px] px-2 py-0.5 rounded-full font-black ml-1.5 shadow-xs">
-                                  🎁 Buy 1 Get 1 Free
+                              <div className="flex flex-wrap items-center gap-1">
+                                <span className="text-[10px] bg-white/85 text-[#000000] px-2 py-0.5 rounded-full font-bold">
+                                  {p.category}
                                 </span>
-                              )}
+                                {p.isDraft && (
+                                  <span className="text-[10px] bg-orange-500 text-white px-2 py-0.5 rounded-full font-black">
+                                    📝 Draft
+                                  </span>
+                                )}
+                                {p.isAvailable === false && (
+                                  <span className="text-[10px] bg-rose-700 text-white px-2 py-0.5 rounded-full font-bold">
+                                    ⏸️ Unavailable
+                                  </span>
+                                )}
+                                {p.brand && p.brand !== "No Brand" && (
+                                  <span className="text-[10px] bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full font-bold">
+                                    🏷️ {p.brand}
+                                  </span>
+                                )}
+                                {p.bogo && (
+                                  <span className="cta-dark-pill text-[10px] px-2 py-0.5 rounded-full font-black shadow-xs">
+                                    🎁 Buy 1 Get 1 Free
+                                  </span>
+                                )}
+                              </div>
                               <h4 className="font-bold text-sm truncate mt-1 text-[#000000]">{p.name}</h4>
                               <p className="text-xs text-[#000000] font-mono">SKU: {p.sku}</p>
                               <div className="flex items-center gap-2 mt-1">
@@ -18676,15 +18668,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <button 
                                 onClick={() => {
                                   setEditingProduct(p);
+                                  const computedOffer = (p.offerPrice && Number(p.offerPrice) > 0 && Number(p.offerPrice) < (Number(p.regularPrice) || Number(p.price)))
+                                    ? p.offerPrice
+                                    : ((p.regularPrice && Number(p.regularPrice) > Number(p.price)) ? p.price : "");
                                   setProductForm({
+                                    ...createEmptySellerProductForm(p.category || "শাড়ি"),
                                     ...p,
                                     price: (p.regularPrice && Number(p.regularPrice) > Number(p.price)) ? p.regularPrice : p.price,
-                                    offerPrice: (p.offerPrice && Number(p.offerPrice) > 0 && Number(p.offerPrice) < (Number(p.regularPrice) || Number(p.price)))
-                                      ? p.offerPrice
-                                      : ((p.regularPrice && Number(p.regularPrice) > Number(p.price)) ? p.price : ""),
-                                    images: p.images || [],
+                                    offerPrice: computedOffer,
+                                    specialPriceEnabled: typeof p.specialPriceEnabled === "boolean" ? p.specialPriceEnabled : Boolean(computedOffer),
+                                    isAvailable: p.isAvailable !== false,
+                                    isDraft: Boolean(p.isDraft),
+                                    brand: p.brand || "No Brand",
+                                    attributes: (p.attributes && typeof p.attributes === "object") ? p.attributes : {},
+                                    highlights: Array.isArray(p.highlights) ? p.highlights : [],
+                                    images: Array.isArray(p.images) ? p.images : (p.imageUrl ? [p.imageUrl] : []),
                                     colors: (p.colors || []).map(cleanVariation).filter(Boolean),
                                     sizes: (p.sizes || []).map(cleanVariation).filter(Boolean),
+                                    ageGroups: Array.isArray(p.ageGroups) ? p.ageGroups : [],
                                     isHotSale: Boolean(p.isHotSale || homeSections.find(s => s.id === "hot_sale")?.productIds?.includes(p.id)),
                                     isBestDeal: Boolean(p.isBestDeal || homeSections.find(s => s.id === "best_deals")?.productIds?.includes(p.id)),
                                     videoEnabled: Boolean(p.videoEnabled && p.videoUrl),
@@ -18693,9 +18694,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     videoThumbUrl: p.videoThumbUrl || "",
                                     videoFileName: p.videoFileName || ""
                                   });
-                                  setImageUrlInput(p.images[0] || "");
+                                  setProductFormSubEditor(null);
+                                  setImageUrlInput((p.images && p.images[0]) || "");
                                   setExternalLinkInput(p.sourceUrl || "");
-                                  setImgLoadStatus(p.images[0] ? "loaded" : "idle");
+                                  setImgLoadStatus((p.images && p.images[0]) ? "loaded" : "idle");
                                   setIsProductModalOpen(true);
                                 }}
                                 className="red-black-tab px-2.5 py-1.5 rounded-full text-xs font-bold transition"
@@ -18729,29 +18731,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       );
                     })}
-                </div>
-                {/* DEDICATED 'SCAN BARCODE' FLOATING ACTION BUTTON (PRODUCT LIST) */}
-                <div className="fixed bottom-6 right-6 z-40 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsScannerOpen(true);
-                      startScanner();
-                    }}
-                    className="cta-dark-pill pl-4 pr-5 py-3.5 rounded-full shadow-2xl border-2 border-[#ef4444] flex items-center gap-3 transition-all duration-200 transform hover:scale-105 active:scale-95 group cursor-pointer ring-4 ring-red-500/25"
-                    title="ক্যামেরা বারকোড স্ক্যানার চালু করুন (Scan Barcode)"
-                  >
-                    <span className="relative flex h-3.5 w-3.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>
-                    </span>
-                    <span className="text-xl group-hover:rotate-12 transition-transform">📷</span>
-                    <div className="text-left">
-                      <p className="text-xs font-black uppercase tracking-wider leading-tight">বারকোড স্ক্যানার</p>
-                      <p className="text-[10px] font-bold leading-tight opacity-85">Scan Barcode</p>
-                    </div>
-                  </button>
-                </div>
+                  </div>
                   </div>
                 )}
               </div>
@@ -18783,20 +18763,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 ) : (
                   <div className="bg-[#f3f6fa] text-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
                     {/* 1. HEADER: Orders + Scanner Icon & Search Icon + Utility Menu */}
-                    <div className="bg-white px-4 py-3.5 flex items-center justify-between gap-3 border-b border-slate-200">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="bg-white px-3.5 sm:px-4 py-3 flex items-center justify-between gap-2 border-b border-slate-200">
+                      <div className="flex items-center gap-2 min-w-0">
                         <button
                           type="button"
                           onClick={() => setActiveTab("Dashboard")}
-                          className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center font-black text-base transition cursor-pointer shrink-0"
+                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center font-black text-base transition cursor-pointer shrink-0"
                           title="ড্যাশবোর্ডে ফিরে যান"
                         >
                           ←
                         </button>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight truncate">Orders</h3>
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-sky-100 text-sky-800 border border-sky-200">
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-base sm:text-xl font-black text-slate-900 tracking-tight whitespace-nowrap">Orders</h3>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-sky-100 text-sky-800 border border-sky-200 shrink-0">
                               {filteredOrders.length}/{orders.length}
                             </span>
                           </div>
@@ -18813,7 +18793,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             setIsScannerOpen(true);
                             startScanner();
                           }}
-                          className="w-10 h-10 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 flex items-center justify-center text-lg transition cursor-pointer"
+                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 flex items-center justify-center text-base sm:text-lg transition cursor-pointer"
                           title="বারকোড / QR স্ক্যানার"
                           aria-label="Scanner"
                         >
@@ -18822,7 +18802,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <button
                           type="button"
                           onClick={() => setOrderShowSearchBar(prev => !prev)}
-                          className={`w-10 h-10 rounded-xl border flex items-center justify-center text-base transition cursor-pointer ${
+                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center text-sm sm:text-base transition cursor-pointer ${
                             orderShowSearchBar || orderSkuOrProductLookup.trim() || orderPhoneFilter.trim()
                               ? "bg-sky-600 text-white border-sky-600"
                               : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
@@ -18844,7 +18824,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               setAdminOrderSubTab(val);
                             }
                           }}
-                          className="h-10 px-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer outline-none"
+                          className="h-9 sm:h-10 max-w-[78px] sm:max-w-none px-2 sm:px-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer outline-none"
                           title="অতিরিক্ত টুলস"
                         >
                           <option value="">⋮ টুলস</option>
@@ -20227,30 +20207,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     )}
                   </div>
                 )}
-
-                {/* DEDICATED 'SCAN BARCODE' FLOATING ACTION BUTTON (ORDER TRACKING) */}
-                <div className="fixed bottom-6 right-6 z-40 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAdminOrderSubTab("all_orders");
-                      setIsScannerOpen(true);
-                      startScanner();
-                    }}
-                    className="bg-gradient-to-r from-[#dc2626] via-[#991b1b] to-[#7f1d1d] hover:brightness-110 text-white pl-4 pr-5 py-3.5 rounded-full shadow-2xl border-2 border-red-400/50 flex items-center gap-3 transition-all duration-200 transform hover:scale-105 active:scale-95 group cursor-pointer ring-4 ring-red-950/40"
-                    title="ক্যামেরা বারকোড স্ক্যানার দিয়ে অর্ডার খুঁজুন (Scan Barcode)"
-                  >
-                    <span className="relative flex h-3.5 w-3.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-300 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-200"></span>
-                    </span>
-                    <span className="text-xl group-hover:rotate-12 transition-transform">📷</span>
-                    <div className="text-left">
-                      <p className="text-xs font-black uppercase tracking-wider leading-tight">বারকোড স্ক্যানার</p>
-                      <p className="text-[10px] text-rose-200 font-bold leading-tight">Scan Barcode</p>
-                    </div>
-                  </button>
-                </div>
               </div>
             )}
 
@@ -31584,983 +31540,1449 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           {/* ADD / EDIT PRODUCT MODAL (ULTRA-PREMIUM WITH SMART IMPORT) */}
           {/* ========================================================= */}
           {isProductModalOpen && (
-            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-              <div className="bg-[#120609]/95 backdrop-blur-2xl text-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 border border-red-900/50 shadow-2xl animate-fadeIn">
-                <div className="flex justify-between items-center mb-4 pb-3 border-b border-red-900/35">
-                  <div>
-                    <h3 className="font-bold text-xl text-white">
-                      {editingProduct ? "প্রোডাক্ট তথ্য আপডেট করুন" : "নতুন প্রোডাক্ট যুক্ত করুন"}
+            <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center sm:p-4">
+              <div className="bg-[#F4F6F9] text-slate-900 w-full h-full sm:h-auto sm:max-h-[94vh] sm:max-w-xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-slate-200 animate-fadeIn">
+                {/* TOP BAR */}
+                <div className="bg-white border-b border-slate-200 px-3 sm:px-5 py-3 flex items-center justify-between shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (productFormSubEditor) {
+                        setProductFormSubEditor(null);
+                      } else {
+                        setIsProductModalOpen(false);
+                      }
+                    }}
+                    className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-800 text-lg font-bold transition cursor-pointer"
+                    title="পিছনে যান"
+                  >
+                    ←
+                  </button>
+                  <div className="text-center min-w-0 flex-1 px-2">
+                    <h3 className="font-extrabold text-base sm:text-lg text-slate-900 truncate">
+                      {productFormSubEditor
+                        ? ({
+                            url: "Smart URL Import & Image Link",
+                            category: "Select Category",
+                            brand: "Select Brand",
+                            attributes: "Product Attributes",
+                            variants: "Variants & Options",
+                            special_period: "Special Price Periods",
+                            shipping: "Shipping Information",
+                            warranty: "Warranty Information",
+                            description: "Product Description",
+                            highlights: "Product Highlights"
+                          }[productFormSubEditor] || "Edit Details")
+                        : (editingProduct ? "Edit Product" : "Add Product")}
                     </h3>
-                    <p className="text-xs text-slate-300">প্রোডাক্টের নাম, মূল্য, স্টক এবং ছবি দিয়ে সহজেই পণ্য যুক্ত করুন</p>
                   </div>
-                  <button onClick={() => setIsProductModalOpen(false)} className="w-8 h-8 rounded-full bg-black/60 border border-red-900/50 flex items-center justify-center font-bold text-rose-200 hover:text-white hover:bg-red-900/40 transition">✕</button>
+                  <button
+                    type="button"
+                    onClick={() => setProductFormSubEditor(prev => prev === "url" ? null : "url")}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-base transition cursor-pointer ${
+                      productFormSubEditor === "url"
+                        ? "bg-orange-100 text-[#f97316]"
+                        : "hover:bg-slate-100 text-slate-700"
+                    }`}
+                    title="লিংক থেকে প্রোডাক্ট বা ছবি ইম্পোর্ট করুন"
+                  >
+                    📝
+                  </button>
                 </div>
 
-                <div className="space-y-5">
-                  
-
-                  {/* PRODUCT BASIC INFO */}
-                  <div>
-                    <label className="text-xs font-semibold text-rose-200">প্রোডাক্টের নাম *</label>
-                    <input 
-                      type="text" 
-                      value={productForm.name} 
-                      onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                      placeholder="যেমন: এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি"
-                      className="w-full bg-black/50 border border-red-900/45 rounded-full px-5 py-2.5 text-sm text-white placeholder-slate-400 outline-none mt-1 focus:border-red-500" 
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-rose-200">বিক্রয় মূল্য (টাকা) *</label>
-                      <input 
-                        type="number" 
-                        value={productForm.price !== undefined && productForm.price !== null ? productForm.price : ''} 
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/^0+(?=\d)/, '');
-                          setProductForm({ ...productForm, price: val === '' ? '' : Number(val) });
-                        }}
-                        placeholder="4200"
-                        className="w-full bg-black/50 border border-red-900/45 rounded-full px-5 py-2.5 text-sm text-white placeholder-slate-400 outline-none mt-1 focus:border-red-500" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-emerald-300 flex items-center justify-between">
-                        <span>অফার প্রাইস (টাকা)</span>
-                        {Number(productForm.offerPrice) > 0 && Number(productForm.price) > Number(productForm.offerPrice) && (
-                          <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full font-black">
-                            -{Math.round(((Number(productForm.price) - Number(productForm.offerPrice)) / Number(productForm.price)) * 100)}%
-                          </span>
-                        )}
-                      </label>
-                      <input 
-                        type="number" 
-                        value={productForm.offerPrice !== undefined && productForm.offerPrice !== null ? productForm.offerPrice : ''} 
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/^0+(?=\d)/, '');
-                          setProductForm({ ...productForm, offerPrice: val === '' ? '' : Number(val) });
-                        }}
-                        placeholder="3500 (ঐচ্ছিক)"
-                        className="w-full bg-black/50 border border-emerald-500/45 rounded-full px-5 py-2.5 text-sm text-white placeholder-slate-400 outline-none mt-1 focus:border-emerald-400" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-rose-200">স্টক পরিমাণ *</label>
-                      <input 
-                        type="number" 
-                        value={productForm.stock !== undefined && productForm.stock !== null ? productForm.stock : ''} 
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/^0+(?=\d)/, '');
-                          setProductForm({ ...productForm, stock: val === '' ? '' : Number(val) });
-                        }}
-                        placeholder="5"
-                        className="w-full bg-black/50 border border-red-900/45 rounded-full px-5 py-2.5 text-sm text-white placeholder-slate-400 outline-none mt-1 focus:border-red-500" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-rose-200">ক্যাটাগরি</label>
-                      <select 
-                        value={productForm.category}
-                        onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                        className="w-full bg-black/70 border border-red-900/45 rounded-full px-4 py-2.5 text-sm text-white outline-none mt-1 focus:border-red-500"
-                      >
-                        {categories.map(c => <option key={c.id} value={c.name} className="bg-[#120609] text-white">{c.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-rose-200">SKU কোড</label>
-                      <input 
-                        type="text" 
-                        placeholder="SAJ-101" 
-                        value={productForm.sku} 
-                        onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
-                        className="w-full bg-black/50 border border-red-900/45 rounded-full px-4 py-2.5 text-sm text-white placeholder-slate-400 outline-none mt-1 font-mono focus:border-red-500" 
-                      />
-                    </div>
-                  </div>
-
-                  {/* SALES CHANNEL & POS SELECTION */}
-                  <div className="bg-black/50 p-4 rounded-3xl border border-red-900/45 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="text-xs font-black text-rose-200 flex items-center gap-1.5">
-                        <span>⚡</span>
-                        <span>বিক্রয় চ্যানেল ও ইনভেন্টরি সিলেকশন</span>
-                      </label>
-                      <span className="text-[10px] bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-bold px-2 py-0.5 rounded-full">
-                        স্বয়ংক্রিয় ২-ওয়ে স্টক সিঙ্ক
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300">
-                      কোন কোন চ্যানেলে এই প্রোডাক্টটি বিক্রয় ও ইনভেন্টরির জন্য আপলোড হবে সিলেক্ট করুন:
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      <label className={`flex items-center gap-3 p-3 rounded-2xl border transition cursor-pointer ${
-                        productForm.enabledForWeb !== false ? 'bg-red-950/40 border-red-500/60 shadow-xs' : 'bg-black/40 border-red-900/30 opacity-60'
-                      }`}>
-                        <input 
-                          type="checkbox" 
-                          checked={productForm.enabledForWeb !== false} 
-                          onChange={(e) => setProductForm({ ...productForm, enabledForWeb: e.target.checked })}
-                          className="w-4 h-4 accent-[#dc2626] rounded cursor-pointer"
-                        />
-                        <div>
-                          <span className="font-bold text-xs text-white block">🌐 অনলাইন ওয়েবসাইট</span>
-                          <span className="text-[10px] text-slate-300">কাস্টমারদের জন্য স্টোরফ্রন্টে থাকবে</span>
+                {/* BODY: EITHER SUB-EDITOR OR MAIN SERIALIZED SELLER FORM */}
+                {productFormSubEditor ? (
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F4F6F9]">
+                    {/* SUB-EDITOR: URL IMPORT & DIRECT IMAGE LINK */}
+                    {productFormSubEditor === "url" && (
+                      <div className="space-y-3">
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
+                          <label className="text-xs font-extrabold text-slate-800 block">যেকোনো প্রোডাক্ট ওয়েবসাইট লিংক থেকে অটো-ফেচ</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="url"
+                              value={externalLinkInput}
+                              onChange={(e) => setExternalLinkInput(e.target.value)}
+                              placeholder="https://... (Daraz / অন্য সাইটের প্রোডাক্ট লিংক)"
+                              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#f97316]"
+                            />
+                            <button
+                              type="button"
+                              disabled={isFetchingUrl}
+                              onClick={() => fetchProductFromUrl(externalLinkInput)}
+                              className="bg-[#f97316] hover:bg-[#ea580c] text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer disabled:opacity-50"
+                            >
+                              {isFetchingUrl ? "⏳..." : "ফেচ করুন"}
+                            </button>
+                          </div>
                         </div>
-                      </label>
 
-                      <label className={`flex items-center gap-3 p-3 rounded-2xl border transition cursor-pointer ${
-                        productForm.enabledForPos !== false ? 'bg-emerald-950/40 border-emerald-500/60 shadow-xs' : 'bg-black/40 border-red-900/30 opacity-60'
-                      }`}>
-                        <input 
-                          type="checkbox" 
-                          checked={productForm.enabledForPos !== false} 
-                          onChange={(e) => setProductForm({ ...productForm, enabledForPos: e.target.checked })}
-                          className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
-                        />
-                        <div>
-                          <span className="font-bold text-xs text-emerald-200 block">🛒 শোরুম POS কাউন্টার (POS অ্যাপ)</span>
-                          <span className="text-[10px] text-emerald-300">বারকোড স্ক্যানার ও বিলিং সিস্টেমে থাকবে</span>
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
+                          <label className="text-xs font-extrabold text-slate-800 block">সরাসরি ছবির URL গ্যালারিতে যোগ করুন (সর্বোচ্চ ৮টি)</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="url"
+                              value={imageUrlInput}
+                              onChange={(e) => {
+                                setImageUrlInput(e.target.value);
+                                setImgLoadStatus("idle");
+                              }}
+                              placeholder="https://.../product.jpg"
+                              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#f97316]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if ((productForm.images?.length || 0) >= 8) {
+                                  return notify("সর্বোচ্চ ৮টি ছবি যুক্ত করা যায়!");
+                                }
+                                addImageToGallery(imageUrlInput);
+                              }}
+                              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer"
+                            >
+                              + যোগ করুন
+                            </button>
+                          </div>
                         </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* IMAGE MANAGEMENT WITH FAST UPLOAD & LIVE PREVIEW */}
-                  <div className="p-4 bg-black/50 rounded-3xl border border-red-900/40 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-rose-200">প্রোডাক্টের ছবি (আপলোড বা ইমেজ লিংক) *</label>
-                      <span className="text-[11px] text-slate-300 font-semibold">সংযুক্ত ছবি: {productForm.images.length || (imageUrlInput ? 1 : 0)} টি</span>
-                    </div>
-
-                    {/* Device Upload Button (Primary Action) */}
-                    <div className="pt-1">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        ref={productImgFileRef} 
-                        onChange={(e) => handleImageUpload(e, (dataUrl) => addImageToGallery(dataUrl))} 
-                        className="hidden" 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => productImgFileRef.current?.click()} 
-                        className="w-full bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white px-4 py-2.5 rounded-full text-xs font-bold hover:brightness-110 transition shadow flex items-center justify-center gap-2 active:scale-98"
-                      >
-                        <span>📷</span>
-                        <span>ক্যামেরা বা গ্যালারি থেকে ছবি আপলোড করুন</span>
-                      </button>
-                    </div>
-
-                    {/* Direct Image URL input + Add to Gallery */}
-                    <div className="pt-1">
-                      <p className="text-[11px] text-slate-300 mb-1.5 font-medium">অথবা সরাসরি ছবির ইন্টারনেট লিঙ্ক দিন:</p>
-                      <div className="flex gap-2">
-                        <input 
-                          type="url" 
-                          placeholder="https://... (যেকোনো সরাসরি ছবির লিংক যেমন .jpg / .png / cdn)" 
-                          value={imageUrlInput}
-                          onChange={(e) => {
-                            setImageUrlInput(e.target.value);
-                            setImgLoadStatus("idle");
-                          }}
-                          className="flex-1 bg-black/50 border border-red-900/45 rounded-full px-4 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-red-500" 
-                        />
-                        <button 
-                          type="button" 
-                          onClick={() => addImageToGallery(imageUrlInput)}
-                          className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-full text-xs font-bold transition shadow-sm whitespace-nowrap"
-                        >
-                          + যুক্ত করুন
-                        </button>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Live Image Preview & Gallery List */}
-                    {(productForm.images.length > 0 || imageUrlInput) && (
-                      <div className="pt-2">
-                        <p className="text-[11px] font-semibold text-slate-300 mb-2">সংযুক্ত ছবিসমূহ (গ্রাহকরা এই ছবিগুলো দেখতে পাবেন):</p>
-                        <div className="flex flex-wrap gap-3">
-                          {/* Image from current input if not added yet */}
-                          {imageUrlInput && !productForm.images.includes(imageUrlInput) && (
-                            <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-dashed border-red-500 bg-black/40 flex items-center justify-center">
-                              <img 
-                                src={imageUrlInput} 
-                                alt="Live Preview" 
-                                className="w-full h-full object-cover" 
-                                onLoad={() => setImgLoadStatus("loaded")}
-                                onError={() => setImgLoadStatus("error")}
+                    {/* SUB-EDITOR: CATEGORY */}
+                    {productFormSubEditor === "category" && (
+                      <div className="space-y-3">
+                        <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+                          {categories.map((c) => {
+                            const selected = productForm.category === c.name;
+                            return (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => setProductForm(prev => ({ ...prev, category: c.name }))}
+                                className={`w-full px-4 py-3 flex items-center justify-between text-left transition cursor-pointer ${
+                                  selected ? "bg-orange-50 text-[#ea580c] font-bold" : "hover:bg-slate-50 text-slate-800"
+                                }`}
+                              >
+                                <span className="text-sm flex items-center gap-2">
+                                  <span>{c.icon || "🏷️"}</span>
+                                  <span>{c.name}</span>
+                                </span>
+                                {selected && <span className="text-[#f97316] font-black">✓</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2">
+                          <label className="text-xs font-extrabold text-slate-700 block">Sub-Category (ঐচ্ছিক)</label>
+                          <input
+                            type="text"
+                            value={productForm.subCategory || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, subCategory: e.target.value }))}
+                            placeholder="যেমন: Jamdani, Baby Boy Shorts, Bridal"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-EDITOR: BRAND */}
+                    {productFormSubEditor === "brand" && (
+                      <div className="space-y-3">
+                        <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+                          {["No Brand", "Sajgoj Fashion", "Sajgoj Premium", "Aarong", "Sailor", "Twelve", "Ecstasy", "Yellow", "Artisan", "Kay Kraft"].map((b) => {
+                            const selected = (productForm.brand || "No Brand") === b;
+                            return (
+                              <button
+                                key={b}
+                                type="button"
+                                onClick={() => setProductForm(prev => ({ ...prev, brand: b }))}
+                                className={`w-full px-4 py-3 flex items-center justify-between text-left cursor-pointer ${
+                                  selected ? "bg-orange-50 text-[#ea580c] font-bold" : "hover:bg-slate-50 text-slate-800"
+                                }`}
+                              >
+                                <span className="text-sm">{b}</span>
+                                {selected && <span className="text-[#f97316] font-black">✓</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2">
+                          <label className="text-xs font-extrabold text-slate-700 block">অন্যান্য কাস্টম ব্র্যান্ড</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={productSubCustomBrand}
+                              onChange={(e) => setProductSubCustomBrand(e.target.value)}
+                              placeholder="ব্র্যান্ডের নাম লিখুন..."
+                              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 outline-none focus:border-[#f97316]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const b = productSubCustomBrand.trim();
+                                if (!b) return;
+                                setProductForm(prev => ({ ...prev, brand: b }));
+                                setProductSubCustomBrand("");
+                              }}
+                              className="bg-[#f97316] text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                            >
+                              সেট
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-EDITOR: ATTRIBUTES */}
+                    {productFormSubEditor === "attributes" && (
+                      <div className="space-y-3">
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
+                          {[
+                            { key: "Material", label: "Material / Fabric", placeholder: "Cotton, Silk, Muslin, Georgette..." },
+                            { key: "Pattern", label: "Pattern", placeholder: "Solid, Jamdani Work, Floral, Embroidery..." },
+                            { key: "Origin", label: "Origin", placeholder: "Bangladesh, India, China..." },
+                            { key: "Gender", label: "Gender / Target", placeholder: "Women, Men, Kids, Unisex..." }
+                          ].map((attr) => (
+                            <div key={attr.key}>
+                              <label className="text-xs font-bold text-slate-700 block mb-1">{attr.label}</label>
+                              <input
+                                type="text"
+                                value={(productForm.attributes || {})[attr.key] || ""}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  setProductForm(prev => {
+                                    const nextAttrs = { ...(prev.attributes || {}) };
+                                    if (v) nextAttrs[attr.key] = v;
+                                    else delete nextAttrs[attr.key];
+                                    return { ...prev, attributes: nextAttrs };
+                                  });
+                                }}
+                                placeholder={attr.placeholder}
+                                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 outline-none focus:border-[#f97316]"
                               />
-                              <span className="absolute bottom-0 inset-x-0 bg-black/80 text-white text-[8px] text-center py-0.5">
-                                প্রিভিউ
-                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                          <label className="text-xs font-bold text-slate-700 block">কাস্টম এট্রিবিউট যোগ করুন</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={productSubTempKey}
+                              onChange={(e) => setProductSubTempKey(e.target.value)}
+                              placeholder="নাম (যেমন: Fit)"
+                              className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                            />
+                            <input
+                              type="text"
+                              value={productSubTempVal}
+                              onChange={(e) => setProductSubTempVal(e.target.value)}
+                              placeholder="মান (যেমন: Regular)"
+                              className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const k = productSubTempKey.trim();
+                              const v = productSubTempVal.trim();
+                              if (!k || !v) return;
+                              setProductForm(prev => ({
+                                ...prev,
+                                attributes: { ...(prev.attributes || {}), [k]: v }
+                              }));
+                              setProductSubTempKey("");
+                              setProductSubTempVal("");
+                            }}
+                            className="w-full bg-slate-900 text-white py-2 rounded-xl text-xs font-bold cursor-pointer"
+                          >
+                            + এট্রিবিউট যুক্ত করুন
+                          </button>
+
+                          {Object.keys(productForm.attributes || {}).length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-2">
+                              {Object.entries(productForm.attributes || {}).map(([k, v]) => (
+                                <span key={k} className="inline-flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-slate-800 px-2.5 py-1 rounded-full text-xs font-semibold">
+                                  <span>{k}: {v}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setProductForm(prev => {
+                                        const next = { ...(prev.attributes || {}) };
+                                        delete next[k];
+                                        return { ...prev, attributes: next };
+                                      });
+                                    }}
+                                    className="text-red-600 font-bold"
+                                  >
+                                    ✕
+                                  </button>
+                                </span>
+                              ))}
                             </div>
                           )}
+                        </div>
+                      </div>
+                    )}
 
-                          {/* Gallery items */}
-                          {productForm.images.map((img, idx) => (
-                            <div key={idx} className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-red-500/70 bg-black/40 shadow-sm">
-                              <img 
-                                src={img} 
-                                alt={`Product ${idx+1}`} 
-                                className="w-full h-full object-cover" 
+                    {/* SUB-EDITOR: VARIANTS (COLORS, SIZES, AGE GROUPS, SKU) */}
+                    {productFormSubEditor === "variants" && (
+                      <div className="space-y-3">
+                        {/* Colors */}
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-extrabold text-slate-800">🎨 কালার ভ্যারিয়েশন (Colors)</span>
+                            <span className="text-[11px] font-bold text-[#f97316]">{(productForm.colors || []).length}টি সিলেক্টেড</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(productForm.colors || []).map((c, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 bg-orange-50 border border-[#f97316]/50 text-[#ea580c] text-xs font-bold px-2.5 py-1 rounded-full">
+                                <span>{c}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setProductForm(prev => ({ ...prev, colors: prev.colors.filter((_, i) => i !== idx) }))}
+                                  className="text-red-600 font-black ml-0.5"
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={customColorInput}
+                              onChange={(e) => setCustomColorInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  const val = cleanVariation(customColorInput.trim());
+                                  if (val && !productForm.colors?.includes(val)) {
+                                    setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
+                                    setCustomColorInput("");
+                                  }
+                                }
+                              }}
+                              placeholder="কাস্টম কালার লিখুন..."
+                              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const val = cleanVariation(customColorInput.trim());
+                                if (val && !productForm.colors?.includes(val)) {
+                                  setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
+                                  setCustomColorInput("");
+                                }
+                              }}
+                              className="bg-[#f97316] text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                            >
+                              + যোগ
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {["কালো", "সাদা", "মেরুন", "রয়েল ব্লু", "নেভি ব্লু", "লাল", "গোলাপি", "সবুজ", "বটল গ্রিন", "হলুদ", "গোল্ডেন", "অলিভ", "অ্যাশ", "স্কিন", "ফিরোজা"].map((cname) => {
+                              const active = productForm.colors?.includes(cname);
+                              return (
+                                <button
+                                  key={cname}
+                                  type="button"
+                                  onClick={() => setProductForm(prev => {
+                                    const cur = prev.colors || [];
+                                    return { ...prev, colors: cur.includes(cname) ? cur.filter(x => x !== cname) : [...cur, cname] };
+                                  })}
+                                  className={`text-[11px] px-2.5 py-1 rounded-full font-semibold border transition cursor-pointer ${
+                                    active ? "bg-[#f97316] text-white border-[#f97316]" : "bg-slate-50 text-slate-700 border-slate-200 hover:border-[#f97316]"
+                                  }`}
+                                >
+                                  {active ? `✓ ${cname}` : `+ ${cname}`}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Sizes & Presets */}
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-extrabold text-slate-800">📏 সাইজ ভ্যারিয়েশন (Sizes)</span>
+                            <span className="text-[11px] font-bold text-[#f97316]">{(productForm.sizes || []).length}টি সিলেক্টেড</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(productForm.sizes || []).map((s, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 bg-orange-50 border border-[#f97316]/50 text-[#ea580c] text-xs font-bold px-2.5 py-1 rounded-full">
+                                <span>{s}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setProductForm(prev => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== idx) }))}
+                                  className="text-red-600 font-black ml-0.5"
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={customSizeInput}
+                              onChange={(e) => setCustomSizeInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  const val = cleanVariation(customSizeInput.trim());
+                                  if (val && !productForm.sizes?.includes(val)) {
+                                    setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
+                                    setCustomSizeInput("");
+                                  }
+                                }
+                              }}
+                              placeholder="নতুন সাইজ লিখুন (যেমন: XL / 36B)..."
+                              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const val = cleanVariation(customSizeInput.trim());
+                                if (val && !productForm.sizes?.includes(val)) {
+                                  setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
+                                  setCustomSizeInput("");
+                                }
+                              }}
+                              className="bg-[#f97316] text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                            >
+                              + যোগ
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            {[
+                              { label: "👕 টি-শার্ট / জামা", items: ["S", "M", "L", "XL", "XXL", "3XL"] },
+                              { label: "👖 প্যান্ট / ট্রাউজার", items: ["২৮", "৩০", "৩২", "৩৪", "৩৬", "৩৮", "৪০"] },
+                              { label: "👙 ইনার / ব্রা", items: ["32B", "34B", "36B", "38B", "40B", "34C", "36C"] },
+                              { label: "👶 বাচ্চাদের পোশাক", items: ["১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮", "৩০"] },
+                              { label: "💍 আংটি ও চুড়ি", items: ["৬", "৭", "৮", "২.২", "২.৪", "২.৬", "২.৮"] },
+                              { label: "✨ Free Size", items: ["Free Size"] }
+                            ].map((preset) => (
+                              <button
+                                key={preset.label}
+                                type="button"
+                                onClick={() => setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...preset.items])) }))}
+                                className="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-[#f97316] text-left text-xs font-bold text-slate-800 cursor-pointer"
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Kids Age Groups */}
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                          <span className="text-xs font-extrabold text-slate-800 block">👶 বাচ্চাদের বয়স গ্রুপ (Age Group)</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {["0-6m", "6-12m", "1-2y", "3-4y", "5-6y", "7-8y", "9-10y", "11-12y"].map((ag) => {
+                              const active = (productForm.ageGroups || []).includes(ag);
+                              return (
+                                <button
+                                  key={ag}
+                                  type="button"
+                                  onClick={() => setProductForm(prev => {
+                                    const cur = prev.ageGroups || [];
+                                    return { ...prev, ageGroups: cur.includes(ag) ? cur.filter(x => x !== ag) : [...cur, ag] };
+                                  })}
+                                  className={`text-xs px-3 py-1 rounded-full font-semibold border transition cursor-pointer ${
+                                    active ? "bg-[#f97316] text-white border-[#f97316]" : "bg-slate-50 text-slate-700 border-slate-200"
+                                  }`}
+                                >
+                                  {ag}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* SKU */}
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-1.5">
+                          <label className="text-xs font-extrabold text-slate-800 block">Seller SKU</label>
+                          <input
+                            type="text"
+                            value={productForm.sku || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, sku: e.target.value }))}
+                            placeholder="SAJ-101"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-EDITOR: SPECIAL PRICE PERIODS */}
+                    {productFormSubEditor === "special_period" && (
+                      <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-4">
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            value={productForm.specialPriceStart || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, specialPriceStart: e.target.value }))}
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">End Date</label>
+                          <input
+                            type="date"
+                            value={productForm.specialPriceEnd || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, specialPriceEnd: e.target.value }))}
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+                        {(productForm.specialPriceStart || productForm.specialPriceEnd) && (
+                          <button
+                            type="button"
+                            onClick={() => setProductForm(prev => ({ ...prev, specialPriceStart: "", specialPriceEnd: "" }))}
+                            className="text-xs font-bold text-red-600 cursor-pointer"
+                          >
+                            ✕ তারিখ রিসেট করুন
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* SUB-EDITOR: SHIPPING INFORMATION */}
+                    {productFormSubEditor === "shipping" && (
+                      <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3.5">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-bold text-slate-700 block mb-1">Package Weight (kg) *</label>
+                            <input
+                              type="text"
+                              value={productForm.shippingWeightKg || ""}
+                              onChange={(e) => setProductForm(prev => ({ ...prev, shippingWeightKg: e.target.value }))}
+                              placeholder="0.5"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-slate-700 block mb-1">Dimensions (L×W×H cm)</label>
+                            <input
+                              type="text"
+                              value={productForm.shippingDimensions || ""}
+                              onChange={(e) => setProductForm(prev => ({ ...prev, shippingDimensions: e.target.value }))}
+                              placeholder="25x18x5"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1.5">Dangerous Goods</label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {["None", "Fragile", "Liquid", "Battery"].map((dg) => {
+                              const active = (productForm.shippingDangerousGoods || "None") === dg;
+                              return (
+                                <button
+                                  key={dg}
+                                  type="button"
+                                  onClick={() => setProductForm(prev => ({ ...prev, shippingDangerousGoods: dg }))}
+                                  className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer ${
+                                    active ? "bg-[#f97316] text-white border-[#f97316]" : "bg-slate-50 text-slate-700 border-slate-200"
+                                  }`}
+                                >
+                                  {dg}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <label className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                          <div>
+                            <span className="text-xs font-extrabold text-slate-800 block">Express Delivery (চাঁদপুর জেলা)</span>
+                            <span className="text-[11px] text-slate-500">চাঁদপুরে একই দিনে এক্সপ্রেস ডেলিভারি চালু থাকবে</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={productForm.shippingExpressChandpur !== false}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, shippingExpressChandpur: e.target.checked }))}
+                            className="w-4 h-4 accent-[#f97316]"
+                          />
+                        </label>
+
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">Shipping Note</label>
+                          <input
+                            type="text"
+                            value={productForm.shippingNote || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, shippingNote: e.target.value }))}
+                            placeholder="যেমন: ঢাকার ভিতরে ১-২ দিন, সারা দেশে ২-৪ দিন"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">সোর্স সাপ্লায়ার লিংক (অপশনাল)</label>
+                          <input
+                            type="url"
+                            value={productForm.sourceUrl || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, sourceUrl: e.target.value }))}
+                            placeholder="https://..."
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-EDITOR: WARRANTY INFORMATION */}
+                    {productFormSubEditor === "warranty" && (
+                      <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3.5">
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1.5">Warranty Type</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {["No Warranty", "Seller Warranty", "Brand Warranty", "Replacement Guarantee"].map((wt) => {
+                              const active = (productForm.warrantyType || "No Warranty") === wt;
+                              return (
+                                <button
+                                  key={wt}
+                                  type="button"
+                                  onClick={() => setProductForm(prev => ({ ...prev, warrantyType: wt }))}
+                                  className={`p-2.5 rounded-xl text-xs font-bold border text-left cursor-pointer ${
+                                    active ? "bg-orange-50 text-[#ea580c] border-[#f97316]" : "bg-slate-50 text-slate-700 border-slate-200"
+                                  }`}
+                                >
+                                  {wt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">Warranty Period</label>
+                          <input
+                            type="text"
+                            value={productForm.warrantyPeriod || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, warrantyPeriod: e.target.value }))}
+                            placeholder="যেমন: 7 Days Return / 6 Months / 1 Year"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">Warranty Policy</label>
+                          <textarea
+                            rows="3"
+                            value={productForm.warrantyPolicy || ""}
+                            onChange={(e) => setProductForm(prev => ({ ...prev, warrantyPolicy: e.target.value }))}
+                            placeholder="ওয়ারেন্টি ও রিটার্ন শর্তাবলি..."
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs outline-none focus:border-[#f97316]"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SUB-EDITOR: DESCRIPTION */}
+                    {productFormSubEditor === "description" && (
+                      <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-extrabold text-slate-800">পণ্যের বিস্তারিত বিবরণ *</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const pName = productForm.name || "এই পণ্যটি";
+                              const sample = `${pName} তৈরি করা হয়েছে প্রিমিয়াম ও আরামদায়ক উপাদানে।\n• শতভাগ অরিজিনাল কোয়ালিটি নিশ্চিত\n• প্রতিদিনের ব্যবহার এবং উৎসব—উভয় ক্ষেত্রেই মানানসই\n• সারাদেশে দ্রুত ডেলিভারি ও ক্যাশ অন ডেলিভারি সুবিধা রয়েছে।`;
+                              setProductForm(prev => ({ ...prev, description: prev.description ? `${prev.description}\n\n${sample}` : sample }));
+                            }}
+                            className="text-[11px] font-bold bg-orange-50 text-[#ea580c] border border-orange-200 px-2.5 py-1 rounded-full cursor-pointer"
+                          >
+                            ✨ টেমপ্লেট বসান
+                          </button>
+                        </div>
+                        <textarea
+                          rows="8"
+                          value={productForm.description || ""}
+                          onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="পণ্যের কাপড়, সাইজ ফিটিং, ব্যবহারবিধি ও বৈশিষ্ট্য বিস্তারিত লিখুন..."
+                          className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-3.5 text-sm text-slate-900 outline-none focus:border-[#f97316]"
+                        />
+                      </div>
+                    )}
+
+                    {/* SUB-EDITOR: HIGHLIGHTS */}
+                    {productFormSubEditor === "highlights" && (
+                      <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
+                        <label className="text-xs font-extrabold text-slate-800 block">প্রোডাক্ট হাইলাইটস / মূল পয়েন্টসমূহ *</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={productSubHighlightInput}
+                            onChange={(e) => setProductSubHighlightInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const t = productSubHighlightInput.trim();
+                                if (t) {
+                                  setProductForm(prev => ({ ...prev, highlights: [...(prev.highlights || []), t] }));
+                                  setProductSubHighlightInput("");
+                                }
+                              }
+                            }}
+                            placeholder="একটি পয়েন্ট লিখুন (যেমন: ১০০% কটন ফেব্রিক)..."
+                            className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#f97316]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const t = productSubHighlightInput.trim();
+                              if (!t) return;
+                              setProductForm(prev => ({ ...prev, highlights: [...(prev.highlights || []), t] }));
+                              setProductSubHighlightInput("");
+                            }}
+                            className="bg-[#f97316] text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                          >
+                            + যোগ
+                          </button>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          {(productForm.highlights || []).map((h, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                              <span className="font-medium text-slate-800">• {h}</span>
+                              <button
+                                type="button"
+                                onClick={() => setProductForm(prev => ({ ...prev, highlights: prev.highlights.filter((_, i) => i !== idx) }))}
+                                className="text-red-600 font-bold"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                          <span className="text-[11px] font-bold text-slate-500 block">কুইক হাইলাইট প্রিসেট:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[
+                              "১০০% অরিজিনাল কোয়ালিটি",
+                              "আরামদায়ক ও স্কিন-ফ্রেন্ডলি ফেব্রিক",
+                              "ক্যাশ অন ডেলিভারি সুবিধা",
+                              "সহজ ৭-দিন রিটার্ন পলিসি"
+                            ].map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setProductForm(prev => ({
+                                  ...prev,
+                                  highlights: (prev.highlights || []).includes(preset) ? prev.highlights : [...(prev.highlights || []), preset]
+                                }))}
+                                className="text-[11px] bg-orange-50 text-[#ea580c] border border-orange-200 px-2.5 py-1 rounded-full font-semibold cursor-pointer"
+                              >
+                                + {preset}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setProductFormSubEditor(null)}
+                      className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white py-3 rounded-full font-bold text-sm shadow cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#F4F6F9]">
+                    {/* BLOCK 1: IMAGE + NAME + CATEGORY + VIDEO */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                      {/* 1. Product Image (0/8) * */}
+                      <div className="p-3.5 sm:p-4 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-900">
+                            Product Image ({(productForm.images || []).length}/8) <span className="text-red-500">*</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setProductFormSubEditor("url")}
+                            className="text-[11px] font-bold text-[#f97316] hover:underline cursor-pointer"
+                          >
+                            + URL লিংক
+                          </button>
+                        </div>
+
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          ref={productImgFileRef}
+                          onChange={async (e) => {
+                            const files = Array.from(e.target.files || []).slice(0, Math.max(0, 8 - (productForm.images?.length || 0)));
+                            if (!files.length) return;
+                            notify("ছবি অপটিমাইজ ও আপলোড হচ্ছে... ⏳");
+                            for (const file of files) {
+                              const compressed = await compressImage(file, 600, 600, 0.72);
+                              if (compressed) {
+                                addImageToGallery(compressed);
+                              }
+                            }
+                            e.target.value = "";
+                          }}
+                          className="hidden"
+                        />
+
+                        <div className="flex flex-wrap gap-2.5 items-center">
+                          {(productForm.images || []).length < 8 && (
+                            <button
+                              type="button"
+                              onClick={() => productImgFileRef.current?.click()}
+                              className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#f97316] bg-slate-50/70 flex flex-col items-center justify-center text-slate-400 hover:text-[#f97316] transition cursor-pointer shrink-0"
+                              title="ছবি যুক্ত করুন"
+                            >
+                              <span className="text-2xl leading-none">🖼️</span>
+                              <span className="text-[10px] font-bold mt-1">+ Add</span>
+                            </button>
+                          )}
+
+                          {(productForm.images || []).map((img, idx) => (
+                            <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                              <img
+                                src={img}
+                                alt={`Product ${idx + 1}`}
+                                className="w-full h-full object-cover"
                                 onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
                               />
-                              <button 
-                                type="button" 
+                              <button
+                                type="button"
                                 onClick={() => setProductForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
-                                className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow hover:scale-110"
-                                title="মুছে ফেলুন"
+                                className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow cursor-pointer"
                               >
                                 ✕
                               </button>
                               {idx === 0 && (
-                                <span className="absolute bottom-0 inset-x-0 bg-[#dc2626] text-white text-[8px] text-center py-0.5 font-bold">
-                                  মূল ছবি
+                                <span className="absolute bottom-0 inset-x-0 bg-[#f97316]/90 text-white text-[9px] text-center py-0.5 font-bold">
+                                  Main
                                 </span>
                               )}
                             </div>
                           ))}
                         </div>
-
-                        {imgLoadStatus === "loaded" && (
-                          <p className="text-[11px] text-emerald-300 font-semibold mt-2 flex items-center gap-1">
-                            <span>✓</span>
-                            <span>ছবির লিঙ্ক কার্যকর এবং সফলভাবে লোড হয়েছে!</span>
-                          </p>
-                        )}
-                        {imgLoadStatus === "error" && (
-                          <p className="text-[11px] text-rose-400 font-semibold mt-2">
-                            ⚠️ লিঙ্কটি থেকে ছবি লোড হতে পারেনি। সঠিক Image URL দিন বা ডিভাইস থেকে ছবি আপলোড করুন।
-                          </p>
-                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* PRODUCT VIDEO SECTION (Seller Center Style + Facebook Reels Link) */}
-                  {(() => {
-                    const parsedVideoPreview = parseProductVideoSource(productForm.videoUrl, productForm.videoType || "upload");
-                    const playablePreviewUrl = productForm.videoType === "upload" ? resolvePlayableVideoUrl(productForm.videoUrl) : "";
-                    return (
-                      <div className="p-4 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3 text-slate-900">
+                      {/* 2. Product Name(English) * */}
+                      <div className="p-3.5 sm:p-4 space-y-1">
+                        <label className="text-sm font-bold text-slate-900 block">
+                          Product Name(English) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={productForm.name}
+                          onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Ex. Nikon Coolpix A300 Digital Camera / Jamdani Sharee"
+                          className="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none py-1"
+                        />
+                      </div>
+
+                      {/* 3. Category * */}
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("category")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between gap-3 text-left hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <span className="text-sm font-bold text-slate-900 shrink-0">
+                          Category <span className="text-red-500">*</span>
+                        </span>
+                        <span className="text-sm text-slate-700 font-medium truncate flex items-center gap-1">
+                          <span>
+                            {productForm.subCategory
+                              ? `${productForm.category || "শাড়ি"} > ${productForm.subCategory}`
+                              : (productForm.category || "শাড়ি")}
+                          </span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+
+                      {/* 4. Video */}
+                      <div className="p-3.5 sm:p-4 space-y-3">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-black text-slate-900">Video</span>
-                            <span className="text-[10px] font-bold bg-orange-100 text-[#ea580c] px-2 py-0.5 rounded-full">
-                              প্রথমে ভিডিও, এরপর ছবি
-                            </span>
-                          </div>
+                          <span className="text-sm font-bold text-slate-900">Video</span>
                           <button
                             type="button"
                             role="switch"
                             aria-checked={Boolean(productForm.videoEnabled)}
                             onClick={() => setProductForm(prev => ({ ...prev, videoEnabled: !prev.videoEnabled }))}
-                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${productForm.videoEnabled ? 'bg-[#f97316]' : 'bg-slate-300'}`}
-                            title="ভিডিও চালু বা বন্ধ করুন"
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${productForm.videoEnabled ? "bg-[#f97316]" : "bg-slate-300"}`}
                           >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.videoEnabled ? 'translate-x-6' : 'translate-x-1'}`}
-                            />
+                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.videoEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
                           </button>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                          {[
-                            { id: "upload", label: "Upload Video" },
-                            { id: "youtube", label: "Youtube Link" },
-                            { id: "facebook_reels", label: "ফেইসবুক রীলস ভিডিও লিংক" }
-                          ].map(opt => {
-                            const selected = (productForm.videoType || "upload") === opt.id;
-                            return (
-                              <label
-                                key={opt.id}
-                                onClick={() => setProductForm(prev => ({
-                                  ...prev,
-                                  videoType: opt.id,
-                                  videoEnabled: true
-                                }))}
-                                className="flex items-center gap-2 cursor-pointer select-none py-1"
-                              >
-                                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${selected ? 'border-[#f97316]' : 'border-slate-400'}`}>
-                                  {selected && <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]" />}
-                                </span>
-                                <span className={`text-xs sm:text-sm font-bold ${selected ? 'text-slate-900' : 'text-slate-700'}`}>
-                                  {opt.label}
-                                </span>
-                              </label>
-                            );
-                          })}
-                        </div>
+                        {productForm.videoEnabled && (() => {
+                          const parsedVideoPreview = parseProductVideoSource(productForm.videoUrl, productForm.videoType || "upload");
+                          const playablePreviewUrl = productForm.videoType === "upload" ? resolvePlayableVideoUrl(productForm.videoUrl) : "";
+                          return (
+                            <div className="space-y-2.5 pt-1">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                                {[
+                                  { id: "upload", label: "Upload Video" },
+                                  { id: "youtube", label: "Youtube Link" },
+                                  { id: "facebook_reels", label: "ফেইসবুক রীলস" }
+                                ].map((opt) => {
+                                  const selected = (productForm.videoType || "upload") === opt.id;
+                                  return (
+                                    <label
+                                      key={opt.id}
+                                      onClick={() => setProductForm(prev => ({ ...prev, videoType: opt.id, videoEnabled: true }))}
+                                      className="flex items-center gap-1.5 cursor-pointer select-none"
+                                    >
+                                      <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selected ? "border-[#f97316]" : "border-slate-400"}`}>
+                                        {selected && <span className="w-2 h-2 rounded-full bg-[#f97316]" />}
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-800">{opt.label}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
 
-                        <p className="text-xs font-medium text-slate-500">
-                          Use video to show your real product.
-                        </p>
-
-                        {(productForm.videoType || "upload") === "upload" ? (
-                          <div className="space-y-3">
-                            <input
-                              type="file"
-                              accept="video/*"
-                              ref={productVideoFileRef}
-                              onChange={handleProductVideoUpload}
-                              className="hidden"
-                            />
-                            <div className="flex flex-wrap items-center gap-3">
-                              <button
-                                type="button"
-                                onClick={() => productVideoFileRef.current?.click()}
-                                disabled={isUploadingVideo}
-                                className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#f97316] bg-slate-50 hover:bg-orange-50/40 flex flex-col items-center justify-center gap-1 transition cursor-pointer shrink-0"
-                                title="ডিভাইস থেকে ভিডিও আপলোড করুন"
-                              >
-                                <span className="text-2xl text-slate-400 font-bold">{isUploadingVideo ? "⏳" : "🎬+"}</span>
-                                <span className="text-[10px] font-bold text-slate-500">
-                                  {isUploadingVideo ? "লোড হচ্ছে..." : "ভিডিও দিন"}
-                                </span>
-                              </button>
-
-                              {productForm.videoUrl && (
-                                <div className="relative w-32 h-24 rounded-2xl overflow-hidden border-2 border-[#f97316] bg-black flex items-center justify-center shadow-sm">
-                                  {playablePreviewUrl ? (
-                                    <video
-                                      src={playablePreviewUrl}
-                                      poster={productForm.videoThumbUrl || ""}
-                                      muted
-                                      controls
-                                      playsInline
-                                      className="w-full h-full object-contain bg-black"
-                                    />
-                                  ) : (
-                                    <img
-                                      src={productForm.videoThumbUrl || productForm.images?.[0] || imgSharee}
-                                      alt="Video thumbnail"
-                                      className="w-full h-full object-cover"
-                                    />
+                              {(productForm.videoType || "upload") === "upload" ? (
+                                <div className="space-y-2">
+                                  <input
+                                    type="file"
+                                    accept="video/*"
+                                    ref={productVideoFileRef}
+                                    onChange={handleProductVideoUpload}
+                                    className="hidden"
+                                  />
+                                  <div className="flex items-center gap-2.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => productVideoFileRef.current?.click()}
+                                      disabled={isUploadingVideo}
+                                      className="px-3.5 py-2 rounded-xl border border-dashed border-slate-300 hover:border-[#f97316] bg-slate-50 text-xs font-bold text-slate-700 cursor-pointer"
+                                    >
+                                      {isUploadingVideo ? "⏳ লোড হচ্ছে..." : "🎬 ভিডিও আপলোড"}
+                                    </button>
+                                    {productForm.videoUrl && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setProductForm(prev => ({ ...prev, videoUrl: "", videoThumbUrl: "", videoFileName: "", videoEnabled: false }))}
+                                        className="text-xs font-bold text-red-600 cursor-pointer"
+                                      >
+                                        ✕ মুছুন
+                                      </button>
+                                    )}
+                                  </div>
+                                  {playablePreviewUrl && (
+                                    <video src={playablePreviewUrl} poster={productForm.videoThumbUrl || ""} muted controls playsInline className="w-40 h-24 rounded-xl bg-black object-contain" />
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={() => setProductForm(prev => ({ ...prev, videoUrl: "", videoThumbUrl: "", videoFileName: "", videoEnabled: false }))}
-                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shadow"
-                                    title="ভিডিও মুছুন"
-                                  >
-                                    ✕
-                                  </button>
-                                  <span className="absolute bottom-0 inset-x-0 bg-black/75 text-white text-[9px] text-center py-0.5 truncate px-1">
-                                    {productForm.videoFileName || "ভিডিও যুক্ত হয়েছে ✓"}
-                                  </span>
+                                  <input
+                                    type="url"
+                                    placeholder="অথবা সরাসরি .mp4 / .webm ভিডিও লিংক"
+                                    value={productForm.videoUrl?.startsWith("data:") || productForm.videoUrl?.startsWith("idb-video://") ? "" : (productForm.videoUrl || "")}
+                                    onChange={(e) => setProductForm(prev => ({ ...prev, videoUrl: e.target.value, videoType: "upload" }))}
+                                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <input
+                                    type="url"
+                                    placeholder={productForm.videoType === "youtube" ? "https://www.youtube.com/watch?v=..." : "https://www.facebook.com/reel/..."}
+                                    value={productForm.videoUrl || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const parsed = parseProductVideoSource(val, productForm.videoType);
+                                      setProductForm(prev => ({
+                                        ...prev,
+                                        videoUrl: val,
+                                        videoThumbUrl: parsed.thumbUrl || ""
+                                      }));
+                                    }}
+                                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                                  />
+                                  {productForm.videoUrl && parsedVideoPreview.isValid && parsedVideoPreview.thumbUrl && (
+                                    <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200">
+                                      <img src={parsedVideoPreview.thumbUrl} alt="Video preview" className="w-16 h-11 rounded-lg object-cover bg-black" />
+                                      <span className="text-[11px] font-bold text-emerald-700 truncate flex-1">✓ ভিডিও সংযুক্ত হয়েছে</span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
 
+                    {/* BLOCK 2: BRAND + ATTRIBUTES */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                      {/* 5. Brand */}
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("brand")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <span className="text-sm font-bold text-slate-900">Brand</span>
+                        <span className="text-sm text-slate-600 font-medium flex items-center gap-1">
+                          <span>{productForm.brand || "No Brand"}</span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+
+                      {/* 6. Attributes */}
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("attributes")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <span className="text-sm font-bold text-slate-900">Attributes</span>
+                        <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                          <span>
+                            {Object.keys(productForm.attributes || {}).length > 0
+                              ? `${Object.keys(productForm.attributes).length} Set`
+                              : "Set"}
+                          </span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* BLOCK 3: VARIANTS * */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("variants")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <div className="text-left">
+                          <span className="text-sm font-bold text-slate-900 block">
+                            Variants <span className="text-red-500">*</span>
+                          </span>
+                          {((productForm.colors?.length || 0) === 0 && (productForm.sizes?.length || 0) === 0 && (productForm.ageGroups?.length || 0) === 0) ? (
+                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-emerald-700">
+                              {[
+                                (productForm.colors?.length || 0) > 0 ? `${productForm.colors.length} কালার` : "",
+                                (productForm.sizes?.length || 0) > 0 ? `${productForm.sizes.length} সাইজ` : "",
+                                (productForm.ageGroups?.length || 0) > 0 ? `${productForm.ageGroups.length} বয়স` : ""
+                              ].filter(Boolean).join(" • ")}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                          <span>Add Variations</span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* BLOCK 4: PRICE + STOCK + AVAILABILITY + SPECIAL PRICE + PERIODS */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                      {/* 8. Price(BDT) * */}
+                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className="text-sm font-bold text-slate-900 block">
+                            Price(BDT) <span className="text-red-500">*</span>
+                          </span>
+                          {(!productForm.price || Number(productForm.price) <= 0) && (
+                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            value={productForm.price !== undefined && productForm.price !== null ? productForm.price : ""}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/^0+(?=\d)/, "");
+                              setProductForm(prev => ({ ...prev, price: val === "" ? "" : Number(val) }));
+                            }}
+                            placeholder="0"
+                            className="w-28 text-right bg-transparent text-sm font-bold text-slate-900 placeholder-slate-400 outline-none"
+                          />
+                          <span className="text-xs font-bold text-slate-400">BDT</span>
+                        </div>
+                      </div>
+
+                      {/* 9. Stock * */}
+                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className="text-sm font-bold text-slate-900 block">
+                            Stock <span className="text-red-500">*</span>
+                          </span>
+                          {(productForm.stock === "" || productForm.stock === null || productForm.stock === undefined) && (
+                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                          )}
+                        </div>
+                        <input
+                          type="number"
+                          value={productForm.stock !== undefined && productForm.stock !== null ? productForm.stock : ""}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/^0+(?=\d)/, "");
+                            setProductForm(prev => ({ ...prev, stock: val === "" ? "" : Number(val) }));
+                          }}
+                          placeholder="0"
+                          className="w-28 text-right bg-transparent text-sm font-bold text-slate-900 placeholder-slate-400 outline-none"
+                        />
+                      </div>
+
+                      {/* 10. Availability */}
+                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">Availability</span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={productForm.isAvailable !== false}
+                          onClick={() => setProductForm(prev => ({ ...prev, isAvailable: prev.isAvailable === false }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${productForm.isAvailable !== false ? "bg-[#f97316]" : "bg-slate-300"}`}
+                        >
+                          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.isAvailable !== false ? "translate-x-5" : "translate-x-0.5"}`} />
+                        </button>
+                      </div>
+
+                      {/* 11. Special Price */}
+                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">Special Price</span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={Boolean(productForm.specialPriceEnabled)}
+                          onClick={() => setProductForm(prev => ({ ...prev, specialPriceEnabled: !prev.specialPriceEnabled }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${productForm.specialPriceEnabled ? "bg-[#f97316]" : "bg-slate-300"}`}
+                        >
+                          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.specialPriceEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                        </button>
+                      </div>
+
+                      {productForm.specialPriceEnabled && (
+                        <>
+                          {/* Special Price(BDT) */}
+                          <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-slate-900">Special Price(BDT)</span>
+                              {Number(productForm.offerPrice) > 0 && Number(productForm.price) > Number(productForm.offerPrice) && (
+                                <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
+                                  -{Math.round(((Number(productForm.price) - Number(productForm.offerPrice)) / Number(productForm.price)) * 100)}%
+                                </span>
+                              )}
+                            </div>
                             <input
-                              type="url"
-                              placeholder="অথবা সরাসরি ভিডিও লিংক (.mp4 / .webm CDN URL)"
-                              value={productForm.videoUrl?.startsWith("data:") || productForm.videoUrl?.startsWith("idb-video://") ? "" : (productForm.videoUrl || "")}
-                              onChange={(e) => setProductForm(prev => ({
-                                ...prev,
-                                videoEnabled: Boolean(e.target.value.trim()),
-                                videoType: "upload",
-                                videoUrl: e.target.value,
-                                videoFileName: ""
-                              }))}
-                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-[#f97316]"
-                            />
-                          </div>
-                        ) : (productForm.videoType === "youtube") ? (
-                          <div className="space-y-2.5">
-                            <input
-                              type="url"
-                              placeholder="https://www.youtube.com/watch?v=... বা https://youtube.com/shorts/..."
-                              value={productForm.videoUrl || ""}
+                              type="number"
+                              value={productForm.offerPrice !== undefined && productForm.offerPrice !== null ? productForm.offerPrice : ""}
                               onChange={(e) => {
-                                const val = e.target.value;
-                                const parsed = parseProductVideoSource(val, "youtube");
-                                setProductForm(prev => ({
-                                  ...prev,
-                                  videoEnabled: Boolean(val.trim()),
-                                  videoType: "youtube",
-                                  videoUrl: val,
-                                  videoThumbUrl: parsed.thumbUrl || ""
-                                }));
+                                const val = e.target.value.replace(/^0+(?=\d)/, "");
+                                setProductForm(prev => ({ ...prev, offerPrice: val === "" ? "" : Number(val) }));
                               }}
-                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-[#f97316]"
+                              placeholder="Input"
+                              className="w-28 text-right bg-transparent text-sm font-bold text-[#ea580c] placeholder-slate-400 outline-none"
                             />
-                            {productForm.videoUrl && parsedVideoPreview.isValid && parsedVideoPreview.thumbUrl && (
-                              <div className="flex items-center gap-3 p-2 rounded-2xl bg-slate-50 border border-slate-200">
-                                <img src={parsedVideoPreview.thumbUrl} alt="YouTube preview" className="w-20 h-14 rounded-xl object-cover bg-black shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-bold text-emerald-700">✓ YouTube ভিডিও সংযুক্ত হয়েছে</p>
-                                  <p className="text-[11px] text-slate-500 truncate">ID: {parsedVideoPreview.videoId}</p>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setProductForm(prev => ({ ...prev, videoUrl: "", videoThumbUrl: "", videoEnabled: false }))}
-                                  className="text-xs font-bold text-red-600 px-2 py-1"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            )}
                           </div>
-                        ) : (
-                          <div className="space-y-2.5">
-                            <input
-                              type="url"
-                              placeholder="https://www.facebook.com/reel/... বা https://fb.watch/..."
-                              value={productForm.videoUrl || ""}
-                              onChange={(e) => setProductForm(prev => ({
-                                ...prev,
-                                videoEnabled: Boolean(e.target.value.trim()),
-                                videoType: "facebook_reels",
-                                videoUrl: e.target.value
-                              }))}
-                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-[#f97316]"
-                            />
-                            {productForm.videoUrl && (
-                              <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-blue-50 border border-blue-200">
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-blue-800">📘 ফেইসবুক রীলস লিংক যুক্ত হয়েছে</p>
-                                  <p className="text-[11px] text-blue-600 truncate">{productForm.videoUrl}</p>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setProductForm(prev => ({ ...prev, videoUrl: "", videoThumbUrl: "", videoEnabled: false }))}
-                                  className="text-xs font-bold text-red-600 px-2 py-1 shrink-0"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
 
-                  {/* SOURCE SUPPLIER LINK (DROPSHIP / SOURCING TRACKING) */}
-                  <div>
-                    <label className="text-xs font-semibold text-rose-200">সোর্স ওয়েবসাইট লিঙ্ক (Dropship / Supplier URL - অপশনাল)</label>
-                    <input 
-                      type="url" 
-                      placeholder="অর্ডার আসলে যে ওয়েবসাইট থেকে আপনি পণ্য কিনবেন সেই লিংক..." 
-                      value={productForm.sourceUrl || ''} 
-                      onChange={(e) => setProductForm({ ...productForm, sourceUrl: e.target.value })}
-                      className="w-full bg-black/50 border border-red-900/45 rounded-full px-5 py-2.5 text-xs text-white placeholder-slate-400 outline-none mt-1 focus:border-red-500" 
-                    />
-                  </div>
-
-                  {/* HOME PAGE DISPLAY SECTION TAGS (Hot Sale / সেরা ডিল) */}
-                  <div className="p-4 bg-black/50 rounded-2xl border border-red-500/40 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div>
-                        <h4 className="font-bold text-sm text-rose-200 flex items-center gap-1.5">
-                          <span>🏠</span>
-                          <span>হোম পেজ ডিসপ্লে ব্লক সিলেকশন</span>
-                        </h4>
-                        <p className="text-[11px] text-slate-300">নতুন পণ্য অটোমেটিক "নতুন প্রোডাক্ট" ব্লকে দেখাবে; নিচের অপশন থেকে Hot Sale বা সেরা ডিল ব্লকেও যুক্ত করুন</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      <label className={`flex items-center gap-3 p-3 rounded-2xl border transition cursor-pointer ${
-                        productForm.isHotSale ? 'bg-red-950/60 border-red-500 shadow-xs' : 'bg-black/40 border-red-900/35 opacity-80'
-                      }`}>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(productForm.isHotSale)}
-                          onChange={(e) => setProductForm({ ...productForm, isHotSale: e.target.checked })}
-                          className="w-4 h-4 accent-[#dc2626] rounded cursor-pointer"
-                        />
-                        <div>
-                          <span className="font-bold text-xs text-white block">🔥 Hot Sale ব্লকে যুক্ত করুন</span>
-                          <span className="text-[10px] text-rose-200">হোম পেজের Hot Sale স্লাইডারে প্রদর্শিত হবে</span>
-                        </div>
-                      </label>
-
-                      <label className={`flex items-center gap-3 p-3 rounded-2xl border transition cursor-pointer ${
-                        productForm.isBestDeal ? 'bg-amber-950/50 border-amber-500/70 shadow-xs' : 'bg-black/40 border-red-900/35 opacity-80'
-                      }`}>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(productForm.isBestDeal)}
-                          onChange={(e) => setProductForm({ ...productForm, isBestDeal: e.target.checked })}
-                          className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                        />
-                        <div>
-                          <span className="font-bold text-xs text-amber-200 block">⭐ সেরা ডিল ব্লকে যুক্ত করুন</span>
-                          <span className="text-[10px] text-slate-300">সেরা ডিল (২ লাইন ৬ প্রোডাক্ট) ব্লকে দেখাবে</span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* BUY 1 GET 1 FREE (BOGO) OFFER CONFIGURATION */}
-                  <div className="p-4 bg-black/50 rounded-2xl border border-amber-500/40 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-2xl animate-pulse">🎁</span>
-                        <div>
-                          <h4 className="font-bold text-sm text-amber-200">Buy 1 Get 1 Free (BOGO) অফার</h4>
-                          <p className="text-[11px] text-slate-300">১টি অর্ডার করলে গ্রাহক সাথে আরেকটি সম্পূর্ণ ফ্রি পাবেন</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={Boolean(productForm.bogo)} 
-                          onChange={(e) => setProductForm({ ...productForm, bogo: e.target.checked })} 
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-black/70 border border-red-900/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#dc2626] peer-checked:to-[#991b1b]"></div>
-                      </label>
-                    </div>
-                    {productForm.bogo && (
-                      <div className="pt-2 border-t border-red-900/35 flex flex-col sm:flex-row gap-2 items-center">
-                        <span className="text-xs font-semibold text-rose-200 whitespace-nowrap">অফার ব্যাজ টেক্সট:</span>
-                        <input 
-                          type="text" 
-                          value={productForm.bogoText || "১টি কিনলে ১টি ফ্রি"} 
-                          onChange={(e) => setProductForm({ ...productForm, bogoText: e.target.value })}
-                          placeholder="১টি কিনলে ১টি ফ্রি / Buy 1 Get 1 Free"
-                          className="flex-1 w-full bg-black/50 border border-red-900/45 rounded-full px-4 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-red-500"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ======================================================== */}
-                  {/* COLOR & SIZE VARIATION MANAGER (কালার ও সাইজ ভ্যারিয়েশন) */}
-                  {/* ======================================================== */}
-                  <div className="p-4 bg-black/50 rounded-3xl border border-red-900/45 space-y-4 shadow-xs">
-                    <div className="flex items-center justify-between border-b border-red-900/35 pb-2 gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">🎨📏</span>
-                        <div>
-                          <h4 className="font-bold text-sm text-white">কালার ও সাইজ ভ্যারিয়েশন ম্যানেজার</h4>
-                          <p className="text-[11px] text-slate-300">কাপড়, জামা, টি-শার্ট, প্যান্ট, ইনার, বাচ্চাদের সাইজ ও পছন্দমতো কালার যোগ করুন</p>
-                        </div>
-                      </div>
-                      <span className="text-[11px] font-bold bg-red-950/60 text-rose-200 px-2.5 py-1 rounded-full border border-red-500/40">
-                        {(productForm.colors?.length || 0)}টি কালার • {(productForm.sizes?.length || 0)}টি সাইজ
-                      </span>
-                    </div>
-
-                    {/* 1. COLOR VARIATIONS */}
-                    <div className="space-y-2.5 bg-black/45 p-3.5 rounded-2xl border border-red-900/35">
-                      <div className="flex items-center justify-between flex-wrap gap-1">
-                        <label className="text-xs font-bold text-rose-200 flex items-center gap-1.5">
-                          <span>🎨</span>
-                          <span>কালার অপশন (Colors)</span>
-                        </label>
-                        <span className="text-[10px] text-slate-400 font-medium">গ্রাহকরা ড্রপডাউন/চিপসে কালার বাছতে পারবেন</span>
-                      </div>
-
-                      {/* Currently selected color tags */}
-                      <div className="flex flex-wrap gap-1.5 min-h-[30px] p-2 bg-black/50 rounded-xl border border-dashed border-red-900/40">
-                        {(productForm.colors && productForm.colors.length > 0) ? (
-                          productForm.colors.map((c, idx) => (
-                            <span 
-                              key={idx} 
-                              className="inline-flex items-center gap-1.5 bg-red-950/60 border border-red-500/60 text-rose-100 text-xs font-bold px-3 py-1 rounded-full shadow-2xs"
-                            >
-                              <span>{c}</span>
-                              <button 
-                                type="button" 
-                                onClick={() => setProductForm(prev => ({ ...prev, colors: prev.colors.filter((_, i) => i !== idx) }))}
-                                className="w-4 h-4 rounded-full bg-red-900 text-rose-200 hover:bg-red-600 hover:text-white flex items-center justify-center text-[10px] transition"
-                                title="কালার মুছুন"
-                              >
-                                ✕
-                              </button>
+                          {/* Special Price Periods */}
+                          <button
+                            type="button"
+                            onClick={() => setProductFormSubEditor("special_period")}
+                            className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                          >
+                            <span className="text-sm font-bold text-slate-900">Special Price Periods</span>
+                            <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                              <span>
+                                {(productForm.specialPriceStart || productForm.specialPriceEnd)
+                                  ? `${productForm.specialPriceStart || "Start"} - ${productForm.specialPriceEnd || "End"}`
+                                  : "Start Date - End Date"}
+                              </span>
+                              <span className="text-slate-400 font-bold text-base">›</span>
                             </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">কোনো কালার যোগ করা হয়নি (ফ্রি কালার / স্ট্যান্ডার্ড হিসেবে থাকবে)</span>
-                        )}
-                      </div>
+                          </button>
+                        </>
+                      )}
+                    </div>
 
-                      {/* Custom color input */}
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          value={customColorInput} 
-                          onChange={(e) => setCustomColorInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const val = cleanVariation(customColorInput.trim());
-                              if (val && !productForm.colors?.includes(val)) {
-                                setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
-                                setCustomColorInput("");
-                              }
-                            }
-                          }}
-                          placeholder="নতুন কালার লিখুন (যেমন: গোল্ডেন / স্কাই ব্লু)..." 
-                          className="flex-1 bg-black/50 border border-red-900/45 rounded-full px-4 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-red-500" 
-                        />
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            const val = cleanVariation(customColorInput.trim());
-                            if (val && !productForm.colors?.includes(val)) {
-                              setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
-                              setCustomColorInput("");
-                            }
-                          }}
-                          className="bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white px-4 py-2 rounded-full text-xs font-bold hover:brightness-110 transition shadow-xs whitespace-nowrap"
+                    {/* BLOCK 5: SHIPPING INFORMATION * + WARRANTY INFORMATION */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                      {/* 12. Shipping Information * */}
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("shipping")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <span className="text-sm font-bold text-slate-900">
+                          Shipping Information <span className="text-red-500">*</span>
+                        </span>
+                        <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                          <span>
+                            {productForm.shippingWeightKg
+                              ? `${productForm.shippingWeightKg} kg${productForm.shippingDimensions ? ` • ${productForm.shippingDimensions}` : ""}`
+                              : "Set"}
+                          </span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+
+                      {/* 13. Warranty Information */}
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("warranty")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <span className="text-sm font-bold text-slate-900">Warranty Information</span>
+                        <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                          <span>
+                            {productForm.warrantyType && productForm.warrantyType !== "No Warranty"
+                              ? `${productForm.warrantyType}${productForm.warrantyPeriod ? ` (${productForm.warrantyPeriod})` : ""}`
+                              : "Set"}
+                          </span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* BLOCK 6: DESCRIPTION * + HIGHLIGHTS * */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                      {/* 14. Description * */}
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("description")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <div className="text-left min-w-0">
+                          <span className="text-sm font-bold text-slate-900 block">
+                            Description <span className="text-red-500">*</span>
+                          </span>
+                          {productForm.description?.trim() ? (
+                            <span className="text-[11px] text-slate-500 truncate block max-w-[220px]">{productForm.description}</span>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                          )}
+                        </div>
+                        <span className="text-sm text-slate-500 font-medium flex items-center gap-1 shrink-0">
+                          <span>{productForm.description?.trim() ? "Edit" : "Set"}</span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+
+                      {/* 15. Highlights * */}
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor("highlights")}
+                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        <div className="text-left min-w-0">
+                          <span className="text-sm font-bold text-slate-900 block">
+                            Highlights <span className="text-red-500">*</span>
+                          </span>
+                          {(productForm.highlights?.length || 0) > 0 ? (
+                            <span className="text-[11px] text-emerald-700 font-semibold">{productForm.highlights.length}টি হাইলাইট যুক্ত আছে</span>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                          )}
+                        </div>
+                        <span className="text-sm text-slate-500 font-medium flex items-center gap-1 shrink-0">
+                          <span>{(productForm.highlights?.length || 0) > 0 ? "Edit" : "Set"}</span>
+                          <span className="text-slate-400 font-bold text-base">›</span>
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* COMPACT QUICK STRIP (SAJGOJ DISPLAY & CHANNELS) */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-slate-700">স্টোরফ্রন্ট ও সেলস চ্যানেল</span>
+                        <span className="text-[10px] font-mono text-slate-400">SKU: {productForm.sku || "SAJ"}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setProductForm(prev => ({ ...prev, isHotSale: !prev.isHotSale }))}
+                          className={`px-2.5 py-1.5 rounded-full text-xs font-bold border transition cursor-pointer ${
+                            productForm.isHotSale ? "bg-[#f97316] text-white border-[#f97316]" : "bg-slate-50 text-slate-700 border-slate-200"
+                          }`}
                         >
-                          + কালার যোগ
+                          🔥 Hot Sale
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProductForm(prev => ({ ...prev, isBestDeal: !prev.isBestDeal }))}
+                          className={`px-2.5 py-1.5 rounded-full text-xs font-bold border transition cursor-pointer ${
+                            productForm.isBestDeal ? "bg-amber-500 text-white border-amber-500" : "bg-slate-50 text-slate-700 border-slate-200"
+                          }`}
+                        >
+                          ⭐ সেরা ডিল
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProductForm(prev => ({ ...prev, bogo: !prev.bogo }))}
+                          className={`px-2.5 py-1.5 rounded-full text-xs font-bold border transition cursor-pointer ${
+                            productForm.bogo ? "bg-rose-600 text-white border-rose-600" : "bg-slate-50 text-slate-700 border-slate-200"
+                          }`}
+                        >
+                          🎁 BOGO
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProductForm(prev => ({ ...prev, enabledForWeb: prev.enabledForWeb === false }))}
+                          className={`px-2.5 py-1.5 rounded-full text-xs font-bold border transition cursor-pointer ${
+                            productForm.enabledForWeb !== false ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-100 text-slate-500 border-slate-200"
+                          }`}
+                        >
+                          🌐 Website
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProductForm(prev => ({ ...prev, enabledForPos: prev.enabledForPos === false }))}
+                          className={`px-2.5 py-1.5 rounded-full text-xs font-bold border transition cursor-pointer ${
+                            productForm.enabledForPos !== false ? "bg-sky-600 text-white border-sky-600" : "bg-slate-100 text-slate-500 border-slate-200"
+                          }`}
+                        >
+                          🛒 POS
                         </button>
                       </div>
-
-                      {/* Quick Popular Color Chips */}
-                      <div className="pt-1">
-                        <p className="text-[10px] font-bold text-slate-300 mb-1.5">জনপ্রিয় কালার প্যালেট (১-ক্লিকে যোগ করুন):</p>
-                        <div className="flex flex-wrap gap-1">
-                          {[
-                            { name: "কালো", dot: "bg-black border border-white/40" },
-                            { name: "সাদা", dot: "bg-white border border-gray-300" },
-                            { name: "মেরুন", dot: "bg-red-900" },
-                            { name: "রয়েল ব্লু", dot: "bg-blue-600" },
-                            { name: "নেভি ব্লু", dot: "bg-blue-950 border border-blue-400/40" },
-                            { name: "লাল", dot: "bg-red-600" },
-                            { name: "গোলাপি", dot: "bg-pink-400" },
-                            { name: "সবুজ", dot: "bg-emerald-600" },
-                            { name: "বটল গ্রিন", dot: "bg-green-900 border border-emerald-400/40" },
-                            { name: "হলুদ", dot: "bg-amber-400" },
-                            { name: "গোল্ডেন", dot: "bg-amber-500" },
-                            { name: "অলিভ", dot: "bg-lime-800" },
-                            { name: "অ্যাশ", dot: "bg-gray-400" },
-                            { name: "স্কিন", dot: "bg-[#e8d5b7]" },
-                            { name: "ফিরোজা", dot: "bg-cyan-500" }
-                          ].map((c) => {
-                            const isAdded = productForm.colors?.includes(c.name);
-                            return (
-                              <button
-                                key={c.name}
-                                type="button"
-                                onClick={() => {
-                                  setProductForm(prev => {
-                                    const current = prev.colors || [];
-                                    if (current.includes(c.name)) {
-                                      return { ...prev, colors: current.filter(x => x !== c.name) };
-                                    } else {
-                                      return { ...prev, colors: [...current, c.name] };
-                                    }
-                                  });
-                                }}
-                                className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border flex items-center gap-1.5 transition ${
-                                  isAdded 
-                                    ? "bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white border-red-500 shadow-2xs font-bold" 
-                                    : "bg-black/50 text-slate-200 border-red-900/40 hover:border-red-500"
-                                }`}
-                              >
-                                <span className={`w-2 h-2 rounded-full ${c.dot}`}></span>
-                                <span>{isAdded ? `✓ ${c.name}` : `+ ${c.name}`}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 2. SIZE VARIATIONS */}
-                    <div className="space-y-2.5 bg-black/45 p-3.5 rounded-2xl border border-red-900/35">
-                      <div className="flex items-center justify-between flex-wrap gap-1">
-                        <label className="text-xs font-bold text-rose-200 flex items-center gap-1.5">
-                          <span>📏</span>
-                          <span>সাইজ অপশন</span>
-                        </label>
-                        <span className="text-[10px] text-slate-400 font-medium">গ্রাহকরা তাদের সাইজ বেছে নেবেন</span>
-                      </div>
-
-                      {/* Currently selected size tags */}
-                      <div className="flex flex-wrap gap-1.5 min-h-[30px] p-2 bg-black/50 rounded-xl border border-dashed border-red-900/40">
-                        {(productForm.sizes && productForm.sizes.length > 0) ? (
-                          productForm.sizes.map((s, idx) => (
-                            <span 
-                              key={idx} 
-                              className="inline-flex items-center gap-1.5 bg-red-950/60 border border-red-500/60 text-rose-100 text-xs font-bold px-3 py-1 rounded-full shadow-2xs"
-                            >
-                              <span>{s}</span>
-                              <button 
-                                type="button" 
-                                onClick={() => setProductForm(prev => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== idx) }))}
-                                className="w-4 h-4 rounded-full bg-red-900 text-rose-200 hover:bg-red-600 hover:text-white flex items-center justify-center text-[10px] transition"
-                                title="সাইজ মুছুন"
-                              >
-                                ✕
-                              </button>
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">কোনো সাইজ যোগ করা হয়নি (Free Size থাকবে)</span>
-                        )}
-                      </div>
-
-                      {/* Custom size input */}
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          value={customSizeInput} 
-                          onChange={(e) => setCustomSizeInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const val = cleanVariation(customSizeInput.trim());
-                              if (val && !productForm.sizes?.includes(val)) {
-                                setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
-                                setCustomSizeInput("");
-                              }
-                            }
-                          }}
-                          placeholder="নতুন সাইজ লিখুন (যেমন: XL / 36B / ৩২)..." 
-                          className="flex-1 bg-black/50 border border-red-900/45 rounded-full px-4 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-red-500" 
+                      {productForm.bogo && (
+                        <input
+                          type="text"
+                          value={productForm.bogoText || "১টি কিনলে ১টি ফ্রি"}
+                          onChange={(e) => setProductForm(prev => ({ ...prev, bogoText: e.target.value }))}
+                          placeholder="অফার ব্যাজ টেক্সট (যেমন: ১টি কিনলে ১টি ফ্রি)"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-[#f97316]"
                         />
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            const val = cleanVariation(customSizeInput.trim());
-                            if (val && !productForm.sizes?.includes(val)) {
-                              setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
-                              setCustomSizeInput("");
-                            }
-                          }}
-                          className="bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white px-4 py-2 rounded-full text-xs font-bold hover:brightness-110 transition shadow-xs whitespace-nowrap"
-                        >
-                          + সাইজ যোগ
-                        </button>
-                      </div>
-
-                      {/* 1-Click Preset Template Sets */}
-                      <div className="pt-2 border-t border-red-900/30 space-y-2">
-                        <p className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
-                          <span>⚡</span>
-                          <span>১-ক্লিকে রেডিমেড সাইজ প্রিসেট সেট যোগ করুন:</span>
-                        </p>
-                        
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const standardShirt = ["S", "M", "L", "XL", "XXL", "3XL"];
-                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardShirt])) }));
-                              notify("👕 টি-শার্ট / জামা সাইজ যোগ হয়েছে!");
-                            }}
-                            className="p-2 bg-black/50 hover:bg-red-950/50 border border-red-900/45 rounded-xl text-left transition"
-                          >
-                            <p className="font-bold text-xs text-rose-200">👕 টি-শার্ট / জামা</p>
-                            <p className="text-[10px] text-slate-300">S, M, L, XL, XXL, 3XL</p>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const standardPants = ["২৮", "৩০", "৩২", "৩৪", "৩৬", "৩৮", "৪০"];
-                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...standardPants])) }));
-                              notify("👖 প্যান্ট / ট্রাউজার সাইজ যোগ হয়েছে!");
-                            }}
-                            className="p-2 bg-black/50 hover:bg-red-950/50 border border-red-900/45 rounded-xl text-left transition"
-                          >
-                            <p className="font-bold text-xs text-rose-200">👖 প্যান্ট / ট্রাউজার</p>
-                            <p className="text-[10px] text-slate-300">২৮, ৩০, ৩২, ৩৪, ৩৬, ৩৮, ৪০</p>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const innerSizes = ["32B", "34B", "36B", "38B", "40B", "34C", "36C"];
-                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...innerSizes])) }));
-                              notify("👙 ইনার ও বডি সাইজ যোগ হয়েছে!");
-                            }}
-                            className="p-2 bg-black/50 hover:bg-red-950/50 border border-red-900/45 rounded-xl text-left transition"
-                          >
-                            <p className="font-bold text-xs text-rose-200">👙 ইনার / ব্রা সাইজ</p>
-                            <p className="text-[10px] text-slate-300">32B, 34B, 36B, 38B, 40B, 34C, 36C</p>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const kidsSizes = ["১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮", "৩০"];
-                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...kidsSizes])) }));
-                              notify("👶 বাচ্চাদের সাইজ যোগ হয়েছে!");
-                            }}
-                            className="p-2 bg-black/50 hover:bg-red-950/50 border border-red-900/45 rounded-xl text-left transition"
-                          >
-                            <p className="font-bold text-xs text-rose-200">👶 বাচ্চাদের পোশাক সাইজ</p>
-                            <p className="text-[10px] text-slate-300">১৬ থেকে ৩০</p>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const jewelrySizes = ["৬", "৭", "৮", "২.২", "২.৪", "২.৬", "২.৮"];
-                              setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...jewelrySizes])) }));
-                              notify("💍 আংটি ও চুড়ির সাইজ যোগ হয়েছে!");
-                            }}
-                            className="p-2 bg-black/50 hover:bg-red-950/50 border border-red-900/45 rounded-xl text-left transition"
-                          >
-                            <p className="font-bold text-xs text-rose-200">💍 আংটি ও চুড়ির সাইজ</p>
-                            <p className="text-[10px] text-slate-300">৬, ৭, ৮, ২.২, ২.৪, ২.৬, ২.৮</p>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setProductForm(prev => ({ ...prev, sizes: ["Free Size"] }));
-                              notify("✨ Free Size সেট করা হয়েছে!");
-                            }}
-                            className="p-2 bg-black/50 hover:bg-red-950/50 border border-red-900/45 rounded-xl text-left transition"
-                          >
-                            <p className="font-bold text-xs text-rose-200">✨ Free Size</p>
-                            <p className="text-[10px] text-slate-300">Free Size</p>
-                          </button>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
+                )}
 
-                  {/* DESCRIPTION */}
-                  <div>
-                    <label className="text-xs font-semibold text-rose-200">পণ্য সম্পর্কে বিস্তারিত বিবরণ</label>
-                    <textarea 
-                      rows="3" 
-                      value={productForm.description} 
-                      onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                      placeholder="পণ্যের উপাদান, সাইজ, কালার ও অন্যান্য সুবিধা লিখুন..." 
-                      className="w-full bg-black/50 border border-red-900/45 rounded-2xl p-3 text-sm text-white placeholder-slate-400 outline-none mt-1 focus:border-red-500" 
-                    />
-                  </div>
+                {/* BOTTOM STICKY ACTION BAR */}
+                {!productFormSubEditor && (() => {
+                  const handleSaveSellerProduct = (saveAsDraft) => {
+                    if (!productForm.name?.trim()) {
+                      return notify("প্রোডাক্টের নাম লিখুন!");
+                    }
+                    if (!saveAsDraft && (!productForm.price || Number(productForm.price) <= 0)) {
+                      return notify("Publish করতে Price(BDT) আবশ্যক!");
+                    }
+                    const allImages = [...(productForm.images || [])];
+                    if (imageUrlInput && !allImages.includes(imageUrlInput)) {
+                      allImages.push(imageUrlInput);
+                    }
+                    const finalImages = allImages.length > 0 ? allImages.slice(0, 8) : [imgSharee];
 
-                  <button 
-                    onClick={() => {
-                      if (!productForm.name || !productForm.price) return notify("নাম ও মূল্য আবশ্যক!");
-                      const allImages = [...productForm.images];
-                      if (imageUrlInput && !allImages.includes(imageUrlInput)) {
-                        allImages.push(imageUrlInput);
+                    const cleanRegular = Number(productForm.price) || 0;
+                    const cleanOffer = productForm.specialPriceEnabled ? (Number(productForm.offerPrice) || 0) : 0;
+                    const hasValidOffer = cleanOffer > 0 && cleanOffer < cleanRegular;
+                    const cleanPrice = hasValidOffer ? cleanOffer : cleanRegular;
+                    const cleanStock = productForm.stock === "" ? 0 : (Number(productForm.stock) || 0);
+                    const finalColors = (productForm.colors || []).map(cleanVariation).filter(Boolean);
+                    const finalSizes = (productForm.sizes || []).map(cleanVariation).filter(Boolean);
+
+                    const normalizedVideoUrl = (productForm.videoUrl || "").trim();
+                    const normalizedVideoType = productForm.videoType || "upload";
+                    const parsedSavedVideo = parseProductVideoSource(normalizedVideoUrl, normalizedVideoType);
+                    const finalVideoEnabled = Boolean(productForm.videoEnabled && normalizedVideoUrl);
+                    const finalVideoThumb = finalVideoEnabled
+                      ? (productForm.videoThumbUrl || parsedSavedVideo.thumbUrl || finalImages[0] || "")
+                      : "";
+
+                    const payloadFields = {
+                      ...productForm,
+                      price: cleanPrice,
+                      regularPrice: cleanRegular,
+                      offerPrice: hasValidOffer ? cleanOffer : 0,
+                      stock: cleanStock,
+                      colors: finalColors,
+                      sizes: finalSizes,
+                      images: finalImages,
+                      videoEnabled: finalVideoEnabled,
+                      videoType: normalizedVideoType,
+                      videoUrl: normalizedVideoUrl,
+                      videoThumbUrl: finalVideoThumb,
+                      videoFileName: productForm.videoFileName || "",
+                      isHotSale: Boolean(productForm.isHotSale),
+                      isBestDeal: Boolean(productForm.isBestDeal),
+                      isAvailable: productForm.isAvailable !== false,
+                      isDraft: Boolean(saveAsDraft),
+                      specialPriceEnabled: Boolean(productForm.specialPriceEnabled),
+                      enabledForPos: productForm.enabledForPos !== false,
+                      enabledForWeb: productForm.enabledForWeb !== false
+                    };
+
+                    if (editingProduct) {
+                      const updated = { ...editingProduct, ...payloadFields };
+                      setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
+                      syncDocToCloud("products", editingProduct.id, updated);
+                      if (!updated.isDraft && updated.enabledForPos !== false) {
+                        syncProductsToPos([updated]);
                       }
-                      const finalImages = allImages.length > 0 ? allImages : [imgSharee];
-
-                      const cleanRegular = Number(productForm.price) || 0;
-                      const cleanOffer = Number(productForm.offerPrice) || 0;
-                      const hasValidOffer = cleanOffer > 0 && cleanOffer < cleanRegular;
-                      const cleanPrice = hasValidOffer ? cleanOffer : cleanRegular;
-                      const cleanStock = productForm.stock === "" ? 0 : (Number(productForm.stock) || 0);
-                      const finalColors = (productForm.colors || []).map(cleanVariation).filter(Boolean);
-                      const finalSizes = (productForm.sizes || []).map(cleanVariation).filter(Boolean);
-
-                      const normalizedVideoUrl = (productForm.videoUrl || "").trim();
-                      const normalizedVideoType = productForm.videoType || "upload";
-                      const parsedSavedVideo = parseProductVideoSource(normalizedVideoUrl, normalizedVideoType);
-                      const finalVideoEnabled = Boolean(productForm.videoEnabled && normalizedVideoUrl);
-                      const finalVideoThumb = finalVideoEnabled
-                        ? (productForm.videoThumbUrl || parsedSavedVideo.thumbUrl || finalImages[0] || "")
-                        : "";
-
-                      if (editingProduct) {
-                        const updated = { 
-                          ...editingProduct, 
-                          ...productForm, 
-                          price: cleanPrice,
-                          regularPrice: cleanRegular,
-                          offerPrice: hasValidOffer ? cleanOffer : 0,
-                          stock: cleanStock,
-                          colors: finalColors,
-                          sizes: finalSizes,
-                          images: finalImages,
-                          videoEnabled: finalVideoEnabled,
-                          videoType: normalizedVideoType,
-                          videoUrl: normalizedVideoUrl,
-                          videoThumbUrl: finalVideoThumb,
-                          videoFileName: productForm.videoFileName || "",
-                          isHotSale: Boolean(productForm.isHotSale),
-                          isBestDeal: Boolean(productForm.isBestDeal),
-                          enabledForPos: productForm.enabledForPos !== false,
-                          enabledForWeb: productForm.enabledForWeb !== false
-                        };
-                        setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
-                        syncDocToCloud("products", editingProduct.id, updated);
-                        if (updated.enabledForPos !== false) {
-                          syncProductsToPos([updated]);
+                      const syncedSections = homeSections.map(s => {
+                        const ids = Array.isArray(s.productIds) ? s.productIds : [];
+                        if (s.id === "hot_sale") {
+                          const nextIds = (!updated.isDraft && updated.isHotSale)
+                            ? (ids.includes(updated.id) ? ids : [updated.id, ...ids])
+                            : ids.filter(id => id !== updated.id);
+                          return { ...s, productIds: nextIds };
                         }
-                        // Keep homeSections ("hot_sale" and "best_deals") synced with product flags
+                        if (s.id === "best_deals") {
+                          const nextIds = (!updated.isDraft && updated.isBestDeal)
+                            ? (ids.includes(updated.id) ? ids : [updated.id, ...ids])
+                            : ids.filter(id => id !== updated.id);
+                          return { ...s, productIds: nextIds };
+                        }
+                        return s;
+                      });
+                      saveHomeSections(syncedSections);
+                      notify(saveAsDraft ? "📝 খসড়া (Draft) হিসেবে সেভ করা হয়েছে!" : "প্রোডাক্ট সফলভাবে আপডেট ও পাবলিশ হয়েছে! ✅");
+                    } else {
+                      const newP = {
+                        id: "p" + Date.now(),
+                        ...payloadFields,
+                        sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
+                        rating: 4.8,
+                        reviewsCount: 1,
+                        createdAt: Date.now()
+                      };
+                      setProducts(prev => [newP, ...prev]);
+                      syncDocToCloud("products", newP.id, newP);
+                      if (!newP.isDraft && newP.enabledForPos !== false) {
+                        syncProductsToPos([newP]);
+                      }
+                      if (!newP.isDraft && (newP.isHotSale || newP.isBestDeal)) {
                         const syncedSections = homeSections.map(s => {
                           const ids = Array.isArray(s.productIds) ? s.productIds : [];
-                          if (s.id === "hot_sale") {
-                            const nextIds = updated.isHotSale
-                              ? (ids.includes(updated.id) ? ids : [updated.id, ...ids])
-                              : ids.filter(id => id !== updated.id);
-                            return { ...s, productIds: nextIds };
+                          if (s.id === "hot_sale" && newP.isHotSale && !ids.includes(newP.id)) {
+                            return { ...s, productIds: [newP.id, ...ids] };
                           }
-                          if (s.id === "best_deals") {
-                            const nextIds = updated.isBestDeal
-                              ? (ids.includes(updated.id) ? ids : [updated.id, ...ids])
-                              : ids.filter(id => id !== updated.id);
-                            return { ...s, productIds: nextIds };
+                          if (s.id === "best_deals" && newP.isBestDeal && !ids.includes(newP.id)) {
+                            return { ...s, productIds: [newP.id, ...ids] };
                           }
                           return s;
                         });
                         saveHomeSections(syncedSections);
-                        notify("প্রোডাক্ট সফলভাবে ওয়েবসাইট ও POS কাউন্টারে আপডেট হয়েছে! ✅");
-                      } else {
-                        const newP = {
-                          id: "p" + Date.now(),
-                          ...productForm,
-                          price: cleanPrice,
-                          regularPrice: cleanRegular,
-                          offerPrice: hasValidOffer ? cleanOffer : 0,
-                          stock: cleanStock,
-                          colors: finalColors,
-                          sizes: finalSizes,
-                          images: finalImages,
-                          videoEnabled: finalVideoEnabled,
-                          videoType: normalizedVideoType,
-                          videoUrl: normalizedVideoUrl,
-                          videoThumbUrl: finalVideoThumb,
-                          videoFileName: productForm.videoFileName || "",
-                          sku: productForm.sku || `SAJ-${Math.floor(100 + Math.random() * 900)}`,
-                          rating: 4.8,
-                          reviewsCount: 1,
-                          createdAt: Date.now(),
-                          isHotSale: Boolean(productForm.isHotSale),
-                          isBestDeal: Boolean(productForm.isBestDeal),
-                          enabledForPos: productForm.enabledForPos !== false,
-                          enabledForWeb: productForm.enabledForWeb !== false
-                        };
-                        setProducts(prev => [newP, ...prev]);
-                        syncDocToCloud("products", newP.id, newP);
-                        if (newP.enabledForPos !== false) {
-                          syncProductsToPos([newP]);
-                        }
-                        if (newP.isHotSale || newP.isBestDeal) {
-                          const syncedSections = homeSections.map(s => {
-                            const ids = Array.isArray(s.productIds) ? s.productIds : [];
-                            if (s.id === "hot_sale" && newP.isHotSale && !ids.includes(newP.id)) {
-                              return { ...s, productIds: [newP.id, ...ids] };
-                            }
-                            if (s.id === "best_deals" && newP.isBestDeal && !ids.includes(newP.id)) {
-                              return { ...s, productIds: [newP.id, ...ids] };
-                            }
-                            return s;
-                          });
-                          saveHomeSections(syncedSections);
-                        }
-                        notify("নতুন প্রোডাক্ট ওয়েবসাইট ও POS কাউন্টারে সফলভাবে যুক্ত হয়েছে! ✨");
                       }
-                      setIsProductModalOpen(false);
-                      setImageUrlInput("");
-                      setExternalLinkInput("");
-                    }}
-                    className="w-full bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white py-3.5 rounded-full font-bold text-sm shadow-lg hover:brightness-110 transition"
-                  >
-                    প্রোডাক্ট সংরক্ষণ করুন (Save Product)
-                  </button>
-                </div>
+                      notify(saveAsDraft ? "📝 প্রোডাক্টটি খসড়া (Draft) হিসেবে সেভ হয়েছে!" : "নতুন প্রোডাক্ট সফলভাবে পাবলিশ হয়েছে! ✨");
+                    }
+                    setProductFormSubEditor(null);
+                    setIsProductModalOpen(false);
+                    setImageUrlInput("");
+                    setExternalLinkInput("");
+                  };
+
+                  return (
+                    <div className="bg-white border-t border-slate-200 px-3 sm:px-4 py-3 grid grid-cols-2 gap-3 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleSaveSellerProduct(true)}
+                        className="w-full py-3 rounded-full border-2 border-[#f97316] text-[#f97316] bg-white hover:bg-orange-50 font-extrabold text-sm transition cursor-pointer active:scale-98"
+                      >
+                        Save as Draft
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveSellerProduct(false)}
+                        className="w-full py-3 rounded-full bg-[#f97316] hover:bg-[#ea580c] text-white font-extrabold text-sm shadow-md transition cursor-pointer active:scale-98"
+                      >
+                        Publish Product
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

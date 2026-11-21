@@ -65,6 +65,27 @@ service cloud.firestore {
         (!('videoUrl' in data) || (data.videoUrl is string && data.videoUrl.size() <= 1500)) &&
         (!('videoThumbUrl' in data) || (data.videoThumbUrl is string && data.videoThumbUrl.size() <= 1500)) &&
         (!('additionalImages' in data) || isValidStringList(data.additionalImages, 20)) &&
+        (!('brand' in data) || (data.brand is string && data.brand.size() <= 120)) &&
+        (!('attributes' in data) || (data.attributes is map && data.attributes.size() <= 30)) &&
+        (!('isAvailable' in data) || data.isAvailable is bool) &&
+        (!('isDraft' in data) || data.isDraft is bool) &&
+        (!('specialPriceEnabled' in data) || data.specialPriceEnabled is bool) &&
+        (!('specialPriceStart' in data) || (data.specialPriceStart is string && data.specialPriceStart.size() <= 40)) &&
+        (!('specialPriceEnd' in data) || (data.specialPriceEnd is string && data.specialPriceEnd.size() <= 40)) &&
+        (!('shippingWeightKg' in data) || (data.shippingWeightKg is string && data.shippingWeightKg.size() <= 40)) &&
+        (!('shippingDimensions' in data) || (data.shippingDimensions is string && data.shippingDimensions.size() <= 80)) &&
+        (!('shippingDangerousGoods' in data) || (data.shippingDangerousGoods is string && data.shippingDangerousGoods.size() <= 40)) &&
+        (!('shippingExpressChandpur' in data) || data.shippingExpressChandpur is bool) &&
+        (!('shippingNote' in data) || (data.shippingNote is string && data.shippingNote.size() <= 400)) &&
+        (!('warrantyType' in data) || (data.warrantyType is string && data.warrantyType.size() <= 80)) &&
+        (!('warrantyPeriod' in data) || (data.warrantyPeriod is string && data.warrantyPeriod.size() <= 80)) &&
+        (!('warrantyPolicy' in data) || (data.warrantyPolicy is string && data.warrantyPolicy.size() <= 500)) &&
+        (!('highlights' in data) || isValidStringList(data.highlights, 20)) &&
+        (!('enabledForWeb' in data) || data.enabledForWeb is bool) &&
+        (!('enabledForPos' in data) || data.enabledForPos is bool) &&
+        (!('bogo' in data) || data.bogo is bool) &&
+        (!('bogoText' in data) || (data.bogoText is string && data.bogoText.size() <= 120)) &&
+        (!('sourceUrl' in data) || (data.sourceUrl is string && data.sourceUrl.size() <= 1500)) &&
         (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
         (!('reviewsCount' in data) || (data.reviewsCount is int && data.reviewsCount >= 0)) &&
         data.updatedAt is timestamp && data.updatedAt <= request.time;
@@ -235,7 +256,13 @@ service cloud.firestore {
           'colors', 'sizes', 'ageGroups', 'stockUpdatedAt', 'lastSyncSource',
           'isHotSale', 'isBestDeal', 'isB2G1', 'createdAt', 'regularPrice',
           'offerPrice', 'videoEnabled', 'videoType', 'videoUrl', 'videoThumbUrl',
-          'additionalImages', 'rating', 'reviewsCount', 'updatedAt'
+          'additionalImages', 'brand', 'attributes', 'isAvailable', 'isDraft',
+          'specialPriceEnabled', 'specialPriceStart', 'specialPriceEnd',
+          'shippingWeightKg', 'shippingDimensions', 'shippingDangerousGoods',
+          'shippingExpressChandpur', 'shippingNote',
+          'warrantyType', 'warrantyPeriod', 'warrantyPolicy', 'highlights',
+          'enabledForWeb', 'enabledForPos', 'bogo', 'bogoText', 'sourceUrl',
+          'rating', 'reviewsCount', 'updatedAt'
         ]) &&
         isValidProduct(incoming());
 
@@ -249,7 +276,13 @@ service cloud.firestore {
             'colors', 'sizes', 'ageGroups', 'stockUpdatedAt', 'lastSyncSource',
             'isHotSale', 'isBestDeal', 'isB2G1', 'regularPrice', 'offerPrice',
             'videoEnabled', 'videoType', 'videoUrl', 'videoThumbUrl',
-            'additionalImages', 'updatedAt'
+            'additionalImages', 'brand', 'attributes', 'isAvailable', 'isDraft',
+            'specialPriceEnabled', 'specialPriceStart', 'specialPriceEnd',
+            'shippingWeightKg', 'shippingDimensions', 'shippingDangerousGoods',
+            'shippingExpressChandpur', 'shippingNote',
+            'warrantyType', 'warrantyPeriod', 'warrantyPolicy', 'highlights',
+            'enabledForWeb', 'enabledForPos', 'bogo', 'bogoText', 'sourceUrl',
+            'updatedAt'
           ]) ||
           incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'stockUpdatedAt', 'lastSyncSource', 'updatedAt']) ||
           incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'reviewsCount', 'updatedAt'])
