@@ -127,10 +127,10 @@ fun SellerCenterProductFormDialog(
   val context = LocalContext.current
   val formScope = rememberCoroutineScope()
 
-  // 1. Images (up to 8: imageUrl + additionalImages)
+  // 1. Images (unlimited: Main imageUrl + additionalImages gallery)
   val initialImages = remember(product) {
     if (product != null) {
-      (listOf(product.imageUrl) + product.additionalImages).filter { it.isNotBlank() }.distinct().take(8)
+      (listOf(product.imageUrl) + product.additionalImages).filter { it.isNotBlank() }.distinct()
     } else {
       emptyList()
     }
@@ -222,9 +222,9 @@ fun SellerCenterProductFormDialog(
   var activeSubEditor by remember { mutableStateOf(SellerSubEditor.NONE) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-  // Android Photo Picker (Zero Storage Permissions - Google Play Compliant)
+  // Android Photo Picker (Zero Storage Permissions - Google Play Compliant, unlimited picks)
   val multiImagePickerLauncher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 8)
+    contract = ActivityResultContracts.PickMultipleVisualMedia()
   ) { uris ->
     if (uris.isNotEmpty()) {
       isPickingImage = true
@@ -234,7 +234,7 @@ fun SellerCenterProductFormDialog(
         }
         isPickingImage = false
         if (copied.isNotEmpty()) {
-          imageList = (imageList + copied).distinct().take(8)
+          imageList = (imageList + copied).distinct()
         }
       }
     }
@@ -249,7 +249,7 @@ fun SellerCenterProductFormDialog(
   fun buildAndSave(saveAsDraft: Boolean) {
     if (!saveAsDraft) {
       if (name.isBlank()) {
-        validationError = "Product Name (English) * পূরণ করুন।"
+        validationError = "প্রোডাক্টের নাম * পূরণ করুন।"
         return
       }
       if (regularParsed <= 0) {
@@ -397,10 +397,10 @@ fun SellerCenterProductFormDialog(
           verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
           // =========================================================
-          // CARD 1: Product Image (0/8) *, Product Name(English) *, Category *, Video
+          // CARD 1: Product Image (Unlimited) *, Product Name *, Category *, Video
           // =========================================================
           SellerCard {
-            // 1. Product Image (X/8) *
+            // 1. Product Image (Main Photo + Small Gallery Strip Below) *
             Column(
               modifier = Modifier
                 .fillMaxWidth()
@@ -412,7 +412,7 @@ fun SellerCenterProductFormDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
               ) {
-                RequiredLabel(text = "Product Image (${imageList.size}/8)", required = true)
+                RequiredLabel(text = "Product Image (${imageList.size}টি)", required = true)
                 Text(
                   text = "+ URL / Preset",
                   fontSize = 11.5.sp,
@@ -425,68 +425,151 @@ fun SellerCenterProductFormDialog(
                 )
               }
 
-              Row(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-              ) {
-                // Existing images
-                imageList.forEachIndexed { idx, img ->
+              if (imageList.isNotEmpty()) {
+                // Selected Main Image on Top
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(12.dp),
+                  verticalAlignment = Alignment.Top
+                ) {
                   Box(
                     modifier = Modifier
-                      .size(72.dp)
-                      .clip(RoundedCornerShape(10.dp))
-                      .border(
-                        width = if (idx == 0) 1.5.dp else 1.dp,
-                        color = if (idx == 0) SellerOrange else SellerCardBorder,
-                        shape = RoundedCornerShape(10.dp)
-                      )
+                      .size(132.dp)
+                      .clip(RoundedCornerShape(14.dp))
+                      .border(2.dp, SellerOrange, RoundedCornerShape(14.dp))
                   ) {
                     AppImage(
-                      model = img,
-                      contentDescription = "Product image ${idx + 1}",
+                      model = imageList.first(),
+                      contentDescription = "মেইন ছবি",
                       modifier = Modifier.fillMaxSize()
                     )
-                    if (idx == 0) {
-                      Box(
-                        modifier = Modifier
-                          .align(Alignment.BottomCenter)
-                          .fillMaxWidth()
-                          .background(SellerOrange.copy(alpha = 0.9f))
-                          .padding(vertical = 2.dp),
-                        contentAlignment = Alignment.Center
-                      ) {
-                        Text("Main", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                      }
+                    Box(
+                      modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(6.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(SellerOrange)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                      Text("★ মেইন ছবি", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                     Box(
                       modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(3.dp)
-                        .size(18.dp)
+                        .padding(5.dp)
+                        .size(22.dp)
                         .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.65f))
-                        .clickable { imageList = imageList.filterIndexed { i, _ -> i != idx } },
+                        .background(Color.Black.copy(alpha = 0.68f))
+                        .clickable { imageList = imageList.drop(1) },
                       contentAlignment = Alignment.Center
                     ) {
-                      Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.White, modifier = Modifier.size(11.dp))
+                      Icon(Icons.Default.Close, contentDescription = "মেইন ছবি মুছুন", tint = Color.White, modifier = Modifier.size(13.dp))
+                    }
+                  }
+
+                  Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                  ) {
+                    Text("মেইন ছবি নির্বাচিত", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SellerLabelInk)
+                    Text(
+                      "নিচের গ্যালারির যেকোনো ছোট ছবিতে ট্যাপ করে মেইন ছবি হিসেবে সেট করুন।",
+                      fontSize = 11.sp,
+                      color = SellerMutedInk,
+                      lineHeight = 15.sp
+                    )
+                    OutlinedButton(
+                      onClick = {
+                        multiImagePickerLauncher.launch(
+                          PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                      },
+                      enabled = !isPickingImage,
+                      border = BorderStroke(1.dp, SellerOrange),
+                      shape = RoundedCornerShape(50),
+                      contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                      modifier = Modifier.height(34.dp)
+                    ) {
+                      Text("+ আরও ছবি যোগ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SellerOrange)
                     }
                   }
                 }
 
-                // Dashed '+' upload tile (exact match to screenshot)
-                if (imageList.size < 8) {
+                // Small Gallery Strip Below Main Image
+                Text(
+                  text = "গ্যালারি (${imageList.size}টি) — ট্যাপ করে মেইন ছবি নির্বাচন করুন",
+                  fontSize = 10.5.sp,
+                  fontWeight = FontWeight.SemiBold,
+                  color = SellerMutedInk
+                )
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  imageList.forEachIndexed { idx, img ->
+                    val isMain = idx == 0
+                    Box(
+                      modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(
+                          width = if (isMain) 2.dp else 1.dp,
+                          color = if (isMain) SellerOrange else SellerCardBorder,
+                          shape = RoundedCornerShape(10.dp)
+                        )
+                        .clickable {
+                          if (!isMain) {
+                            val mutable = imageList.toMutableList()
+                            val picked = mutable.removeAt(idx)
+                            mutable.add(0, picked)
+                            imageList = mutable
+                          }
+                        }
+                    ) {
+                      AppImage(
+                        model = img,
+                        contentDescription = "Gallery image ${idx + 1}",
+                        modifier = Modifier.fillMaxSize()
+                      )
+                      if (isMain) {
+                        Box(
+                          modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(SellerOrange.copy(alpha = 0.92f))
+                            .padding(vertical = 1.dp),
+                          contentAlignment = Alignment.Center
+                        ) {
+                          Text("মেইন", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                      }
+                      Box(
+                        modifier = Modifier
+                          .align(Alignment.TopEnd)
+                          .padding(2.dp)
+                          .size(16.dp)
+                          .clip(CircleShape)
+                          .background(Color.Black.copy(alpha = 0.65f))
+                          .clickable { imageList = imageList.filterIndexed { i, _ -> i != idx } },
+                        contentAlignment = Alignment.Center
+                      ) {
+                        Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.White, modifier = Modifier.size(10.dp))
+                      }
+                    }
+                  }
+
                   Box(
                     modifier = Modifier
-                      .size(72.dp)
+                      .size(56.dp)
                       .clip(RoundedCornerShape(10.dp))
                       .background(Color(0xFFFAFAFC))
                       .drawBehind {
                         drawRoundRect(
                           color = Color(0xFFCBD5E1),
-                          style = Stroke(width = 3f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)),
+                          style = Stroke(width = 2.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 7f), 0f)),
                           cornerRadius = CornerRadius(10.dp.toPx())
                         )
                       }
@@ -498,15 +581,47 @@ fun SellerCenterProductFormDialog(
                     contentAlignment = Alignment.Center
                   ) {
                     if (isPickingImage) {
-                      CircularProgressIndicator(strokeWidth = 2.dp, color = SellerOrange, modifier = Modifier.size(20.dp))
+                      CircularProgressIndicator(strokeWidth = 2.dp, color = SellerOrange, modifier = Modifier.size(18.dp))
                     } else {
                       Icon(
                         imageVector = Icons.Outlined.AddPhotoAlternate,
                         contentDescription = "Add Photo",
                         tint = SellerMutedInk,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(22.dp)
                       )
                     }
+                  }
+                }
+              } else {
+                // Empty state dashed '+' upload tile
+                Box(
+                  modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFFAFAFC))
+                    .drawBehind {
+                      drawRoundRect(
+                        color = Color(0xFFCBD5E1),
+                        style = Stroke(width = 3f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)),
+                        cornerRadius = CornerRadius(12.dp.toPx())
+                      )
+                    }
+                    .clickable(enabled = !isPickingImage) {
+                      multiImagePickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                      )
+                    },
+                  contentAlignment = Alignment.Center
+                ) {
+                  if (isPickingImage) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, color = SellerOrange, modifier = Modifier.size(20.dp))
+                  } else {
+                    Icon(
+                      imageVector = Icons.Outlined.AddPhotoAlternate,
+                      contentDescription = "Add Photo",
+                      tint = SellerMutedInk,
+                      modifier = Modifier.size(26.dp)
+                    )
                   }
                 }
               }
@@ -514,14 +629,21 @@ fun SellerCenterProductFormDialog(
 
             SellerRowDivider()
 
-            // 2. Product Name(English) *
+            // 2. Product Name (Any Language: Bangla / English) *
             Column(
               modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 12.dp),
               verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-              RequiredLabel(text = "Product Name(English)", required = true)
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                RequiredLabel(text = "প্রোডাক্টের নাম / Product Name", required = true)
+                Text("বাংলা / English", fontSize = 10.5.sp, color = SellerMutedInk, fontWeight = FontWeight.Medium)
+              }
               BasicTextField(
                 value = name,
                 onValueChange = {
@@ -537,7 +659,7 @@ fun SellerCenterProductFormDialog(
                 decorationBox = { inner ->
                   if (name.isEmpty()) {
                     Text(
-                      text = "Ex. Nikon Coolpix A300 Digital Camera / Jamdani Sharee",
+                      text = "যেমন: এক্সক্লুসিভ জামদানি শাড়ি / Bridal Choker Set",
                       fontSize = 13.5.sp,
                       color = Color(0xFFC0C8D2)
                     )
@@ -768,11 +890,11 @@ fun SellerCenterProductFormDialog(
           // CARD 6: Description *, Highlights *
           // =========================================================
           SellerCard {
-            // 14. Description *
+            // 14. Description * (বাংলায়)
             SellerNavRow(
-              label = "Description",
+              label = "পণ্যের বিবরণ (Description)",
               required = true,
-              value = if (description.isBlank()) "Set" else "${description.length} chars",
+              value = if (description.isBlank()) "লিখুন" else "${description.length} অক্ষর",
               valueColor = if (description.isBlank()) SellerMutedInk else Color(0xFF059669),
               onClick = { activeSubEditor = SellerSubEditor.DESCRIPTION }
             )
@@ -908,7 +1030,7 @@ fun SellerCenterProductFormDialog(
   // =========================================================
   when (activeSubEditor) {
     SellerSubEditor.URL_PICKER -> {
-      SellerSubModal(title = "Image URL & Presets (Max 8)", onDismiss = { activeSubEditor = SellerSubEditor.NONE }) {
+      SellerSubModal(title = "Image URL & Presets (যত খুশি)", onDismiss = { activeSubEditor = SellerSubEditor.NONE }) {
         OutlinedTextField(
           value = customUrlInput,
           onValueChange = { customUrlInput = it },
@@ -920,8 +1042,8 @@ fun SellerCenterProductFormDialog(
         Button(
           onClick = {
             val trimmed = customUrlInput.trim()
-            if (trimmed.isNotBlank() && imageList.size < 8) {
-              imageList = (imageList + trimmed).distinct().take(8)
+            if (trimmed.isNotBlank()) {
+              imageList = (imageList + trimmed).distinct()
               customUrlInput = ""
             }
           },
@@ -929,7 +1051,7 @@ fun SellerCenterProductFormDialog(
           shape = RoundedCornerShape(12.dp),
           modifier = Modifier.fillMaxWidth().height(46.dp)
         ) {
-          Text("+ ইমেজ লিস্টে যোগ করুন (${imageList.size}/8)", fontWeight = FontWeight.Bold)
+          Text("+ ইমেজ লিস্টে যোগ করুন (${imageList.size}টি)", fontWeight = FontWeight.Bold)
         }
         Text("দ্রুত প্রিসেট:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SellerLabelInk)
         listOf(
@@ -944,7 +1066,7 @@ fun SellerCenterProductFormDialog(
             modifier = Modifier
               .fillMaxWidth()
               .clickable {
-                if (imageList.size < 8) imageList = (imageList + url).distinct().take(8)
+                imageList = (imageList + url).distinct()
               }
           ) {
             Text(label, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
@@ -1444,11 +1566,11 @@ fun SellerCenterProductFormDialog(
     }
 
     SellerSubEditor.DESCRIPTION -> {
-      SellerSubModal(title = "Product Description *", onDismiss = { activeSubEditor = SellerSubEditor.NONE }) {
+      SellerSubModal(title = "পণ্যের বিস্তারিত বিবরণ *", onDismiss = { activeSubEditor = SellerSubEditor.NONE }) {
         OutlinedButton(
           onClick = {
             if (name.isBlank()) {
-              aiDescError = "আগে Product Name(English) লিখুন।"
+              aiDescError = "আগে প্রোডাক্টের নাম লিখুন।"
               return@OutlinedButton
             }
             aiDescError = null
@@ -1480,7 +1602,7 @@ fun SellerCenterProductFormDialog(
           } else {
             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("✨ AI দিয়ে প্রফেশনাল বিবরণ লিখুন", color = AdminV2CyanDeep, fontWeight = FontWeight.Bold)
+            Text("✨ AI দিয়ে বাংলা বিবরণ লিখুন", color = AdminV2CyanDeep, fontWeight = FontWeight.Bold)
           }
         }
         if (aiDescError != null) {
@@ -1489,8 +1611,8 @@ fun SellerCenterProductFormDialog(
         OutlinedTextField(
           value = description,
           onValueChange = { description = it },
-          label = { Text("বিস্তারিত বিবরণ *") },
-          placeholder = { Text("পণ্যের ফেব্রিক, সাইজ, ডিজাইন ও যত্নের নির্দেশনা লিখুন...") },
+          label = { Text("পণ্যের বিস্তারিত বিবরণ (বাংলায়) *") },
+          placeholder = { Text("পণ্যের ফেব্রিক, সাইজ, ডিজাইন ও যত্নের নির্দেশনা বাংলায় লিখুন...") },
           minLines = 5,
           shape = RoundedCornerShape(12.dp),
           modifier = Modifier.fillMaxWidth()
@@ -1501,7 +1623,7 @@ fun SellerCenterProductFormDialog(
           shape = RoundedCornerShape(12.dp),
           modifier = Modifier.fillMaxWidth().height(46.dp)
         ) {
-          Text("Save Description", fontWeight = FontWeight.Bold)
+          Text("বিবরণ সংরক্ষণ করুন", fontWeight = FontWeight.Bold)
         }
       }
     }

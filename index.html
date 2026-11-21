@@ -31570,7 +31570,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             special_period: "Special Price Periods",
                             shipping: "Shipping Information",
                             warranty: "Warranty Information",
-                            description: "Product Description",
+                            description: "পণ্যের বিস্তারিত বিবরণ",
                             highlights: "Product Highlights"
                           }[productFormSubEditor] || "Edit Details")
                         : (editingProduct ? "Edit Product" : "Add Product")}
@@ -31618,7 +31618,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
 
                         <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
-                          <label className="text-xs font-extrabold text-slate-800 block">সরাসরি ছবির URL গ্যালারিতে যোগ করুন (সর্বোচ্চ ৮টি)</label>
+                          <label className="text-xs font-extrabold text-slate-800 block">সরাসরি ছবির URL গ্যালারিতে যোগ করুন (যত খুশি)</label>
                           <div className="flex gap-2">
                             <input
                               type="url"
@@ -31632,12 +31632,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             />
                             <button
                               type="button"
-                              onClick={() => {
-                                if ((productForm.images?.length || 0) >= 8) {
-                                  return notify("সর্বোচ্চ ৮টি ছবি যুক্ত করা যায়!");
-                                }
-                                addImageToGallery(imageUrlInput);
-                              }}
+                              onClick={() => addImageToGallery(imageUrlInput)}
                               className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer"
                             >
                               + যোগ করুন
@@ -32180,11 +32175,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
                     )}
 
-                    {/* SUB-EDITOR: DESCRIPTION */}
+                    {/* SUB-EDITOR: DESCRIPTION (বাংলায়) */}
                     {productFormSubEditor === "description" && (
                       <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-extrabold text-slate-800">পণ্যের বিস্তারিত বিবরণ *</label>
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-xs font-extrabold text-slate-800">পণ্যের বিস্তারিত বিবরণ (বাংলায় লিখুন) *</label>
                           <button
                             type="button"
                             onClick={() => {
@@ -32192,16 +32187,19 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               const sample = `${pName} তৈরি করা হয়েছে প্রিমিয়াম ও আরামদায়ক উপাদানে।\n• শতভাগ অরিজিনাল কোয়ালিটি নিশ্চিত\n• প্রতিদিনের ব্যবহার এবং উৎসব—উভয় ক্ষেত্রেই মানানসই\n• সারাদেশে দ্রুত ডেলিভারি ও ক্যাশ অন ডেলিভারি সুবিধা রয়েছে।`;
                               setProductForm(prev => ({ ...prev, description: prev.description ? `${prev.description}\n\n${sample}` : sample }));
                             }}
-                            className="text-[11px] font-bold bg-orange-50 text-[#ea580c] border border-orange-200 px-2.5 py-1 rounded-full cursor-pointer"
+                            className="text-[11px] font-bold bg-orange-50 text-[#ea580c] border border-orange-200 px-2.5 py-1 rounded-full cursor-pointer shrink-0"
                           >
-                            ✨ টেমপ্লেট বসান
+                            ✨ বাংলা টেমপ্লেট বসান
                           </button>
                         </div>
+                        <p className="text-[11px] text-slate-500">
+                          গ্রাহকরা ওয়েবসাইটের প্রোডাক্ট পেজে এই বাংলা বিবরণ দেখতে পাবেন।
+                        </p>
                         <textarea
                           rows="8"
                           value={productForm.description || ""}
                           onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                          placeholder="পণ্যের কাপড়, সাইজ ফিটিং, ব্যবহারবিধি ও বৈশিষ্ট্য বিস্তারিত লিখুন..."
+                          placeholder="পণ্যের কাপড়, সাইজ ফিটিং, ব্যবহারবিধি ও বৈশিষ্ট্য বাংলায় বিস্তারিত লিখুন..."
                           className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-3.5 text-sm text-slate-900 outline-none focus:border-[#f97316]"
                         />
                       </div>
@@ -32296,11 +32294,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#F4F6F9]">
                     {/* BLOCK 1: IMAGE + NAME + CATEGORY + VIDEO */}
                     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
-                      {/* 1. Product Image (0/8) * */}
-                      <div className="p-3.5 sm:p-4 space-y-2.5">
+                      {/* 1. Product Image (Unlimited + Main Photo & Small Gallery Strip Below) * */}
+                      <div className="p-3.5 sm:p-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-bold text-slate-900">
-                            Product Image ({(productForm.images || []).length}/8) <span className="text-red-500">*</span>
+                            Product Image ({(productForm.images || []).length}টি) <span className="text-red-500">*</span>
                           </span>
                           <button
                             type="button"
@@ -32317,7 +32315,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           multiple
                           ref={productImgFileRef}
                           onChange={async (e) => {
-                            const files = Array.from(e.target.files || []).slice(0, Math.max(0, 8 - (productForm.images?.length || 0)));
+                            const files = Array.from(e.target.files || []);
                             if (!files.length) return;
                             notify("ছবি অপটিমাইজ ও আপলোড হচ্ছে... ⏳");
                             for (const file of files) {
@@ -32331,54 +32329,133 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           className="hidden"
                         />
 
-                        <div className="flex flex-wrap gap-2.5 items-center">
-                          {(productForm.images || []).length < 8 && (
-                            <button
-                              type="button"
-                              onClick={() => productImgFileRef.current?.click()}
-                              className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#f97316] bg-slate-50/70 flex flex-col items-center justify-center text-slate-400 hover:text-[#f97316] transition cursor-pointer shrink-0"
-                              title="ছবি যুক্ত করুন"
-                            >
-                              <span className="text-2xl leading-none">🖼️</span>
-                              <span className="text-[10px] font-bold mt-1">+ Add</span>
-                            </button>
-                          )}
-
-                          {(productForm.images || []).map((img, idx) => (
-                            <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
-                              <img
-                                src={img}
-                                alt={`Product ${idx + 1}`}
-                                className="w-full h-full object-cover"
-                                onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setProductForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
-                                className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow cursor-pointer"
-                              >
-                                ✕
-                              </button>
-                              {idx === 0 && (
-                                <span className="absolute bottom-0 inset-x-0 bg-[#f97316]/90 text-white text-[9px] text-center py-0.5 font-bold">
-                                  Main
+                        {(productForm.images || []).length > 0 ? (
+                          <div className="space-y-2.5">
+                            {/* Selected Main Image on Top */}
+                            <div className="flex items-start gap-3">
+                              <div className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-2xl overflow-hidden border-2 border-[#f97316] bg-slate-50 shadow-sm shrink-0">
+                                <img
+                                  src={productForm.images[0]}
+                                  alt="Main Product"
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                />
+                                <span className="absolute bottom-1.5 left-1.5 bg-[#f97316] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow">
+                                  ★ মেইন ছবি
                                 </span>
-                              )}
+                                <button
+                                  type="button"
+                                  onClick={() => setProductForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== 0) }))}
+                                  className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow cursor-pointer"
+                                  title="মেইন ছবি মুছুন"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                              <div className="text-[11px] text-slate-500 space-y-1 pt-1">
+                                <p className="font-bold text-slate-700">মেইন ছবি নির্বাচিত</p>
+                                <p>নিচের গ্যালারির যেকোনো ছোট ছবিতে ক্লিক করে সেটিকে মেইন ছবি বানাতে পারবেন।</p>
+                                <button
+                                  type="button"
+                                  onClick={() => productImgFileRef.current?.click()}
+                                  className="mt-1 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-50 text-[#ea580c] border border-orange-200 font-bold text-[11px] hover:bg-orange-100 cursor-pointer"
+                                >
+                                  <span>+</span>
+                                  <span>আরও ছবি যোগ করুন</span>
+                                </button>
+                              </div>
                             </div>
-                          ))}
-                        </div>
+
+                            {/* Small Gallery Strip Below Main Image */}
+                            <div className="pt-1 border-t border-slate-100">
+                              <span className="text-[10px] font-bold text-slate-500 block mb-1.5">
+                                গ্যালারি ({productForm.images.length}টি ছবি — ক্লিক করে মেইন ছবি নির্বাচন করুন)
+                              </span>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                {productForm.images.map((img, idx) => {
+                                  const isMain = idx === 0;
+                                  return (
+                                    <div
+                                      key={idx}
+                                      onClick={() => {
+                                        if (!isMain) {
+                                          setProductForm(prev => {
+                                            const arr = [...(prev.images || [])];
+                                            const [picked] = arr.splice(idx, 1);
+                                            return { ...prev, images: [picked, ...arr] };
+                                          });
+                                          notify("✓ নির্বাচিত ছবিটি মেইন ছবি হিসেবে সেট হয়েছে!");
+                                        }
+                                      }}
+                                      className={`relative w-14 h-14 rounded-xl overflow-hidden bg-slate-50 shrink-0 cursor-pointer transition ${
+                                        isMain ? "border-2 border-[#f97316] ring-2 ring-orange-200" : "border border-slate-200 opacity-85 hover:opacity-100 hover:border-[#f97316]"
+                                      }`}
+                                      title={isMain ? "বর্তমান মেইন ছবি" : "ক্লিক করে মেইন ছবি বানান"}
+                                    >
+                                      <img
+                                        src={img}
+                                        alt={`Gallery ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setProductForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+                                        }}
+                                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center text-[9px] font-bold shadow cursor-pointer"
+                                        title="মুছুন"
+                                      >
+                                        ✕
+                                      </button>
+                                      {isMain && (
+                                        <span className="absolute bottom-0 inset-x-0 bg-[#f97316]/95 text-white text-[8px] text-center py-0.2 font-bold">
+                                          মেইন
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+
+                                <button
+                                  type="button"
+                                  onClick={() => productImgFileRef.current?.click()}
+                                  className="w-14 h-14 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#f97316] bg-slate-50/70 flex flex-col items-center justify-center text-slate-400 hover:text-[#f97316] transition cursor-pointer shrink-0"
+                                  title="আরও ছবি যোগ করুন"
+                                >
+                                  <span className="text-lg leading-none">+</span>
+                                  <span className="text-[9px] font-bold">Add</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => productImgFileRef.current?.click()}
+                            className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#f97316] bg-slate-50/70 flex flex-col items-center justify-center text-slate-400 hover:text-[#f97316] transition cursor-pointer shrink-0"
+                            title="ছবি যুক্ত করুন"
+                          >
+                            <span className="text-2xl leading-none">🖼️</span>
+                            <span className="text-[11px] font-bold mt-1">+ Add</span>
+                          </button>
+                        )}
                       </div>
 
-                      {/* 2. Product Name(English) * */}
+                      {/* 2. Product Name (Any Language: Bangla / English) * */}
                       <div className="p-3.5 sm:p-4 space-y-1">
-                        <label className="text-sm font-bold text-slate-900 block">
-                          Product Name(English) <span className="text-red-500">*</span>
-                        </label>
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-sm font-bold text-slate-900">
+                            প্রোডাক্টের নাম / Product Name <span className="text-red-500">*</span>
+                          </label>
+                          <span className="text-[10px] font-semibold text-slate-400">বাংলা / English</span>
+                        </div>
                         <input
                           type="text"
                           value={productForm.name}
                           onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Ex. Nikon Coolpix A300 Digital Camera / Jamdani Sharee"
+                          placeholder="যেমন: এক্সক্লুসিভ জামদানি শাড়ি / Bridal Choker Set"
                           className="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none py-1"
                         />
                       </div>
@@ -32739,7 +32816,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                     {/* BLOCK 6: DESCRIPTION * + HIGHLIGHTS * */}
                     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
-                      {/* 14. Description * */}
+                      {/* 14. Description * (বাংলায়) */}
                       <button
                         type="button"
                         onClick={() => setProductFormSubEditor("description")}
@@ -32747,16 +32824,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       >
                         <div className="text-left min-w-0">
                           <span className="text-sm font-bold text-slate-900 block">
-                            Description <span className="text-red-500">*</span>
+                            পণ্যের বিবরণ (Description) <span className="text-red-500">*</span>
                           </span>
                           {productForm.description?.trim() ? (
                             <span className="text-[11px] text-slate-500 truncate block max-w-[220px]">{productForm.description}</span>
                           ) : (
-                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                            <span className="text-[11px] font-semibold text-red-500">বাংলায় বিস্তারিত বিবরণ লিখুন</span>
                           )}
                         </div>
                         <span className="text-sm text-slate-500 font-medium flex items-center gap-1 shrink-0">
-                          <span>{productForm.description?.trim() ? "Edit" : "Set"}</span>
+                          <span>{productForm.description?.trim() ? "এডিট" : "লিখুন"}</span>
                           <span className="text-slate-400 font-bold text-base">›</span>
                         </span>
                       </button>
@@ -32863,7 +32940,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     if (imageUrlInput && !allImages.includes(imageUrlInput)) {
                       allImages.push(imageUrlInput);
                     }
-                    const finalImages = allImages.length > 0 ? allImages.slice(0, 8) : [imgSharee];
+                    const finalImages = allImages.length > 0 ? allImages : [imgSharee];
 
                     const cleanRegular = Number(productForm.price) || 0;
                     const cleanOffer = productForm.specialPriceEnabled ? (Number(productForm.offerPrice) || 0) : 0;
