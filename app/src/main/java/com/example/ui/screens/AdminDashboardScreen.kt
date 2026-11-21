@@ -149,6 +149,8 @@ import com.example.ui.components.AdminV2SkySoft
 import com.example.ui.components.AdminV2TopBar
 import com.example.ui.components.AdminVibrantHeroCard
 import com.example.ui.components.AdminQrScannerDialog
+import com.example.ui.components.AdminSellerOrdersHub
+import com.example.ui.components.AdminShippingInfoHub
 import com.example.ui.components.AdminSmsGatewayHub
 import com.example.ui.components.AppImage
 import com.example.ui.components.DailyRevenueTrendChartCard
@@ -199,6 +201,7 @@ fun AdminDashboardScreen(
   onDeleteProduct: (String) -> Unit,
   onUpdateOrderStatus: (String, String) -> Unit,
   onDispatchCourier: (String, String) -> Unit,
+  onUpdateDeliveredBy: (String, String) -> Unit = { _, _ -> },
   onViewInvoice: (Order) -> Unit,
   onOpenShippingLabel: (Order) -> Unit = {},
   onAddReturnRecord: (ReturnRecord) -> Unit = {},
@@ -541,7 +544,7 @@ fun AdminDashboardScreen(
         }
 
         AdminTab.ORDERS -> {
-          AdminOrdersHub(
+          AdminSellerOrdersHub(
             orders = orders,
             products = products,
             returns = returns,
@@ -549,6 +552,7 @@ fun AdminDashboardScreen(
             courierConfig = courierConfig,
             onUpdateStatus = onUpdateOrderStatus,
             onDispatchCourier = onDispatchCourier,
+            onUpdateDeliveredBy = onUpdateDeliveredBy,
             onViewInvoice = onViewInvoice,
             onOpenShippingLabel = onOpenShippingLabel,
             onOpenReturn = { order ->
@@ -565,6 +569,14 @@ fun AdminDashboardScreen(
               val msg = SmsHelper.buildOrderStatusSms(order, storeConfig.storeName)
               onEnqueueSingleSms(order.phone, order.customerName, msg, order.id, "order_alert")
             }
+          )
+        }
+
+        AdminTab.SHIPPING_INFO -> {
+          AdminShippingInfoHub(
+            storeConfig = storeConfig,
+            onSaveStoreConfig = onUpdateStoreConfig,
+            onShowToast = onShowToast
           )
         }
 

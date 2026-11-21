@@ -360,6 +360,7 @@ class MainActivity : ComponentActivity() {
                     onDeleteProduct = { viewModel.deleteProduct(it) },
                     onUpdateOrderStatus = { id, status -> viewModel.updateOrderStatus(id, status) },
                     onDispatchCourier = { id, provider -> viewModel.dispatchCourier(id, provider) },
+                    onUpdateDeliveredBy = { id, partner -> viewModel.updateOrderDeliveryPartner(id, partner) },
                     onViewInvoice = { viewModel.openInvoice(it) },
                     onOpenShippingLabel = { viewModel.openShippingLabel(it) },
                     onAddReturnRecord = { viewModel.addReturnRecord(it) },
@@ -631,11 +632,25 @@ class MainActivity : ComponentActivity() {
             visible = isCartOpen,
             cartItems = cartItems,
             coupons = coupons,
+            storeConfig = storeConfig,
             onDismiss = { viewModel.setCartOpen(false) },
             onUpdateQty = { id, delta -> viewModel.updateCartQty(id, delta) },
             onRemoveItem = { id -> viewModel.removeFromCart(id) },
-            onPlaceOrder = { name, phone, district, thana, address, payment, coupon ->
-              viewModel.placeOrder(name, phone, district, thana, address, payment, coupon)
+            onPlaceOrder = { name, phone, district, thana, address, payment, coupon, orderType, deliveryType, landmark, category, isDefault ->
+              viewModel.placeOrder(
+                customerName = name,
+                phone = phone,
+                district = district,
+                thana = thana,
+                address = address,
+                paymentMethod = payment,
+                appliedCoupon = coupon,
+                orderType = orderType,
+                deliveryType = deliveryType,
+                landmark = landmark,
+                addressCategory = category,
+                defaultShippingAddress = isDefault
+              )
             },
             onShowToast = { viewModel.emitToast(it) }
           )

@@ -3,6 +3,7 @@ package com.example.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.R
+import com.example.data.BangladeshLocations
 import com.example.data.model.BannerItem
 import com.example.data.model.CartItem
 import com.example.data.model.Category
@@ -21,6 +22,8 @@ import com.example.data.model.ProductReview
 import com.example.data.model.ReelItem
 import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
+import com.example.data.model.ShippingInfoConfig
+import com.example.data.model.ShippingOptionItem
 import com.example.data.model.SmsQueueItem
 import com.example.data.model.StoreConfig
 import com.example.data.model.StoreDesignConfig
@@ -510,7 +513,7 @@ class StoreRepository(private val context: Context) {
       id = "ORD-1001",
       customerName = "ফাতেমা আক্তার",
       phone = "01712345678",
-      district = "ঢাকা",
+      district = "ঢাকা (Dhaka)",
       thana = "ধানমন্ডি",
       address = "বাসা ১২, রোড ৫, ধানমন্ডি",
       items = listOf(OrderItem("p1", "এক্সক্লুসিভ কাতান ডিজাইনার শাড়ি (Royal Red)", 1, 3500)),
@@ -521,28 +524,38 @@ class StoreRepository(private val context: Context) {
       paymentMethod = "Cash on Delivery",
       status = "Pending",
       date = "2026-10-18",
-      trackingId = ""
+      trackingId = "",
+      orderType = "Normal",
+      deliveryType = "Standard",
+      deliveredBy = "",
+      addressCategory = "Home",
+      createdAt = System.currentTimeMillis() - 2L * 24L * 3600L * 1000L
     ),
     Order(
       id = "ORD-1002",
       customerName = "নুসরাত জাহান",
       phone = "01813987654",
-      district = "ঢাকা",
-      thana = "গুলশান",
-      address = "ফ্ল্যাট ৩বি, গুলশান এভিনিউ",
+      district = "চাঁদপুর (Chandpur)",
+      thana = "হাজীগঞ্জ",
+      address = "হাজীগঞ্জ বাজার রোড, চাঁদপুর",
       items = listOf(
         OrderItem("p2", "রাজওয়াড়ি কুন্দন ব্রাইডাল চোকার সেট", 1, 2999),
         OrderItem("p4", "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", 1, 890)
       ),
       subtotal = 3889,
-      deliveryCharge = 0,
+      deliveryCharge = 100,
       discount = 388,
       couponCode = "EID2026",
-      total = 3501,
+      total = 3601,
       paymentMethod = "bKash",
       status = "Shipped",
       date = "2026-10-19",
-      trackingId = "ST-884219"
+      trackingId = "ST-884219",
+      orderType = "Normal",
+      deliveryType = "Express",
+      deliveredBy = "SteadFast",
+      addressCategory = "Home",
+      createdAt = System.currentTimeMillis() - 12L * 24L * 3600L * 1000L
     )
   )
 
@@ -964,7 +977,7 @@ class StoreRepository(private val context: Context) {
               id = doc.getString("id") ?: doc.id,
               customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
               phone = doc.getString("phone") ?: "",
-              district = doc.getString("district") ?: "ঢাকা",
+              district = doc.getString("district") ?: "ঢাকা (Dhaka)",
               thana = doc.getString("thana") ?: "সদর",
               address = doc.getString("address") ?: "",
               items = itemsList,
@@ -977,7 +990,16 @@ class StoreRepository(private val context: Context) {
               status = doc.getString("status") ?: "Pending",
               date = doc.getString("date") ?: "",
               trackingId = doc.getString("trackingId") ?: "",
-              stockRestockedOnCancel = doc.getBoolean("stockRestockedOnCancel") ?: false
+              stockRestockedOnCancel = doc.getBoolean("stockRestockedOnCancel") ?: false,
+              orderType = doc.getString("orderType") ?: "Normal",
+              deliveryType = doc.getString("deliveryType") ?: "Standard",
+              deliveredBy = doc.getString("deliveredBy") ?: "",
+              landmark = doc.getString("landmark") ?: "",
+              addressCategory = doc.getString("addressCategory") ?: "Home",
+              defaultShippingAddress = doc.getBoolean("defaultShippingAddress") ?: false,
+              createdAt = doc.getTimestamp("createdAt")?.toDate()?.time
+                ?: doc.getLong("createdAtMs")
+                ?: 0L
             )
           } catch (_: Exception) {
             null
@@ -1191,13 +1213,30 @@ class StoreRepository(private val context: Context) {
     thana: String,
     address: String,
     paymentMethod: String,
-    appliedCoupon: Coupon?
+    appliedCoupon: Coupon?,
+    orderType: String = "Normal",
+    deliveryType: String = "Standard",
+    landmark: String = "",
+    addressCategory: String = "Home",
+    defaultShippingAddress: Boolean = false
   ): Order? {
     val cartItems = _cart.value
     if (cartItems.isEmpty()) return null
 
     val subtotal = cartItems.sumOf { it.product.price * it.quantity }
-    val deliveryCharge = if (subtotal >= 2000) 0 else if (district.contains("Dhaka", ignoreCase = true) || district.contains("ঢাকা")) 60 else 120
+    val resolvedDeliveryType = if (deliveryType.equals("Express", ignoreCase = true) &&
+      BangladeshLocations.isChandpurDistrict(district)
+    ) {
+      "Express"
+    } else {
+      "Standard"
+    }
+    val deliveryCharge = BangladeshLocations.calculateShippingFee(
+      subtotal = subtotal,
+      district = district,
+      deliveryType = resolvedDeliveryType,
+      shippingInfo = _storeConfig.value.shippingInfo
+    )
 
     var discount = 0
     if (appliedCoupon != null) {
@@ -1210,7 +1249,10 @@ class StoreRepository(private val context: Context) {
 
     val total = (subtotal - discount).coerceAtLeast(0) + deliveryCharge
     val orderId = "ORD-${Random.nextInt(1000, 9999)}"
-    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    val nowMs = System.currentTimeMillis()
+    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(nowMs))
+    val safeOrderType = if (orderType.equals("Custom", ignoreCase = true)) "Custom" else "Normal"
+    val safeCategory = if (addressCategory.equals("Office", ignoreCase = true)) "Office" else "Home"
 
     val newOrder = Order(
       id = orderId,
@@ -1238,7 +1280,14 @@ class StoreRepository(private val context: Context) {
       paymentMethod = paymentMethod,
       status = "Pending",
       date = currentDate,
-      trackingId = ""
+      trackingId = "",
+      orderType = safeOrderType,
+      deliveryType = resolvedDeliveryType,
+      deliveredBy = "",
+      landmark = landmark.trim(),
+      addressCategory = safeCategory,
+      defaultShippingAddress = defaultShippingAddress,
+      createdAt = nowMs
     )
 
     // Deduct stock across Storefront + POS Inventory + Firestore in real time
@@ -1287,6 +1336,12 @@ class StoreRepository(private val context: Context) {
             "district" to newOrder.district,
             "thana" to newOrder.thana,
             "address" to newOrder.address,
+            "landmark" to newOrder.landmark,
+            "addressCategory" to newOrder.addressCategory,
+            "defaultShippingAddress" to newOrder.defaultShippingAddress,
+            "orderType" to newOrder.orderType,
+            "deliveryType" to newOrder.deliveryType,
+            "deliveredBy" to newOrder.deliveredBy,
             "items" to itemsMaps,
             "subtotal" to newOrder.subtotal,
             "deliveryCharge" to newOrder.deliveryCharge,
@@ -1298,6 +1353,7 @@ class StoreRepository(private val context: Context) {
             "date" to newOrder.date,
             "trackingId" to newOrder.trackingId,
             "stockRestockedOnCancel" to false,
+            "createdAtMs" to nowMs,
             "createdAt" to FieldValue.serverTimestamp(),
             "updatedAt" to FieldValue.serverTimestamp()
           )
@@ -1518,10 +1574,20 @@ class StoreRepository(private val context: Context) {
   }
 
   fun dispatchToCourier(orderId: String, provider: String): String {
-    val prefix = if (provider.contains("Steadfast", true)) "ST-" else "PTH-"
+    val cleanProvider = when {
+      provider.contains("Pathao", true) -> "Pathao"
+      provider.contains("Stead", true) -> "SteadFast"
+      provider.contains("Digital", true) -> "Digital"
+      else -> provider.ifBlank { "SteadFast" }
+    }
+    val prefix = when (cleanProvider) {
+      "Pathao" -> "PTH-"
+      "Digital" -> "DGT-"
+      else -> "ST-"
+    }
     val tracking = prefix + Random.nextInt(100000, 999999)
     _orders.value = _orders.value.map {
-      if (it.id == orderId) it.copy(status = "Shipped", trackingId = tracking) else it
+      if (it.id == orderId) it.copy(status = "Shipped", trackingId = tracking, deliveredBy = cleanProvider) else it
     }
     if (isVerifiedAdmin()) {
       try {
@@ -1529,6 +1595,7 @@ class StoreRepository(private val context: Context) {
           mapOf(
             "status" to "Shipped",
             "trackingId" to tracking,
+            "deliveredBy" to cleanProvider,
             "updatedAt" to FieldValue.serverTimestamp()
           )
         )?.addOnFailureListener { e ->
@@ -1552,6 +1619,26 @@ class StoreRepository(private val context: Context) {
       }
     }
     return tracking
+  }
+
+  fun updateOrderDeliveryPartner(orderId: String, deliveredBy: String) {
+    _orders.value = _orders.value.map {
+      if (it.id == orderId) it.copy(deliveredBy = deliveredBy) else it
+    }
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("orders")?.document(orderId)?.update(
+          mapOf(
+            "deliveredBy" to deliveredBy,
+            "updatedAt" to FieldValue.serverTimestamp()
+          )
+        )?.addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+        }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+      }
+    }
   }
 
   // Returns and Exchanges
@@ -1858,6 +1945,57 @@ class StoreRepository(private val context: Context) {
       } else {
         defDesign
       }
+      val sObj = o.optJSONObject("shippingInfo")
+      val defShip = ShippingInfoConfig()
+      val shippingInfo = if (sObj != null) {
+        val optArr = sObj.optJSONArray("options")
+        val opts = if (optArr != null) {
+          buildList {
+            for (i in 0 until optArr.length()) {
+              val itemObj = optArr.optJSONObject(i) ?: continue
+              val customDistArr = itemObj.optJSONArray("customDistricts")
+              val customDists = buildList {
+                if (customDistArr != null) {
+                  for (j in 0 until customDistArr.length()) {
+                    val d = customDistArr.optString(j)
+                    if (d.isNotBlank()) add(d)
+                  }
+                }
+              }
+              add(
+                ShippingOptionItem(
+                  id = itemObj.optString("id", "ship-$i"),
+                  title = itemObj.optString("title", "Delivery Option"),
+                  subtitle = itemObj.optString("subtitle", ""),
+                  badge = itemObj.optString("badge", ""),
+                  fee = itemObj.optInt("fee", 100),
+                  freeAbove = itemObj.optInt("freeAbove", 0),
+                  estimatedDays = itemObj.optString("estimatedDays", "২-৪ কার্যদিবস"),
+                  deliveryType = itemObj.optString("deliveryType", "Standard"),
+                  districtRule = itemObj.optString("districtRule", "ALL"),
+                  customDistricts = customDists,
+                  enabled = itemObj.optBoolean("enabled", true)
+                )
+              )
+            }
+          }
+        } else {
+          defShip.options
+        }
+        ShippingInfoConfig(
+          sectionTitle = sObj.optString("sectionTitle", defShip.sectionTitle),
+          chandpurExpressNotice = sObj.optString("chandpurExpressNotice", defShip.chandpurExpressNotice),
+          sectionBgColor = sObj.optString("sectionBgColor", defShip.sectionBgColor),
+          blockBgColor = sObj.optString("blockBgColor", defShip.blockBgColor),
+          borderColor = sObj.optString("borderColor", defShip.borderColor),
+          textColor = sObj.optString("textColor", defShip.textColor),
+          buttonBgColor = sObj.optString("buttonBgColor", defShip.buttonBgColor),
+          buttonTextColor = sObj.optString("buttonTextColor", defShip.buttonTextColor),
+          options = if (opts.isNotEmpty()) opts else defShip.options
+        )
+      } else {
+        defShip
+      }
       val defCfg = StoreConfig()
       StoreConfig(
         storeName = o.optString("storeName", defCfg.storeName),
@@ -1880,7 +2018,8 @@ class StoreRepository(private val context: Context) {
         smsGatewayDeviceEnabled = o.optBoolean("smsGatewayDeviceEnabled", defCfg.smsGatewayDeviceEnabled),
         smsAutoSendOnOrderStatus = o.optBoolean("smsAutoSendOnOrderStatus", defCfg.smsAutoSendOnOrderStatus),
         smsDelaySeconds = o.optInt("smsDelaySeconds", defCfg.smsDelaySeconds).coerceIn(2, 15),
-        design = design
+        design = design,
+        shippingInfo = shippingInfo
       )
     } catch (_: Exception) {
       StoreConfig()
@@ -1933,6 +2072,36 @@ class StoreRepository(private val context: Context) {
       put("wishlistBg", d.wishlistBg)
       put("wishlistTextColor", d.wishlistTextColor)
     }
+    val s = config.shippingInfo
+    val sObj = JSONObject().apply {
+      put("sectionTitle", s.sectionTitle)
+      put("chandpurExpressNotice", s.chandpurExpressNotice)
+      put("sectionBgColor", s.sectionBgColor)
+      put("blockBgColor", s.blockBgColor)
+      put("borderColor", s.borderColor)
+      put("textColor", s.textColor)
+      put("buttonBgColor", s.buttonBgColor)
+      put("buttonTextColor", s.buttonTextColor)
+      val optArr = JSONArray()
+      s.options.forEach { opt ->
+        optArr.put(
+          JSONObject().apply {
+            put("id", opt.id)
+            put("title", opt.title)
+            put("subtitle", opt.subtitle)
+            put("badge", opt.badge)
+            put("fee", opt.fee)
+            put("freeAbove", opt.freeAbove)
+            put("estimatedDays", opt.estimatedDays)
+            put("deliveryType", opt.deliveryType)
+            put("districtRule", opt.districtRule)
+            put("customDistricts", JSONArray(opt.customDistricts))
+            put("enabled", opt.enabled)
+          }
+        )
+      }
+      put("options", optArr)
+    }
     val root = JSONObject().apply {
       put("storeName", config.storeName)
       put("tagline", config.tagline)
@@ -1955,6 +2124,7 @@ class StoreRepository(private val context: Context) {
       put("smsAutoSendOnOrderStatus", config.smsAutoSendOnOrderStatus)
       put("smsDelaySeconds", config.smsDelaySeconds.coerceIn(2, 15))
       put("design", dObj)
+      put("shippingInfo", sObj)
     }
     prefs.edit().putString("sajgoj_store_config", root.toString()).apply()
   }

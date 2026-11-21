@@ -101,6 +101,7 @@ enum class AdminTab(val title: String, val icon: String) {
   HOME_PAGE_SETTING("Home Page Setting", "🏠"),
   PRODUCTS("প্রোডাক্ট", "👗"),
   ORDERS("অর্ডার", "📦"),
+  SHIPPING_INFO("Shipping info", "🚚"),
   MARKETING("মার্কেটিং", "🎁"),
   SMS_GATEWAY("SMS গেটওয়ে", "📲"),
   SETTINGS("সেটিংস", "⚙️")
@@ -536,7 +537,12 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     thana: String,
     address: String,
     paymentMethod: String,
-    appliedCoupon: Coupon?
+    appliedCoupon: Coupon?,
+    orderType: String = "Normal",
+    deliveryType: String = "Standard",
+    landmark: String = "",
+    addressCategory: String = "Home",
+    defaultShippingAddress: Boolean = false
   ): Order? {
     val order = repository.placeOrder(
       customerName = customerName,
@@ -545,7 +551,12 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       thana = thana,
       address = address,
       paymentMethod = paymentMethod,
-      appliedCoupon = appliedCoupon
+      appliedCoupon = appliedCoupon,
+      orderType = orderType,
+      deliveryType = deliveryType,
+      landmark = landmark,
+      addressCategory = addressCategory,
+      defaultShippingAddress = defaultShippingAddress
     )
     if (order != null) {
       _isCheckoutOpen.value = false
@@ -555,6 +566,11 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       emitToast("অর্ডার সম্পন্ন করা সম্ভব হয়নি। কার্ট খালি!")
     }
     return order
+  }
+
+  fun updateOrderDeliveryPartner(orderId: String, deliveredBy: String) {
+    repository.updateOrderDeliveryPartner(orderId, deliveredBy)
+    emitToast("অর্ডার $orderId এর ডেলিভারি পার্টনার \"$deliveredBy\" সেট হয়েছে 🚚")
   }
 
   fun updateOrderStatus(orderId: String, status: String) {

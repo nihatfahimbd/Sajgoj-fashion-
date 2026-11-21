@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,12 +43,18 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -60,8 +68,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -79,8 +91,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.BangladeshLocations
 import com.example.data.model.CartItem
 import com.example.data.model.Coupon
+import com.example.data.model.StoreConfig
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
 import com.example.ui.theme.AntiqueGold
@@ -97,10 +111,11 @@ import kotlinx.coroutines.delay
 fun CartAndCheckoutDialog(
   cartItems: List<CartItem>,
   coupons: List<Coupon>,
+  storeConfig: StoreConfig = StoreConfig(),
   onDismiss: () -> Unit,
   onUpdateQty: (String, Int) -> Unit,
   onRemoveItem: (String) -> Unit,
-  onPlaceOrder: (String, String, String, String, String, String, Coupon?) -> Unit,
+  onPlaceOrder: (String, String, String, String, String, String, Coupon?, String, String, String, String, Boolean) -> Unit,
   onShowToast: (String) -> Unit,
   visible: Boolean = true
 ) {
@@ -114,34 +129,44 @@ fun CartAndCheckoutDialog(
     }
   }
 
-  // Form states
+  // Form states (Daraz-style Shipping Address + Chandpur Express Delivery Type)
   var name by remember { mutableStateOf("") }
   var phone by remember { mutableStateOf("") }
-  val districts = listOf(
-    "ঢাকা (Dhaka)",
-    "চট্টগ্রাম (Chattogram)",
-    "সিলেট (Sylhet)",
-    "রাজশাহী (Rajshahi)",
-    "খুলনা (Khulna)",
-    "বরিশাল (Barishal)",
-    "রংপুর (Rangpur)",
-    "ময়মনসিংহ (Mymensingh)"
-  )
-  var selectedDistrict by remember { mutableStateOf(districts[0]) }
-  var isDistrictExpanded by remember { mutableStateOf(false) }
-  var thana by remember { mutableStateOf("") }
+  var selectedDistrict by remember { mutableStateOf("ঢাকা (Dhaka)") }
+  var thana by remember { mutableStateOf("ধানমন্ডি") }
+  var showLocationPickerDialog by remember { mutableStateOf(false) }
+  var locationPickerStep by remember { mutableStateOf("DISTRICT") } // "DISTRICT" | "THANA"
+  var districtSearchQuery by remember { mutableStateOf("") }
+
   var address by remember { mutableStateOf("") }
+  var landmark by remember { mutableStateOf("") }
+  var addressCategory by remember { mutableStateOf("Home") } // "Home" | "Office"
+  var defaultShippingAddress by remember { mutableStateOf(false) }
+  var deliveryType by remember { mutableStateOf("Standard") } // "Standard" | "Express"
+  var orderType by remember { mutableStateOf("Normal") } // "Normal" | "Custom"
   var paymentMethod by remember { mutableStateOf("Cash on Delivery") }
+
+  val isChandpur = remember(selectedDistrict) { BangladeshLocations.isChandpurDistrict(selectedDistrict) }
+
+  // Auto-revert Express back to Standard if user changes district away from Chandpur
+  LaunchedEffect(isChandpur) {
+    if (!isChandpur && deliveryType == "Express") {
+      deliveryType = "Standard"
+    }
+  }
 
   // Coupon state
   var couponCodeInput by remember { mutableStateOf("") }
   var appliedCoupon by remember { mutableStateOf<Coupon?>(null) }
 
-  // Calculations
+  // Calculations using StoreConfig ShippingInfo rules
   val subtotal = cartItems.sumOf { it.product.price * it.quantity }
-  val isFreeDelivery = subtotal >= 2000
-  val isDhaka = selectedDistrict.contains("ঢাকা") || selectedDistrict.contains("Dhaka")
-  val deliveryCharge = if (isFreeDelivery) 0 else if (isDhaka) 60 else 120
+  val deliveryCharge = BangladeshLocations.calculateShippingFee(
+    subtotal = subtotal,
+    district = selectedDistrict,
+    deliveryType = deliveryType,
+    shippingInfo = storeConfig.shippingInfo
+  )
 
   var discount = 0
   if (appliedCoupon != null) {
@@ -630,101 +655,372 @@ fun CartAndCheckoutDialog(
                       )
                     }
                   } else {
-                    // Customer Checkout Form
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Customer Checkout Form (Screenshots 3 & 4 Daraz Shipping Address + 64 Districts + Express Chandpur Delivery Type)
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                       Text(
-                        text = "🚚 ডেলিভারি ঠিকানা পূরণ করুন",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
+                        text = "🚚 Shipping Address",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
                         color = RoyalMaroon
                       )
 
-                      // Name
+                      // Recipient's Name *
                       OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("আপনার নাম *", fontSize = 12.sp) },
-                        placeholder = { Text("সম্পূর্ণ নাম লিখুন", fontSize = 12.sp) },
+                        label = { Text("Recipient's Name *", fontSize = 12.sp) },
+                        placeholder = { Text("Input the real name", fontSize = 12.sp) },
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                           .fillMaxWidth()
                           .testTag("checkout_name_input")
                       )
 
-                      // Phone
+                      // Phone Number *
                       OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
-                        label = { Text("মোবাইল নম্বর * (১১ ডিজিট)", fontSize = 12.sp) },
-                        placeholder = { Text("01XXXXXXXXX", fontSize = 12.sp) },
+                        label = { Text("Phone Number * (১১ ডিজিট)", fontSize = 12.sp) },
+                        placeholder = { Text("Please input Phone Number", fontSize = 12.sp) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                           .fillMaxWidth()
                           .testTag("checkout_phone_input")
                       )
 
-                      // District Dropdown
-                      ExposedDropdownMenuBox(
-                        expanded = isDistrictExpanded,
-                        onExpandedChange = { isDistrictExpanded = !isDistrictExpanded }
+                      // District / Thana / City * (Screenshot 3 & 4: searchable 64 districts + auto-cascading Thana)
+                      Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = CreamBackground,
+                        border = BorderStroke(1.2.dp, BorderGold),
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .heightIn(min = 56.dp)
+                          .clickable {
+                            locationPickerStep = "DISTRICT"
+                            districtSearchQuery = ""
+                            showLocationPickerDialog = true
+                          }
+                          .testTag("checkout_district_thana_selector")
                       ) {
-                        OutlinedTextField(
-                          value = selectedDistrict,
-                          onValueChange = {},
-                          readOnly = true,
-                          label = { Text("জেলা নির্বাচন করুন", fontSize = 12.sp) },
-                          trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDistrictExpanded) },
-                          shape = RoundedCornerShape(14.dp),
+                        Row(
                           modifier = Modifier
-                            .menuAnchor()
                             .fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
-                          expanded = isDistrictExpanded,
-                          onDismissRequest = { isDistrictExpanded = false },
-                          containerColor = Color.White
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically
                         ) {
-                          districts.forEach { dist ->
-                            DropdownMenuItem(
-                              text = { Text(dist, fontSize = 13.sp) },
-                              onClick = {
-                                selectedDistrict = dist
-                                isDistrictExpanded = false
-                              }
+                          Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                              text = "District / Thana / City *",
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = RoyalMaroon
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                              text = if (selectedDistrict.isNotBlank() && thana.isNotBlank()) {
+                                "$selectedDistrict / $thana"
+                              } else {
+                                "Please input District / Thana / City"
+                              },
+                              fontSize = 12.5.sp,
+                              fontWeight = FontWeight.SemiBold,
+                              color = DarkEspresso,
+                              maxLines = 1,
+                              overflow = TextOverflow.Ellipsis
+                            )
+                          }
+                          Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "জেলা ও থানা নির্বাচন",
+                            tint = RoyalMaroon
+                          )
+                        }
+                      }
+
+                      // Quick cascading Thana trigger chip row
+                      Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                      ) {
+                        Surface(
+                          shape = RoundedCornerShape(10.dp),
+                          color = Color(0xFFF0F9FF),
+                          border = BorderStroke(1.dp, Color(0xFF0284C7).copy(alpha = 0.4f)),
+                          modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                            .clickable {
+                              locationPickerStep = "DISTRICT"
+                              districtSearchQuery = ""
+                              showLocationPickerDialog = true
+                            }
+                        ) {
+                          Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                          ) {
+                            Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(15.dp))
+                            Text("৬৪ জেলা খুঁজুন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                          }
+                        }
+
+                        Surface(
+                          shape = RoundedCornerShape(10.dp),
+                          color = Color(0xFFFFF7ED),
+                          border = BorderStroke(1.dp, Color(0xFFEA580C).copy(alpha = 0.4f)),
+                          modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                            .clickable {
+                              locationPickerStep = "THANA"
+                              showLocationPickerDialog = true
+                            }
+                            .testTag("checkout_thana_picker_btn")
+                        ) {
+                          Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                          ) {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFFEA580C), modifier = Modifier.size(15.dp))
+                            Text("থানা: ${thana.ifBlank { "বাছাই" }}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC2410C), maxLines = 1, overflow = TextOverflow.Ellipsis)
                           }
                         }
                       }
 
-                      // Thana / Upazila
-                      OutlinedTextField(
-                        value = thana,
-                        onValueChange = { thana = it },
-                        label = { Text("থানা / উপজেলা", fontSize = 12.sp) },
-                        placeholder = { Text("যেমন: ধানমন্ডি / মিরপুর", fontSize = 12.sp) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
-                      )
-
-                      // Full Address
+                      // Address * (House no./building/street/area)
                       OutlinedTextField(
                         value = address,
                         onValueChange = { address = it },
-                        label = { Text("সম্পূর্ণ বিস্তারিত ঠিকানা *", fontSize = 12.sp) },
-                        placeholder = { Text("বাসা নম্বর, রোড নম্বর, ফ্ল্যাট নম্বর...", fontSize = 12.sp) },
+                        label = { Text("Address *", fontSize = 12.sp) },
+                        placeholder = { Text("House no./building/street/area", fontSize = 12.sp) },
                         minLines = 2,
                         maxLines = 3,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                           .fillMaxWidth()
                           .testTag("checkout_address_input")
                       )
 
-                      // Payment Method Selector
+                      // Landmark (Optional)
+                      OutlinedTextField(
+                        value = landmark,
+                        onValueChange = { landmark = it },
+                        label = { Text("Landmark(Optional)", fontSize = 12.sp) },
+                        placeholder = { Text("Add Additional Info", fontSize = 12.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                      )
+
+                      // Address Category: Home / Office
+                      Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                      ) {
+                        Text(text = "Address Category", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DarkEspresso)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                          listOf("Home", "Office").forEach { cat ->
+                            val selected = addressCategory == cat
+                            Row(
+                              verticalAlignment = Alignment.CenterVertically,
+                              modifier = Modifier
+                                .heightIn(min = 48.dp)
+                                .clickable { addressCategory = cat }
+                                .padding(horizontal = 6.dp)
+                            ) {
+                              RadioButton(
+                                selected = selected,
+                                onClick = { addressCategory = cat },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF0284C7))
+                              )
+                              Text(text = cat, fontSize = 12.5.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+                            }
+                          }
+                        }
+                      }
+
+                      // Default Shipping Address On / Off
+                      Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                      ) {
+                        Text(text = "Default Shipping Address", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DarkEspresso)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                          listOf(true to "on", false to "Off").forEach { (flag, label) ->
+                            val selected = defaultShippingAddress == flag
+                            Row(
+                              verticalAlignment = Alignment.CenterVertically,
+                              modifier = Modifier
+                                .heightIn(min = 48.dp)
+                                .clickable { defaultShippingAddress = flag }
+                                .padding(horizontal = 4.dp)
+                            ) {
+                              RadioButton(
+                                selected = selected,
+                                onClick = { defaultShippingAddress = flag },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF0284C7))
+                              )
+                              Text(text = label, fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+                            }
+                          }
+                        }
+                      }
+
+                      // Delivery Type & Shipping Info Block (Styled from Admin Shipping info studio + Chandpur-only Express)
+                      val shipCfg = storeConfig.shippingInfo
+                      val sSectionBg = parseShippingHexColor(shipCfg.sectionBgColor, Color(0xFFF0F9FF))
+                      val sBlockBg = parseShippingHexColor(shipCfg.blockBgColor, Color.White)
+                      val sBorder = parseShippingHexColor(shipCfg.borderColor, Color(0xFF0284C7))
+                      val sText = parseShippingHexColor(shipCfg.textColor, Color(0xFF0F172A))
+                      val sBtnBg = parseShippingHexColor(shipCfg.buttonBgColor, Color(0xFF0284C7))
+                      val sBtnText = parseShippingHexColor(shipCfg.buttonTextColor, Color.White)
+
+                      Column(
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .clip(RoundedCornerShape(14.dp))
+                          .background(sSectionBg)
+                          .border(1.3.dp, sBorder, RoundedCornerShape(14.dp))
+                          .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                      ) {
+                        Text(
+                          text = shipCfg.sectionTitle.ifBlank { "Delivery Type & Shipping Info" },
+                          fontSize = 13.sp,
+                          fontWeight = FontWeight.ExtraBold,
+                          color = sText
+                        )
+
+                        shipCfg.options.filter { it.enabled }.forEach { opt ->
+                          val optionType = if (opt.deliveryType.equals("Express", true)) "Express" else "Standard"
+                          val isOptionEligible = when (opt.districtRule) {
+                            "CHANDPUR_ONLY" -> isChandpur
+                            "CUSTOM" -> opt.customDistricts.isEmpty() || opt.customDistricts.any { selectedDistrict.contains(it, true) }
+                            else -> true
+                          }
+                          val isSelected = deliveryType.equals(optionType, ignoreCase = true) && isOptionEligible
+                          val effFee = if (opt.freeAbove > 0 && subtotal >= opt.freeAbove && optionType != "Express") 0 else opt.fee
+
+                          Row(
+                            modifier = Modifier
+                              .fillMaxWidth()
+                              .clip(RoundedCornerShape(12.dp))
+                              .background(if (isOptionEligible) sBlockBg else Color(0xFFF1F5F9))
+                              .border(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color = if (isSelected) sBtnBg else sBorder.copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(12.dp)
+                              )
+                              .clickable {
+                                if (isOptionEligible) {
+                                  deliveryType = optionType
+                                } else {
+                                  onShowToast(shipCfg.chandpurExpressNotice.ifBlank { "Express ডেলিভারি শুধুমাত্র চাঁদপুর জেলার জন্য প্রযোজ্য!" })
+                                }
+                              }
+                              .padding(10.dp)
+                              .testTag("checkout_delivery_type_$optionType"),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                          ) {
+                            Box(
+                              modifier = Modifier
+                                .size(22.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                  when {
+                                    isSelected -> sBtnBg
+                                    !isOptionEligible -> Color(0xFFCBD5E1)
+                                    else -> Color.White
+                                  }
+                                )
+                                .border(1.5.dp, if (isSelected) sBtnBg else sBorder, RoundedCornerShape(6.dp)),
+                              contentAlignment = Alignment.Center
+                            ) {
+                              if (isSelected) {
+                                Icon(Icons.Default.Check, contentDescription = null, tint = sBtnText, modifier = Modifier.size(14.dp))
+                              } else if (!isOptionEligible) {
+                                Icon(Icons.Default.Lock, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(12.dp))
+                              }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                  text = opt.title,
+                                  fontSize = 12.5.sp,
+                                  fontWeight = FontWeight.ExtraBold,
+                                  color = if (isOptionEligible) sText else Color.Gray
+                                )
+                                if (opt.badge.isNotBlank()) {
+                                  Surface(shape = RoundedCornerShape(6.dp), color = if (isOptionEligible) sBtnBg else Color(0xFF94A3B8)) {
+                                    Text(
+                                      text = opt.badge,
+                                      fontSize = 9.5.sp,
+                                      fontWeight = FontWeight.Bold,
+                                      color = sBtnText,
+                                      modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                  }
+                                }
+                              }
+                              Text(
+                                text = if (!isOptionEligible) {
+                                  "🔒 শুধুমাত্র চাঁদপুর জেলার জন্য প্রযোজ্য"
+                                } else {
+                                  opt.subtitle.ifBlank { opt.estimatedDays }
+                                },
+                                fontSize = 10.5.sp,
+                                color = if (!isOptionEligible) Color(0xFFDC2626) else sText.copy(alpha = 0.78f)
+                              )
+                            }
+
+                            Text(
+                              text = if (effFee == 0) "ফ্রি" else "৳$effFee",
+                              fontSize = 12.5.sp,
+                              fontWeight = FontWeight.Black,
+                              color = if (isOptionEligible) sBtnBg else Color.Gray
+                            )
+                          }
+                        }
+                      }
+
+                      // Order Type selector (Normal / Custom)
+                      Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                      ) {
+                        Text(text = "Order Type:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                          listOf("Normal", "Custom").forEach { ot ->
+                            val selected = orderType == ot
+                            Surface(
+                              shape = RoundedCornerShape(10.dp),
+                              color = if (selected) RoyalMaroon else CreamBackground,
+                              border = BorderStroke(1.dp, if (selected) RoyalMaroon else BorderGold),
+                              modifier = Modifier
+                                .heightIn(min = 48.dp)
+                                .clickable { orderType = ot }
+                            ) {
+                              Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+                                Text(ot, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (selected) Color.White else DarkEspresso)
+                              }
+                            }
+                          }
+                        }
+                      }
+
+                      // Payment Method Selector (dynamically honors Admin Footer/Payment toggles)
                       Text(
                         text = "পেমেন্ট মাধ্যম নির্বাচন:",
                         fontSize = 12.sp,
@@ -732,43 +1028,57 @@ fun CartAndCheckoutDialog(
                         color = DarkEspresso
                       )
 
-                      Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                      ) {
-                        listOf("Cash on Delivery", "bKash", "Nagad").forEach { method ->
-                          val isSelected = paymentMethod == method
-                          Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) RoyalMaroon else CreamBackground,
-                            border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
-                            modifier = Modifier
-                              .weight(1f)
-                              .heightIn(min = 48.dp)
-                              .clickable { paymentMethod = method }
+                      val enabledPayments = buildList {
+                        if (storeConfig.codEnabled) add("Cash on Delivery")
+                        if (storeConfig.bkashEnabled) add("bKash")
+                        if (storeConfig.nagadEnabled) add("Nagad")
+                        if (storeConfig.rocketEnabled) add("Rocket")
+                        if (storeConfig.visaEnabled) add("Visa/Mastercard")
+                      }.ifEmpty { listOf("Cash on Delivery") }
+
+                      Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        enabledPayments.chunked(3).forEach { rowMethods ->
+                          Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                           ) {
-                            Box(
-                              modifier = Modifier.padding(vertical = 8.dp),
-                              contentAlignment = Alignment.Center
-                            ) {
-                              Text(
-                                text = method,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else DarkEspresso
-                              )
+                            rowMethods.forEach { method ->
+                              val isSelected = paymentMethod == method
+                              Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) RoyalMaroon else CreamBackground,
+                                border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+                                modifier = Modifier
+                                  .weight(1f)
+                                  .heightIn(min = 48.dp)
+                                  .clickable { paymentMethod = method }
+                              ) {
+                                Box(
+                                  modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                  contentAlignment = Alignment.Center
+                                ) {
+                                  Text(
+                                    text = method,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) Color.White else DarkEspresso,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                  )
+                                }
+                              }
                             }
                           }
                         }
                       }
 
-                      Spacer(modifier = Modifier.height(10.dp))
+                      Spacer(modifier = Modifier.height(8.dp))
 
                       // Submit Button
                       Button(
                         onClick = {
-                          if (name.isBlank() || phone.isBlank() || address.isBlank()) {
-                            onShowToast("অনুগ্রহ করে নাম, ফোন নম্বর এবং সম্পূর্ণ ঠিকানা লিখুন!")
+                          if (name.isBlank() || phone.isBlank() || address.isBlank() || selectedDistrict.isBlank() || thana.isBlank()) {
+                            onShowToast("অনুগ্রহ করে নাম, মোবাইল নম্বর, জেলা/থানা এবং ঠিকানা লিখুন!")
                             return@Button
                           }
                           if (phone.length < 11) {
@@ -782,7 +1092,12 @@ fun CartAndCheckoutDialog(
                             thana,
                             address,
                             paymentMethod,
-                            appliedCoupon
+                            appliedCoupon,
+                            orderType,
+                            deliveryType,
+                            landmark,
+                            addressCategory,
+                            defaultShippingAddress
                           )
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
@@ -819,5 +1134,172 @@ fun CartAndCheckoutDialog(
         }
       }
     }
+  }
+
+  // Searchable 64 Districts -> Auto-Cascading Thanas Picker Dialog
+  if (showLocationPickerDialog) {
+    val matchingDistricts = remember(districtSearchQuery) {
+      BangladeshLocations.searchDistricts(districtSearchQuery)
+    }
+    val districtThanas = remember(selectedDistrict) {
+      BangladeshLocations.getThanasForDistrict(selectedDistrict)
+    }
+
+    AlertDialog(
+      onDismissRequest = { showLocationPickerDialog = false },
+      containerColor = Color.White,
+      title = {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+          Text(
+            text = if (locationPickerStep == "DISTRICT") "District / জেলা খুঁজুন (৬৪টি জেলা)" else "Thana / থানা নির্বাচন — $selectedDistrict",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Black,
+            color = DarkEspresso
+          )
+          Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = if (locationPickerStep == "DISTRICT") Color(0xFF0284C7) else Color(0xFFF1F5F9),
+              modifier = Modifier.clickable { locationPickerStep = "DISTRICT" }
+            ) {
+              Text(
+                text = "১. জেলা (৬৪)",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (locationPickerStep == "DISTRICT") Color.White else DarkEspresso,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+              )
+            }
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = if (locationPickerStep == "THANA") Color(0xFF0284C7) else Color(0xFFF1F5F9),
+              modifier = Modifier.clickable { locationPickerStep = "THANA" }
+            ) {
+              Text(
+                text = "২. থানা (${districtThanas.size})",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (locationPickerStep == "THANA") Color.White else DarkEspresso,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+              )
+            }
+          }
+        }
+      },
+      text = {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(360.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          if (locationPickerStep == "DISTRICT") {
+            OutlinedTextField(
+              value = districtSearchQuery,
+              onValueChange = { districtSearchQuery = it },
+              placeholder = { Text("জেলার নাম লিখুন (যেমন: চাঁদপুর / Chandpur / Dhaka)", fontSize = 12.sp) },
+              leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+              singleLine = true,
+              shape = RoundedCornerShape(10.dp),
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("district_search_input")
+            )
+            LazyColumn(
+              modifier = Modifier.fillMaxSize(),
+              verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+              items(matchingDistricts, key = { it.nameEn }) { dist ->
+                val isCurrent = selectedDistrict == dist.displayLabel
+                val isDistChandpur = dist.nameEn.equals("Chandpur", true)
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isCurrent) Color(0xFFE0F2FE) else Color(0xFFF8FAFC))
+                    .clickable {
+                      selectedDistrict = dist.displayLabel
+                      thana = dist.thanas.firstOrNull() ?: "সদর"
+                      // Automatically display cascading Thanas list right after choosing a district!
+                      locationPickerStep = "THANA"
+                    }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                      text = dist.displayLabel,
+                      fontSize = 13.sp,
+                      fontWeight = if (isCurrent) FontWeight.ExtraBold else FontWeight.SemiBold,
+                      color = DarkEspresso
+                    )
+                    Text(
+                      text = "${dist.division} Division • ${dist.thanas.size} টি থানা",
+                      fontSize = 10.5.sp,
+                      color = Color.Gray
+                    )
+                  }
+                  if (isDistChandpur) {
+                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFFEF3C7)) {
+                      Text(
+                        text = "⚡ Express Available",
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFB45309),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                      )
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            Text(
+              text = "$selectedDistrict এর সকল থানা (${districtThanas.size} টি):",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color(0xFF0369A1)
+            )
+            LazyColumn(
+              modifier = Modifier.fillMaxSize(),
+              verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+              items(districtThanas.withIndex().toList(), key = { it.value + it.index }) { (idx, th) ->
+                val isCurrent = thana == th
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isCurrent) Color(0xFFE0F2FE) else Color(0xFFF8FAFC))
+                    .clickable {
+                      thana = th
+                      showLocationPickerDialog = false
+                    }
+                    .padding(horizontal = 12.dp, vertical = 11.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Text(
+                    text = "${idx + 1}. $th",
+                    fontSize = 13.sp,
+                    fontWeight = if (isCurrent) FontWeight.ExtraBold else FontWeight.Medium,
+                    color = DarkEspresso
+                  )
+                  if (isCurrent) {
+                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(18.dp))
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      confirmButton = {
+        TextButton(onClick = { showLocationPickerDialog = false }) {
+          Text("সম্পন্ন", fontWeight = FontWeight.Bold)
+        }
+      }
+    )
   }
 }

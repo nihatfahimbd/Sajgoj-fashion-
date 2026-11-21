@@ -1554,12 +1554,58 @@
         cod: true, 
         visa: true,
         copyright: "© 2026 SAJGOJ FASHION. All Rights Reserved."
+      },
+      shippingInfo: {
+        sectionTitle: "Delivery Type & Shipping Info",
+        chandpurExpressNotice: "⚡ Express Delivery শুধুমাত্র চাঁদপুর জেলার জন্য প্রযোজ্য",
+        sectionBgColor: "#f0f9ff",
+        blockBgColor: "#ffffff",
+        borderColor: "#0284c7",
+        textColor: "#0f172a",
+        buttonBgColor: "#0284c7",
+        buttonTextColor: "#ffffff",
+        options: [
+          {
+            id: "ship-std",
+            title: "Standard Delivery",
+            subtitle: "সারা বাংলাদেশে ৬৪ জেলায় বিশ্বস্ত হোম ডেলিভারি (২০০০৳+ ফ্রি)",
+            badge: "সারা বাংলাদেশ",
+            fee: 120,
+            freeAbove: 2000,
+            estimatedDays: "২-৪ কার্যদিবস",
+            deliveryType: "Standard",
+            districtRule: "ALL",
+            customDistricts: [],
+            enabled: true
+          },
+          {
+            id: "ship-exp",
+            title: "Express Delivery (Fast)",
+            subtitle: "সুপার ফাস্ট একই দিনে / ২৪ ঘন্টায় ডেলিভারি (শুধুমাত্র চাঁদপুর জেলা)",
+            badge: "শুধুমাত্র চাঁদপুর",
+            fee: 100,
+            freeAbove: 0,
+            estimatedDays: "২৪ ঘন্টা / একই দিন",
+            deliveryType: "Express",
+            districtRule: "CHANDPUR_ONLY",
+            customDistricts: [],
+            enabled: true
+          }
+        ]
       }
     };
 
     const mergeStoreConfig = (baseCfg, incomingCfg) => {
       const b = baseCfg || initialStoreConfig;
       const r = incomingCfg || {};
+      const mergedShipping = {
+        ...initialStoreConfig.shippingInfo,
+        ...(b.shippingInfo || {}),
+        ...(r.shippingInfo || {})
+      };
+      if (!Array.isArray(mergedShipping.options) || mergedShipping.options.length === 0) {
+        mergedShipping.options = initialStoreConfig.shippingInfo.options;
+      }
       return {
         ...initialStoreConfig,
         ...b,
@@ -1568,8 +1614,116 @@
         b2g1: { ...initialStoreConfig.b2g1, ...(b.b2g1 || {}), ...(r.b2g1 || {}) },
         header: { ...initialStoreConfig.header, ...(b.header || {}), ...(r.header || {}) },
         design: { ...initialStoreConfig.design, ...(b.design || {}), ...(r.design || {}) },
-        footer: { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) }
+        footer: { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) },
+        shippingInfo: mergedShipping
       };
+    };
+
+    // =========================================================
+    // ALL 64 DISTRICTS OF BANGLADESH WITH SERIAL THANAS
+    // =========================================================
+    const BD_DISTRICTS_THANAS = [
+      // Dhaka Division (13)
+      { en: "Dhaka", bn: "ঢাকা", div: "Dhaka", thanas: ["ধানমন্ডি", "গুলশান", "বনানী", "উত্তরা পূর্ব", "উত্তরা পশ্চিম", "মিরপুর", "পল্লবী", "মোহাম্মদপুর", "তেজগাঁও", "বাড্ডা", "রামপুরা", "খিলগাঁও", "মতিঝিল", "রমনা", "লালবাগ", "কোতোয়ালি", "যাত্রাবাড়ী", "ডেমরা", "শ্যামপুর", "হাজারীবাগ", "সাভার", "ধামরাই", "কেরানীগঞ্জ", "দোহার", "নবাবগঞ্জ"] },
+      { en: "Gazipur", bn: "গাজীপুর", div: "Dhaka", thanas: ["গাজীপুর সদর", "টঙ্গী পূর্ব", "টঙ্গী পশ্চিম", "কালিয়াকৈর", "কালীগঞ্জ", "কাপাসিয়া", "শ্রীপুর"] },
+      { en: "Narayanganj", bn: "নারায়ণগঞ্জ", div: "Dhaka", thanas: ["নারায়ণগঞ্জ সদর", "ফতুল্লা", "সিদ্ধিরগঞ্জ", "বন্দর", "রূপগঞ্জ", "সোনারগাঁও", "আড়াইহাজার"] },
+      { en: "Narsingdi", bn: "নরসিংদী", div: "Dhaka", thanas: ["নরসিংদী সদর", "পলাশ", "শিবপুর", "বেলাবো", "মনোহরদী", "রায়পুরা", "মাধবদী"] },
+      { en: "Manikganj", bn: "মানিকগঞ্জ", div: "Dhaka", thanas: ["মানিকগঞ্জ সদর", "সিংগাইর", "সাটুরিয়া", "ঘিওর", "শিবালয়", "দৌলতপুর", "হরিরামপুর"] },
+      { en: "Munshiganj", bn: "মুন্সীগঞ্জ", div: "Dhaka", thanas: ["মুন্সীগঞ্জ সদর", "টঙ্গীবাড়ী", "সিরাজদিখান", "লৌহজং", "শ্রীনগর", "গজারিয়া"] },
+      { en: "Tangail", bn: "টাঙ্গাইল", div: "Dhaka", thanas: ["টাঙ্গাইল সদর", "মির্জাপুর", "কালিহাতী", "ঘাটাইল", "সখিপুর", "বাসাইল", "মধুপুর", "ধনবাড়ী", "গোপালপুর", "ভূঞাপুর", "নাগরপুর", "দেলদুয়ার"] },
+      { en: "Kishoreganj", bn: "কিশোরগঞ্জ", div: "Dhaka", thanas: ["কিশোরগঞ্জ সদর", "ভৈরব", "বাজিতপুর", "কুলিয়ারচর", "কটিয়াদী", "পাকুন্দিয়া", "হোসেনপুর", "করিমগঞ্জ", "তাড়াইল", "ইটনা", "মিঠামইন", "অষ্টগ্রাম", "নিকলী"] },
+      { en: "Faridpur", bn: "ফরিদপুর", div: "Dhaka", thanas: ["ফরিদপুর সদর", "বোয়ালমারী", "ভাঙ্গা", "নগরকান্দা", "সালথা", "সদরপুর", "চরভদ্রাসন", "মধুখালী", "আলফাডাঙ্গা"] },
+      { en: "Gopalganj", bn: "গোপালগঞ্জ", div: "Dhaka", thanas: ["গোপালগঞ্জ সদর", "টুঙ্গিপাড়া", "কোটালীপাড়া", "কাশিয়ানী", "মুকসুদপুর"] },
+      { en: "Madaripur", bn: "মাদারীপুর", div: "Dhaka", thanas: ["মাদারীপুর সদর", "শিবচর", "কালকিনি", "রাজৈর", "ডাসার"] },
+      { en: "Rajbari", bn: "রাজবাড়ী", div: "Dhaka", thanas: ["রাজবাড়ী সদর", "গোয়ালন্দ", "পাংশা", "বালিয়াকান্দি", "কালুখালী"] },
+      { en: "Shariatpur", bn: "শরীয়তপুর", div: "Dhaka", thanas: ["শরীয়তপুর সদর", "পালং", "জাজিরা", "নড়িয়া", "ভেদরগঞ্জ", "ডামুড্যা", "গোসাইরহাট"] },
+      // Chattogram Division (11 - includes Chandpur)
+      { en: "Chandpur", bn: "চাঁদপুর", div: "Chattogram", thanas: ["চাঁদপুর সদর", "হাজীগঞ্জ", "শাহরাস্তি", "কচুয়া", "মতলব দক্ষিণ", "মতলব উত্তর", "ফরিদগঞ্জ", "হাইমচর"] },
+      { en: "Chattogram", bn: "চট্টগ্রাম", div: "Chattogram", thanas: ["কোতোয়ালি", "পাঁচলাইশ", "ডবলমুরিং", "হালিশহর", "পাহাড়তলী", "খুলশী", "চান্দগাঁও", "বায়েজিদ বোস্তামী", "পতেঙ্গা", "বন্দর", "সীতাকুণ্ড", "মিরসরাই", "হাটহাজারী", "রাউজান", "রাঙ্গুনিয়া", "পটিয়া", "বোয়ালখালী", "আনোয়ারা", "চন্দনাইশ", "সাতকানিয়া", "লোহাগাড়া", "বাঁশখালী", "ফটিকছড়ি", "সন্দ্বীপ", "কর্ণফুলী"] },
+      { en: "Cumilla", bn: "কুমিল্লা", div: "Chattogram", thanas: ["কুমিল্লা আদর্শ সদর", "সদর দক্ষিণ", "দাউদকান্দি", "চান্দিনা", "দেবিদ্বার", "মুরাদনগর", "বুড়িচং", "ব্রাহ্মণপাড়া", "হোমনা", "মেঘনা", "তিতাস", "লাকসাম", "মনোহরগঞ্জ", "চৌদ্দগ্রাম", "নাঙ্গলকোট", "বরুড়া", "লালমাই"] },
+      { en: "Cox's Bazar", bn: "কক্সবাজার", div: "Chattogram", thanas: ["কক্সবাজার সদর", "রামু", "উখিয়া", "টেকনাফ", "চকরিয়া", "পেকুয়া", "মহেশখালী", "কুতুবদিয়া", "ঈদগাঁও"] },
+      { en: "Brahmanbaria", bn: "ব্রাহ্মণবাড়িয়া", div: "Chattogram", thanas: ["ব্রাহ্মণবাড়িয়া সদর", "আশুগঞ্জ", "সরাইল", "নাসিরনগর", "নবীনগর", "কসবা", "আখাউড়া", "বাঞ্ছারামপুর", "বিজয়নগর"] },
+      { en: "Noakhali", bn: "নোয়াখালী", div: "Chattogram", thanas: ["নোয়াখালী সদর (সুধারাম)", "বেগমগঞ্জ", "সোনাইমুড়ী", "চাটখিল", "সেনবাগ", "কোম্পানীগঞ্জ", "কবিরহাট", "সুবর্ণচর", "হাতিয়া"] },
+      { en: "Feni", bn: "ফেনী", div: "Chattogram", thanas: ["ফেনী সদর", "দাগনভূঞা", "সোনাগাজী", "ছাগলনাইয়া", "ফুলগাজী", "পরশুরাম"] },
+      { en: "Lakshmipur", bn: "লক্ষ্মীপুর", div: "Chattogram", thanas: ["লক্ষ্মীপুর সদর", "রায়পুর", "রামগঞ্জ", "রামগতি", "কমলনগর"] },
+      { en: "Rangamati", bn: "রাঙ্গামাটি", div: "Chattogram", thanas: ["রাঙ্গামাটি সদর (কোতোয়ালি)", "কাপ্তাই", "কাউখালী", "নানিয়ারচর", "লংগদু", "বাঘাইছড়ি", "বরকল", "জুরাছড়ি", "বিলাইছড়ি", "রাজস্থলী"] },
+      { en: "Khagrachhari", bn: "খাগড়াছড়ি", div: "Chattogram", thanas: ["খাগড়াছড়ি সদর", "দীঘিনালা", "পানছড়ি", "মাটিরাঙ্গা", "রামগড়", "মানিকছড়ি", "লক্ষ্মীছড়ি", "মহালছড়ি", "গুইমারা"] },
+      { en: "Bandarban", bn: "বান্দরবান", div: "Chattogram", thanas: ["বান্দরবান সদর", "লামা", "আলীকদম", "নাইক্ষ্যংছড়ি", "রোয়াংছড়ি", "রুমা", "থানচি"] },
+      // Rajshahi Division (8)
+      { en: "Rajshahi", bn: "রাজশাহী", div: "Rajshahi", thanas: ["বোয়ালিয়া", "মতিহার", "রাজপাড়া", "শাহমখদুম", "পবা", "মোহনপুর", "বাগমারা", "দুর্গাপুর", "পুঠিয়া", "চারঘাট", "বাঘা", "তানোর", "গোদাগাড়ী"] },
+      { en: "Bogura", bn: "বগুড়া", div: "Rajshahi", thanas: ["বগুড়া সদর", "শেরপুর", "শাজাহানপুর", "কাহালু", "দুপচাঁচিয়া", "আদমদীঘি", "নন্দীগ্রাম", "শিবগঞ্জ", "সোনাতলা", "গাবতলী", "সারিয়াকান্দি", "ধুনট"] },
+      { en: "Pabna", bn: "পাবনা", div: "Rajshahi", thanas: ["পাবনা সদর", "ঈশ্বরদী", "সাঁথিয়া", "বেড়া", "সুজানগর", "আটঘরিয়া", "চাটমোহর", "ভাঙ্গুড়া", "ফরিদপুর"] },
+      { en: "Sirajganj", bn: "সিরাজগঞ্জ", div: "Rajshahi", thanas: ["সিরাজগঞ্জ সদর", "কাজিপুর", "রায়গঞ্জ", "তাড়াশ", "উল্লাপাড়া", "শাহজাদপুর", "বেলকুচি", "কামারখন্দ", "চৌহালী"] },
+      { en: "Natore", bn: "নাটোর", div: "Rajshahi", thanas: ["নাটোর সদর", "সিংড়া", "গুরুদাসপুর", "বড়াইগ্রাম", "লালপুর", "বাগাতিপাড়া", "নলডাঙ্গা"] },
+      { en: "Naogaon", bn: "নওগাঁ", div: "Rajshahi", thanas: ["নওগাঁ সদর", "রানীনগর", "আত্রাই", "মান্দা", "মহাদেবপুর", "বদলগাছী", "পত্নীতলা", "ধামইরহাট", "সাপাহার", "পোরশা", "নিয়ামতপুর"] },
+      { en: "Chapainawabganj", bn: "চাঁপাইনবাবগঞ্জ", div: "Rajshahi", thanas: ["চাঁপাইনবাবগঞ্জ সদর", "শিবগঞ্জ", "গোমস্তাপুর", "নাচোল", "ভোলাহাট"] },
+      { en: "Joypurhat", bn: "জয়পুরহাট", div: "Rajshahi", thanas: ["জয়পুরহাট সদর", "পাঁচবিবি", "আক্কেলপুর", "কালাই", "ক্ষেতলাল"] },
+      // Khulna Division (10)
+      { en: "Khulna", bn: "খুলনা", div: "Khulna", thanas: ["খুলনা সদর", "সোনাডাঙ্গা", "খালিশপুর", "দৌলতপুর", "খানজাহান আলী", "ডুমুরিয়া", "বটিয়াঘাটা", "রূপসা", "তেরখাদা", "দিঘলিয়া", "ফুলতলা", "পাইকগাছা", "কয়রা", "দাকোপ"] },
+      { en: "Jashore", bn: "যশোর", div: "Khulna", thanas: ["যশোর সদর (কোতোয়ালি)", "অভয়নগর", "বাঘারপাড়া", "চৌগাছা", "ঝিকরগাছা", "শার্শা", "কেশবপুর", "মনিরামপুর"] },
+      { en: "Satkhira", bn: "সাতক্ষীরা", div: "Khulna", thanas: ["সাতক্ষীরা সদর", "তালা", "কলারোয়া", "দেবহাটা", "আশাশুনি", "কালিগঞ্জ", "শ্যামনগর"] },
+      { en: "Bagerhat", bn: "বাগেরহাট", div: "Khulna", thanas: ["বাগেরহাট সদর", "ফকিরহাট", "মোল্লাহাট", "চিতলমারী", "কচুয়া", "রামপাল", "মোংলা", "মোড়েলগঞ্জ", "শরণখোলা"] },
+      { en: "Kushtia", bn: "কুষ্টিয়া", div: "Khulna", thanas: ["কুষ্টিয়া সদর", "কুমারখালী", "খোকসা", "মিরপুর", "ভেড়ামারা", "দৌলতপুর"] },
+      { en: "Jhenaidah", bn: "ঝিনাইদহ", div: "Khulna", thanas: ["ঝিনাইদহ সদর", "শৈলকুপা", "হরিণাকুণ্ডু", "কালীগঞ্জ", "কোটচাঁদপুর", "মহেশপুর"] },
+      { en: "Magura", bn: "মাগুরা", div: "Khulna", thanas: ["মাগুরা সদর", "শ্রীপুর", "শালিখা", "মহম্মদপুর"] },
+      { en: "Narail", bn: "নড়াইল", div: "Khulna", thanas: ["নড়াইল সদর", "লোহাগড়া", "কালিয়া", "নড়াগাতি"] },
+      { en: "Chuadanga", bn: "চুয়াডাঙ্গা", div: "Khulna", thanas: ["চুয়াডাঙ্গা সদর", "আলমডাঙ্গা", "দামুড়হুদা", "জীবননগর"] },
+      { en: "Meherpur", bn: "মেহেরপুর", div: "Khulna", thanas: ["মেহেরপুর সদর", "গাংনী", "মুজিবনগর"] },
+      // Barishal Division (6)
+      { en: "Barishal", bn: "বরিশাল", div: "Barishal", thanas: ["বরিশাল সদর (কোতোয়ালি)", "বাকেরগঞ্জ", "বাবুগঞ্জ", "বানারীপাড়া", "উজিরপুর", "গৌরনদী", "আগৈলঝাড়া", "মুলাদী", "হিজলা", "মেহেন্দিগঞ্জ"] },
+      { en: "Patuakhali", bn: "পটুয়াখালী", div: "Barishal", thanas: ["পটুয়াখালী সদর", "বাউফল", "দশমিনা", "গলাচিপা", "কলাপাড়া", "দুমকি", "মির্জাগঞ্জ", "রাঙ্গাবালী"] },
+      { en: "Bhola", bn: "ভোলা", div: "Barishal", thanas: ["ভোলা সদর", "দৌলতখান", "বোরহানউদ্দিন", "তজুমদ্দিন", "লালমোহন", "চরফ্যাশন", "মনপুরা"] },
+      { en: "Pirojpur", bn: "পিরোজপুর", div: "Barishal", thanas: ["পিরোজপুর সদর", "নাজিরপুর", "কাউখালী", "ভাণ্ডারিয়া", "মঠবাড়িয়া", "নেছারাবাদ (স্বরূপকাঠি)", "ইন্দুরকানী"] },
+      { en: "Barguna", bn: "বরগুনা", div: "Barishal", thanas: ["বরগুনা সদর", "আমতলী", "তালতলী", "বেতাগী", "বামনা", "পাথরঘাটা"] },
+      { en: "Jhalokathi", bn: "ঝালকাঠি", div: "Barishal", thanas: ["ঝালকাঠি সদর", "নলছিটি", "রাজাপুর", "কাঁঠালিয়া"] },
+      // Sylhet Division (4)
+      { en: "Sylhet", bn: "সিলেট", div: "Sylhet", thanas: ["সিলেট সদর (কোতোয়ালি)", "জালালাবাদ", "দক্ষিণ সুরমা", "শাহপরাণ", "বিশ্বনাথ", "বালাগঞ্জ", "ওসমানীনগর", "ফেঞ্চুগঞ্জ", "গোলাপগঞ্জ", "বিয়ানীবাজার", "জকিগঞ্জ", "কানাইঘাট", "জৈন্তাপুর", "গোয়াইনঘাট", "কোম্পানীগঞ্জ"] },
+      { en: "Moulvibazar", bn: "মৌলভীবাজার", div: "Sylhet", thanas: ["মৌলভীবাজার সদর", "শ্রীমঙ্গল", "কমলগঞ্জ", "কুলাউড়া", "জুড়ী", "বড়লেখা", "রাজনগর"] },
+      { en: "Habiganj", bn: "হবিগঞ্জ", div: "Sylhet", thanas: ["হবিগঞ্জ সদর", "শায়েস্তাগঞ্জ", "নবীগঞ্জ", "বাহুবল", "চুনারুঘাট", "মাধবপুর", "লাখাই", "বানিয়াচং", "আজমিরীগঞ্জ"] },
+      { en: "Sunamganj", bn: "সুনামগঞ্জ", div: "Sylhet", thanas: ["সুনামগঞ্জ সদর", "ছাতক", "দোয়ারাবাজার", "বিশ্বম্ভরপুর", "তাহিরপুর", "জামালগঞ্জ", "ধর্মপাশা", "মধ্যনগর", "দিরাই", "শাল্লা", "জগন্নাথপুর", "শান্তিগঞ্জ"] },
+      // Rangpur Division (8)
+      { en: "Rangpur", bn: "রংপুর", div: "Rangpur", thanas: ["রংপুর সদর (কোতোয়ালি)", "তাজহাট", "হারাগাছ", "গঙ্গাচড়া", "তারাগঞ্জ", "বদরগঞ্জ", "মিঠাপুকুর", "পীরগাছা", "কাউনিয়া", "পীরগঞ্জ"] },
+      { en: "Dinajpur", bn: "দিনাজপুর", div: "Rangpur", thanas: ["দিনাজপুর সদর", "বিরল", "বোচাগঞ্জ", "কাহারোল", "বীরগঞ্জ", "খানসামা", "চিরিরবন্দর", "পার্বতীপুর", "ফুলবাড়ী", "বিরামপুর", "নবাবগঞ্জ", "হাকিমপুর", "ঘোড়াঘাট"] },
+      { en: "Kurigram", bn: "কুড়িগ্রাম", div: "Rangpur", thanas: ["কুড়িগ্রাম সদর", "নাগেশ্বরী", "ভূরুঙ্গামারী", "ফুলবাড়ী", "রাজারহাট", "উলিপুর", "চিলমারী", "রৌমারী", "চর রাজিবপুর"] },
+      { en: "Gaibandha", bn: "গাইবান্ধা", div: "Rangpur", thanas: ["গাইবান্ধা সদর", "সাদুল্লাপুর", "সুন্দরগঞ্জ", "পলাশবাড়ী", "গোবিন্দগঞ্জ", "সাঘাটা", "ফুলছড়ি"] },
+      { en: "Nilphamari", bn: "নীলফামারী", div: "Rangpur", thanas: ["নীলফামারী সদর", "সৈয়দপুর", "ডোমার", "ডিমলা", "জলঢাকা", "কিশোরগঞ্জ"] },
+      { en: "Lalmonirhat", bn: "লালমনিরহাট", div: "Rangpur", thanas: ["লালমনিরহাট সদর", "আদিতমারী", "কালীগঞ্জ", "হাতীবান্ধা", "পাটগ্রাম"] },
+      { en: "Thakurgaon", bn: "ঠাকুরগাঁও", div: "Rangpur", thanas: ["ঠাকুরগাঁও সদর", "পীরগঞ্জ", "রানীশংকৈল", "হরিপুর", "বালিয়াডাঙ্গী"] },
+      { en: "Panchagarh", bn: "পঞ্চগড়", div: "Rangpur", thanas: ["পঞ্চগড় সদর", "বোদা", "দেবীগঞ্জ", "আটোয়ারী", "তেঁতুলিয়া"] },
+      // Mymensingh Division (4)
+      { en: "Mymensingh", bn: "ময়মনসিংহ", div: "Mymensingh", thanas: ["ময়মনসিংহ সদর", "মুক্তাগাছা", "ফুলবাড়িয়া", "ত্রিশাল", "ভালুকা", "গফরগাঁও", "ঈশ্বরগঞ্জ", "নান্দাইল", "গৌরীপুর", "তারাকান্দা", "ফুলপুর", "হালুয়াঘাট", "ধোবাউড়া"] },
+      { en: "Jamalpur", bn: "জামালপুর", div: "Mymensingh", thanas: ["জামালপুর সদর", "মেলান্দহ", "ইসলামপুর", "দেওয়ানগঞ্জ", "বকশীগঞ্জ", "মাদারগঞ্জ", "সরিষাবাড়ী"] },
+      { en: "Sherpur", bn: "শেরপুর", div: "Mymensingh", thanas: ["শেরপুর সদর", "নালিতাবাড়ী", "নকলা", "ঝিনাইগাতী", "শ্রীবরদী"] },
+      { en: "Netrokona", bn: "নেত্রকোণা", div: "Mymensingh", thanas: ["নেত্রকোণা সদর", "পূর্বধলা", "দুর্গাপুর", "কলমাকান্দা", "বারহাট্টা", "আটপাড়া", "কেন্দুয়া", "মদন", "মোহনগঞ্জ", "খালিয়াজুরী"] }
+    ];
+
+    const findBdDistrictObj = (val) => {
+      const q = String(val || "").trim().toLowerCase();
+      if (!q) return null;
+      return BD_DISTRICTS_THANAS.find(d =>
+        d.en.toLowerCase() === q ||
+        d.bn === String(val || "").trim() ||
+        q.includes(d.en.toLowerCase()) ||
+        String(val || "").includes(d.bn)
+      ) || null;
+    };
+
+    const isChandpurDistrictName = (val) => {
+      const q = String(val || "").trim().toLowerCase();
+      return q.includes("chandpur") || String(val || "").includes("চাঁদপুর");
+    };
+
+    const parseOrderTimestampMs = (order) => {
+      if (!order) return Date.now();
+      if (Number(order.createdAtMs) > 0) return Number(order.createdAtMs);
+      if (order.createdAt && typeof order.createdAt.toMillis === "function") return order.createdAt.toMillis();
+      if (Number(order.createdAt) > 0) return Number(order.createdAt);
+      const raw = String(order.date || "").trim();
+      if (raw) {
+        const parsed = Date.parse(raw);
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+      return Date.now();
     };
 
     const initialCourierConfig = {
@@ -2680,35 +2834,100 @@
       const [orderStatusFilter, setOrderStatusFilter] = useState("All");
       const [orderPhoneFilter, setOrderPhoneFilter] = useState("");
       const [orderSkuOrProductLookup, setOrderSkuOrProductLookup] = useState("");
+      // Seller-Center Orders Hub states
+      const [orderSellerTab, setOrderSellerTab] = useState("ALL"); // ALL | TO_SHIP | SHIPPING | DELIVERED | FAILED_DELIVERED | CANCELLATION
+      const [orderShowSearchBar, setOrderShowSearchBar] = useState(false);
+      const [orderSortNewest, setOrderSortNewest] = useState(true);
+      const [orderDatePreset, setOrderDatePreset] = useState("ALL"); // ALL | TODAY | 7D | 15D | 1M | 1_3M | 3_6M | 6_9M | 1Y | 1_2Y | 2_3Y | CUSTOM
+      const [orderCustomStartDate, setOrderCustomStartDate] = useState("");
+      const [orderCustomEndDate, setOrderCustomEndDate] = useState("");
+      const [orderShowDateDropdown, setOrderShowDateDropdown] = useState(false);
+      const [orderShowFilterModal, setOrderShowFilterModal] = useState(false);
+      const [orderTypeFilter, setOrderTypeFilter] = useState("All"); // All | Normal | Custom
+      const [orderDeliveryTypeFilter, setOrderDeliveryTypeFilter] = useState("All"); // All | Standard | Express
+      const [orderDeliveredByFilter, setOrderDeliveredByFilter] = useState("All"); // All | Pathao | SteadFast | Digital
+      const [openOrderDotsMenuId, setOpenOrderDotsMenuId] = useState(null);
+      // Checkout 64-district searchable modal & Admin Shipping Info states
+      const [isDistrictPickerOpen, setIsDistrictPickerOpen] = useState(false);
+      const [districtModalStep, setDistrictModalStep] = useState("district"); // "district" | "thana"
+      const [districtSearchQuery, setDistrictSearchQuery] = useState("");
+      const [shippingOptionDraft, setShippingOptionDraft] = useState(null);
       const [posSkuLookup, setPosSkuLookup] = useState("");
       const [posLookupMatchedProduct, setPosLookupMatchedProduct] = useState(null);
       const [adminProductSearch, setAdminProductSearch] = useState("");
 
-      const filteredOrders = useMemo(() => {
-        return orders.filter(o => {
-          const matchesStatus = orderStatusFilter === "All" || o.status === orderStatusFilter;
-          const cleanFilterPhone = orderPhoneFilter.trim().replace(/[\s-+()]/g, "");
-          const cleanOrderPhone = (o.phone || "").replace(/[\s-+()]/g, "");
-          const matchesPhone = !cleanFilterPhone || cleanOrderPhone.includes(cleanFilterPhone);
+      const matchesSellerOrderTab = (ord, tabKey) => {
+        const st = String(ord?.status || "").trim().toLowerCase();
+        if (tabKey === "ALL") return true;
+        if (tabKey === "TO_SHIP") return ["pending", "confirmed", "processing", "to ship", "to_ship"].includes(st);
+        if (tabKey === "SHIPPING") return ["shipped", "shipping", "in transit"].includes(st);
+        if (tabKey === "DELIVERED") return st === "delivered";
+        if (tabKey === "FAILED_DELIVERED") return ["failed delivered", "failed delivery", "failed_delivered", "returned"].includes(st);
+        if (tabKey === "CANCELLATION") return ["cancelled", "cancellation", "canceled"].includes(st);
+        return true;
+      };
 
-          const q = orderSkuOrProductLookup.trim().toLowerCase();
-          let matchesSkuOrProduct = true;
-          if (q) {
-            const matchesOrderId = o.id && o.id.toLowerCase().includes(q);
-            const matchesCustomer = o.customer && o.customer.toLowerCase().includes(q);
-            const matchesTracking = o.trackingId && o.trackingId.toLowerCase().includes(q);
-            const matchesItem = (o.items || []).some(it => {
-              const itName = (it.name || it.productName || "").toLowerCase();
-              const itSku = (it.sku || "").toLowerCase();
-              const itId = String(it.productId || it.id || "").toLowerCase();
-              return itName.includes(q) || itSku.includes(q) || itId.includes(q);
-            });
-            matchesSkuOrProduct = matchesOrderId || matchesCustomer || matchesTracking || matchesItem;
+      const filteredOrders = useMemo(() => {
+        const nowMs = Date.now();
+        const dayMs = 24 * 3600 * 1000;
+        const customStartMs = orderCustomStartDate ? new Date(`${orderCustomStartDate}T00:00:00`).getTime() : null;
+        const customEndMs = orderCustomEndDate ? new Date(`${orderCustomEndDate}T23:59:59`).getTime() : null;
+
+        const list = (orders || []).filter(o => {
+          if (!matchesSellerOrderTab(o, orderSellerTab)) return false;
+          if (orderStatusFilter !== "All" && o.status !== orderStatusFilter) return false;
+
+          const oType = o.orderType || "Normal";
+          if (orderTypeFilter !== "All" && oType.toLowerCase() !== orderTypeFilter.toLowerCase()) return false;
+
+          const dType = o.deliveryType || "Standard";
+          if (orderDeliveryTypeFilter !== "All" && dType.toLowerCase() !== orderDeliveryTypeFilter.toLowerCase()) return false;
+
+          const dBy = o.deliveredBy || (o.courier && o.courier !== "None" ? o.courier : "SteadFast");
+          if (orderDeliveredByFilter !== "All" && dBy.toLowerCase() !== orderDeliveredByFilter.toLowerCase()) return false;
+
+          const ts = parseOrderTimestampMs(o);
+          const age = Math.max(0, nowMs - ts);
+          if (orderDatePreset === "TODAY" && age > dayMs) return false;
+          if (orderDatePreset === "7D" && age > 7 * dayMs) return false;
+          if (orderDatePreset === "15D" && age > 15 * dayMs) return false;
+          if (orderDatePreset === "1M" && age > 30 * dayMs) return false;
+          if (orderDatePreset === "1_3M" && (age < 30 * dayMs || age > 90 * dayMs)) return false;
+          if (orderDatePreset === "3_6M" && (age < 90 * dayMs || age > 180 * dayMs)) return false;
+          if (orderDatePreset === "6_9M" && (age < 180 * dayMs || age > 270 * dayMs)) return false;
+          if (orderDatePreset === "1Y" && age > 365 * dayMs) return false;
+          if (orderDatePreset === "1_2Y" && (age < 365 * dayMs || age > 730 * dayMs)) return false;
+          if (orderDatePreset === "2_3Y" && (age < 730 * dayMs || age > 1095 * dayMs)) return false;
+          if (orderDatePreset === "CUSTOM") {
+            if (customStartMs && ts < customStartMs) return false;
+            if (customEndMs && ts > customEndMs) return false;
           }
 
-          return matchesStatus && matchesPhone && matchesSkuOrProduct;
+          const cleanFilterPhone = orderPhoneFilter.trim().replace(/[\s-+()]/g, "");
+          const cleanOrderPhone = (o.phone || "").replace(/[\s-+()]/g, "");
+          if (cleanFilterPhone && !cleanOrderPhone.includes(cleanFilterPhone)) return false;
+
+          const q = orderSkuOrProductLookup.trim().toLowerCase();
+          if (q) {
+            const hay = `${o.id || ""} ${o.customer || o.customerName || ""} ${o.phone || ""} ${o.trackingId || ""} ${o.district || ""} ${o.thana || ""} ${o.paymentMethod || ""}`.toLowerCase();
+            const itemMatch = (o.items || []).some(it =>
+              `${it.name || it.productName || ""} ${it.sku || ""} ${it.productId || it.id || ""}`.toLowerCase().includes(q)
+            );
+            if (!hay.includes(q) && !itemMatch) return false;
+          }
+          return true;
         });
-      }, [orders, orderStatusFilter, orderPhoneFilter, orderSkuOrProductLookup]);
+
+        return list.sort((a, b) => {
+          const ta = parseOrderTimestampMs(a);
+          const tb = parseOrderTimestampMs(b);
+          return orderSortNewest ? tb - ta : ta - tb;
+        });
+      }, [
+        orders, orderSellerTab, orderStatusFilter, orderPhoneFilter, orderSkuOrProductLookup,
+        orderTypeFilter, orderDeliveryTypeFilter, orderDeliveredByFilter,
+        orderDatePreset, orderCustomStartDate, orderCustomEndDate, orderSortNewest
+      ]);
       const [returns, setReturns] = useState(() => getStored("returns", initialReturns));
       const [returnSummarySearch, setReturnSummarySearch] = useState("");
       const [returnSummaryFilter, setReturnSummaryFilter] = useState("all"); // "all", "returned", "exchanged"
@@ -10683,8 +10902,14 @@
         name: "",
         phone: "",
         district: "Dhaka",
-        thana: "",
+        thana: "ধানমন্ডি",
         address: "",
+        landmark: "",
+        addressCategory: "Home", // "Home" | "Office"
+        defaultShippingAddress: false,
+        deliveryType: "Standard", // "Standard" | "Express" (Chandpur exclusive)
+        orderType: "Normal",
+        deliveredBy: "SteadFast",
         orderNote: "",
         paymentMethod: "Cash on Delivery"
       });
@@ -12738,10 +12963,28 @@
       const paidCartQty = cart.filter(item => !item.isFreeGift).reduce((sum, item) => sum + (item.qty || 1), 0);
       const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
       const isDhaka = checkoutForm.district.includes("ঢাকা") || checkoutForm.district.includes("Dhaka");
+      const isChandpurSelected = isChandpurDistrictName(checkoutForm.district);
+      const effectiveDeliveryType = (checkoutForm.deliveryType === "Express" && isChandpurSelected) ? "Express" : "Standard";
+      const shippingCfg = config?.shippingInfo || initialStoreConfig.shippingInfo;
       const freeThreshold = (config.freeDeliveryThreshold !== "" && config.freeDeliveryThreshold !== undefined) ? Number(config.freeDeliveryThreshold) : 2000;
       const insideDhakaFee = (config.deliveryInsideDhaka !== "" && config.deliveryInsideDhaka !== undefined) ? Number(config.deliveryInsideDhaka) : 60;
       const outsideDhakaFee = (config.deliveryOutsideDhaka !== "" && config.deliveryOutsideDhaka !== undefined) ? Number(config.deliveryOutsideDhaka) : 120;
-      const deliveryCharge = cartSubtotal >= freeThreshold ? 0 : (isDhaka ? insideDhakaFee : outsideDhakaFee);
+      const deliveryCharge = (() => {
+        const opts = shippingCfg?.options || [];
+        const matched = opts.find(opt => opt.enabled !== false && String(opt.deliveryType || "").toLowerCase() === effectiveDeliveryType.toLowerCase());
+        if (matched) {
+          const ruleOk = matched.districtRule === "CHANDPUR_ONLY" ? isChandpurSelected : true;
+          if (ruleOk) {
+            const optFreeAbove = Number(matched.freeAbove) || 0;
+            if (optFreeAbove > 0 && cartSubtotal >= optFreeAbove && effectiveDeliveryType !== "Express") {
+              return 0;
+            }
+            return Number(matched.fee) || 0;
+          }
+        }
+        if (effectiveDeliveryType === "Express") return 100;
+        return cartSubtotal >= freeThreshold ? 0 : (isDhaka ? insideDhakaFee : outsideDhakaFee);
+      })();
 
       let discountAmount = 0;
       if (appliedCoupon) {
@@ -12885,13 +13128,24 @@
 
         const newOrderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
         const trimmedNote = (checkoutForm.orderNote || "").trim();
+        const finalDeliveryType = (checkoutForm.deliveryType === "Express" && isChandpurDistrictName(checkoutForm.district))
+          ? "Express"
+          : "Standard";
+        const nowTimestamp = Date.now();
         const orderData = {
           id: newOrderId,
           customer: checkoutForm.name,
+          customerName: checkoutForm.name,
           phone: checkoutForm.phone,
           district: checkoutForm.district,
           thana: checkoutForm.thana || "সদর",
           address: checkoutForm.address,
+          landmark: (checkoutForm.landmark || "").trim(),
+          addressCategory: checkoutForm.addressCategory || "Home",
+          defaultShippingAddress: Boolean(checkoutForm.defaultShippingAddress),
+          orderType: checkoutForm.orderType || (isGiftWrap ? "Custom" : "Normal"),
+          deliveryType: finalDeliveryType,
+          deliveredBy: checkoutForm.deliveredBy || "SteadFast",
           orderNote: trimmedNote,
           note: trimmedNote,
           giftWrap: isGiftWrap,
@@ -12920,7 +13174,8 @@
           originalDeliveryCharge: deliveryCharge,
           paymentMethod: checkoutForm.paymentMethod,
           status: "Pending",
-          date: new Date().toISOString().split("T")[0],
+          date: new Date(nowTimestamp).toISOString().split("T")[0],
+          createdAtMs: nowTimestamp,
           items: cart.map(i => ({ 
             productId: i.id, 
             name: i.name, 
@@ -12973,11 +13228,12 @@
 
       // Courier Dispatch
       const dispatchCourier = (orderId, provider) => {
-        const prefix = provider === "Steadfast" ? "ST-" : "PTH-" ;
+        const prefix = provider === "Pathao" ? "PTH-" : (provider === "Digital" ? "DIG-" : "ST-");
         const tracking = prefix + Math.floor(100000 + Math.random() * 900000);
+        const normalizedPartner = provider === "Steadfast" ? "SteadFast" : provider;
         const existingOrder = (ordersRef.current || orders).find(o => o.id === orderId);
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "Shipped", trackingId: tracking } : o));
-        syncDocToCloud("orders", orderId, { status: "Shipped", trackingId: tracking });
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "Shipped", trackingId: tracking, courier: normalizedPartner, deliveredBy: normalizedPartner } : o));
+        syncDocToCloud("orders", orderId, { status: "Shipped", trackingId: tracking, courier: normalizedPartner, deliveredBy: normalizedPartner });
         if (config?.smsAutoSendOnOrderStatus && existingOrder && existingOrder.phone) {
           enqueueSmsToCloud({
             phone: existingOrder.phone,
@@ -12987,7 +13243,30 @@
             type: "status_update"
           }, { silent: true });
         }
-        notify(`অর্ডার #${orderId} সফলভাবে ${provider}-এ বুকিং করা হয়েছে! ট্র্যাকিং ID: ${tracking}`);
+        notify(`অর্ডার #${orderId} সফলভাবে ${normalizedPartner}-এ বুকিং করা হয়েছে! ট্র্যাকিং ID: ${tracking}`);
+      };
+
+      const updateOrderDeliveredBy = (orderId, partner) => {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, deliveredBy: partner, courier: partner } : o));
+        syncDocToCloud("orders", orderId, { deliveredBy: partner, courier: partner });
+        notify(`অর্ডার #${orderId} ডেলিভারি পার্টনার "${partner}" সেট করা হয়েছে! 🚚`);
+      };
+
+      const updateShippingInfoConfig = async (patch, customToast) => {
+        let nextSnapshot = null;
+        setConfig(prev => {
+          const base = prev || initialStoreConfig;
+          const next = mergeStoreConfig(base, {
+            shippingInfo: { ...(base?.shippingInfo || initialStoreConfig.shippingInfo), ...patch }
+          });
+          nextSnapshot = next;
+          setStored("config", next);
+          return next;
+        });
+        if (nextSnapshot) {
+          await syncDocToCloud("config", "store", nextSnapshot);
+        }
+        if (customToast) notify(customToast);
       };
 
       // Change Order Status (With POS Payment Recording on Delivery & Bidirectional Restock on Cancel)
@@ -16016,6 +16295,16 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   onClick: () => setActiveTab("SMSGateway")
                 },
                 {
+                  id: "ShippingInfo",
+                  label: "Shipping info",
+                  subLabel: "ডেলিভারি, লিস্ট ও কালার স্টুডিও",
+                  icon: "🚚",
+                  badge: `${(config?.shippingInfo?.options || initialStoreConfig.shippingInfo.options).length} মেথড`,
+                  badgeTone: "cyan",
+                  isActive: activeTab === "ShippingInfo",
+                  onClick: () => setActiveTab("ShippingInfo")
+                },
+                {
                   id: "HomePageSetting",
                   label: "Home Page Setting",
                   subLabel: "Blocks, Banners, Order & Search",
@@ -18473,808 +18762,788 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             {/* ========================================================= */}
             {activeTab === "Orders" && (
               <div className="space-y-4 animate-fadeIn">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-black/55 backdrop-blur-xl text-white p-5 rounded-3xl border border-red-900/35 shadow-lg">
-                  <div className="flex items-center gap-2.5">
-                    <button 
-                      onClick={() => setActiveTab("Dashboard")}
-                      className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-red-900/50 bg-[#1a0a0e]/80 text-rose-200 hover:bg-[#dc2626] hover:text-white transition flex items-center gap-1 shadow-xs"
-                      title="ড্যাশবোর্ডে ফিরে যান"
-                    >
-                      ← ড্যাশবোর্ড
-                    </button>
-                    <div>
-                      <h3 className="text-xl font-bold text-white">কাস্টমার অর্ডার তালিকা ({orders.length})</h3>
-                      <p className="text-xs text-rose-300/80">অর্ডার অনুমোদন, স্ট্যাটাস পরিবর্তন, মেমো প্রিন্ট ও কুরিয়ার বুকিং</p>
+                {["courier", "delivery_tracking", "shipping_labels", "returns"].includes(adminOrderSubTab) ? (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-black/60 backdrop-blur-xl text-white px-4 py-3 rounded-2xl border border-sky-500/40 shadow">
+                      <button
+                        type="button"
+                        onClick={() => setAdminOrderSubTab("all_orders")}
+                        className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        ← Orders তালিকায় ফিরুন (Seller Center)
+                      </button>
+                      <span className="text-xs sm:text-sm font-extrabold text-sky-200">
+                        {adminOrderSubTab === "delivery_tracking" ? "📊 ডেলিভারি ট্র্যাকিং" :
+                         adminOrderSubTab === "shipping_labels" ? "🏷️ শিপিং লেবেল ডেস্ক" :
+                         adminOrderSubTab === "courier" ? "🚚 কুরিয়ার কনফিগারেশন ও বুকিং" :
+                         "🔄 রিটার্ন ও এক্সচেঞ্জ"}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-wrap items-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveReturnTab("new");
-                        if (!returnOrder && orders.length > 0) {
-                          openReturnModalForOrder(orders[0]);
-                        } else {
-                          setIsReturnModalOpen(true);
-                        }
-                      }}
-                      className="bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white px-3.5 py-1.5 rounded-full text-xs font-bold hover:brightness-110 shadow-xs flex items-center gap-1.5 transition active:scale-95"
-                      title="সেলস রিটার্ন ও পণ্য এক্সচেঞ্জ উইন্ডো খুলুন"
-                    >
-                      <span>🔄</span>
-                      <span>রিটার্ন ও এক্সচেঞ্জ</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveReturnTab("history");
-                        setIsReturnModalOpen(true);
-                      }}
-                      className="bg-[#1a0a0e]/80 text-rose-200 border border-red-800/50 px-3.5 py-1.5 rounded-full text-xs font-bold hover:bg-red-950/80 shadow-xs flex items-center gap-1.5 transition"
-                      title="পূর্ববর্তী সকল রিটার্ন ও এক্সচেঞ্জ তালিকা দেখুন"
-                    >
-                      <span>📜</span>
-                      <span>রিটার্ন তালিকা ({returns.length})</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAdminOrderSubTab("all_orders");
-                        setIsScannerOpen(true);
-                        startScanner();
-                      }}
-                      className="bg-gradient-to-r from-[#dc2626] to-[#7f1d1d] hover:brightness-110 text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
-                      title="ক্যামেরা বারকোড স্ক্যানার দিয়ে অর্ডার বা পার্সেল খুঁজুন"
-                    >
-                      <span>📷</span>
-                      <span>বারকোড স্ক্যানার</span>
-                    </button>
-                    <span className="text-xs bg-amber-950/60 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-full font-bold">
-                      পেন্ডিং: {orders.filter(o => o.status === "Pending").length}
-                    </span>
-                    <span className="text-xs bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 px-3 py-1.5 rounded-full font-bold">
-                      সম্পন্ন: {orders.filter(o => o.status === "Delivered").length}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Sub-navigation Pills for Order Hub */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  {[
-                    { id: "new_orders", label: "🔔 নতুন অর্ডার অনুমোদন", count: orders.filter(o => o.status === "Pending").length, highlight: orders.filter(o => o.status === "Pending").length > 0 },
-                    { id: "delivery_tracking", label: "📊 ডেলিভারি ট্র্যাকিং", count: orders.filter(o => o.status === "Pending" || o.status === "Shipped" || o.status === "Delivered").length, highlight: false },
-                    { id: "all_orders", label: "📋 সকল অর্ডার ও ফিল্টার", count: orders.length, highlight: false },
-                    { id: "shipping_labels", label: "🏷️ শিপিং লেবেল", count: orders.filter(o => o.status === "Shipped").length, highlight: false },
-                    { id: "courier", label: "🚚 কুরিয়ার ট্র্যাকিং ও বুকিং", count: orders.filter(o => o.courier && o.courier !== "None").length, highlight: false },
-                    { id: "returns", label: "🔄 রিটার্ন ও এক্সচেঞ্জ হিস্ট্রি", count: returns.length, highlight: false }
-                  ].map(st => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => setAdminOrderSubTab(st.id)}
-                      className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 border cursor-pointer ${
-                        adminOrderSubTab === st.id
-                          ? "bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white border-red-400/50 shadow-lg shadow-red-950/40 scale-[1.02]"
-                          : "bg-black/45 backdrop-blur-md text-slate-300 hover:bg-red-950/40 border-red-900/35"
-                      }`}
-                    >
-                      <span>{st.label}</span>
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-black ${
-                        adminOrderSubTab === st.id
-                          ? (st.highlight ? "bg-amber-400 text-amber-950 animate-pulse" : "bg-white/20 text-white")
-                          : (st.highlight ? "bg-rose-600 text-white animate-bounce" : "bg-black/50 text-slate-300")
-                      }`}>
-                        {st.count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* ========================================================= */}
-                {/* SUBTAB 1: NEW ORDERS APPROVAL (নতুন অর্ডার অনুমোদন) */}
-                {/* ========================================================= */}
-                {adminOrderSubTab === "new_orders" && (
-                  <div className="space-y-4 animate-fadeIn">
-                    <div className="text-white bg-black/55 backdrop-blur-xl border border-amber-500/40 p-4 sm:p-5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shadow-xs">
-                          🔔
-                        </div>
-                        <div>
-                          <h4 className="font-extrabold text-base text-amber-300">
-                            নতুন অর্ডার অনুমোদন ডেস্কে স্বাগতম
-                          </h4>
-                          <p className="text-xs text-slate-300">
-                            নতুন কাস্টমারদের পেন্ডিং অর্ডার দ্রুত রিভিউ করে ১-ক্লিকে কনফার্ম, প্রসেসিং, কুরিয়ারে বুকিং বা ক্যানসেল করুন।
+                ) : (
+                  <div className="bg-[#f3f6fa] text-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
+                    {/* 1. HEADER: Orders + Scanner Icon & Search Icon + Utility Menu */}
+                    <div className="bg-white px-4 py-3.5 flex items-center justify-between gap-3 border-b border-slate-200">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("Dashboard")}
+                          className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center font-black text-base transition cursor-pointer shrink-0"
+                          title="ড্যাশবোর্ডে ফিরে যান"
+                        >
+                          ←
+                        </button>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight truncate">Orders</h3>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-sky-100 text-sky-800 border border-sky-200">
+                              {filteredOrders.length}/{orders.length}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-semibold truncate hidden sm:block">
+                            Seller Center · স্ক্যান, ফিল্টার, প্রিন্ট ও কাস্টমার যোগাযোগ
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <span className="text-xs bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold px-3 py-1.5 rounded-full">
-                          পেন্ডিং অর্ডার: {orders.filter(o => o.status === "Pending").length} টি
-                        </span>
-                      </div>
-                    </div>
 
-                    {orders.filter(o => o.status === "Pending").length === 0 ? (
-                      <div className="text-white text-center py-16 bg-black/55 backdrop-blur-xl rounded-3xl border border-red-900/35 p-8 shadow-lg space-y-3">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-emerald-950/60 text-emerald-400 flex items-center justify-center text-3xl border border-emerald-500/40">
-                          ✓
-                        </div>
-                        <h4 className="font-extrabold text-lg text-emerald-300">
-                          আলহামদুলিল্লাহ! কোনো নতুন পেন্ডিং অর্ডার নেই
-                        </h4>
-                        <p className="text-xs text-slate-400 max-w-md mx-auto">
-                          সকল অর্ডার সফলভাবে অনুমোদিত বা ডেলিভারিতে রয়েছে। নতুন কোনো কাস্টমার অর্ডার করার সাথে সাথে এখানে ভেসে উঠবে।
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setAdminOrderSubTab("all_orders")}
-                          className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white text-xs font-bold hover:brightness-110 transition shadow-xs inline-flex items-center gap-2"
-                        >
-                          <span>📋 সকল অর্ডার তালিকা দেখুন</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {orders.filter(o => o.status === "Pending").map(o => (
-                          <div key={o.id} className="text-white bg-black/60 backdrop-blur-xl rounded-3xl border border-amber-500/40 p-4 sm:p-5 shadow-lg space-y-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-red-900/35 pb-3">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono font-black text-sm text-rose-200 bg-red-950/70 px-2.5 py-1 rounded-lg border border-red-700/50">
-                                  #{o.id}
-                                </span>
-                                <span className="text-xs text-slate-400 font-medium">
-                                  🕒 {new Date(o.date).toLocaleString('bn-BD', { dateStyle: 'medium', timeStyle: 'short' })}
-                                </span>
-                                <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-black shadow-2xs flex items-center gap-1 animate-pulse">
-                                  <span>🔔</span> পেন্ডিং অনুমোদন
-                                </span>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-xs text-slate-400 mr-1.5 font-bold">মোট বিল:</span>
-                                <span className="font-mono font-black text-lg text-rose-300">
-                                  ৳{o.total}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="text-white grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#14070a]/70 p-3.5 rounded-2xl border border-red-900/35 text-xs">
-                              <div>
-                                <span className="text-slate-400 font-bold block mb-0.5">গ্রাহক পরিচিতি:</span>
-                                <p className="font-extrabold text-white text-sm">👤 {o.customerName || "অজানা গ্রাহক"}</p>
-                                <a 
-                                  href={`tel:${o.phone}`}
-                                  className="font-mono text-emerald-300 font-bold hover:underline flex items-center gap-1 mt-0.5"
-                                  title="সরাসরি কল দিন"
-                                >
-                                  📞 {o.phone}
-                                </a>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 font-bold block mb-0.5">ডেলিভারি ঠিকানা:</span>
-                                <p className="text-slate-200 font-medium leading-relaxed">📍 {o.address || "ঠিকানা দেওয়া হয়নি"}</p>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 font-bold block mb-0.5">পেমেন্ট মেথড:</span>
-                                <span className="inline-block px-2.5 py-1 rounded-lg bg-black/50 border border-red-800/40 text-slate-200 font-bold">
-                                  💳 {o.paymentMethod || "ক্যাশ অন ডেলিভারি (COD)"}
-                                </span>
-                                {o.trxId && (
-                                  <p className="font-mono text-[11px] text-slate-400 mt-1">
-                                    TrxID: <span className="font-bold text-rose-300">{o.trxId}</span>
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <span className="text-xs font-bold text-slate-300 block">অর্ডারের পণ্যসমূহ ({o.items?.length || 0} টি আইটেম):</span>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {o.items?.map((it, idx) => (
-                                  <div key={idx} className="text-white flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-red-900/30">
-                                    <div className="text-white w-10 h-10 rounded-lg bg-black/60 overflow-hidden shrink-0">
-                                      <img src={it.image || it.imageUrl} alt={it.productName || it.name} className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-bold text-white truncate">{it.productName || it.name}</p>
-                                      <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-slate-300 mt-0.5">
-                                        {it.color && <span className="text-white bg-black/60 px-1.5 py-0.2 rounded border border-red-900/30">রং: {it.color}</span>}
-                                        {it.size && <span className="text-white bg-black/60 px-1.5 py-0.2 rounded border border-red-900/30">সাইজ: {it.size}</span>}
-                                        {it.age && <span className="text-white bg-black/60 px-1.5 py-0.2 rounded border border-red-900/30">বয়স: {it.age}</span>}
-                                        <span className="font-bold text-slate-200">পরিমাণ: {it.quantity || 1} টি</span>
-                                        <span className="font-mono font-bold text-rose-300">৳{it.price}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-dashed border-red-900/40">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => updateOrderStatus(o.id, "Confirmed")}
-                                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
-                                  title="অর্ডার অনুমোদন করুন"
-                                >
-                                  <span>✅</span>
-                                  <span>কনফার্ম (অনুমোদন)</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => updateOrderStatus(o.id, "Processing")}
-                                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
-                                  title="প্যাকিং ও প্রসেসিংয়ে পাঠান"
-                                >
-                                  <span>⚙️</span>
-                                  <span>প্রসেসিং</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => dispatchCourier(o.id, "Steadfast")}
-                                  className="px-4 py-2 bg-[#2c1810] hover:bg-black text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
-                                  title="Steadfast কুরিয়ার বুকিং করুন"
-                                >
-                                  <span>📦</span>
-                                  <span>Steadfast কুরিয়ার</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => dispatchCourier(o.id, "Pathao")}
-                                  className="px-4 py-2 bg-[#e2136e] hover:bg-[#c20d5c] text-white rounded-full text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
-                                  title="Pathao কুরিয়ার বুকিং করুন"
-                                >
-                                  <span>🛵</span>
-                                  <span>Pathao কুরিয়ার</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => printInvoiceWindow(o)}
-                                  className="px-3.5 py-2 bg-black/50 border border-red-900/50 text-slate-200 rounded-full text-xs font-bold hover:bg-red-950/60 hover:text-white transition shadow-xs flex items-center gap-1.5"
-                                  title="চালান মেমো প্রিন্ট করুন"
-                                >
-                                  <span>🧾</span>
-                                  <span>মেমো প্রিন্ট</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => shareOrderToWhatsApp(o)}
-                                  className="px-3.5 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5"
-                                  title="কাস্টমারকে হোয়াটসঅ্যাপে মেসেজ পাঠান"
-                                >
-                                  <span>💬</span>
-                                  <span>WhatsApp</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => openPlaySafeSmsIntent(o.phone, buildOrderSmsText(o))}
-                                  className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5"
-                                  title="১-ক্লিক ডিফল্ট SMS অ্যাপ (Play-Safe)"
-                                >
-                                  <span>📩</span>
-                                  <span>১-ক্লিক SMS</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => enqueueSmsToCloud({
-                                    phone: o.phone,
-                                    customerName: o.customer || o.customerName || "",
-                                    message: buildOrderSmsText(o),
-                                    orderId: o.id,
-                                    type: "order_alert"
-                                  })}
-                                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold transition shadow-xs flex items-center gap-1.5"
-                                  title="ব্যক্তিগত মোবাইল SIM Gateway কিউতে পাঠান"
-                                >
-                                  <span>📲</span>
-                                  <span>SIM কিউ SMS</span>
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (confirm(`অর্ডার #${o.id} বাতিল (Cancel) করতে চান?`)) {
-                                      updateOrderStatus(o.id, "Cancelled");
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 bg-red-950/60 text-rose-200 hover:bg-red-900/80 border border-red-700/50 rounded-full text-xs font-bold transition flex items-center gap-1"
-                                >
-                                  <span>❌</span>
-                                  <span>বাতিল</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => deleteOrder(o.id)}
-                                  className="px-2.5 py-1.5 text-rose-300 hover:text-white hover:bg-red-950/70 text-xs font-bold rounded-full transition"
-                                  title="অর্ডারটি স্থায়ীভাবে মুছুন"
-                                >
-                                  🗑️
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ========================================================= */}
-                {/* SUBTAB 2: ALL ORDERS & FILTER (সকল অর্ডার ও ফিল্টার) */}
-                {/* ========================================================= */}
-                {adminOrderSubTab === "all_orders" && (
-                  <div className="space-y-4 animate-fadeIn">
-                {/* 🔍 ORDERS FILTER CONTROLS: BARCODE SCANNER, SKU/PRODUCT LOOKUP, PHONE & STATUS */}
-                <div className="text-white bg-black/55 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-red-900/35 shadow-lg space-y-3.5">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
-                    {/* Barcode / SKU / Order ID Search & Scanner Input */}
-                    <div className="md:col-span-7 relative flex items-center">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-rose-400">🏷️</span>
-                      <input
-                        type="text"
-                        value={orderSkuOrProductLookup}
-                        onChange={(e) => setOrderSkuOrProductLookup(e.target.value)}
-                        placeholder="বারকোড, প্রোডাক্ট SKU বা অর্ডার আইডি দিয়ে খুঁজুন..."
-                        className="w-full bg-black/50 border border-red-900/45 text-white placeholder-slate-400 rounded-2xl pl-10 pr-24 py-2.5 text-xs sm:text-sm font-mono outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition"
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        {orderSkuOrProductLookup && (
-                          <button
-                            type="button"
-                            onClick={() => setOrderSkuOrProductLookup("")}
-                            className="w-5 h-5 rounded-full bg-red-950 hover:bg-red-800 text-rose-200 flex items-center justify-center text-xs font-bold transition mr-1 cursor-pointer"
-                            title="ক্লিয়ার করুন"
-                          >
-                            ✕
-                          </button>
-                        )}
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => {
                             setIsScannerOpen(true);
                             startScanner();
                           }}
-                          className="px-2.5 py-1 bg-gradient-to-r from-[#dc2626] to-[#991b1b] hover:brightness-110 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition active:scale-95 cursor-pointer"
-                          title="ক্যামেরা বারকোড স্ক্যানার দিয়ে স্ক্যান করুন"
+                          className="w-10 h-10 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 flex items-center justify-center text-lg transition cursor-pointer"
+                          title="বারকোড / QR স্ক্যানার"
+                          aria-label="Scanner"
                         >
-                          <span>📷</span>
-                          <span className="hidden sm:inline">স্ক্যান</span>
+                          ⛶
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setOrderShowSearchBar(prev => !prev)}
+                          className={`w-10 h-10 rounded-xl border flex items-center justify-center text-base transition cursor-pointer ${
+                            orderShowSearchBar || orderSkuOrProductLookup.trim() || orderPhoneFilter.trim()
+                              ? "bg-sky-600 text-white border-sky-600"
+                              : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
+                          }`}
+                          title="অর্ডার ও ফোন সার্চ"
+                          aria-label="Search Orders"
+                        >
+                          🔍
+                        </button>
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "return_modal") {
+                              setActiveReturnTab("new");
+                              if (!returnOrder && orders.length > 0) openReturnModalForOrder(orders[0]);
+                              else setIsReturnModalOpen(true);
+                            } else if (val) {
+                              setAdminOrderSubTab(val);
+                            }
+                          }}
+                          className="h-10 px-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer outline-none"
+                          title="অতিরিক্ত টুলস"
+                        >
+                          <option value="">⋮ টুলস</option>
+                          <option value="delivery_tracking">📊 ডেলিভারি ট্র্যাকিং</option>
+                          <option value="shipping_labels">🏷️ শিপিং লেবেল ডেস্ক</option>
+                          <option value="courier">🚚 কুরিয়ার বুকিং ({orders.filter(o => o.courier && o.courier !== "None").length})</option>
+                          <option value="returns">🔄 রিটার্ন তালিকা ({returns.length})</option>
+                          <option value="return_modal">+ নতুন রিটার্ন / এক্সচেঞ্জ</option>
+                        </select>
                       </div>
                     </div>
 
-                    {/* Customer Phone Search Input */}
-                    <div className="md:col-span-5 relative flex items-center">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base text-rose-400">📞</span>
-                      <input
-                        type="text"
-                        value={orderPhoneFilter}
-                        onChange={(e) => setOrderPhoneFilter(e.target.value)}
-                        placeholder="গ্রাহকের ফোন (017...)"
-                        className="w-full bg-black/50 border border-red-900/45 text-white placeholder-slate-400 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm font-mono outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition"
-                      />
-                      {orderPhoneFilter && (
-                        <button
-                          type="button"
-                          onClick={() => setOrderPhoneFilter("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-red-950 hover:bg-red-800 text-rose-200 flex items-center justify-center text-xs font-bold transition cursor-pointer"
-                          title="ক্লিয়ার করুন"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Filter Active Reset / Clear chips if filters applied */}
-                  {(orderStatusFilter !== "All" || orderPhoneFilter.trim() || orderSkuOrProductLookup.trim()) && (
-                    <div className="text-white flex flex-wrap items-center justify-between gap-2 bg-amber-950/50 p-2.5 rounded-2xl border border-amber-500/40">
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="font-bold text-amber-200">সক্রিয় ফিল্টার:</span>
-                        {orderSkuOrProductLookup.trim() && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white font-mono text-[11px] shadow-2xs">
-                            <span>📷 SKU/বারকোড:</span>
-                            <span className="font-bold">{orderSkuOrProductLookup.trim()}</span>
+                    {/* Expandable Live Search Bar */}
+                    {(orderShowSearchBar || orderSkuOrProductLookup.trim() || orderPhoneFilter.trim()) && (
+                      <div className="bg-white px-4 py-3 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                        <div className="sm:col-span-7 relative flex items-center">
+                          <input
+                            type="text"
+                            value={orderSkuOrProductLookup}
+                            onChange={(e) => setOrderSkuOrProductLookup(e.target.value)}
+                            placeholder="অর্ডার নম্বর, প্রোডাক্ট, SKU, জেলা বা কাস্টমারের নাম লিখুন..."
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-3.5 pr-9 py-2 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-sky-600"
+                          />
+                          {orderSkuOrProductLookup && (
                             <button
                               type="button"
                               onClick={() => setOrderSkuOrProductLookup("")}
-                              className="ml-1 hover:text-amber-200 cursor-pointer"
-                              title="মুছে ফেলুন"
+                              className="absolute right-2.5 text-slate-400 hover:text-slate-700 font-bold text-xs cursor-pointer"
                             >
                               ✕
                             </button>
-                          </span>
-                        )}
-                        {orderPhoneFilter.trim() && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-700 text-white font-mono text-[11px] shadow-2xs">
-                            <span>📞 ফোন:</span>
-                            <span className="font-bold">{orderPhoneFilter.trim()}</span>
+                          )}
+                        </div>
+                        <div className="sm:col-span-5 relative flex items-center">
+                          <input
+                            type="text"
+                            value={orderPhoneFilter}
+                            onChange={(e) => setOrderPhoneFilter(e.target.value)}
+                            placeholder="কাস্টমার ফোন (017...)"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-3.5 pr-9 py-2 text-xs sm:text-sm font-mono text-slate-900 outline-none focus:border-sky-600"
+                          />
+                          {orderPhoneFilter && (
                             <button
                               type="button"
                               onClick={() => setOrderPhoneFilter("")}
-                              className="ml-1 hover:text-amber-200 cursor-pointer"
-                              title="মুছে ফেলুন"
+                              className="absolute right-2.5 text-slate-400 hover:text-slate-700 font-bold text-xs cursor-pointer"
                             >
                               ✕
                             </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. DEEP SKY TAB BAR WITH LIGHT WHITE TEXT */}
+                    <div
+                      className="w-full overflow-x-auto scrollbar-none px-3 py-2 flex items-center gap-1.5 shadow-inner"
+                      style={{ background: "linear-gradient(90deg, #0284c7 0%, #0369a1 100%)" }}
+                    >
+                      {[
+                        { key: "ALL", label: "All", count: (orders || []).length },
+                        { key: "TO_SHIP", label: "To Ship", count: (orders || []).filter(o => matchesSellerOrderTab(o, "TO_SHIP")).length },
+                        { key: "SHIPPING", label: "Shipping", count: (orders || []).filter(o => matchesSellerOrderTab(o, "SHIPPING")).length },
+                        { key: "DELIVERED", label: "Delivered", count: (orders || []).filter(o => matchesSellerOrderTab(o, "DELIVERED")).length },
+                        { key: "FAILED_DELIVERED", label: "Failed Delivered", count: (orders || []).filter(o => matchesSellerOrderTab(o, "FAILED_DELIVERED")).length },
+                        { key: "CANCELLATION", label: "Cancellation", count: (orders || []).filter(o => matchesSellerOrderTab(o, "CANCELLATION")).length, redBadge: true }
+                      ].map(tab => {
+                        const isActiveTab = orderSellerTab === tab.key;
+                        return (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setOrderSellerTab(tab.key)}
+                            className={`relative px-3.5 py-2.5 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                              isActiveTab
+                                ? "bg-white/25 text-white font-black shadow-sm border border-white/60"
+                                : "text-[#e0f2fe] hover:bg-white/10 font-semibold border border-transparent"
+                            }`}
+                          >
+                            <span>{tab.label}</span>
+                            {tab.redBadge ? (
+                              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center shadow">
+                                {tab.count}
+                              </span>
+                            ) : (
+                              tab.count > 0 && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                                  isActiveTab ? "bg-white text-sky-900" : "bg-white/15 text-[#f0f9ff]"
+                                }`}>
+                                  {tab.count}
+                                </span>
+                              )
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* 3. SUB-BAR: ORDER CREATED DROPDOWN & FILTER BUTTON */}
+                    <div className="bg-[#f8fafc] px-4 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 relative">
+                      {/* Left: Order Created Sort + Multi-Range Date Dropdown */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOrderShowDateDropdown(prev => !prev)}
+                          className="px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs font-extrabold text-slate-800 hover:border-sky-500 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        >
+                          <span>
+                            {orderSortNewest ? "Newest Order Created" : "Oldest Order Created"}
+                            {orderDatePreset !== "ALL" && ` · ${
+                              ({
+                                TODAY: "Today",
+                                "7D": "Last 7 Days",
+                                "15D": "Last 15 Days",
+                                "1M": "Last 1 Month",
+                                "1_3M": "1–3 Months",
+                                "3_6M": "3–6 Months",
+                                "6_9M": "6–9 Months",
+                                "1Y": "Last 1 Year",
+                                "1_2Y": "1–2 Years",
+                                "2_3Y": "2–3 Years",
+                                CUSTOM: "Custom Date"
+                              })[orderDatePreset] || orderDatePreset
+                            }`}
                           </span>
-                        )}
-                        {orderStatusFilter !== "All" && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 border border-red-900/50 text-white text-[11px] shadow-2xs">
-                            <span>স্ট্যাটাস:</span>
-                            <span className="font-bold">{orderStatusFilter}</span>
-                            <button
-                              type="button"
-                              onClick={() => setOrderStatusFilter("All")}
-                              className="ml-1 hover:text-amber-200 cursor-pointer"
-                              title="মুছে ফেলুন"
-                            >
-                              ✕
-                            </button>
-                          </span>
+                          <span className="text-[10px] text-slate-500">▾</span>
+                        </button>
+
+                        {orderShowDateDropdown && (
+                          <div className="absolute left-0 top-full mt-1.5 z-40 w-[300px] sm:w-[340px] bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 space-y-2.5 text-xs">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                              <span className="font-black text-slate-900">Order Created সময় ও সাজানো</span>
+                              <button
+                                type="button"
+                                onClick={() => setOrderShowDateDropdown(false)}
+                                className="text-slate-400 hover:text-slate-700 font-bold cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setOrderSortNewest(true)}
+                                className={`py-2 px-2.5 rounded-xl font-bold border text-[11px] cursor-pointer ${
+                                  orderSortNewest ? "bg-sky-600 text-white border-sky-600" : "bg-slate-50 text-slate-700 border-slate-200"
+                                }`}
+                              >
+                                ↓ Newest Order (নতুন)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setOrderSortNewest(false)}
+                                className={`py-2 px-2.5 rounded-xl font-bold border text-[11px] cursor-pointer ${
+                                  !orderSortNewest ? "bg-sky-600 text-white border-sky-600" : "bg-slate-50 text-slate-700 border-slate-200"
+                                }`}
+                              >
+                                ↑ Oldest Order (পুরাতন)
+                              </button>
+                            </div>
+
+                            <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+                              {[
+                                { k: "ALL", label: "সকল সময়ের অর্ডার (All Time)" },
+                                { k: "TODAY", label: "আজকের অর্ডার (Today)" },
+                                { k: "7D", label: "লাস্ট ৭ দিনের অর্ডার (Last 7 Days)" },
+                                { k: "15D", label: "লাস্ট ১৫ দিনের অর্ডার (Last 15 Days)" },
+                                { k: "1M", label: "লাস্ট ১ মাসের অর্ডার (Last 1 Month)" },
+                                { k: "1_3M", label: "১ থেকে ৩ মাস আগের (1–3 Months)" },
+                                { k: "3_6M", label: "৩ থেকে ৬ মাস আগের (3–6 Months)" },
+                                { k: "6_9M", label: "৬ থেকে ৯ মাস আগের (6–9 Months)" },
+                                { k: "1Y", label: "লাস্ট ১ বছর (Last 1 Year)" },
+                                { k: "1_2Y", label: "১ থেকে ২ বছর আগের (1–2 Years)" },
+                                { k: "2_3Y", label: "২ থেকে ৩ বছর আগের (2–3 Years)" },
+                                { k: "CUSTOM", label: "📅 কাস্টম তারিখ সিলেক্ট (Custom Date)" }
+                              ].map(opt => (
+                                <button
+                                  key={opt.k}
+                                  type="button"
+                                  onClick={() => {
+                                    setOrderDatePreset(opt.k);
+                                    if (opt.k !== "CUSTOM") setOrderShowDateDropdown(false);
+                                  }}
+                                  className={`w-full text-left px-3 py-2 rounded-xl font-bold transition flex items-center justify-between cursor-pointer ${
+                                    orderDatePreset === opt.k
+                                      ? "bg-sky-50 text-sky-800 border border-sky-300"
+                                      : "hover:bg-slate-50 text-slate-700"
+                                  }`}
+                                >
+                                  <span>{opt.label}</span>
+                                  {orderDatePreset === opt.k && <span className="text-sky-600">✓</span>}
+                                </button>
+                              ))}
+                            </div>
+
+                            {orderDatePreset === "CUSTOM" && (
+                              <div className="pt-2 border-t border-slate-200 space-y-2 bg-sky-50/70 p-2.5 rounded-xl">
+                                <p className="text-[11px] font-bold text-sky-900">কাস্টম তারিখ (২-৩+ বছর আগের অর্ডারও খুঁজুন):</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-600 block">শুরুর তারিখ</label>
+                                    <input
+                                      type="date"
+                                      value={orderCustomStartDate}
+                                      onChange={(e) => setOrderCustomStartDate(e.target.value)}
+                                      className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-[11px] font-mono"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-slate-600 block">শেষ তারিখ</label>
+                                    <input
+                                      type="date"
+                                      value={orderCustomEndDate}
+                                      onChange={(e) => setOrderCustomEndDate(e.target.value)}
+                                      className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-[11px] font-mono"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOrderCustomStartDate("");
+                                      setOrderCustomEndDate("");
+                                      setOrderDatePreset("ALL");
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-[11px] font-bold text-slate-700 cursor-pointer"
+                                  >
+                                    রিসেট
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setOrderShowDateDropdown(false)}
+                                    className="px-3 py-1 rounded-lg bg-sky-600 text-white text-[11px] font-bold cursor-pointer"
+                                  >
+                                    প্রয়োগ করুন ✓
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOrderStatusFilter("All");
-                          setOrderPhoneFilter("");
-                          setOrderSkuOrProductLookup("");
-                        }}
-                        className="px-3 py-1 rounded-xl bg-black/60 text-rose-200 border border-red-800/50 text-xs font-bold hover:bg-red-950/80 transition flex items-center gap-1 shrink-0 active:scale-95 shadow-2xs cursor-pointer ml-auto"
-                      >
-                        <span>✕</span>
-                        <span>সকল ফিল্টার রিসেট</span>
-                      </button>
-                    </div>
-                  )}
 
-                  {/* Status Filter Tabs / Chips */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                    <span className="text-xs font-bold text-slate-300 whitespace-nowrap mr-1">স্ট্যাটাস:</span>
-                    {[
-                      { key: "All", label: "All (সকল)", count: orders.length },
-                      { key: "Pending", label: "Pending (পেন্ডিং)", count: orders.filter(o => o.status === "Pending").length },
-                      { key: "Confirmed", label: "Confirmed (অনুমোদিত)", count: orders.filter(o => o.status === "Confirmed").length },
-                      { key: "Shipped", label: "Shipped (ডেলিভারিতে)", count: orders.filter(o => o.status === "Shipped").length },
-                      { key: "Delivered", label: "Delivered (সম্পন্ন)", count: orders.filter(o => o.status === "Delivered").length },
-                      { key: "Cancelled", label: "Cancelled (বাতিল)", count: orders.filter(o => o.status === "Cancelled").length }
-                    ].map(st => {
-                      const isSelected = orderStatusFilter === st.key;
-                      return (
+                      {/* Right: Filter Button (opens Screenshot 2 Filter Modal) */}
+                      <div className="flex items-center gap-2">
+                        {(orderTypeFilter !== "All" || orderDeliveryTypeFilter !== "All" || orderDeliveredByFilter !== "All" || orderDatePreset !== "ALL") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOrderTypeFilter("All");
+                              setOrderDeliveryTypeFilter("All");
+                              setOrderDeliveredByFilter("All");
+                              setOrderDatePreset("ALL");
+                              setOrderCustomStartDate("");
+                              setOrderCustomEndDate("");
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold cursor-pointer"
+                          >
+                            ✕ রিসেট
+                          </button>
+                        )}
                         <button
-                          key={st.key}
                           type="button"
-                          onClick={() => setOrderStatusFilter(st.key)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border cursor-pointer ${
-                            isSelected
-                              ? "bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white border-red-500/60 shadow-xs scale-[1.02]"
-                              : "bg-black/45 text-rose-200 border-red-900/40 hover:bg-red-950/60"
+                          onClick={() => setOrderShowFilterModal(true)}
+                          className={`px-3.5 py-2 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 shadow-2xs cursor-pointer transition ${
+                            (orderTypeFilter !== "All" || orderDeliveryTypeFilter !== "All" || orderDeliveredByFilter !== "All")
+                              ? "bg-orange-500 text-white border-orange-500"
+                              : "bg-white text-slate-800 border-slate-300 hover:border-sky-500"
                           }`}
                         >
-                          <span>{st.label}</span>
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                            isSelected ? "bg-white/25 text-white" : "bg-red-950/80 text-rose-200"
-                          }`}>
-                            {st.count}
-                          </span>
+                          <span>Filter</span>
+                          <span>⧩</span>
                         </button>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    </div>
 
-                  {/* Active Filter Summary Bar */}
-                  <div className="flex items-center justify-between text-[11px] text-rose-300/80 pt-1.5 border-t border-dashed border-red-900/35">
-                    <span>
-                      প্রদর্শিত হচ্ছে: <b className="text-white">{filteredOrders.length}</b> টি অর্ডার (মোট: {orders.length} টি)
-                    </span>
-                    {(orderStatusFilter !== "All" || orderPhoneFilter.trim() || orderSkuOrProductLookup.trim()) && (
-                      <span className="text-slate-300 font-medium">
-                        {orderStatusFilter !== "All" && `স্ট্যাটাস: ${orderStatusFilter} `}
-                        {orderSkuOrProductLookup.trim() && `| SKU/বারকোড: ${orderSkuOrProductLookup.trim()} `}
-                        {orderPhoneFilter.trim() && `| ফোন: ${orderPhoneFilter.trim()}`}
-                      </span>
+                    {/* Active Filter Summary Chips */}
+                    {(orderTypeFilter !== "All" || orderDeliveryTypeFilter !== "All" || orderDeliveredByFilter !== "All") && (
+                      <div className="px-4 py-2 bg-sky-50 border-b border-sky-200 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className="font-bold text-sky-900">সক্রিয় ফিল্টার:</span>
+                        {orderTypeFilter !== "All" && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-white border border-sky-300 font-bold text-sky-800">
+                            Order Type: {orderTypeFilter}
+                          </span>
+                        )}
+                        {orderDeliveryTypeFilter !== "All" && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-white border border-sky-300 font-bold text-sky-800">
+                            Delivery Type: {orderDeliveryTypeFilter}
+                          </span>
+                        )}
+                        {orderDeliveredByFilter !== "All" && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-white border border-sky-300 font-bold text-sky-800">
+                            Delivered By: {orderDeliveredByFilter}
+                          </span>
+                        )}
+                      </div>
                     )}
-                  </div>
-                </div>
 
-                {orders.length === 0 ? (
-                  <div className="text-white text-center py-16 bg-black/55 backdrop-blur-xl rounded-3xl border border-red-900/35 p-8">
-                    <p className="text-4xl mb-3">📦</p>
-                    <h4 className="font-bold text-base text-white">কোন অর্ডার নেই</h4>
-                    <p className="text-xs text-slate-400 mt-1">গ্রাহক স্টোরফ্রন্ট থেকে অর্ডার করলে এখানে তালিকা চলে আসবে।</p>
-                  </div>
-                ) : filteredOrders.length === 0 ? (
-                  <div className="text-white text-center py-12 bg-black/55 backdrop-blur-xl rounded-3xl border border-red-900/35 p-8 space-y-3">
-                    <p className="text-4xl">🔍</p>
-                    <h4 className="font-bold text-base text-white">কোন অর্ডার খুঁজে পাওয়া যায়নি!</h4>
-                    <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                      {orderSkuOrProductLookup.trim() && `SKU/বারকোড "${orderSkuOrProductLookup.trim()}" `}
-                      {orderPhoneFilter.trim() && `ফোন নম্বর "${orderPhoneFilter.trim()}" `}
-                      {orderStatusFilter !== "All" && `স্ট্যাটাস "${orderStatusFilter}" `}
-                      অনুযায়ী কোনো অর্ডার মেলেনি। ফিল্টার রিসেট করে আবার চেষ্টা করুন।
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOrderStatusFilter("All");
-                        setOrderPhoneFilter("");
-                        setOrderSkuOrProductLookup("");
-                      }}
-                      className="px-4 py-2 rounded-full bg-gradient-to-r from-[#dc2626] to-[#991b1b] text-white text-xs font-bold hover:brightness-110 transition shadow-xs"
-                    >
-                      ফিল্টার রিসেট করুন 🔄
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredOrders.map(o => (
-                      <div key={o.id} className="text-white bg-black/55 backdrop-blur-xl rounded-3xl border border-red-900/35 p-4 sm:p-5 shadow-lg space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-red-900/35 pb-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono font-bold text-sm sm:text-base text-rose-200 bg-red-950/60 px-3 py-1 rounded-full border border-red-800/50">
-                              #{o.id}
-                            </span>
-                            <span className="text-xs text-slate-400">তারিখ: {o.date}</span>
-                            {o.hasReturn && (
-                              <span 
-                                onClick={() => {
-                                  const foundRet = returns.find(r => r.orderId === o.id || r.id === o.lastReturnId);
-                                  if (foundRet) setViewReturnSlip(foundRet);
-                                  else {
-                                    setActiveReturnTab("history");
-                                    setIsReturnModalOpen(true);
-                                  }
-                                }}
-                                className="cursor-pointer text-[10px] bg-orange-950/70 text-orange-200 border border-orange-500/40 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 hover:bg-orange-900/70 transition"
-                                title="রিটার্ন ও এক্সচেঞ্জ মেমো দেখুন"
-                              >
-                                <span>🔄</span>
-                                <span>রিটার্ন/এক্সচেঞ্জ প্রসেসড</span>
-                              </span>
-                            )}
-                          </div>
-                          
-                          {/* Status Dropdown with Live Trigger */}
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-slate-300 hidden sm:inline">স্ট্যাটাস:</span>
-                            <select 
-                              value={o.status}
-                              onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                              className={`text-xs rounded-full px-3.5 py-1.5 font-bold outline-none cursor-pointer border shadow-sm ${
-                                o.status === "Pending" ? "bg-amber-950/80 text-amber-200 border-amber-500/50" :
-                                o.status === "Confirmed" ? "bg-blue-950/80 text-blue-200 border-blue-500/50" :
-                                o.status === "Shipped" ? "bg-purple-950/80 text-purple-200 border-purple-500/50" :
-                                o.status === "Delivered" ? "bg-emerald-950/80 text-emerald-200 border-emerald-500/50" :
-                                "bg-red-950/80 text-rose-200 border-red-500/50"
-                              }`}
-                            >
-                              <option value="Pending">🟡 Pending (পেন্ডিং)</option>
-                              <option value="Confirmed">🔵 Confirmed (অনুমোদিত)</option>
-                              <option value="Shipped">🟣 Shipped (ডেলিভারিতে)</option>
-                              <option value="Delivered">🟢 Delivered (সম্পন্ন)</option>
-                              <option value="Cancelled">🔴 Cancelled (বাতিল)</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Customer & Address details */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                          <div className="text-white bg-[#14070a]/75 p-3 rounded-2xl border border-red-900/35">
-                            <p className="font-bold text-sm text-white">{o.customer}</p>
-                            <p className="text-slate-300 mt-1 font-mono">📞 {o.phone}</p>
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              <a href={`tel:${o.phone}`} className="bg-black/60 border border-emerald-500/40 px-2.5 py-1 rounded-full text-[11px] font-bold text-emerald-300 hover:bg-emerald-950/60">
-                                📞 কল করুন
-                              </a>
-                              <button 
-                                type="button"
-                                onClick={() => shareOrderToWhatsApp(o)} 
-                                className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs flex items-center gap-1 transition"
-                                title="হোয়াটসঅ্যাপে বিস্তারিত পাঠান"
-                              >
-                                💬 WhatsApp
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openPlaySafeSmsIntent(o.phone, buildOrderSmsText(o))}
-                                className="bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs flex items-center gap-1 transition"
-                                title="১-ক্লিক Play-Safe SMS পাঠান"
-                              >
-                                📩 SMS
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="text-white bg-[#14070a]/75 p-3 rounded-2xl border border-red-900/35">
-                            <p className="font-semibold text-rose-300/80">ডেলিভারি ঠিকানা</p>
-                            <p className="text-white mt-1">{o.address}, {o.thana}, {o.district}</p>
-                            <p className="text-slate-400 mt-1">পেমেন্ট: <b className="text-rose-200">{o.paymentMethod}</b></p>
-                          </div>
-
-                          <div className="text-white bg-[#14070a]/75 p-3 rounded-2xl border border-red-900/35 flex flex-col justify-between">
-                            <div>
-                              <p className="font-semibold text-rose-300/80">বিলের সারসংক্ষেপ</p>
-                              <p className="text-white font-bold text-base mt-0.5">{o.total} ৳</p>
-                              <p className="text-[11px] text-slate-300">
-                                সাবটোটাল: {o.subtotal} ৳ | ডেলিভারি: {o.deliveryCharge} ৳
-                                {o.discount > 0 && ` | ছাড়: -${o.discount} ৳`}
-                              </p>
-                            </div>
-                            {o.trackingId && (
-                              <p className="text-[11px] text-emerald-300 font-bold bg-emerald-950/60 p-1.5 rounded-lg border border-emerald-500/40 mt-1">
-                                🚚 ট্র্যাকিং ID: {o.trackingId}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Customer Order Note / Delivery Instructions */}
-                        {(o.orderNote || o.note) && (
-                          <div className="text-white bg-amber-950/45 border border-amber-500/45 p-3 rounded-2xl text-xs flex items-start gap-2 shadow-xs">
-                            <span className="text-base flex-shrink-0">📝</span>
-                            <div className="space-y-0.5">
-                              <span className="font-bold text-amber-300 block text-[11px] uppercase tracking-wider">কাস্টমারের বিশেষ ডেলিভারি নির্দেশনা (Order Note):</span>
-                              <p className="text-white font-medium whitespace-pre-wrap">{o.orderNote || o.note}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Gift Wrapping & Greetings Card Information */}
-                        {o.giftWrap && (
-                          <div className="text-white bg-red-950/50 border border-rose-500/45 p-3 rounded-2xl text-xs space-y-1.5 shadow-xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-rose-200 flex items-center gap-1.5">
-                                <span>🎁</span> <span>লাক্সারি গিফট র্যাপিং ও কার্ড (+৫০ ৳)</span>
-                              </span>
-                              <span className="text-[10px] bg-rose-600 text-white px-2 py-0.5 rounded-full font-black">উপহার</span>
-                            </div>
-                            <div className="text-[11px] text-slate-200 flex flex-wrap gap-3">
-                              {o.giftRecipient && <span><b>প্রাপক:</b> {o.giftRecipient}</span>}
-                              {o.giftSender && <span><b>প্রেরক:</b> {o.giftSender}</span>}
-                            </div>
-                            {o.giftMessage && (
-                              <p className="text-[11px] text-rose-100 italic bg-black/45 p-2 rounded-lg border border-red-900/40">
-                                "{o.giftMessage}"
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Ordered Items List & Supplier Links */}
-                        <div className="text-white bg-[#14070a]/75 p-3 rounded-2xl border border-red-900/35">
-                          <p className="text-xs font-semibold text-rose-300/80 mb-2">অর্ডারের পণ্যসমূহ ({o.items.length}):</p>
-                          <div className="flex flex-wrap gap-2">
-                            {o.items.map((it, idx) => (
-                              <div key={idx} className="bg-black/50 border border-red-900/40 rounded-xl px-3 py-1.5 text-xs flex items-center gap-2 text-white">
-                                <span className="font-semibold">{it.name}</span>
-                                <span className="bg-[#dc2626] text-white px-2 py-0.2 rounded-full font-bold text-[10px]">
-                                  {it.qty} টি
-                                </span>
-                                {it.bogo && (
-                                  <span className="bg-gradient-to-r from-amber-500 to-rose-600 text-white px-2 py-0.2 rounded-full font-black text-[9px]">
-                                    🎁 BOGO (+{it.qty}টি ফ্রি)
-                                  </span>
-                                )}
-                                {it.isFreeGift && (
-                                  <span className="bg-emerald-950/70 text-emerald-300 border border-emerald-500/40 px-2 py-0.2 rounded-full font-black text-[9px]">
-                                    🎁 ফ্রি গিফট (০ ৳)
-                                  </span>
-                                )}
-                                <span className="font-bold text-amber-300">{it.price * it.qty} ৳</span>
-                                {it.sourceUrl && (
-                                  <a 
-                                    href={it.sourceUrl} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="bg-blue-950/70 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded text-[10px] font-bold hover:underline"
-                                    title="সোর্স ওয়েবসাইটে ড্রপশিপ / কিনুন"
-                                  >
-                                    🌐 সোর্স লিঙ্ক
-                                  </a>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Action Buttons: Confirmation View, Share to WhatsApp, Invoice, Steadfast, Pathao, Delete */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-red-900/35">
-                          <div className="flex flex-wrap gap-2">
-                            <button 
-                              onClick={() => setViewInvoiceOrder(o)}
-                              className="px-4 py-2 bg-black/50 border border-red-900/50 text-rose-200 rounded-full text-xs font-bold hover:bg-[#dc2626] hover:text-white transition shadow-sm flex items-center gap-1.5"
-                              title="অর্ডার কনফার্মেশন ও বিবরণী দেখুন"
-                            >
-                              <span>👁️</span>
-                              <span>কনফার্মেশন ভিউ</span>
-                            </button>
-                            <button 
-                              onClick={() => openReturnModalForOrder(o)}
-                              className="px-4 py-2 bg-gradient-to-r from-orange-600 to-[#b91c1c] text-white rounded-full text-xs font-bold hover:brightness-110 transition shadow-sm flex items-center gap-1.5"
-                              title="এই অর্ডারের পণ্য রিটার্ন বা এক্সচেঞ্জ করুন"
-                            >
-                              <span>🔄</span>
-                              <span>রিটার্ন ও এক্সচেঞ্জ</span>
-                            </button>
-                            <button 
-                              onClick={() => shareOrderToWhatsApp(o)}
-                              className="px-4 py-2 bg-[#25D366] text-white rounded-full text-xs font-bold hover:bg-[#20bd5a] transition shadow-sm flex items-center gap-1.5"
-                              title="হোয়াটসঅ্যাপে প্রি-ফিল্ড অর্ডার ডিটেইলস পাঠান"
-                            >
-                              <span>💬</span>
-                              <span>Share to WhatsApp</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openPlaySafeSmsIntent(o.phone, buildOrderSmsText(o))}
-                              className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-full text-xs font-bold transition shadow-sm flex items-center gap-1.5"
-                              title="ডিফল্ট মেসেজ অ্যাপে ১-ক্লিক SMS পাঠান"
-                            >
-                              <span>📩</span>
-                              <span>১-ক্লিক SMS</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => enqueueSmsToCloud({
-                                phone: o.phone,
-                                customerName: o.customer || o.customerName || "",
-                                message: buildOrderSmsText(o),
-                                orderId: o.id,
-                                type: "order_alert"
-                              })}
-                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold transition shadow-sm flex items-center gap-1.5"
-                              title="ব্যক্তিগত মোবাইল SIM Gateway কিউতে পাঠান"
-                            >
-                              <span>📲</span>
-                              <span>SIM কিউ SMS</span>
-                            </button>
-                            <button 
-                              onClick={() => printInvoiceWindow(o)}
-                              className="px-4 py-2 bg-black/50 border border-red-900/50 text-slate-200 rounded-full text-xs font-bold hover:bg-red-950/60 transition shadow-sm flex items-center gap-1.5"
-                            >
-                              <span>🧾</span>
-                              <span>চালান প্রিন্ট</span>
-                            </button>
-                            {o.status === "Shipped" && (
-                              <button
-                                type="button"
-                                onClick={() => setShippingLabelOrder(o)}
-                                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-full text-xs font-bold hover:brightness-110 transition shadow-sm flex items-center gap-1.5 cursor-pointer"
-                                title="পার্সেলের গায়ে লাগানোর জন্য QR কোডসহ শিপিং লেবেল প্রিন্ট করুন"
-                              >
-                                <span>🏷️</span>
-                                <span>শিপিং লেবেল প্রিন্ট</span>
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => dispatchCourier(o.id, "Steadfast")}
-                              className="px-4 py-2 bg-black/75 border border-red-800/40 text-white rounded-full text-xs font-semibold hover:bg-black transition shadow-sm flex items-center gap-1.5"
-                            >
-                              <span>🚚 Steadfast বুকিং</span>
-                            </button>
-                            <button 
-                              onClick={() => dispatchCourier(o.id, "Pathao")}
-                              className="px-4 py-2 bg-[#e2136e] text-white rounded-full text-xs font-semibold hover:bg-[#c20d5c] transition shadow-sm flex items-center gap-1.5"
-                            >
-                              <span>🛵 Pathao বুকিং</span>
-                            </button>
-                          </div>
-                          
-                          <button 
-                            onClick={() => deleteOrder(o.id)}
-                            className="px-3 py-1.5 text-rose-300 hover:text-white text-xs font-bold hover:bg-red-950/70 rounded-full transition"
+                    {/* 4. SELLER-CENTER ORDER CARDS LIST */}
+                    <div className="p-3 sm:p-4 space-y-3.5">
+                      {filteredOrders.length === 0 ? (
+                        <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-2.5">
+                          <p className="text-4xl">📦</p>
+                          <h4 className="font-black text-base text-slate-900">এই ফিল্টারে কোনো অর্ডার পাওয়া যায়নি</h4>
+                          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                            অর্ডার স্ট্যাটাস ট্যাব, তারিখ অথবা Filter অপশন পরিবর্তন করে দেখুন।
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOrderSellerTab("ALL");
+                              setOrderTypeFilter("All");
+                              setOrderDeliveryTypeFilter("All");
+                              setOrderDeliveredByFilter("All");
+                              setOrderDatePreset("ALL");
+                              setOrderSkuOrProductLookup("");
+                              setOrderPhoneFilter("");
+                            }}
+                            className="px-4 py-2 rounded-full bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 cursor-pointer"
                           >
-                            🗑️ অর্ডার মুছুন
+                            সব ফিল্টার রিসেট করুন
                           </button>
                         </div>
+                      ) : (
+                        filteredOrders.map(o => {
+                          const firstItem = (o.items && o.items[0]) || null;
+                          const totalQty = (o.items || []).reduce((s, it) => s + (Number(it.qty || it.quantity) || 1), 0);
+                          const payRaw = String(o.paymentMethod || "COD");
+                          const payBadge = payRaw.toLowerCase().includes("bkash") ? "bKash" :
+                            payRaw.toLowerCase().includes("nagad") ? "Nagad" :
+                            payRaw.toLowerCase().includes("rocket") ? "Rocket" :
+                            payRaw.toLowerCase().includes("visa") || payRaw.toLowerCase().includes("card") ? "Visa/Card" :
+                            "COD";
+                          const payClass = payBadge === "bKash" ? "border-pink-500 text-pink-700 bg-pink-50" :
+                            payBadge === "Nagad" ? "border-orange-500 text-orange-700 bg-orange-50" :
+                            payBadge === "Rocket" ? "border-purple-600 text-purple-700 bg-purple-50" :
+                            payBadge === "Visa/Card" ? "border-blue-600 text-blue-700 bg-blue-50" :
+                            "border-orange-500 text-orange-700 bg-orange-50";
+                          const orderTypeVal = o.orderType || "Normal";
+                          const deliveryTypeVal = o.deliveryType || "Standard";
+                          const deliveredByVal = o.deliveredBy || (o.courier && o.courier !== "None" ? o.courier : "SteadFast");
+                          const isDotsOpen = openOrderDotsMenuId === o.id;
+
+                          return (
+                            <div key={o.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3 relative">
+                              {/* Order Number + Copy + Status */}
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-xs font-semibold text-slate-500">Order Number:</span>
+                                  <span className="font-mono font-black text-sm text-slate-900">{o.id}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      try { navigator.clipboard?.writeText(String(o.id)); } catch (_e) {}
+                                      notify(`অর্ডার নম্বর #${o.id} কপি হয়েছে!`);
+                                    }}
+                                    className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 hover:bg-orange-100 text-[11px] font-bold cursor-pointer"
+                                    title="Order Number কপি করুন"
+                                  >
+                                    📋
+                                  </button>
+                                </div>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${
+                                  o.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                  ["Shipped", "Shipping"].includes(o.status) ? "bg-sky-50 text-sky-700 border-sky-200" :
+                                  ["Cancelled", "Cancellation", "Failed Delivered"].includes(o.status) ? "bg-red-50 text-red-700 border-red-200" :
+                                  "bg-amber-50 text-amber-800 border-amber-200"
+                                }`}>
+                                  {o.status || "Pending"}
+                                </span>
+                              </div>
+
+                              {/* Prominent Payment Method Badge + Order/Delivery/Courier Pills */}
+                              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                                <span className={`px-2 py-0.5 rounded-md font-black border ${payClass}`}>
+                                  {payBadge}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                  {orderTypeVal}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-md font-bold border ${
+                                  deliveryTypeVal === "Express"
+                                    ? "bg-amber-50 text-amber-800 border-amber-300"
+                                    : "bg-sky-50 text-sky-800 border-sky-200"
+                                }`}>
+                                  {deliveryTypeVal === "Express" ? "⚡ Express" : "Standard"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                                  🚚 {deliveredByVal}
+                                </span>
+                                <span className="text-slate-400 font-medium ml-auto text-[11px]">
+                                  {o.date} · {o.district || "Dhaka"}{o.thana ? `, ${o.thana}` : ""}
+                                </span>
+                              </div>
+
+                              {/* Product Row Box */}
+                              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 flex items-center gap-3">
+                                <div className="w-14 h-14 rounded-lg bg-white border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                  {firstItem && (firstItem.image || firstItem.imageUrl) ? (
+                                    <img
+                                      src={firstItem.image || firstItem.imageUrl}
+                                      alt={firstItem.name || firstItem.productName || "Product"}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-xl">🛍️</span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                                    {firstItem ? (firstItem.name || firstItem.productName || "প্রোডাক্ট") : "অর্ডার আইটেম"}
+                                    {(o.items || []).length > 1 && ` (+ আরও ${o.items.length - 1} টি পণ্য)`}
+                                  </p>
+                                  <p className="text-xs font-extrabold text-slate-600 mt-0.5">
+                                    x {totalQty || 1}
+                                  </p>
+                                  <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                                    👤 {o.customer || o.customerName || "গ্রাহক"} · 📞 {o.phone || ""}
+                                    {o.landmark ? ` · ${o.landmark}` : ""}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Total Purchase Row */}
+                              <div className="flex items-center justify-between text-xs sm:text-sm pt-0.5">
+                                <span className="font-semibold text-slate-500">Total Purchase</span>
+                                <span className="font-mono font-black text-slate-900">
+                                  BDT {Number(o.total || 0).toFixed(2)}
+                                </span>
+                              </div>
+
+                              {/* Print Status Row */}
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-100 pb-2.5">
+                                <span className="font-semibold text-slate-500">Print Status</span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShippingLabelOrder(o)}
+                                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 font-bold flex items-center gap-1 cursor-pointer transition"
+                                  >
+                                    <span>🖨️</span>
+                                    <span>Shipping Label</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => printInvoiceWindow(o)}
+                                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-sky-800 border border-slate-200 font-bold flex items-center gap-1 cursor-pointer transition"
+                                  >
+                                    <span>🖨️</span>
+                                    <span>Invoice</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Bottom Bar: Contact Customer (Call + WhatsApp + Mobile SIM SMS) + Three Dots Menu */}
+                              <div className="flex items-center justify-between gap-2 pt-0.5 flex-wrap">
+                                <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                                  <span className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-900 text-xs font-extrabold border border-slate-200">
+                                    Contact Customer
+                                  </span>
+                                  <a
+                                    href={`tel:${o.phone || ""}`}
+                                    className="w-9 h-9 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center text-sm font-bold transition"
+                                    title="কাস্টমারকে কল করুন"
+                                  >
+                                    📞
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => shareOrderToWhatsApp(o)}
+                                    className="w-9 h-9 rounded-full bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] border border-[#25D366]/40 flex items-center justify-center text-sm font-bold cursor-pointer transition"
+                                    title="হোয়াটসঅ্যাপ মেসেজ পাঠান"
+                                  >
+                                    💬
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (config?.smsGatewayDeviceEnabled) {
+                                        enqueueSmsToCloud({
+                                          phone: o.phone,
+                                          customerName: o.customer || o.customerName || "",
+                                          message: buildOrderSmsText(o),
+                                          orderId: o.id,
+                                          type: "order_alert"
+                                        });
+                                      } else {
+                                        openPlaySafeSmsIntent(o.phone, buildOrderSmsText(o));
+                                      }
+                                    }}
+                                    className="px-2.5 h-9 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 flex items-center gap-1 text-xs font-bold cursor-pointer transition"
+                                    title="মোবাইল সিম থেকে SMS পাঠান"
+                                  >
+                                    <span>📲</span>
+                                    <span>SIM SMS</span>
+                                  </button>
+                                </div>
+
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenOrderDotsMenuId(isDotsOpen ? null : o.id)}
+                                    className="w-10 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 flex items-center justify-center font-black text-base cursor-pointer"
+                                    title="আরও অ্যাকশন ও প্রিন্ট মেনু"
+                                  >
+                                    •••
+                                  </button>
+
+                                  {isDotsOpen && (
+                                    <div className="absolute right-0 bottom-11 z-40 w-60 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 space-y-1 text-xs">
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); setShippingLabelOrder(o); }}
+                                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-sky-50 font-bold text-slate-800 flex items-center gap-2 cursor-pointer"
+                                      >
+                                        <span>🖨️</span>
+                                        <span>প্রিন্ট Shipping Label</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); printInvoiceWindow(o); }}
+                                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-sky-50 font-bold text-slate-800 flex items-center gap-2 cursor-pointer"
+                                      >
+                                        <span>🖨️</span>
+                                        <span>প্রিন্ট Invoice</span>
+                                      </button>
+                                      <div className="border-t border-slate-100 my-1"></div>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); setViewInvoiceOrder(o); }}
+                                        className="w-full text-left px-3 py-1.5 rounded-xl hover:bg-slate-50 font-semibold text-slate-700 cursor-pointer"
+                                      >
+                                        👁️ অর্ডার বিবরণী দেখুন
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); dispatchCourier(o.id, "Pathao"); }}
+                                        className="w-full text-left px-3 py-1.5 rounded-xl hover:bg-pink-50 font-semibold text-pink-700 cursor-pointer"
+                                      >
+                                        🛵 Pathao কুরিয়ার বুকিং
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); dispatchCourier(o.id, "SteadFast"); }}
+                                        className="w-full text-left px-3 py-1.5 rounded-xl hover:bg-slate-100 font-semibold text-slate-800 cursor-pointer"
+                                      >
+                                        🚚 SteadFast কুরিয়ার বুকিং
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); dispatchCourier(o.id, "Digital"); }}
+                                        className="w-full text-left px-3 py-1.5 rounded-xl hover:bg-sky-50 font-semibold text-sky-700 cursor-pointer"
+                                      >
+                                        ⚡ Digital ডেলিভারি
+                                      </button>
+                                      <div className="border-t border-slate-100 my-1"></div>
+                                      <div className="px-3 py-1">
+                                        <label className="text-[10px] font-bold text-slate-400 block mb-1">স্ট্যাটাস পরিবর্তন করুন:</label>
+                                        <select
+                                          value={o.status}
+                                          onChange={(e) => {
+                                            setOpenOrderDotsMenuId(null);
+                                            updateOrderStatus(o.id, e.target.value);
+                                          }}
+                                          className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none"
+                                        >
+                                          <option value="Pending">Pending (To Ship)</option>
+                                          <option value="Confirmed">Confirmed (To Ship)</option>
+                                          <option value="To Ship">To Ship</option>
+                                          <option value="Shipped">Shipped (Shipping)</option>
+                                          <option value="Delivered">Delivered</option>
+                                          <option value="Failed Delivered">Failed Delivered</option>
+                                          <option value="Cancelled">Cancellation</option>
+                                        </select>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); openReturnModalForOrder(o); }}
+                                        className="w-full text-left px-3 py-1.5 rounded-xl hover:bg-orange-50 font-semibold text-orange-700 cursor-pointer"
+                                      >
+                                        🔄 রিটার্ন ও এক্সচেঞ্জ
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setOpenOrderDotsMenuId(null); deleteOrder(o.id); }}
+                                        className="w-full text-left px-3 py-1.5 rounded-xl hover:bg-red-50 font-bold text-red-600 cursor-pointer"
+                                      >
+                                        🗑️ অর্ডার মুছুন
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* 5. FILTER MODAL (Screenshot 2: Order Type, Delivery Type, Delivered By) */}
+                    {orderShowFilterModal && (
+                      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+                        <div className="bg-white text-slate-900 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-5 sm:p-6 space-y-5 shadow-2xl animate-fadeIn">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h4 className="text-lg font-black text-slate-900 flex-1 text-center">Filter</h4>
+                            <button
+                              type="button"
+                              onClick={() => setOrderShowFilterModal(false)}
+                              className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="text-sm font-black text-slate-900">Order Type</p>
+                            <div className="flex flex-wrap gap-2">
+                              {["All", "Normal", "Custom"].map(opt => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setOrderTypeFilter(opt)}
+                                  className={`px-4 py-2 rounded-full text-xs font-extrabold transition cursor-pointer border ${
+                                    orderTypeFilter === opt
+                                      ? "bg-[#ea580c] text-white border-[#ea580c] shadow"
+                                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="text-sm font-black text-slate-900">Delivery Type</p>
+                            <div className="flex flex-wrap gap-2">
+                              {["All", "Standard", "Express"].map(opt => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setOrderDeliveryTypeFilter(opt)}
+                                  className={`px-4 py-2 rounded-full text-xs font-extrabold transition cursor-pointer border ${
+                                    orderDeliveryTypeFilter === opt
+                                      ? "bg-[#ea580c] text-white border-[#ea580c] shadow"
+                                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="text-sm font-black text-slate-900">Delivered By</p>
+                            <div className="flex flex-wrap gap-2">
+                              {["All", "Pathao", "SteadFast", "Digital"].map(opt => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setOrderDeliveredByFilter(opt)}
+                                  className={`px-4 py-2 rounded-full text-xs font-extrabold transition cursor-pointer border ${
+                                    orderDeliveredByFilter === opt
+                                      ? "bg-[#ea580c] text-white border-[#ea580c] shadow"
+                                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOrderTypeFilter("All");
+                                setOrderDeliveryTypeFilter("All");
+                                setOrderDeliveredByFilter("All");
+                              }}
+                              className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-extrabold cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setOrderShowFilterModal(false)}
+                              className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-extrabold shadow cursor-pointer"
+                            >
+                              Apply Filter ✓
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
                   </div>
                 )}
 
@@ -24144,6 +24413,387 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             )}
 
             {/* ========================================================= */}
+            {/* 11.9 SHIPPING INFO ADMIN HUB (Add/Edit/Delete + Color Studio) */}
+            {/* ========================================================= */}
+            {activeTab === "ShippingInfo" && (() => {
+              const sCfg = config?.shippingInfo || initialStoreConfig.shippingInfo;
+              const opts = sCfg.options || [];
+
+              return (
+                <div className="space-y-5 animate-fadeIn">
+                  {/* Header */}
+                  <div className="text-white bg-black/55 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-sky-500/40 shadow-lg flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("Dashboard")}
+                        className="px-3.5 py-1.5 rounded-full text-xs font-bold border border-red-900/50 bg-[#1a0a0e]/80 text-rose-200 hover:bg-[#dc2626] hover:text-white transition cursor-pointer"
+                      >
+                        ← ড্যাশবোর্ড
+                      </button>
+                      <div>
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                          <span>🚚</span>
+                          <span>Shipping info ম্যানেজমেন্ট ও কালার স্টুডিও</span>
+                        </h3>
+                        <p className="text-xs text-sky-200/80 mt-0.5">
+                          চেকআউট ডেলিভারি অপশন Add/Edit/Delete ও ব্লক-বর্ডার-বাটন কালার পরিবর্তন করুন
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShippingOptionDraft({
+                          id: `ship-${Date.now()}`,
+                          title: "",
+                          subtitle: "",
+                          badge: "",
+                          fee: 100,
+                          freeAbove: 0,
+                          estimatedDays: "২-৩ কার্যদিবস",
+                          deliveryType: "Standard",
+                          districtRule: "ALL",
+                          customDistricts: [],
+                          enabled: true,
+                          isNew: true
+                        })}
+                        className="px-4 py-2 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow cursor-pointer"
+                      >
+                        + নতুন ডেলিভারি অপশন যোগ করুন
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateShippingInfoConfig(initialStoreConfig.shippingInfo, "Shipping info ডিফল্ট অবস্থায় রিসেট হয়েছে!")}
+                        className="px-3.5 py-2 rounded-full bg-black/60 border border-slate-500/50 text-slate-200 hover:text-white text-xs font-bold cursor-pointer"
+                      >
+                        ↺ রিসেট
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Live Checkout Preview Card */}
+                  <div
+                    className="rounded-3xl p-4 sm:p-5 border-2 shadow-lg space-y-3"
+                    style={{
+                      backgroundColor: sCfg.sectionBgColor || "#f0f9ff",
+                      borderColor: sCfg.borderColor || "#0284c7",
+                      color: sCfg.textColor || "#0f172a"
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-black/10">LIVE CHECKOUT PREVIEW</span>
+                        <h4 className="font-black text-base mt-1">{sCfg.sectionTitle || "Delivery Type & Shipping Info"}</h4>
+                        <p className="text-xs font-semibold opacity-80">{sCfg.chandpurExpressNotice}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="px-3.5 py-1.5 rounded-full text-xs font-extrabold shadow"
+                        style={{ backgroundColor: sCfg.buttonBgColor || "#0284c7", color: sCfg.buttonTextColor || "#ffffff" }}
+                      >
+                        প্রিভিউ বাটন
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {opts.map(opt => (
+                        <div
+                          key={opt.id}
+                          className="rounded-2xl p-3.5 border shadow-xs flex flex-col justify-between gap-2"
+                          style={{
+                            backgroundColor: sCfg.blockBgColor || "#ffffff",
+                            borderColor: sCfg.borderColor || "#0284c7",
+                            color: sCfg.textColor || "#0f172a"
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-extrabold text-sm">{opt.title}</span>
+                                {opt.badge && (
+                                  <span
+                                    className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    style={{ backgroundColor: sCfg.buttonBgColor || "#0284c7", color: sCfg.buttonTextColor || "#ffffff" }}
+                                  >
+                                    {opt.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs opacity-75 mt-1">{opt.subtitle}</p>
+                              <p className="text-[11px] font-bold opacity-80 mt-1">
+                                ফি: ৳{opt.fee} {Number(opt.freeAbove) > 0 ? `(৳${opt.freeAbove}+ ফ্রি)` : ""} · {opt.estimatedDays}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Shipping Options CRUD List */}
+                  <div className="text-white bg-black/55 backdrop-blur-xl p-5 rounded-3xl border border-red-900/35 space-y-3 shadow-lg">
+                    <h4 className="font-extrabold text-base text-white">ডেলিভারি সার্ভিস অপশনসমূহ ({opts.length})</h4>
+                    <div className="space-y-3">
+                      {opts.map(opt => (
+                        <div key={opt.id} className="bg-[#14070a]/80 border border-slate-700/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-sm text-white">{opt.title}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-900/70 text-sky-200 border border-sky-500/40">
+                                {opt.deliveryType}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-900/70 text-amber-200 border border-amber-500/40">
+                                {opt.districtRule === "CHANDPUR_ONLY" ? "শুধুমাত্র চাঁদপুর" : "সারা বাংলাদেশ (৬৪ জেলা)"}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${opt.enabled !== false ? "bg-emerald-900/70 text-emerald-300" : "bg-red-900/70 text-rose-300"}`}>
+                                {opt.enabled !== false ? "চালু (ON)" : "বন্ধ (OFF)"}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300">{opt.subtitle}</p>
+                            <p className="text-xs font-mono text-sky-300">
+                              চার্জ: ৳{opt.fee} · ফ্রি থ্রেশহোল্ড: {Number(opt.freeAbove) > 0 ? `৳${opt.freeAbove}` : "নেই"} · সময়: {opt.estimatedDays}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setShippingOptionDraft({ ...opt, isNew: false })}
+                              className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold cursor-pointer"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`"${opt.title}" মুছে ফেলতে চান?`)) {
+                                  const nextOpts = opts.filter(o => o.id !== opt.id);
+                                  updateShippingInfoConfig({ options: nextOpts }, "ডেলিভারি অপশন মুছে ফেলা হয়েছে!");
+                                }
+                              }}
+                              className="px-3.5 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-800 text-rose-200 border border-red-700/50 text-xs font-bold cursor-pointer"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Full Color & Title Customization Studio */}
+                  <div className="text-white bg-black/55 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-sky-500/35 space-y-4 shadow-lg">
+                    <h4 className="font-extrabold text-base text-white">🎨 ব্লক কালার, বর্ডার কালার, বাটন ও ব্যাকগ্রাউন্ড কালার এডিটর</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="font-bold text-slate-300 block mb-1">সেকশন টাইটেল</label>
+                        <input
+                          type="text"
+                          value={sCfg.sectionTitle || ""}
+                          onChange={(e) => updateShippingInfoConfig({ sectionTitle: e.target.value })}
+                          className="w-full bg-black/50 border border-slate-600 rounded-xl px-3.5 py-2 text-white outline-none focus:border-sky-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-300 block mb-1">চাঁদপুর Express নোটিশ টেক্সট</label>
+                        <input
+                          type="text"
+                          value={sCfg.chandpurExpressNotice || ""}
+                          onChange={(e) => updateShippingInfoConfig({ chandpurExpressNotice: e.target.value })}
+                          className="w-full bg-black/50 border border-slate-600 rounded-xl px-3.5 py-2 text-white outline-none focus:border-sky-400"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                      {[
+                        { key: "sectionBgColor", label: "সেকশন ব্যাকগ্রাউন্ড কালার" },
+                        { key: "blockBgColor", label: "ব্লক কার্ড কালার" },
+                        { key: "borderColor", label: "বর্ডার কালার" },
+                        { key: "textColor", label: "টেক্সট কালার" },
+                        { key: "buttonBgColor", label: "বাটন কালার" },
+                        { key: "buttonTextColor", label: "বাটন টেক্সট কালার" }
+                      ].map(cItem => (
+                        <div key={cItem.key} className="bg-black/45 p-3 rounded-2xl border border-slate-700/60 space-y-1.5">
+                          <label className="font-bold text-slate-200 block text-[11px]">{cItem.label}</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={sCfg[cItem.key] || "#0284c7"}
+                              onChange={(e) => updateShippingInfoConfig({ [cItem.key]: e.target.value })}
+                              className="w-9 h-9 rounded-lg border-0 bg-transparent cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={sCfg[cItem.key] || ""}
+                              onChange={(e) => updateShippingInfoConfig({ [cItem.key]: e.target.value })}
+                              className="flex-1 bg-black/50 border border-slate-600 rounded-lg px-2 py-1.5 text-[11px] font-mono text-white"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => updateShippingInfoConfig(sCfg, "Shipping info ও কালার সেটিংস সেভ ও সিঙ্ক হয়েছে! ✅")}
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold shadow cursor-pointer"
+                    >
+                      💾 পরিবর্তন সেভ ও লাইভ সিঙ্ক করুন
+                    </button>
+                  </div>
+
+                  {/* Add / Edit Shipping Option Modal */}
+                  {shippingOptionDraft && (
+                    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+                      <div className="bg-[#120609] text-white rounded-3xl w-full max-w-lg p-6 border border-sky-500/40 shadow-2xl space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                          <h4 className="font-black text-base">
+                            {shippingOptionDraft.isNew ? "+ নতুন ডেলিভারি অপশন" : "✏️ ডেলিভারি অপশন এডিট"}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setShippingOptionDraft(null)}
+                            className="w-8 h-8 rounded-full bg-white/10 font-bold cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <div className="space-y-3 text-xs">
+                          <div>
+                            <label className="font-bold text-slate-300 block mb-1">টাইটেল *</label>
+                            <input
+                              type="text"
+                              value={shippingOptionDraft.title}
+                              onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, title: e.target.value })}
+                              placeholder="যেমন: Express Delivery"
+                              className="w-full bg-black/60 border border-slate-600 rounded-xl px-3.5 py-2 text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-bold text-slate-300 block mb-1">বিস্তারিত বিবরণ</label>
+                            <input
+                              type="text"
+                              value={shippingOptionDraft.subtitle}
+                              onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, subtitle: e.target.value })}
+                              placeholder="যেমন: চাঁদপুর জেলার জন্য ২৪ ঘন্টায় ডেলিভারি"
+                              className="w-full bg-black/60 border border-slate-600 rounded-xl px-3.5 py-2 text-white"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-300 block mb-1">ডেলিভারি ফি (৳)</label>
+                              <input
+                                type="number"
+                                value={shippingOptionDraft.fee}
+                                onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, fee: Number(e.target.value) || 0 })}
+                                className="w-full bg-black/60 border border-slate-600 rounded-xl px-3.5 py-2 text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-300 block mb-1">ফ্রি ডেলিভারি থ্রেশহোল্ড (৳)</label>
+                              <input
+                                type="number"
+                                value={shippingOptionDraft.freeAbove}
+                                onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, freeAbove: Number(e.target.value) || 0 })}
+                                className="w-full bg-black/60 border border-slate-600 rounded-xl px-3.5 py-2 text-white"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-300 block mb-1">ব্যাজ লেবেল</label>
+                              <input
+                                type="text"
+                                value={shippingOptionDraft.badge}
+                                onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, badge: e.target.value })}
+                                placeholder="শুধুমাত্র চাঁদপুর / সারা দেশ"
+                                className="w-full bg-black/60 border border-slate-600 rounded-xl px-3.5 py-2 text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-300 block mb-1">আনুমানিক সময়</label>
+                              <input
+                                type="text"
+                                value={shippingOptionDraft.estimatedDays}
+                                onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, estimatedDays: e.target.value })}
+                                placeholder="২-৪ কার্যদিবস"
+                                className="w-full bg-black/60 border border-slate-600 rounded-xl px-3.5 py-2 text-white"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-300 block mb-1">Delivery Type</label>
+                              <select
+                                value={shippingOptionDraft.deliveryType}
+                                onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, deliveryType: e.target.value })}
+                                className="w-full bg-black/60 border border-slate-600 rounded-xl px-3 py-2 text-white"
+                              >
+                                <option value="Standard">Standard</option>
+                                <option value="Express">Express</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-300 block mb-1">জেলা রুল</label>
+                              <select
+                                value={shippingOptionDraft.districtRule}
+                                onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, districtRule: e.target.value })}
+                                className="w-full bg-black/60 border border-slate-600 rounded-xl px-3 py-2 text-white"
+                              >
+                                <option value="ALL">সারা বাংলাদেশ (৬৪ জেলা)</option>
+                                <option value="CHANDPUR_ONLY">শুধুমাত্র চাঁদপুর জেলা</option>
+                              </select>
+                            </div>
+                          </div>
+                          <label className="flex items-center gap-2 cursor-pointer pt-1">
+                            <input
+                              type="checkbox"
+                              checked={shippingOptionDraft.enabled !== false}
+                              onChange={(e) => setShippingOptionDraft({ ...shippingOptionDraft, enabled: e.target.checked })}
+                              className="w-4 h-4 accent-sky-500"
+                            />
+                            <span className="font-bold">চেকআউট পেজে সক্রিয় রাখুন (Enabled)</span>
+                          </label>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => setShippingOptionDraft(null)}
+                            className="px-4 py-2 rounded-xl bg-white/10 text-xs font-bold cursor-pointer"
+                          >
+                            বাতিল
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!String(shippingOptionDraft.title || "").trim()) {
+                                notify("অনুগ্রহ করে টাইটেল লিখুন!");
+                                return;
+                              }
+                              const cleanItem = { ...shippingOptionDraft };
+                              delete cleanItem.isNew;
+                              const nextOpts = opts.some(o => o.id === cleanItem.id)
+                                ? opts.map(o => o.id === cleanItem.id ? cleanItem : o)
+                                : [...opts, cleanItem];
+                              updateShippingInfoConfig({ options: nextOpts }, "ডেলিভারি অপশন সেভ হয়েছে! ✅");
+                              setShippingOptionDraft(null);
+                            }}
+                            className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold cursor-pointer"
+                          >
+                            সেভ করুন ✓
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ========================================================= */}
             {/* 12. BACKUP & RESTORE TAB */}
             {/* ========================================================= */}
             {activeTab === "Backup" && (
@@ -25980,26 +26630,29 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 border shadow-2xl animate-fadeIn">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-[#7a1c2b]">ক্যাশ অন ডেলিভারি চেকআউট</h3>
-                  <button onClick={() => setIsCheckoutOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setIsCheckoutOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 border flex items-center justify-center font-bold text-slate-700">‹</button>
+                    <h3 className="text-lg sm:text-xl font-black text-slate-900">Shipping Address</h3>
+                  </div>
+                  <button type="button" onClick={() => setIsCheckoutOpen(false)} className="w-8 h-8 rounded-full bg-[#fff8f0] border flex items-center justify-center font-bold">✕</button>
                 </div>
 
                 <form onSubmit={handlePlaceOrder} className="space-y-4">
                   <div>
-                    <label className="text-xs font-semibold">আপনার নাম *</label>
+                    <label className="text-xs font-bold text-slate-800">Recipient's Name <span className="text-red-500">*</span></label>
                     <input 
                       type="text" 
                       required 
-                      placeholder="পুরো নাম লিখুন..." 
+                      placeholder="Input the real name" 
                       value={checkoutForm.name} 
                       onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })} 
-                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
+                      className="w-full bg-[#fffaf5] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-sky-600 mt-1" 
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold">মোবাইল নম্বর * (১১ ডিজিট)</label>
+                      <label className="text-xs font-bold text-slate-800">Phone Number <span className="text-red-500">*</span></label>
                       {isLoyaltyEnabled && (
                         <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                           👑 VIP মেম্বার সুবিধা সংযুক্ত
@@ -26009,10 +26662,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <input 
                       type="tel" 
                       required 
-                      placeholder="01XXXXXXXXX" 
+                      placeholder="Please input Phone Number" 
                       value={checkoutForm.phone} 
                       onChange={(e) => setCheckoutForm({ ...checkoutForm, phone: e.target.value })} 
-                      className="w-full bg-[#fffaf5] border rounded-full px-5 py-2.5 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
+                      className="w-full bg-[#fffaf5] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-sky-600 mt-1" 
                     />
 
                     {/* LIVE VIP MEMBERSHIP & REWARD POINTS CARD */}
@@ -26044,7 +26697,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </button>
                         </div>
 
-                        {/* Points Redemption Checkbox */}
                         {canRedeemPoints ? (
                           <div className="pt-2 border-t border-amber-200 flex items-start gap-2.5">
                             <input
@@ -26075,7 +26727,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           </div>
                         )}
 
-                        {/* Teaser for points earned on current order */}
                         {pointsEarnedThisOrder > 0 && (
                           <div className="bg-white/80 px-2.5 py-1.5 rounded-xl border border-amber-200 text-[11px] text-amber-900 font-semibold flex items-center justify-between">
                             <span>✨ এই অর্ডার সফল হলে আপনি পাবেন:</span>
@@ -26088,47 +26739,333 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold">জেলা *</label>
-                      <select 
-                        value={checkoutForm.district} 
-                        onChange={(e) => setCheckoutForm({ ...checkoutForm, district: e.target.value })}
-                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1"
-                      >
-                        <option value="Dhaka">ঢাকা (ডেলিভারি {insideDhakaFee} ৳)</option>
-                        <option value="Chattogram">চট্টগ্রাম (ডেলিভারি {outsideDhakaFee} ৳)</option>
-                        <option value="Sylhet">সিলেট (ডেলিভারি {outsideDhakaFee} ৳)</option>
-                        <option value="Rajshahi">রাজশাহী (ডেলিভারি {outsideDhakaFee} ৳)</option>
-                        <option value="Khulna">খুলনা (ডেলিভারি {outsideDhakaFee} ৳)</option>
-                        <option value="Barishal">বরিশাল (ডেলিভারি {outsideDhakaFee} ৳)</option>
-                        <option value="Rangpur">রংপুর (ডেলিভারি {outsideDhakaFee} ৳)</option>
-                        <option value="Mymensingh">ময়মনসিংহ (ডেলিভারি {outsideDhakaFee} ৳)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold">থানা / উপজেলা</label>
-                      <input 
-                        type="text" 
-                        placeholder="যেমন: ধানমন্ডি" 
-                        value={checkoutForm.thana} 
-                        onChange={(e) => setCheckoutForm({ ...checkoutForm, thana: e.target.value })} 
-                        className="w-full bg-[#fffaf5] border rounded-full px-4 py-2.5 text-sm outline-none mt-1" 
-                      />
-                    </div>
+                  {/* Daraz-style District / Thana / City * (64 Districts Searchable + Auto Thana Cascade) */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800">District / Thana / City <span className="text-red-500">*</span></label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDistrictModalStep("district");
+                        setDistrictSearchQuery("");
+                        setIsDistrictPickerOpen(true);
+                      }}
+                      className="w-full text-left bg-[#fffaf5] border border-slate-300 hover:border-sky-600 rounded-xl px-4 py-2.5 text-sm mt-1 flex items-center justify-between gap-2 cursor-pointer transition"
+                    >
+                      <span className={checkoutForm.district ? "font-bold text-slate-900" : "text-slate-400"}>
+                        {(() => {
+                          const dObj = findBdDistrictObj(checkoutForm.district);
+                          const dText = dObj ? `${dObj.bn} (${dObj.en})` : checkoutForm.district;
+                          return checkoutForm.thana ? `${dText} › ${checkoutForm.thana}` : dText;
+                        })()}
+                      </span>
+                      <span className="text-xs font-bold text-sky-600 shrink-0">৬৪ জেলা ও থানা ▾</span>
+                    </button>
+
+                    {/* Auto Serial Thanas Quick Selector */}
+                    {(() => {
+                      const dObj = findBdDistrictObj(checkoutForm.district) || BD_DISTRICTS_THANAS[0];
+                      return (
+                        <div className="mt-2 space-y-1">
+                          <span className="text-[11px] font-bold text-slate-500 block">
+                            {dObj.bn} জেলার থানা/উপজেলা ({dObj.thanas.length} টি সিরিয়াল):
+                          </span>
+                          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                            {dObj.thanas.map((th, idx) => (
+                              <button
+                                key={th}
+                                type="button"
+                                onClick={() => setCheckoutForm(prev => ({ ...prev, thana: th }))}
+                                className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap border cursor-pointer transition ${
+                                  checkoutForm.thana === th
+                                    ? "bg-sky-600 text-white border-sky-600"
+                                    : "bg-white text-slate-700 border-slate-300 hover:border-sky-400"
+                                }`}
+                              >
+                                {idx + 1}. {th}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
+                  {/* Address * */}
                   <div>
-                    <label className="text-xs font-semibold">সম্পূর্ণ বিস্তারিত ঠিকানা *</label>
+                    <label className="text-xs font-bold text-slate-800">Address <span className="text-red-500">*</span></label>
                     <textarea 
                       rows="2" 
                       required 
-                      placeholder="বাসা নম্বর, রোড নম্বর, এলাকা..." 
+                      placeholder="House no./building/street/area" 
                       value={checkoutForm.address} 
                       onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })} 
-                      className="w-full bg-[#fffaf5] border rounded-2xl p-3 text-sm outline-none focus:border-[#7a1c2b] mt-1" 
+                      className="w-full bg-[#fffaf5] border border-slate-300 rounded-xl p-3 text-sm outline-none focus:border-sky-600 mt-1" 
                     />
                   </div>
+
+                  {/* Landmark(Optional) */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800">Landmark(Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="Add Additional Info"
+                      value={checkoutForm.landmark || ""}
+                      onChange={(e) => setCheckoutForm({ ...checkoutForm, landmark: e.target.value })}
+                      className="w-full bg-[#fffaf5] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-sky-600 mt-1"
+                    />
+                  </div>
+
+                  {/* Address Category & Default Shipping Address */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="text-xs font-bold text-slate-700">Address Category</span>
+                      <div className="flex items-center gap-2">
+                        {["Home", "Office"].map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setCheckoutForm({ ...checkoutForm, addressCategory: cat })}
+                            className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer flex items-center gap-1 ${
+                              checkoutForm.addressCategory === cat
+                                ? "bg-sky-600 text-white border-sky-600"
+                                : "bg-white text-slate-700 border-slate-300"
+                            }`}
+                          >
+                            <span>{checkoutForm.addressCategory === cat ? "●" : "○"}</span>
+                            <span>{cat}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <span className="text-xs font-bold text-slate-700">Default Shipping Address</span>
+                      <div className="flex items-center gap-2">
+                        {[
+                          { label: "on", val: true },
+                          { label: "Off", val: false }
+                        ].map(item => (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => setCheckoutForm({ ...checkoutForm, defaultShippingAddress: item.val })}
+                            className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer flex items-center gap-1 ${
+                              Boolean(checkoutForm.defaultShippingAddress) === item.val
+                                ? "bg-sky-600 text-white border-sky-600"
+                                : "bg-white text-slate-700 border-slate-300"
+                            }`}
+                          >
+                            <span>{Boolean(checkoutForm.defaultShippingAddress) === item.val ? "●" : "○"}</span>
+                            <span>{item.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delivery Type Selector (Standard vs Express - Express ONLY for Chandpur District) */}
+                  <div
+                    className="rounded-2xl p-4 border-2 space-y-2.5"
+                    style={{
+                      backgroundColor: shippingCfg?.sectionBgColor || "#f0f9ff",
+                      borderColor: shippingCfg?.borderColor || "#0284c7",
+                      color: shippingCfg?.textColor || "#0f172a"
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="font-black text-xs sm:text-sm">
+                        🚚 {shippingCfg?.sectionTitle || "Delivery Type & Shipping Info"}
+                      </span>
+                      <span className="text-[11px] font-bold opacity-80">
+                        {shippingCfg?.chandpurExpressNotice || "⚡ Express শুধুমাত্র চাঁদপুর জেলায়"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {(shippingCfg?.options || []).filter(o => o.enabled !== false).map(opt => {
+                        const isExpressOpt = String(opt.deliveryType || "").toLowerCase() === "express" || opt.districtRule === "CHANDPUR_ONLY";
+                        const isAllowed = !isExpressOpt || isChandpurSelected;
+                        const isSelected = effectiveDeliveryType.toLowerCase() === String(opt.deliveryType || "").toLowerCase();
+
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            disabled={!isAllowed}
+                            onClick={() => {
+                              if (!isAllowed) {
+                                notify("Express Delivery শুধুমাত্র চাঁদপুর জেলার জন্য প্রযোজ্য!");
+                                return;
+                              }
+                              setCheckoutForm({ ...checkoutForm, deliveryType: opt.deliveryType });
+                            }}
+                            className={`text-left p-3 rounded-xl border-2 transition cursor-pointer ${
+                              !isAllowed ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                            style={{
+                              backgroundColor: shippingCfg?.blockBgColor || "#ffffff",
+                              borderColor: isSelected ? (shippingCfg?.buttonBgColor || "#0284c7") : "#cbd5e1",
+                              color: shippingCfg?.textColor || "#0f172a"
+                            }}
+                          >
+                            <div className="flex items-center justify-between gap-1.5">
+                              <span className="font-extrabold text-xs flex items-center gap-1.5">
+                                <span>{isSelected ? "☑️" : "⬜"}</span>
+                                <span>{opt.title}</span>
+                              </span>
+                              <span
+                                className="px-2 py-0.5 rounded-full text-[10px] font-black"
+                                style={{
+                                  backgroundColor: isSelected ? (shippingCfg?.buttonBgColor || "#0284c7") : "#e2e8f0",
+                                  color: isSelected ? (shippingCfg?.buttonTextColor || "#ffffff") : "#334155"
+                                }}
+                              >
+                                ৳{opt.fee}
+                              </span>
+                            </div>
+                            <p className="text-[11px] opacity-75 mt-1">{opt.subtitle}</p>
+                            {!isAllowed && (
+                              <span className="inline-block mt-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                                🔒 শুধুমাত্র চাঁদপুর জেলায় প্রযোজ্য
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Payment Method Selector */}
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                    <label className="text-xs font-bold text-slate-800 block">পেমেন্ট মেথড নির্বাচন করুন</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { val: "Cash on Delivery", label: "💵 Cash on Delivery (COD)", on: config?.footer?.cod !== false },
+                        { val: "bKash", label: "📱 bKash", on: config?.footer?.bkash !== false },
+                        { val: "Nagad", label: "📱 Nagad", on: config?.footer?.nagad !== false },
+                        { val: "Rocket", label: "🚀 Rocket", on: config?.footer?.rocket !== false },
+                        { val: "Visa/Mastercard", label: "💳 Visa/Mastercard", on: config?.footer?.visa !== false }
+                      ].filter(p => p.on).map(pm => (
+                        <button
+                          key={pm.val}
+                          type="button"
+                          onClick={() => setCheckoutForm({ ...checkoutForm, paymentMethod: pm.val })}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer transition ${
+                            checkoutForm.paymentMethod === pm.val
+                              ? "bg-[#7a1c2b] text-white border-[#7a1c2b]"
+                              : "bg-white text-slate-700 border-slate-300"
+                          }`}
+                        >
+                          {pm.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Searchable 64-District + Serial Thana Picker Overlay */}
+                  {isDistrictPickerOpen && (
+                    <div className="fixed inset-0 z-[60] bg-black/65 backdrop-blur-xs flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl w-full max-w-md max-h-[82vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
+                        <div className="px-4 py-3.5 bg-sky-600 text-white flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {districtModalStep === "thana" && (
+                              <button
+                                type="button"
+                                onClick={() => setDistrictModalStep("district")}
+                                className="px-2 py-1 rounded-lg bg-white/20 text-xs font-bold cursor-pointer"
+                              >
+                                ← ৬৪ জেলা
+                              </button>
+                            )}
+                            <h4 className="font-black text-sm">
+                              {districtModalStep === "district"
+                                ? "জেলা নির্বাচন করুন (৬৪ জেলা)"
+                                : `${(findBdDistrictObj(checkoutForm.district) || BD_DISTRICTS_THANAS[0]).bn} জেলার থানা/উপজেলা`}
+                            </h4>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsDistrictPickerOpen(false)}
+                            className="w-7 h-7 rounded-full bg-white/20 font-bold text-xs cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {districtModalStep === "district" ? (
+                          <>
+                            <div className="p-3 border-b border-slate-200 bg-slate-50">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={districtSearchQuery}
+                                onChange={(e) => setDistrictSearchQuery(e.target.value)}
+                                placeholder="জেলার নাম লিখে সার্চ দিন (যেমন: Chandpur, চাঁদপুর, ঢাকা)..."
+                                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs sm:text-sm outline-none focus:border-sky-600"
+                              />
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                              {BD_DISTRICTS_THANAS.filter(d => {
+                                const q = districtSearchQuery.trim().toLowerCase();
+                                if (!q) return true;
+                                return (
+                                  d.en.toLowerCase().includes(q) ||
+                                  d.bn.includes(districtSearchQuery.trim()) ||
+                                  d.div.toLowerCase().includes(q) ||
+                                  d.thanas.some(t => t.toLowerCase().includes(q))
+                                );
+                              }).map((d, idx) => (
+                                <button
+                                  key={d.en}
+                                  type="button"
+                                  onClick={() => {
+                                    const isCh = isChandpurDistrictName(d.en);
+                                    setCheckoutForm(prev => ({
+                                      ...prev,
+                                      district: d.en,
+                                      thana: d.thanas[0] || "সদর",
+                                      deliveryType: isCh ? prev.deliveryType : "Standard"
+                                    }));
+                                    setDistrictModalStep("thana");
+                                  }}
+                                  className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2 cursor-pointer transition ${
+                                    checkoutForm.district === d.en ? "bg-sky-50 border border-sky-300 text-sky-900" : "hover:bg-slate-50 text-slate-800"
+                                  }`}
+                                >
+                                  <div>
+                                    <span className="font-extrabold text-xs sm:text-sm">{idx + 1}. {d.bn} ({d.en})</span>
+                                    <span className="block text-[10px] text-slate-500">
+                                      বিভাগ: {d.div} · {d.thanas.length} টি থানা {isChandpurDistrictName(d.en) ? "· ⚡ Express চালু" : ""}
+                                    </span>
+                                  </div>
+                                  <span className="text-sky-600 text-xs font-bold">থানা ›</span>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                            {(findBdDistrictObj(checkoutForm.district) || BD_DISTRICTS_THANAS[0]).thanas.map((th, idx) => (
+                              <button
+                                key={th}
+                                type="button"
+                                onClick={() => {
+                                  setCheckoutForm(prev => ({ ...prev, thana: th }));
+                                  setIsDistrictPickerOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-bold cursor-pointer transition ${
+                                  checkoutForm.thana === th ? "bg-sky-600 text-white" : "hover:bg-slate-50 text-slate-800"
+                                }`}
+                              >
+                                <span>{idx + 1}. {th}</span>
+                                {checkoutForm.thana === th && <span>✓</span>}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Optional Order Note / Special Delivery Instructions */}
                   <div>

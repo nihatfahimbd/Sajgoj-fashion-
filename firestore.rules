@@ -90,6 +90,12 @@ service cloud.firestore {
         (!('district' in data) || (data.district is string && data.district.size() <= 80)) &&
         (!('thana' in data) || (data.thana is string && data.thana.size() <= 80)) &&
         (!('address' in data) || (data.address is string && data.address.size() <= 400)) &&
+        (!('landmark' in data) || (data.landmark is string && data.landmark.size() <= 200)) &&
+        (!('addressCategory' in data) || (data.addressCategory is string && data.addressCategory in ['Home', 'Office', ''])) &&
+        (!('defaultShippingAddress' in data) || data.defaultShippingAddress is bool) &&
+        (!('orderType' in data) || (data.orderType is string && data.orderType in ['Normal', 'Custom'])) &&
+        (!('deliveryType' in data) || (data.deliveryType is string && data.deliveryType in ['Standard', 'Express'])) &&
+        (!('deliveredBy' in data) || (data.deliveredBy is string && data.deliveredBy.size() <= 40)) &&
         data.items is list && data.items.size() >= 1 && data.items.size() <= 50 &&
         (!('subtotal' in data) || (data.subtotal is int && data.subtotal >= 0 && data.subtotal <= 10000000)) &&
         (!('deliveryCharge' in data) || (data.deliveryCharge is int && data.deliveryCharge >= 0 && data.deliveryCharge <= 100000)) &&
@@ -97,10 +103,11 @@ service cloud.firestore {
         (!('couponCode' in data) || (data.couponCode is string && data.couponCode.size() <= 40)) &&
         data.total is int && data.total >= 0 && data.total <= 10000000 &&
         (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() <= 60)) &&
-        data.status is string && data.status in ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'] &&
+        data.status is string && data.status in ['Pending', 'Confirmed', 'Processing', 'To Ship', 'Shipped', 'Shipping', 'Delivered', 'Failed Delivered', 'Cancelled', 'Cancellation'] &&
         (!('date' in data) || (data.date is string && data.date.size() <= 40)) &&
         (!('trackingId' in data) || (data.trackingId is string && data.trackingId.size() <= 80)) &&
         (!('stockRestockedOnCancel' in data) || data.stockRestockedOnCancel is bool) &&
+        (!('createdAtMs' in data) || (data.createdAtMs is int && data.createdAtMs >= 0)) &&
         data.createdAt is timestamp && data.createdAt <= request.time &&
         data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
@@ -289,9 +296,11 @@ service cloud.firestore {
         incoming().keys().hasAll(['userId', 'customer', 'phone', 'items', 'total', 'status', 'createdAt', 'updatedAt']) &&
         incoming().keys().hasOnly([
           'userId', 'customer', 'customerName', 'phone', 'district', 'thana', 'address',
+          'landmark', 'addressCategory', 'defaultShippingAddress',
+          'orderType', 'deliveryType', 'deliveredBy',
           'items', 'subtotal', 'deliveryCharge', 'discount', 'couponCode', 'total',
           'paymentMethod', 'status', 'date', 'trackingId', 'stockRestockedOnCancel',
-          'createdAt', 'updatedAt'
+          'createdAtMs', 'createdAt', 'updatedAt'
         ]) &&
         isValidOrder(incoming());
 
@@ -301,7 +310,7 @@ service cloud.firestore {
         incoming().userId == existing().userId &&
         incoming().createdAt == existing().createdAt &&
         (
-          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'trackingId', 'stockRestockedOnCancel', 'updatedAt'])) ||
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'trackingId', 'deliveredBy', 'deliveryType', 'orderType', 'stockRestockedOnCancel', 'updatedAt'])) ||
           (existing().userId == request.auth.uid && existing().status == 'Pending' && incoming().status == 'Cancelled' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
         );
 

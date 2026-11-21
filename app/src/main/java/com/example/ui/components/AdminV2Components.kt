@@ -67,6 +67,7 @@ private fun adminTabIcon(tab: AdminTab): ImageVector = when (tab) {
   AdminTab.HOME_PAGE_SETTING -> Icons.Default.Home
   AdminTab.PRODUCTS -> Icons.Default.Inventory2
   AdminTab.ORDERS -> Icons.Default.LocalShipping
+  AdminTab.SHIPPING_INFO -> Icons.Default.LocalShipping
   AdminTab.MARKETING -> Icons.Default.Campaign
   AdminTab.SMS_GATEWAY -> Icons.Default.Sms
   AdminTab.SETTINGS -> Icons.Default.Settings
@@ -85,6 +86,7 @@ fun AdminV2SidebarContent(
   val managementTabs = listOf(
     AdminTab.PRODUCTS,
     AdminTab.ORDERS,
+    AdminTab.SHIPPING_INFO,
     AdminTab.MARKETING,
     AdminTab.SMS_GATEWAY,
     AdminTab.SETTINGS

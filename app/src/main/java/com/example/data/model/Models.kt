@@ -111,10 +111,17 @@ data class Order(
   val couponCode: String = "",
   val total: Int,
   val paymentMethod: String,
-  val status: String, // Pending, Confirmed, Shipped, Delivered, Cancelled
+  val status: String, // Pending, Confirmed, Processing, To Ship, Shipped, Shipping, Delivered, Failed Delivered, Cancelled, Cancellation
   val date: String,
   val trackingId: String = "",
-  val stockRestockedOnCancel: Boolean = false
+  val stockRestockedOnCancel: Boolean = false,
+  val orderType: String = "Normal", // "Normal", "Custom"
+  val deliveryType: String = "Standard", // "Standard", "Express" (Express Chandpur exclusive)
+  val deliveredBy: String = "", // "", "Pathao", "SteadFast", "Digital"
+  val landmark: String = "",
+  val addressCategory: String = "Home", // "Home", "Office"
+  val defaultShippingAddress: Boolean = false,
+  val createdAt: Long = 0L
 )
 
 data class Coupon(
@@ -181,6 +188,59 @@ data class StoreDesignConfig(
   val wishlistTextColor: String = "#000000"
 )
 
+data class ShippingOptionItem(
+  val id: String,
+  val title: String,
+  val subtitle: String = "",
+  val badge: String = "",
+  val fee: Int = 60,
+  val freeAbove: Int = 2000,
+  val estimatedDays: String = "২-৪ কার্যদিবস",
+  val deliveryType: String = "Standard", // "Standard", "Express"
+  val districtRule: String = "ALL", // "ALL", "CHANDPUR_ONLY", "CUSTOM"
+  val customDistricts: List<String> = emptyList(),
+  val enabled: Boolean = true
+)
+
+data class ShippingInfoConfig(
+  val sectionTitle: String = "Delivery Type & Shipping Info",
+  val chandpurExpressNotice: String = "⚡ Express Delivery শুধুমাত্র চাঁদপুর জেলার জন্য প্রযোজ্য",
+  val sectionBgColor: String = "#F0F9FF",
+  val blockBgColor: String = "#FFFFFF",
+  val borderColor: String = "#0284C7",
+  val textColor: String = "#0F172A",
+  val buttonBgColor: String = "#0284C7",
+  val buttonTextColor: String = "#FFFFFF",
+  val options: List<ShippingOptionItem> = defaultShippingOptions()
+)
+
+fun defaultShippingOptions(): List<ShippingOptionItem> = listOf(
+  ShippingOptionItem(
+    id = "ship-std",
+    title = "Standard Delivery",
+    subtitle = "সারা বাংলাদেশে ৬৪ জেলায় বিশ্বস্ত হোম ডেলিভারি (২০০০৳+ ফ্রি)",
+    badge = "সারা বাংলাদেশ",
+    fee = 120,
+    freeAbove = 2000,
+    estimatedDays = "২-৪ কার্যদিবস",
+    deliveryType = "Standard",
+    districtRule = "ALL",
+    enabled = true
+  ),
+  ShippingOptionItem(
+    id = "ship-exp",
+    title = "Express Delivery (Fast)",
+    subtitle = "সুপার ফাস্ট একই দিনে / ২৪ ঘন্টায় ডেলিভারি (শুধুমাত্র চাঁদপুর জেলা)",
+    badge = "শুধুমাত্র চাঁদপুর",
+    fee = 100,
+    freeAbove = 0,
+    estimatedDays = "২৪ ঘন্টা / একই দিন",
+    deliveryType = "Express",
+    districtRule = "CHANDPUR_ONLY",
+    enabled = true
+  )
+)
+
 data class StoreConfig(
   val storeName: String = "SAJGOJ FASHION",
   val tagline: String = "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
@@ -202,7 +262,8 @@ data class StoreConfig(
   val smsGatewayDeviceEnabled: Boolean = false,
   val smsAutoSendOnOrderStatus: Boolean = false,
   val smsDelaySeconds: Int = 4,
-  val design: StoreDesignConfig = StoreDesignConfig()
+  val design: StoreDesignConfig = StoreDesignConfig(),
+  val shippingInfo: ShippingInfoConfig = ShippingInfoConfig()
 )
 
 data class CourierConfig(
