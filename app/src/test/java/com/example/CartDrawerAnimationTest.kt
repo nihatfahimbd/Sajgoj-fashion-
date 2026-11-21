@@ -52,7 +52,7 @@ class CartDrawerAnimationTest {
         onDismiss = { isOpen = false },
         onUpdateQty = { _, _ -> },
         onRemoveItem = {},
-        onPlaceOrder = { _, _, _, _, _, _, _ -> },
+        onPlaceOrder = { _, _, _, _, _, _, _, _, _, _, _, _ -> },
         onShowToast = {}
       )
     }
