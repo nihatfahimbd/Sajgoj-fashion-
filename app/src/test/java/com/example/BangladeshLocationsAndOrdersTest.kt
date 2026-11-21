@@ -47,16 +47,25 @@ class BangladeshLocationsAndOrdersTest {
     assertFalse(BangladeshLocations.isChandpurDistrict("Cumilla"))
 
     val config = ShippingInfoConfig()
-    // Express requested in Chandpur -> Express fee (100)
+    // Standard in Chandpur -> 60 BDT
+    val chandpurStandardFee = BangladeshLocations.calculateShippingFee(
+      subtotal = 1500,
+      district = "Chandpur",
+      deliveryType = "Standard",
+      shippingInfo = config
+    )
+    assertEquals(60, chandpurStandardFee)
+
+    // Express requested in Chandpur -> Express fee (200 BDT)
     val chandpurExpressFee = BangladeshLocations.calculateShippingFee(
       subtotal = 1500,
       district = "Chandpur",
       deliveryType = "Express",
       shippingInfo = config
     )
-    assertEquals(100, chandpurExpressFee)
+    assertEquals(200, chandpurExpressFee)
 
-    // Express requested outside Chandpur -> falls back to Standard fee (120)
+    // Express requested outside Chandpur -> falls back to Standard fee (120 BDT)
     val cumillaAttemptExpressFee = BangladeshLocations.calculateShippingFee(
       subtotal = 1500,
       district = "Cumilla",

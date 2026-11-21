@@ -223,6 +223,7 @@ data class ShippingOptionItem(
 data class ShippingInfoConfig(
   val sectionTitle: String = "Delivery Type & Shipping Info",
   val chandpurExpressNotice: String = "⚡ Express Delivery শুধুমাত্র চাঁদপুর জেলার জন্য প্রযোজ্য",
+  val chandpurStandardFee: Int = 60,
   val sectionBgColor: String = "#F0F9FF",
   val blockBgColor: String = "#FFFFFF",
   val borderColor: String = "#0284C7",
@@ -250,7 +251,7 @@ fun defaultShippingOptions(): List<ShippingOptionItem> = listOf(
     title = "Express Delivery (Fast)",
     subtitle = "সুপার ফাস্ট একই দিনে / ২৪ ঘন্টায় ডেলিভারি (শুধুমাত্র চাঁদপুর জেলা)",
     badge = "শুধুমাত্র চাঁদপুর",
-    fee = 100,
+    fee = 200,
     freeAbove = 0,
     estimatedDays = "২৪ ঘন্টা / একই দিন",
     deliveryType = "Express",

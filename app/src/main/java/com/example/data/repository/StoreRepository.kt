@@ -543,10 +543,10 @@ class StoreRepository(private val context: Context) {
         OrderItem("p4", "রুবি স্টোন ক্রিস্টাল ব্রেসলেট পেয়ার", 1, 890)
       ),
       subtotal = 3889,
-      deliveryCharge = 100,
+      deliveryCharge = 200,
       discount = 388,
       couponCode = "EID2026",
-      total = 3601,
+      total = 3701,
       paymentMethod = "bKash",
       status = "Shipped",
       date = "2026-10-19",
@@ -2010,6 +2010,7 @@ class StoreRepository(private val context: Context) {
       val sObj = o.optJSONObject("shippingInfo")
       val defShip = ShippingInfoConfig()
       val shippingInfo = if (sObj != null) {
+        val rateV2 = sObj.optBoolean("chandpurRateV2", false)
         val optArr = sObj.optJSONArray("options")
         val opts = if (optArr != null) {
           buildList {
@@ -2024,16 +2025,24 @@ class StoreRepository(private val context: Context) {
                   }
                 }
               }
+              val itemId = itemObj.optString("id", "ship-$i")
+              val itemType = itemObj.optString("deliveryType", "Standard")
+              val rawFee = itemObj.optInt("fee", if (itemType.equals("Express", true)) 200 else 120)
+              val normalizedFee = if (!rateV2 && (itemId == "ship-exp" || itemType.equals("Express", true)) && rawFee == 100) {
+                200
+              } else {
+                rawFee
+              }
               add(
                 ShippingOptionItem(
-                  id = itemObj.optString("id", "ship-$i"),
+                  id = itemId,
                   title = itemObj.optString("title", "Delivery Option"),
                   subtitle = itemObj.optString("subtitle", ""),
                   badge = itemObj.optString("badge", ""),
-                  fee = itemObj.optInt("fee", 100),
+                  fee = normalizedFee,
                   freeAbove = itemObj.optInt("freeAbove", 0),
                   estimatedDays = itemObj.optString("estimatedDays", "২-৪ কার্যদিবস"),
-                  deliveryType = itemObj.optString("deliveryType", "Standard"),
+                  deliveryType = itemType,
                   districtRule = itemObj.optString("districtRule", "ALL"),
                   customDistricts = customDists,
                   enabled = itemObj.optBoolean("enabled", true)
@@ -2047,6 +2056,7 @@ class StoreRepository(private val context: Context) {
         ShippingInfoConfig(
           sectionTitle = sObj.optString("sectionTitle", defShip.sectionTitle),
           chandpurExpressNotice = sObj.optString("chandpurExpressNotice", defShip.chandpurExpressNotice),
+          chandpurStandardFee = sObj.optInt("chandpurStandardFee", defShip.chandpurStandardFee),
           sectionBgColor = sObj.optString("sectionBgColor", defShip.sectionBgColor),
           blockBgColor = sObj.optString("blockBgColor", defShip.blockBgColor),
           borderColor = sObj.optString("borderColor", defShip.borderColor),
@@ -2138,6 +2148,8 @@ class StoreRepository(private val context: Context) {
     val sObj = JSONObject().apply {
       put("sectionTitle", s.sectionTitle)
       put("chandpurExpressNotice", s.chandpurExpressNotice)
+      put("chandpurStandardFee", s.chandpurStandardFee)
+      put("chandpurRateV2", true)
       put("sectionBgColor", s.sectionBgColor)
       put("blockBgColor", s.blockBgColor)
       put("borderColor", s.borderColor)

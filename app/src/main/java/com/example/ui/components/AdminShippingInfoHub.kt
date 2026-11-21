@@ -276,7 +276,10 @@ fun AdminShippingInfoHub(
             TextButton(
               onClick = {
                 persist(
-                  ShippingInfoConfig(options = shippingCfg.options),
+                  ShippingInfoConfig(
+                    options = shippingCfg.options,
+                    chandpurStandardFee = shippingCfg.chandpurStandardFee
+                  ),
                   "ডিফল্ট Shipping কালার রিসেট করা হয়েছে"
                 )
               },
@@ -301,6 +304,19 @@ fun AdminShippingInfoHub(
             value = shippingCfg.chandpurExpressNotice,
             onValueChange = { shippingCfg = shippingCfg.copy(chandpurExpressNotice = it) },
             label = { Text("Express ডেলিভারি নোটিশ (চাঁদপুর রুল)", fontSize = 11.5.sp) },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+          )
+
+          OutlinedTextField(
+            value = shippingCfg.chandpurStandardFee.toString(),
+            onValueChange = { raw ->
+              val v = raw.filter(Char::isDigit).toIntOrNull() ?: 0
+              shippingCfg = shippingCfg.copy(chandpurStandardFee = v)
+            },
+            label = { Text("চাঁদপুর Standard ডেলিভারি চার্জ (৳)", fontSize = 11.5.sp) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()

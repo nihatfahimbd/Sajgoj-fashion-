@@ -322,11 +322,11 @@ object BangladeshLocations {
     deliveryType: String,
     shippingInfo: com.example.data.model.ShippingInfoConfig
   ): Int {
-    val matchedOpt = shippingInfo.options.firstOrNull {
-      it.enabled && it.deliveryType.equals(deliveryType, ignoreCase = true)
-    }
     val allowExpress = isChandpurDistrict(district)
     val effectiveType = if (deliveryType.equals("Express", ignoreCase = true) && allowExpress) "Express" else "Standard"
+    val matchedOpt = shippingInfo.options.firstOrNull {
+      it.enabled && it.deliveryType.equals(effectiveType, ignoreCase = true)
+    }
 
     if (matchedOpt != null) {
       val districtValid = when (matchedOpt.districtRule) {
@@ -340,14 +340,17 @@ object BangladeshLocations {
         if (matchedOpt.freeAbove > 0 && subtotal >= matchedOpt.freeAbove && effectiveType != "Express") {
           return 0
         }
+        if (effectiveType == "Standard" && allowExpress) {
+          return shippingInfo.chandpurStandardFee
+        }
         return matchedOpt.fee
       }
     }
 
     if (effectiveType == "Express") {
-      return 100
+      return 200
     }
     if (subtotal >= 2000) return 0
-    return if (district.contains("Dhaka", ignoreCase = true) || district.contains("ঢাকা")) 60 else 120
+    return if (allowExpress) shippingInfo.chandpurStandardFee else 120
   }
 }

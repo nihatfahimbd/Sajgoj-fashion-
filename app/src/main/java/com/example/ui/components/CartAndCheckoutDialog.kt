@@ -734,11 +734,22 @@ fun CartAndCheckoutDialog(
                               overflow = TextOverflow.Ellipsis
                             )
                           }
-                          Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "জেলা ও থানা নির্বাচন",
-                            tint = RoyalMaroon
-                          )
+                          Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                          ) {
+                            Text(
+                              text = "জেলা নির্বাচন করুন",
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = Color(0xFF0284C7)
+                            )
+                            Icon(
+                              imageVector = Icons.Default.ArrowDropDown,
+                              contentDescription = "জেলা নির্বাচন করুন",
+                              tint = Color(0xFF0284C7)
+                            )
+                          }
                         }
                       }
 
@@ -766,7 +777,7 @@ fun CartAndCheckoutDialog(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                           ) {
                             Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(15.dp))
-                            Text("৬৪ জেলা খুঁজুন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                            Text("জেলা নির্বাচন করুন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
                           }
                         }
 
@@ -908,7 +919,12 @@ fun CartAndCheckoutDialog(
                             else -> true
                           }
                           val isSelected = deliveryType.equals(optionType, ignoreCase = true) && isOptionEligible
-                          val effFee = if (opt.freeAbove > 0 && subtotal >= opt.freeAbove && optionType != "Express") 0 else opt.fee
+                          val baseFee = when {
+                            optionType == "Express" -> opt.fee
+                            isChandpur -> shipCfg.chandpurStandardFee
+                            else -> opt.fee
+                          }
+                          val effFee = if (opt.freeAbove > 0 && subtotal >= opt.freeAbove && optionType != "Express") 0 else baseFee
 
                           Row(
                             modifier = Modifier

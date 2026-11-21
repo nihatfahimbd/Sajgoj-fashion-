@@ -1556,6 +1556,8 @@
         copyright: "© 2026 SAJGOJ FASHION. All Rights Reserved."
       },
       shippingInfo: {
+        shippingRateVersion: 2,
+        chandpurStandardFee: 60,
         sectionTitle: "Delivery Type & Shipping Info",
         chandpurExpressNotice: "⚡ Express Delivery শুধুমাত্র চাঁদপুর জেলার জন্য প্রযোজ্য",
         sectionBgColor: "#f0f9ff",
@@ -1583,7 +1585,7 @@
             title: "Express Delivery (Fast)",
             subtitle: "সুপার ফাস্ট একই দিনে / ২৪ ঘন্টায় ডেলিভারি (শুধুমাত্র চাঁদপুর জেলা)",
             badge: "শুধুমাত্র চাঁদপুর",
-            fee: 100,
+            fee: 200,
             freeAbove: 0,
             estimatedDays: "২৪ ঘন্টা / একই দিন",
             deliveryType: "Express",
@@ -1605,6 +1607,23 @@
       };
       if (!Array.isArray(mergedShipping.options) || mergedShipping.options.length === 0) {
         mergedShipping.options = initialStoreConfig.shippingInfo.options;
+      }
+      const prevRateVer = Math.max(
+        Number(b?.shippingInfo?.shippingRateVersion) || 0,
+        Number(r?.shippingInfo?.shippingRateVersion) || 0
+      );
+      if (prevRateVer < 2) {
+        mergedShipping.options = mergedShipping.options.map(opt => {
+          const isLegacyExpress = opt?.id === "ship-exp" || String(opt?.deliveryType || "").toLowerCase() === "express";
+          if (isLegacyExpress && Number(opt.fee) === 100) {
+            return { ...opt, fee: 200 };
+          }
+          return opt;
+        });
+        if (mergedShipping.chandpurStandardFee === undefined || mergedShipping.chandpurStandardFee === null) {
+          mergedShipping.chandpurStandardFee = 60;
+        }
+        mergedShipping.shippingRateVersion = 2;
       }
       return {
         ...initialStoreConfig,
@@ -12964,6 +12983,9 @@
       const freeThreshold = (config.freeDeliveryThreshold !== "" && config.freeDeliveryThreshold !== undefined) ? Number(config.freeDeliveryThreshold) : 2000;
       const insideDhakaFee = (config.deliveryInsideDhaka !== "" && config.deliveryInsideDhaka !== undefined) ? Number(config.deliveryInsideDhaka) : 60;
       const outsideDhakaFee = (config.deliveryOutsideDhaka !== "" && config.deliveryOutsideDhaka !== undefined) ? Number(config.deliveryOutsideDhaka) : 120;
+      const chandpurStandardFee = (shippingCfg?.chandpurStandardFee !== "" && shippingCfg?.chandpurStandardFee !== undefined)
+        ? Number(shippingCfg.chandpurStandardFee)
+        : 60;
       const deliveryCharge = (() => {
         const opts = shippingCfg?.options || [];
         const matched = opts.find(opt => opt.enabled !== false && String(opt.deliveryType || "").toLowerCase() === effectiveDeliveryType.toLowerCase());
@@ -12974,11 +12996,14 @@
             if (optFreeAbove > 0 && cartSubtotal >= optFreeAbove && effectiveDeliveryType !== "Express") {
               return 0;
             }
+            if (effectiveDeliveryType === "Standard" && isChandpurSelected) {
+              return chandpurStandardFee;
+            }
             return Number(matched.fee) || 0;
           }
         }
-        if (effectiveDeliveryType === "Express") return 100;
-        return cartSubtotal >= freeThreshold ? 0 : (isDhaka ? insideDhakaFee : outsideDhakaFee);
+        if (effectiveDeliveryType === "Express") return 200;
+        return cartSubtotal >= freeThreshold ? 0 : (isChandpurSelected ? chandpurStandardFee : (isDhaka ? insideDhakaFee : outsideDhakaFee));
       })();
 
       let discountAmount = 0;
@@ -24540,7 +24565,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   {/* Full Color & Title Customization Studio */}
                   <div className="text-white bg-black/55 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-sky-500/35 space-y-4 shadow-lg">
                     <h4 className="font-extrabold text-base text-white">🎨 ব্লক কালার, বর্ডার কালার, বাটন ও ব্যাকগ্রাউন্ড কালার এডিটর</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div>
                         <label className="font-bold text-slate-300 block mb-1">সেকশন টাইটেল</label>
                         <input
@@ -24556,6 +24581,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           type="text"
                           value={sCfg.chandpurExpressNotice || ""}
                           onChange={(e) => updateShippingInfoConfig({ chandpurExpressNotice: e.target.value })}
+                          className="w-full bg-black/50 border border-slate-600 rounded-xl px-3.5 py-2 text-white outline-none focus:border-sky-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-300 block mb-1">চাঁদপুর Standard চার্জ (৳)</label>
+                        <input
+                          type="number"
+                          value={sCfg.chandpurStandardFee ?? 60}
+                          onChange={(e) => updateShippingInfoConfig({ chandpurStandardFee: e.target.value === "" ? 0 : Number(e.target.value) })}
                           className="w-full bg-black/50 border border-slate-600 rounded-xl px-3.5 py-2 text-white outline-none focus:border-sky-400"
                         />
                       </div>
@@ -25237,10 +25271,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                     {footerInfoTopic === "shipping" && (
                       <div className="bg-[#fff8f0] p-4 rounded-2xl border border-[#f3e2d0] space-y-2 text-xs sm:text-sm text-gray-700">
-                        <p>🚚 <strong>ঢাকার ভেতরে ডেলিভারি চার্জ:</strong> ৳{config.deliveryDhaka ?? 70} (১-২ কার্যদিবস)</p>
-                        <p>📦 <strong>ঢাকার বাইরে ডেলিভারি চার্জ:</strong> ৳{config.deliveryOutsideDhaka ?? 130} (২-৪ কার্যদিবস)</p>
+                        <p>🚚 <strong>চাঁদপুর জেলা ডেলিভারি চার্জ:</strong> Standard ৳{config?.shippingInfo?.chandpurStandardFee ?? 60} · Express ৳200</p>
+                        <p>📦 <strong>অন্যান্য জেলা (৬৪ জেলা) ডেলিভারি চার্জ:</strong> ৳{config.deliveryOutsideDhaka ?? 120} (২-৪ কার্যদিবস)</p>
                         {config.freeDeliveryThreshold ? (
-                          <p className="text-emerald-700 font-bold">🎁 ফ্রি ডেলিভারি: ৳{config.freeDeliveryThreshold}+ টাকার অর্ডারে ডেলিভারি সম্পূর্ণ ফ্রি!</p>
+                          <p className="text-emerald-700 font-bold">🎁 ফ্রি ডেলিভারি: ৳{config.freeDeliveryThreshold}+ টাকার Standard অর্ডারে ডেলিভারি সম্পূর্ণ ফ্রি!</p>
                         ) : null}
                       </div>
                     )}
@@ -26714,7 +26748,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           return checkoutForm.thana ? `${dText} › ${checkoutForm.thana}` : dText;
                         })()}
                       </span>
-                      <span className="text-xs font-bold text-sky-600 shrink-0">৬৪ জেলা ও থানা ▾</span>
+                      <span className="text-xs font-bold text-sky-600 shrink-0">জেলা নির্বাচন করুন ▾</span>
                     </button>
 
                     {/* Auto Serial Thanas Quick Selector */}
@@ -26842,6 +26876,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         const isExpressOpt = String(opt.deliveryType || "").toLowerCase() === "express" || opt.districtRule === "CHANDPUR_ONLY";
                         const isAllowed = !isExpressOpt || isChandpurSelected;
                         const isSelected = effectiveDeliveryType.toLowerCase() === String(opt.deliveryType || "").toLowerCase();
+                        const displayFee = isExpressOpt
+                          ? (Number(opt.fee) || 200)
+                          : (isChandpurSelected ? chandpurStandardFee : (Number(opt.fee) || 120));
 
                         return (
                           <button
@@ -26876,7 +26913,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                   color: isSelected ? (shippingCfg?.buttonTextColor || "#ffffff") : "#334155"
                                 }}
                               >
-                                ৳{opt.fee}
+                                ৳{displayFee}
                               </span>
                             </div>
                             <p className="text-[11px] opacity-75 mt-1">{opt.subtitle}</p>
