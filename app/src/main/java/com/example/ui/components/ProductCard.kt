@@ -1,9 +1,19 @@
 package com.example.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,11 +40,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -42,6 +55,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.data.model.Product
 import com.example.data.model.StoreDesignConfig
 import com.example.ui.theme.AccentRed
@@ -74,16 +88,49 @@ fun ProductCard(
 ) {
   val hasActiveVideo = ProductMediaHelper.hasActiveVideo(product)
   val cardMediaModel = ProductMediaHelper.cardPreviewThumbUrl(product)
+  val interactionSource = remember { MutableInteractionSource() }
+  val isHovered by interactionSource.collectIsHoveredAsState()
+  val isPressed by interactionSource.collectIsPressedAsState()
+  val cardScale by animateFloatAsState(
+    targetValue = when {
+      isPressed -> 0.985f
+      isHovered -> 1.03f
+      else -> 1f
+    },
+    animationSpec = spring(
+      dampingRatio = Spring.DampingRatioNoBouncy,
+      stiffness = Spring.StiffnessMediumLow
+    ),
+    label = "product_card_hover_scale"
+  )
+  val cardElevation by animateDpAsState(
+    targetValue = if (isHovered) 10.dp else 2.dp,
+    animationSpec = tween(durationMillis = 200),
+    label = "product_card_hover_elevation"
+  )
 
   Card(
     modifier = modifier
       .fillMaxWidth()
-      .clickable { onProductClick(product) }
+      .zIndex(if (isHovered) 1f else 0f)
+      .graphicsLayer {
+        scaleX = cardScale
+        scaleY = cardScale
+      }
+      .hoverable(interactionSource = interactionSource)
+      .clickable(
+        interactionSource = interactionSource,
+        indication = LocalIndication.current
+      ) { onProductClick(product) }
       .testTag("product_card_${product.id}"),
     shape = RoundedCornerShape(16.dp),
     colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(1.dp, BorderGold),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    border = BorderStroke(if (isHovered) 1.5.dp else 1.dp, BorderGold),
+    elevation = CardDefaults.cardElevation(
+      defaultElevation = cardElevation,
+      hoveredElevation = 10.dp,
+      pressedElevation = 4.dp
+    )
   ) {
     Column {
       // Product Image with Video-First Thumbnail & Touch-to-Original-Size
@@ -480,15 +527,51 @@ fun CompactProductCard(
 ) {
   val hasActiveVideo = ProductMediaHelper.hasActiveVideo(product)
   val cardMediaModel = ProductMediaHelper.cardPreviewThumbUrl(product)
+  val interactionSource = remember { MutableInteractionSource() }
+  val isHovered by interactionSource.collectIsHoveredAsState()
+  val isPressed by interactionSource.collectIsPressedAsState()
+  val cardScale by animateFloatAsState(
+    targetValue = when {
+      isPressed -> 0.985f
+      isHovered -> 1.03f
+      else -> 1f
+    },
+    animationSpec = spring(
+      dampingRatio = Spring.DampingRatioNoBouncy,
+      stiffness = Spring.StiffnessMediumLow
+    ),
+    label = "compact_card_hover_scale"
+  )
+  val cardElevation by animateDpAsState(
+    targetValue = if (isHovered) 10.dp else 2.dp,
+    animationSpec = tween(durationMillis = 200),
+    label = "compact_card_hover_elevation"
+  )
 
   Card(
     modifier = modifier
-      .clickable { onProductClick(product) }
+      .zIndex(if (isHovered) 1f else 0f)
+      .graphicsLayer {
+        scaleX = cardScale
+        scaleY = cardScale
+      }
+      .hoverable(interactionSource = interactionSource)
+      .clickable(
+        interactionSource = interactionSource,
+        indication = LocalIndication.current
+      ) { onProductClick(product) }
       .testTag("compact_product_card_${product.id}"),
     shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = parseColorHex(design.cardBodyBg, NavyBlue)),
-    border = BorderStroke(1.dp, parseColorHex(design.cardBorderColor, Color.White).copy(alpha = 0.75f)),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    border = BorderStroke(
+      width = if (isHovered) 1.5.dp else 1.dp,
+      color = parseColorHex(design.cardBorderColor, Color.White).copy(alpha = if (isHovered) 0.95f else 0.75f)
+    ),
+    elevation = CardDefaults.cardElevation(
+      defaultElevation = cardElevation,
+      hoveredElevation = 10.dp,
+      pressedElevation = 4.dp
+    )
   ) {
     Column {
       Box(

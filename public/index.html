@@ -424,6 +424,26 @@
       border: 1.5px solid var(--sf-card-border, rgba(255, 255, 255, 0.72)) !important;
       border-radius: 16px;
       box-shadow: 0 12px 26px -8px rgba(15, 41, 74, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+      transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.26s ease !important;
+      will-change: transform, box-shadow;
+    }
+    .storefront-navy-card:hover,
+    .storefront-navy-card:focus-within {
+      transform: translateY(-4px) scale(1.025) !important;
+      box-shadow: 0 22px 38px -10px rgba(15, 41, 74, 0.54), 0 8px 18px -6px rgba(212, 165, 116, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
+      z-index: 2;
+    }
+    .storefront-navy-card:active {
+      transform: translateY(-1px) scale(0.99) !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .storefront-navy-card,
+      .storefront-navy-card:hover,
+      .storefront-navy-card:focus-within,
+      .storefront-navy-card:active {
+        transition: none !important;
+        transform: none !important;
+      }
     }
     .storefront-navy-card-body {
       background: linear-gradient(165deg, var(--sf-card-body-bg, #0f294a) 0%, var(--sf-card-body-bg-end, #1e3a8a) 100%) !important;
