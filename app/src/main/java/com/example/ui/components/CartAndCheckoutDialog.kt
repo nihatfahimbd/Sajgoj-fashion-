@@ -169,7 +169,7 @@ fun CartAndCheckoutDialog(
   val hasFreeGiftInCart = remember(cartItems) { cartItems.any { it.isFreeGift } }
 
   // Calculations using StoreConfig ShippingInfo rules (free gifts cost 0)
-  val subtotal = cartItems.filterNot { it.isFreeGift }.sumOf { it.product.price * it.quantity }
+  val subtotal = cartItems.filterNot { it.isFreeGift }.sumOf { it.effectiveUnitPrice * it.quantity }
   val deliveryCharge = BangladeshLocations.calculateShippingFee(
     subtotal = subtotal,
     district = selectedDistrict,
@@ -406,7 +406,7 @@ fun CartAndCheckoutDialog(
                       verticalAlignment = Alignment.CenterVertically
                     ) {
                       AppImage(
-                        model = item.product.imageUrl,
+                        model = item.effectiveImageUrl,
                         contentDescription = item.product.name,
                         modifier = Modifier
                           .size(54.dp)
@@ -461,7 +461,7 @@ fun CartAndCheckoutDialog(
                           }
                         } else {
                           Text(
-                            text = "${item.product.price} ৳ / পিস",
+                            text = "${item.effectiveUnitPrice} ৳ / পিস",
                             fontSize = 11.sp,
                             color = AntiqueGoldDark,
                             fontWeight = FontWeight.Medium
@@ -585,7 +585,7 @@ fun CartAndCheckoutDialog(
                         modifier = Modifier.padding(start = 6.dp)
                       ) {
                         Text(
-                          text = if (item.isFreeGift) "০ ৳" else "${item.product.price * item.quantity} ৳",
+                          text = if (item.isFreeGift) "০ ৳" else "${item.effectiveUnitPrice * item.quantity} ৳",
                           fontSize = 14.sp,
                           fontWeight = FontWeight.Bold,
                           color = if (item.isFreeGift) Color(0xFF047857) else RoyalMaroon

@@ -5,6 +5,7 @@ import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
+import com.example.data.model.ProductVariantHelper
 import com.example.data.model.ReturnRecord
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
@@ -28,7 +29,10 @@ data class StockDeltaRequest(
   val productName: String = "",
   val sku: String = "",
   val delta: Int,
-  val reason: String = ""
+  val reason: String = "",
+  val color: String = "",
+  val size: String = "",
+  val ageGroup: String = ""
 )
 
 /**
@@ -406,7 +410,10 @@ class InventorySyncService(
         productId = it.productId,
         productName = it.name,
         delta = -it.quantity.coerceAtLeast(1),
-        reason = "অনলাইন স্টোরফ্রন্ট অর্ডার #$orderId"
+        reason = "অনলাইন স্টোরফ্রন্ট অর্ডার #$orderId",
+        color = it.color,
+        size = it.size,
+        ageGroup = it.ageGroup
       )
     }
     return applyStockDeltaBatch(
@@ -428,7 +435,10 @@ class InventorySyncService(
         productId = it.productId,
         productName = it.name,
         delta = -it.quantity.coerceAtLeast(1),
-        reason = "POS কাউন্টার বিক্রয় #$saleId"
+        reason = "POS কাউন্টার বিক্রয় #$saleId",
+        color = it.color,
+        size = it.size,
+        ageGroup = it.ageGroup
       )
     }
     return applyStockDeltaBatch(
@@ -503,7 +513,10 @@ class InventorySyncService(
           "অর্ডার #${order.id} বাতিল হওয়ায় অটো-রিস্টক"
         } else {
           "অর্ডার #${order.id} পুনরায় সক্রিয় হওয়ায় স্টক সমন্বয়"
-        }
+        },
+        color = it.color,
+        size = it.size,
+        ageGroup = it.ageGroup
       )
     }
     return applyStockDeltaBatch(
@@ -546,8 +559,19 @@ class InventorySyncService(
           product
         } else {
           val prevStock = product.stock
-          val nextStock = (prevStock + totalDelta).coerceAtLeast(0)
-          val updated = product.copy(
+          val variantDeltas = matched.mapNotNull { req ->
+            val szOrAge = req.size.ifBlank { req.ageGroup }
+            if (req.color.isNotBlank() || szOrAge.isNotBlank()) {
+              Triple(req.color, szOrAge, req.delta)
+            } else null
+          }
+          val variantAdjusted = ProductVariantHelper.applyVariantStockDeltas(
+            product = product,
+            variantDeltas = variantDeltas,
+            fallbackTotalDelta = totalDelta
+          )
+          val nextStock = variantAdjusted.stock.coerceAtLeast(0)
+          val updated = variantAdjusted.copy(
             stock = nextStock,
             stockUpdatedAt = now,
             lastSyncSource = source
@@ -757,16 +781,19 @@ class InventorySyncService(
   private fun pushStorefrontStockDoc(product: Product) {
     if (!canWriteAdminCloud()) return
     try {
-      firestore?.collection("products")?.document(product.id)?.update(
-        mapOf(
-          "stock" to product.stock,
-          "stockUpdatedAt" to product.stockUpdatedAt,
-          "lastSyncSource" to product.lastSyncSource,
-          "updatedAt" to FieldValue.serverTimestamp()
-        )
-      )?.addOnSuccessListener {
-        markFirestoreSync()
-      }?.addOnFailureListener { e ->
+      val updatePayload = buildMap<String, Any> {
+        put("stock", product.stock)
+        put("stockUpdatedAt", product.stockUpdatedAt)
+        put("lastSyncSource", product.lastSyncSource)
+        put("updatedAt", FieldValue.serverTimestamp())
+        if (product.variations.isNotEmpty()) {
+          put("variations", product.variations.map(ProductVariantHelper::variationToMap))
+        }
+      }
+      firestore?.collection("products")?.document(product.id)?.update(updatePayload)
+        ?.addOnSuccessListener {
+          markFirestoreSync()
+        }?.addOnFailureListener { e ->
         handleFirestoreError(e, OperationType.UPDATE, "products/${product.id}")
         recordSyncError(
           source = "FIRESTORE_WRITE",

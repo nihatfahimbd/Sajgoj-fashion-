@@ -778,17 +778,17 @@
     const { useState, useEffect, useRef, useMemo } = React;
 
     // Self-contained high quality SVG Fallback Images
-    const imgSharee = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0e6'/><rect x='40' y='60' width='520' height='480' rx='28' fill='#7a1c2b'/><circle cx='300' cy='280' r='120' fill='#d4a574' opacity='0.25'/><text x='50%' y='46%' dominant-baseline='middle' text-anchor='middle' fill='#fff8f0' font-size='32' font-weight='700'>ডিজাইনার কাতান শাড়ি</text><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#d4a574' font-size='22'>SAJ-001 • ৩৫০০ ৳</text></svg>");
-    const imgChoker = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><circle cx='300' cy='300' r='190' fill='#d4a574'/><circle cx='300' cy='300' r='140' fill='#7a1c2b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#fff8f0' font-size='28' font-weight='700'>রাজওয়াড়ি ব্রাইডাল চোকার</text></svg>");
-    const imgBangles = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fffaf5'/><circle cx='210' cy='300' r='80' fill='none' stroke='#b8956a' stroke-width='22'/><circle cx='390' cy='300' r='80' fill='none' stroke='#7a1c2b' stroke-width='22'/><text x='50%' y='82%' text-anchor='middle' fill='#2c1810' font-size='24' font-weight='700'>সিটি গোল্ড চুড়ি সেট</text></svg>");
-    const imgBracelet = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><rect x='130' y='260' width='340' height='30' rx='15' fill='#2c1810'/><circle cx='300' cy='275' r='36' fill='#7a1c2b'/><text x='50%' y='48%' text-anchor='middle' fill='#7a1c2b' font-size='26' font-weight='700'>রুবি স্টোন ব্রেসলেট</text></svg>");
+    const imgSharee = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0e6'/><rect x='40' y='60' width='520' height='480' rx='28' fill='#7a1c2b'/><circle cx='300' cy='280' r='120' fill='#d4a574' opacity='0.25'/></svg>");
+    const imgChoker = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><circle cx='300' cy='300' r='190' fill='#d4a574'/><circle cx='300' cy='300' r='140' fill='#7a1c2b'/></svg>");
+    const imgBangles = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fffaf5'/><circle cx='210' cy='300' r='80' fill='none' stroke='#b8956a' stroke-width='22'/><circle cx='390' cy='300' r='80' fill='none' stroke='#7a1c2b' stroke-width='22'/></svg>");
+    const imgBracelet = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff8f0'/><rect x='130' y='260' width='340' height='30' rx='15' fill='#2c1810'/><circle cx='300' cy='275' r='36' fill='#7a1c2b'/></svg>");
     
     // Clothing & Apparel SVG Fallbacks
-    const imgTshirt = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#f4ede4'/><path d='M180,120 L240,170 C270,190 330,190 360,170 L420,120 L480,190 L420,240 L420,500 L180,500 L180,240 L120,190 Z' fill='#7a1c2b'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#ffdcc0' font-size='26' font-weight='bold'>প্রিমিয়াম কটন টি-শার্ট</text></svg>");
-    const imgKurti = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0f5'/><path d='M200,100 L250,150 C280,170 320,170 350,150 L400,100 L440,200 L390,220 L450,520 L150,520 L210,220 L160,200 Z' fill='#800020'/><circle cx='300' cy='220' r='18' fill='#ffd700'/><text x='50%' y='65%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='24' font-weight='bold'>ডিজাইনার জামা ও কুর্তি</text></svg>");
-    const imgPants = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#edf2f7'/><path d='M200,120 L400,120 L420,490 L320,490 L300,280 L280,490 L180,490 Z' fill='#2d3748'/><text x='50%' y='35%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='24' font-weight='bold'>ক্যাজুয়াল চিনো প্যান্ট</text></svg>");
-    const imgInnerwear = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff5f5'/><circle cx='230' cy='320' r='75' fill='#e53e3e'/><circle cx='370' cy='320' r='75' fill='#e53e3e'/><rect x='280' y='305' width='40' height='30' rx='8' fill='#c53030'/><text x='50%' y='75%' dominant-baseline='middle' text-anchor='middle' fill='#7a1c2b' font-size='24' font-weight='bold'>বডি ফিট ইনার ওয়্যার</text></svg>");
-    const imgKids = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fefcbf'/><path d='M220,150 L380,150 L420,460 L180,460 Z' fill='#dd6b20'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#fff' font-size='26' font-weight='bold'>বাচ্চাদের কিউট পোশাক</text></svg>");
+    const imgTshirt = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#f4ede4'/><path d='M180,120 L240,170 C270,190 330,190 360,170 L420,120 L480,190 L420,240 L420,500 L180,500 L180,240 L120,190 Z' fill='#7a1c2b'/></svg>");
+    const imgKurti = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff0f5'/><path d='M200,100 L250,150 C280,170 320,170 350,150 L400,100 L440,200 L390,220 L450,520 L150,520 L210,220 L160,200 Z' fill='#800020'/><circle cx='300' cy='220' r='18' fill='#ffd700'/></svg>");
+    const imgPants = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#edf2f7'/><path d='M200,120 L400,120 L420,490 L320,490 L300,280 L280,490 L180,490 Z' fill='#2d3748'/></svg>");
+    const imgInnerwear = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fff5f5'/><circle cx='230' cy='320' r='75' fill='#e53e3e'/><circle cx='370' cy='320' r='75' fill='#e53e3e'/><rect x='280' y='305' width='40' height='30' rx='8' fill='#c53030'/></svg>");
+    const imgKids = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='600' height='600' fill='#fefcbf'/><path d='M220,150 L380,150 L420,460 L180,460 Z' fill='#dd6b20'/></svg>");
 
     const banner1 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><defs><linearGradient id='g1' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='#7a1c2b'/><stop offset='50%' stop-color='#53111c'/><stop offset='100%' stop-color='#2c1810'/></linearGradient></defs><rect width='1200' height='550' fill='url(#g1)'/><circle cx='950' cy='220' r='260' fill='#d4a574' opacity='0.25'/><circle cx='1050' cy='400' r='180' fill='#fff8f0' opacity='0.1'/><circle cx='150' cy='100' r='80' fill='#d4a574' opacity='0.15'/><path d='M800,0 Q900,200 1200,220 L1200,0 Z' fill='#d4a574' opacity='0.2'/></svg>");
     const banner2 = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='550'><defs><linearGradient id='g2' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='#2c1810'/><stop offset='60%' stop-color='#7a1c2b'/><stop offset='100%' stop-color='#3a0d15'/></linearGradient></defs><rect width='1200' height='550' fill='url(#g2)'/><circle cx='600' cy='275' r='160' fill='#d4a574' opacity='0.2'/><circle cx='1000' cy='180' r='220' fill='#ffd700' opacity='0.15'/><circle cx='1100' cy='420' r='150' fill='#fff8f0' opacity='0.1'/><path d='M0,400 Q200,300 450,550 L0,550 Z' fill='#d4a574' opacity='0.15'/></svg>");
@@ -931,9 +931,218 @@
           videoThumbUrl: p.videoThumbUrl || "",
           videoFileName: p.videoFileName || "",
           colors: (p.colors || []).map(cleanVariation).filter(Boolean),
-          sizes: (p.sizes || []).map(cleanVariation).filter(Boolean)
+          sizes: (p.sizes || []).map(cleanVariation).filter(Boolean),
+          ageGroups: Array.isArray(p.ageGroups) ? p.ageGroups.filter(Boolean) : [],
+          variations: Array.isArray(p.variations) ? p.variations.map((v, idx) => ({
+            id: String(v?.id || `var_${idx}`),
+            size: String(v?.size || ""),
+            color: String(v?.color || ""),
+            ageGroup: String(v?.ageGroup || ""),
+            price: Math.max(0, Number(v?.price) || 0),
+            specialPrice: Math.max(0, Number(v?.specialPrice) || 0),
+            specialPriceStart: String(v?.specialPriceStart || ""),
+            specialPriceEnd: String(v?.specialPriceEnd || ""),
+            stock: Math.max(0, Number(v?.stock) || 0),
+            enabled: v?.enabled !== false,
+            sku: String(v?.sku || "")
+          })) : [],
+          variantImages: (p.variantImages && typeof p.variantImages === "object" && !Array.isArray(p.variantImages)) ? p.variantImages : {},
+          variantOrder: Array.isArray(p.variantOrder) && p.variantOrder.length > 0 ? p.variantOrder : ["Size", "Color Family"],
+          variantImageType: String(p.variantImageType || "Color Family")
         };
       });
+    };
+
+    const PRESET_SIZE_OPTIONS = [
+      "3-4yrs", "4-5 yrs", "5-6yrs", "6-7yrs",
+      "0-3 years", "3-12 months", "0-12 months",
+      "Free Size", "XS", "S", "M", "L", "XL", "XXL", "3XL",
+      "22", "24", "26", "28", "30", "32", "34", "36", "38", "40", "42", "44"
+    ];
+
+    const PRESET_COLOR_OPTIONS = [
+      "Black", "Blue", "Brown", "Green", "White", "Grey",
+      "Navy Blue", "Olive", "Red", "Maroon", "Pink", "Yellow",
+      "Purple", "Golden", "Orange", "Beige",
+      "লাল", "মেরুন", "কালো", "সবুজ", "নীল", "সাদা", "গোলাপি", "গোল্ডেন"
+    ];
+
+    const PRESET_AGE_OPTIONS = [
+      "0-6 months", "6-12 months", "1-2 yrs", "2-3 yrs",
+      "3-4 yrs", "4-5 yrs", "5-6 yrs", "6-7 yrs", "7-8 yrs", "9-10 yrs"
+    ];
+
+    const isWithinVariantPeriod = (start = "", end = "") => {
+      const s = String(start || "").trim();
+      const e = String(end || "").trim();
+      if (!s && !e) return true;
+      const today = new Date().toISOString().split("T")[0];
+      if (s && today < s) return false;
+      if (e && today > e) return false;
+      return true;
+    };
+
+    const findProductVariation = (product, color = "", size = "", ageGroup = "") => {
+      const vars = Array.isArray(product?.variations) ? product.variations : [];
+      if (vars.length === 0) return null;
+      const normC = String(color || "").trim().toLowerCase();
+      const normS = String(size || "").trim().toLowerCase();
+      const normA = String(ageGroup || "").trim().toLowerCase();
+      return vars.find(v => {
+        const vc = String(v.color || "").trim().toLowerCase();
+        const vs = String(v.size || "").trim().toLowerCase();
+        const va = String(v.ageGroup || "").trim().toLowerCase();
+        return (!vc || !normC || vc === normC) &&
+          (!vs || !normS || vs === normS) &&
+          (!va || !normA || va === normA) &&
+          (vc === normC || (!vc && !normC)) &&
+          (vs === normS || (!vs && !normS));
+      }) || vars.find(v => {
+        const vc = String(v.color || "").trim().toLowerCase();
+        const vs = String(v.size || "").trim().toLowerCase();
+        const cMatch = !normC || vc === normC;
+        const sMatch = !normS || vs === normS;
+        return cMatch && sMatch;
+      }) || null;
+    };
+
+    const resolveVariantPricing = (product, color = "", size = "", ageGroup = "") => {
+      const matched = findProductVariation(product, color, size, ageGroup);
+      if (matched && Number(matched.price) > 0) {
+        const reg = Number(matched.price);
+        const start = matched.specialPriceStart || product?.specialPriceStart || "";
+        const end = matched.specialPriceEnd || product?.specialPriceEnd || "";
+        const sp = Number(matched.specialPrice) || 0;
+        const validSpecial = sp > 0 && sp < reg && isWithinVariantPeriod(start, end);
+        return { price: validSpecial ? sp : reg, regularPrice: reg };
+      }
+      const pPrice = Number(product?.price) || 0;
+      const pReg = Number(product?.regularPrice) > pPrice ? Number(product.regularPrice) : pPrice;
+      const periodOk = isWithinVariantPeriod(product?.specialPriceStart, product?.specialPriceEnd);
+      const pOffer = (product?.specialPriceEnabled && Number(product?.offerPrice) > 0 && Number(product?.offerPrice) < pReg && periodOk)
+        ? Number(product.offerPrice)
+        : 0;
+      return { price: pOffer > 0 ? pOffer : pPrice, regularPrice: pReg };
+    };
+
+    const resolveVariantStock = (product, color = "", size = "", ageGroup = "") => {
+      const vars = Array.isArray(product?.variations) ? product.variations : [];
+      if (vars.length === 0) return Math.max(0, Number(product?.stock) || 0);
+      const matched = findProductVariation(product, color, size, ageGroup);
+      if (matched) return matched.enabled === false ? 0 : Math.max(0, Number(matched.stock) || 0);
+      return Math.max(0, Number(product?.stock) || 0);
+    };
+
+    const resolveVariantImage = (product, color = "", size = "", fallbackImg = "") => {
+      const vImgs = (product?.variantImages && typeof product.variantImages === "object") ? product.variantImages : {};
+      if (color && vImgs[color]) return vImgs[color];
+      if (size && vImgs[size]) return vImgs[size];
+      return (product?.images && product.images[0]) || fallbackImg || "";
+    };
+
+    const buildCartesianVariations = (
+      sizes = [],
+      colors = [],
+      ageGroups = [],
+      existing = [],
+      defaults = {}
+    ) => {
+      const sArr = sizes.length > 0 ? sizes : [""];
+      const cArr = colors.length > 0 ? colors : [""];
+      const aArr = ageGroups.length > 0 ? ageGroups : [""];
+      if (sizes.length === 0 && colors.length === 0 && ageGroups.length === 0) return [];
+      const defPrice = Math.max(0, Number(defaults.price) || 0);
+      const defStock = Math.max(0, Number(defaults.stock) || 0);
+      const defSp = (Number(defaults.specialPrice) > 0 && Number(defaults.specialPrice) < defPrice) ? Number(defaults.specialPrice) : 0;
+      const defStart = String(defaults.specialPriceStart || "");
+      const defEnd = String(defaults.specialPriceEnd || "");
+      const skuPrefix = String(defaults.skuPrefix || "SAJ").trim();
+      const result = [];
+      let index = 1;
+      for (const sz of sArr) {
+        for (const col of cArr) {
+          for (const ag of aArr) {
+            const prev = (existing || []).find(v =>
+              String(v.size || "").toLowerCase() === String(sz || "").toLowerCase() &&
+              String(v.color || "").toLowerCase() === String(col || "").toLowerCase() &&
+              String(v.ageGroup || "").toLowerCase() === String(ag || "").toLowerCase()
+            );
+            const cleanId = `var_${sz}_${col}_${ag}_${index}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+            if (prev) {
+              result.push({ ...prev, id: prev.id || cleanId });
+            } else {
+              result.push({
+                id: cleanId,
+                size: sz,
+                color: col,
+                ageGroup: ag,
+                price: defPrice,
+                specialPrice: defSp,
+                specialPriceStart: defStart,
+                specialPriceEnd: defEnd,
+                stock: defStock,
+                enabled: true,
+                sku: skuPrefix ? `${skuPrefix}-${index}` : `VAR-${index}`
+              });
+            }
+            index++;
+          }
+        }
+      }
+      return result;
+    };
+
+    const summarizeVariations = (variations = []) => {
+      const active = (variations || []).filter(v => v.enabled !== false);
+      const totalStock = active.reduce((sum, v) => sum + Math.max(0, Number(v.stock) || 0), 0);
+      const positivePrices = active.map(v => Number(v.price) || 0).filter(p => p > 0);
+      const minRegularPrice = positivePrices.length > 0 ? Math.min(...positivePrices) : 0;
+      const validSpecials = active.filter(v => Number(v.price) > 0 && Number(v.specialPrice) > 0 && Number(v.specialPrice) < Number(v.price));
+      const minOfferPrice = validSpecials.length > 0 ? Math.min(...validSpecials.map(v => Number(v.specialPrice))) : 0;
+      const firstStart = validSpecials.find(v => v.specialPriceStart)?.specialPriceStart || "";
+      const firstEnd = validSpecials.find(v => v.specialPriceEnd)?.specialPriceEnd || "";
+      const effectiveSellingPrice = minOfferPrice > 0 ? minOfferPrice : minRegularPrice;
+      return {
+        totalStock,
+        minRegularPrice,
+        minOfferPrice,
+        effectiveSellingPrice,
+        specialPriceEnabled: minOfferPrice > 0,
+        specialPriceStart: firstStart,
+        specialPriceEnd: firstEnd
+      };
+    };
+
+    const applyVariantStockDeltasToProduct = (product, matchedChanges = [], totalDelta = 0) => {
+      const vars = Array.isArray(product?.variations) ? product.variations : [];
+      const hasSpecific = matchedChanges.some(ch => (ch.color && String(ch.color).trim()) || (ch.size && String(ch.size).trim()) || (ch.ageGroup && String(ch.ageGroup).trim()));
+      if (vars.length === 0 || !hasSpecific) {
+        return { nextStock: Math.max(0, (Number(product?.stock) || 0) + totalDelta), nextVariations: vars };
+      }
+      const nextVariations = vars.map(v => ({ ...v }));
+      let appliedAny = false;
+      matchedChanges.forEach(ch => {
+        const d = Number(ch.delta) || 0;
+        if (d === 0) return;
+        const col = String(ch.color || "").trim().toLowerCase();
+        const sz = String(ch.size || "").trim().toLowerCase();
+        const ag = String(ch.ageGroup || "").trim().toLowerCase();
+        const idx = nextVariations.findIndex(v => {
+          const vc = String(v.color || "").trim().toLowerCase();
+          const vs = String(v.size || "").trim().toLowerCase();
+          const va = String(v.ageGroup || "").trim().toLowerCase();
+          return (!col || vc === col) && (!sz || vs === sz || va === sz) && (!ag || va === ag);
+        });
+        if (idx >= 0) {
+          nextVariations[idx].stock = Math.max(0, (Number(nextVariations[idx].stock) || 0) + d);
+          appliedAny = true;
+        }
+      });
+      if (!appliedAny) {
+        return { nextStock: Math.max(0, (Number(product?.stock) || 0) + totalDelta), nextVariations: vars };
+      }
+      const recalculatedTotal = nextVariations.filter(v => v.enabled !== false).reduce((sum, v) => sum + Math.max(0, Number(v.stock) || 0), 0);
+      return { nextStock: recalculatedTotal, nextVariations };
     };
 
     const initialCategories = [
@@ -4030,14 +4239,18 @@
       const [productQty, setProductQty] = useState(1);
       const [selectedProductColor, setSelectedProductColor] = useState("");
       const [selectedProductSize, setSelectedProductSize] = useState("");
+      const [preferDetailVariantImg, setPreferDetailVariantImg] = useState(false);
       const [customColorInput, setCustomColorInput] = useState("");
       const [customSizeInput, setCustomSizeInput] = useState("");
 
-      // Initialize selected color and size when viewProduct opens
+      // Initialize selected color and size when viewProduct opens (picking first enabled in-stock variation)
       useEffect(() => {
+        setPreferDetailVariantImg(false);
         if (viewProduct) {
-          setSelectedProductColor((viewProduct.colors && viewProduct.colors[0]) || "");
-          setSelectedProductSize((viewProduct.sizes && viewProduct.sizes[0]) || "");
+          const vars = Array.isArray(viewProduct.variations) ? viewProduct.variations : [];
+          const initVar = vars.find(v => v.enabled !== false && Number(v.stock) > 0) || vars.find(v => v.enabled !== false);
+          setSelectedProductColor((initVar && initVar.color) || (viewProduct.colors && viewProduct.colors[0]) || "");
+          setSelectedProductSize((initVar && initVar.size) || (viewProduct.sizes && viewProduct.sizes[0]) || "");
         } else {
           setSelectedProductColor("");
           setSelectedProductSize("");
@@ -10125,26 +10338,33 @@
       // 3B. Unified Bidirectional Inventory Sync Service (Storefront <-> POS <-> Firestore)
       const expandOrderItemsToStockChanges = (itemsList, directionMultiplier = -1) => {
         const aggregated = {};
-        const addDelta = (pid, sku, name, delta) => {
-          const key = String(pid || name || sku || "");
-          if (!key || !delta) return;
+        const addDelta = (pid, sku, name, delta, color = "", size = "", ageGroup = "") => {
+          const col = String(color || "").trim();
+          const sz = String(size || "").trim();
+          const ag = String(ageGroup || "").trim();
+          const baseKey = String(pid || name || sku || "");
+          if (!baseKey || !delta) return;
+          const key = `${baseKey}__${col}__${sz}__${ag}`;
           if (!aggregated[key]) {
-            aggregated[key] = { productId: pid, sku: sku || "", name: name || "", delta: 0 };
+            aggregated[key] = { productId: pid, sku: sku || "", name: name || "", color: col, size: sz, ageGroup: ag, delta: 0 };
           }
           aggregated[key].delta += delta;
         };
 
         (itemsList || []).forEach(it => {
           const qty = Math.max(1, Number(it.qty || it.quantity || 1));
+          const col = it.color || it.selectedColor || "";
+          const sz = it.size || it.selectedSize || "";
+          const ag = it.ageGroup || it.selectedAgeGroup || "";
           if (it.isCombo && Array.isArray(it.bundledProducts) && it.bundledProducts.length > 0) {
             it.bundledProducts.forEach(bp => {
               const bpQty = Math.max(1, Number(bp.qty || bp.quantity || 1)) * qty;
-              addDelta(bp.id || bp.productId, bp.sku, bp.name, directionMultiplier * bpQty);
+              addDelta(bp.id || bp.productId, bp.sku, bp.name, directionMultiplier * bpQty, bp.color || "", bp.size || "", bp.ageGroup || "");
             });
           } else if (it.isFreeGift && it.freeGiftOriginId) {
-            addDelta(it.freeGiftOriginId, it.sku, it.name, directionMultiplier * qty);
+            addDelta(it.freeGiftOriginId, it.sku, it.name, directionMultiplier * qty, col, sz, ag);
           } else {
-            addDelta(it.productId || it.id, it.sku, it.name, directionMultiplier * qty);
+            addDelta(it.productId || it.id, it.sku, it.name, directionMultiplier * qty, col, sz, ag);
           }
         });
         return Object.values(aggregated);
@@ -10177,10 +10397,11 @@
           if (totalDelta === 0) return p;
 
           const prevStock = Number(p.stock) || 0;
-          const nextStock = Math.max(0, prevStock + totalDelta);
+          const { nextStock, nextVariations } = applyVariantStockDeltasToProduct(p, matchedChanges, totalDelta);
           const updatedProduct = {
             ...p,
             stock: nextStock,
+            variations: nextVariations,
             stockUpdatedAt: now,
             lastSyncSource: source
           };
@@ -10210,11 +10431,15 @@
           });
 
           if (syncCloud && firestoreDb) {
-            firestoreDb.collection("products").doc(String(p.id)).set({
+            const productSyncPayload = {
               stock: nextStock,
               stockUpdatedAt: now,
               lastSyncSource: source
-            }, { merge: true }).then(() => {
+            };
+            if (Array.isArray(nextVariations) && nextVariations.length > 0) {
+              productSyncPayload.variations = nextVariations;
+            }
+            firestoreDb.collection("products").doc(String(p.id)).set(productSyncPayload, { merge: true }).then(() => {
               markFirestorePosSync(Date.now());
             }).catch((err) => {
               recordPosSyncError({
@@ -11745,7 +11970,11 @@
         warrantyType: "No Warranty",
         warrantyPeriod: "",
         warrantyPolicy: "",
-        highlights: []
+        highlights: [],
+        variations: [],
+        variantImages: {},
+        variantOrder: ["Size", "Color Family"],
+        variantImageType: "Color Family"
       });
       const [isProductModalOpen, setIsProductModalOpen] = useState(false);
       const [editingProduct, setEditingProduct] = useState(null);
@@ -11755,6 +11984,13 @@
       const [productSubTempVal, setProductSubTempVal] = useState("");
       const [productSubHighlightInput, setProductSubHighlightInput] = useState("");
       const [productSubCustomBrand, setProductSubCustomBrand] = useState("");
+      const [variantPickerType, setVariantPickerType] = useState(null); // "Size" | "Color Family" | "Age Group" | null
+      const [variantPickerCustomInput, setVariantPickerCustomInput] = useState("");
+      const [variantShowColorType, setVariantShowColorType] = useState(false);
+      const [variantShowAgeType, setVariantShowAgeType] = useState(false);
+      const [variantShowSpecialSettings, setVariantShowSpecialSettings] = useState(true);
+      const [variantShowBulkModal, setVariantShowBulkModal] = useState(false);
+      const [variantBulkForm, setVariantBulkForm] = useState({ price: "", specialPrice: "", specialStart: "", specialEnd: "", stock: "" });
       const [mediaViewerState, setMediaViewerState] = useState(null); // { product, activeIndex }
       const [idbVideoUrls, setIdbVideoUrls] = useState({});
       const [isUploadingVideo, setIsUploadingVideo] = useState(false);
@@ -12939,32 +13175,57 @@
 
       // Cart Functions
       const addToCart = (product, qty = 1, selectedColor = null, selectedSize = null) => {
-        if (product.stock <= 0) {
-          notify("দুঃখিত, এই পণ্যটি স্টক আউট!");
+        const vars = Array.isArray(product?.variations) ? product.variations : [];
+        const firstAvailableVar = vars.find(v => v.enabled !== false && Number(v.stock) > 0) || vars.find(v => v.enabled !== false);
+        const color = (selectedColor !== null && selectedColor !== undefined)
+          ? selectedColor
+          : (selectedProductColor || (firstAvailableVar && firstAvailableVar.color) || (product.colors && product.colors[0]) || "");
+        const size = (selectedSize !== null && selectedSize !== undefined)
+          ? selectedSize
+          : (selectedProductSize || (vars.find(v => v.enabled !== false && Number(v.stock) > 0 && (!color || String(v.color || "").toLowerCase() === String(color).toLowerCase()))?.size) || (firstAvailableVar && firstAvailableVar.size) || (product.sizes && product.sizes[0]) || "");
+
+        const availStock = resolveVariantStock(product, color, size);
+        if (availStock <= 0 || Number(product.stock) <= 0) {
+          notify("দুঃখিত, নির্বাচিত ভ্যারিয়েশনটি বর্তমানে স্টক আউট!");
           return;
         }
-        const color = selectedColor !== null && selectedColor !== undefined ? selectedColor : (selectedProductColor || (product.colors && product.colors[0]) || "");
-        const size = selectedSize !== null && selectedSize !== undefined ? selectedSize : (selectedProductSize || (product.sizes && product.sizes[0]) || "");
+
+        const { price: resolvedSellPrice, regularPrice: resolvedRegPrice } = resolveVariantPricing(product, color, size);
+        const resolvedVariantImg = resolveVariantImage(product, color, size, product.images?.[0] || "");
+        const itemImages = resolvedVariantImg
+          ? [resolvedVariantImg, ...(product.images || []).filter(u => u && u !== resolvedVariantImg)]
+          : (product.images || []);
         const cartItemId = `${product.id}_${color}_${size}`;
 
         setCart(prev => {
           const existing = prev.find(item => (item.cartItemId === cartItemId || (item.id === product.id && (item.selectedColor || "") === color && (item.selectedSize || "") === size)) && !item.isFreeGift);
           if (existing) {
-            return prev.map(item => (item === existing) ? { 
-              ...item, 
-              qty: item.qty + qty, 
-              bogo: Boolean(product.bogo), 
-              bogoText: product.bogoText || "" 
+            const cappedQty = Math.min(availStock, (existing.qty || 1) + qty);
+            return prev.map(item => (item === existing) ? {
+              ...item,
+              qty: cappedQty,
+              price: resolvedSellPrice,
+              regularPrice: resolvedRegPrice,
+              originalPrice: resolvedRegPrice,
+              images: itemImages,
+              variantImageUrl: resolvedVariantImg,
+              bogo: Boolean(product.bogo),
+              bogoText: product.bogoText || ""
             } : item);
           }
-          return [...prev, { 
-            ...product, 
+          return [...prev, {
+            ...product,
+            price: resolvedSellPrice,
+            regularPrice: resolvedRegPrice,
+            originalPrice: resolvedRegPrice,
+            images: itemImages,
+            variantImageUrl: resolvedVariantImg,
             cartItemId,
             selectedColor: color,
             selectedSize: size,
-            qty, 
-            bogo: Boolean(product.bogo), 
-            bogoText: product.bogoText || "" 
+            qty: Math.min(availStock, qty),
+            bogo: Boolean(product.bogo),
+            bogoText: product.bogoText || ""
           }];
         });
 
@@ -12986,7 +13247,18 @@
               if (delta < 0) return null;
               return item;
             }
-            const newQty = item.qty + delta;
+            let newQty = item.qty + delta;
+            if (delta > 0) {
+              const prodMatch = (productsRef.current || []).find(p => p.id === item.id || p.id === item.productId) || item;
+              const maxVarStock = resolveVariantStock(prodMatch, item.selectedColor || "", item.selectedSize || "");
+              if (maxVarStock > 0 && newQty > maxVarStock) {
+                notify(`এই ভ্যারিয়েশনের সর্বোচ্চ ${maxVarStock} পিস স্টকে আছে!`);
+                newQty = maxVarStock;
+              } else if (maxVarStock <= 0) {
+                notify("দুঃখিত, এই ভ্যারিয়েশনটি স্টক আউট!");
+                return item;
+              }
+            }
             return newQty > 0 ? { ...item, qty: newQty } : null;
           }
           return item;
@@ -14716,10 +14988,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       setSelectedDetailImg(0);
                       setProductQty(1);
                     };
-                    const openOriginalMediaViewer = (e) => {
-                      if (e && e.stopPropagation) e.stopPropagation();
-                      setMediaViewerState({ product: p, activeIndex: 0 });
-                    };
                     return (
                       <div
                         key={p.id}
@@ -14727,8 +14995,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       >
                         <div
                           className="aspect-square bg-white/90 overflow-hidden relative cursor-pointer"
-                          onClick={openOriginalMediaViewer}
-                          title="অরিজিনাল সাইজে দেখতে টাচ করুন"
+                          onClick={openProductDetail}
+                          title="পন্যটি দেখুন"
                         >
                           {hasActiveVideo && directVideoPlayable ? (
                             <video
@@ -18939,6 +19207,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     colors: (p.colors || []).map(cleanVariation).filter(Boolean),
                                     sizes: (p.sizes || []).map(cleanVariation).filter(Boolean),
                                     ageGroups: Array.isArray(p.ageGroups) ? p.ageGroups : [],
+                                    variations: Array.isArray(p.variations) ? p.variations : [],
+                                    variantImages: (p.variantImages && typeof p.variantImages === "object" && !Array.isArray(p.variantImages)) ? p.variantImages : {},
+                                    variantOrder: Array.isArray(p.variantOrder) && p.variantOrder.length > 0 ? p.variantOrder : ["Size", "Color Family"],
+                                    variantImageType: p.variantImageType || "Color Family",
                                     isHotSale: Boolean(p.isHotSale || homeSections.find(s => s.id === "hot_sale")?.productIds?.includes(p.id)),
                                     isBestDeal: Boolean(p.isBestDeal || homeSections.find(s => s.id === "best_deals")?.productIds?.includes(p.id)),
                                     videoEnabled: Boolean(p.videoEnabled && p.videoUrl),
@@ -18947,6 +19219,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     videoThumbUrl: p.videoThumbUrl || "",
                                     videoFileName: p.videoFileName || ""
                                   });
+                                  setVariantShowColorType((p.colors && p.colors.length > 0) || (Array.isArray(p.variations) && p.variations.some(v => v.color)));
+                                  setVariantShowAgeType((p.ageGroups && p.ageGroups.length > 0) || (Array.isArray(p.variations) && p.variations.some(v => v.ageGroup)));
+                                  setVariantPickerType(null);
+                                  setVariantShowBulkModal(false);
+                                  setVariantShowSpecialSettings(true);
                                   setProductFormSubEditor(null);
                                   setImageUrlInput((p.images && p.images[0]) || "");
                                   setExternalLinkInput(p.sourceUrl || "");
@@ -31146,18 +31423,28 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-6 items-start">
-                  {/* Video-First Gallery & Original Size Touch Viewer */}
+                  {/* Video-First Gallery, Color Variant Hero Switch & Original Size Touch Viewer */}
                   {(() => {
                     const detailGallery = buildProductMediaGallery(viewProduct, imgSharee);
                     const safeIndex = Math.min(selectedDetailImg, Math.max(0, detailGallery.length - 1));
                     const activeMedia = detailGallery[safeIndex] || detailGallery[0];
-                    const directDetailVideo = activeMedia?.type === "video" && activeMedia.kind === "upload"
+                    const activeVariantHeroImg = resolveVariantImage(viewProduct, selectedProductColor, selectedProductSize, "");
+                    const showVariantHeroOverride = preferDetailVariantImg && Boolean(activeVariantHeroImg);
+                    const directDetailVideo = !showVariantHeroOverride && activeMedia?.type === "video" && activeMedia.kind === "upload"
                       ? resolvePlayableVideoUrl(activeMedia.playableUrl)
                       : "";
                     return (
                       <div className="space-y-3">
                         <div className="aspect-square rounded-2xl overflow-hidden border bg-black/5 relative shadow-inner group">
-                          {activeMedia?.type === "video" ? (
+                          {showVariantHeroOverride ? (
+                            <img
+                              src={activeVariantHeroImg}
+                              alt={`${viewProduct.name} - ${selectedProductColor}`}
+                              onClick={() => setMediaViewerState({ product: viewProduct, activeIndex: 0 })}
+                              className="w-full h-full object-cover cursor-zoom-in"
+                              onError={(e) => { e.target.onerror = null; e.target.src = viewProduct.images?.[0] || imgSharee; }}
+                            />
+                          ) : activeMedia?.type === "video" ? (
                             activeMedia.kind === "youtube" && activeMedia.embedUrl ? (
                               <iframe
                                 src={activeMedia.embedUrl}
@@ -31221,9 +31508,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             <span>অরিজিনাল সাইজ</span>
                           </button>
 
-                          {activeMedia?.type === "video" && (
+                          {!showVariantHeroOverride && activeMedia?.type === "video" && (
                             <span className="absolute top-2.5 left-2.5 z-10 bg-[#ea580c] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow">
                               🎬 {activeMedia.label}
+                            </span>
+                          )}
+                          {showVariantHeroOverride && selectedProductColor && (
+                            <span className="absolute bottom-2.5 left-2.5 z-10 bg-black/70 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
+                              {cleanVariation(selectedProductColor)}
                             </span>
                           )}
                         </div>
@@ -31233,8 +31525,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             {detailGallery.map((item, i) => (
                               <div
                                 key={i}
-                                onClick={() => setSelectedDetailImg(i)}
-                                className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition shrink-0 ${safeIndex === i ? 'border-[#7a1c2b] scale-105' : 'border-gray-200 opacity-70 hover:opacity-100'}`}
+                                onClick={() => {
+                                  setPreferDetailVariantImg(false);
+                                  setSelectedDetailImg(i);
+                                }}
+                                className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition shrink-0 ${!showVariantHeroOverride && safeIndex === i ? 'border-[#7a1c2b] scale-105' : 'border-gray-200 opacity-70 hover:opacity-100'}`}
                               >
                                 <img
                                   src={item.thumbUrl || viewProduct.images?.[0] || imgSharee}
@@ -31256,14 +31551,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     );
                   })()}
 
+                  {(() => {
+                    const livePricing = resolveVariantPricing(viewProduct, selectedProductColor, selectedProductSize);
+                    const liveStock = resolveVariantStock(viewProduct, selectedProductColor, selectedProductSize);
+                    const hasVariantImages = (viewProduct.colors || []).some(col => viewProduct.variantImages && viewProduct.variantImages[col]);
+                    const maxOrderQty = Math.max(1, liveStock);
+                    return (
                   <div className="flex flex-col justify-between h-full space-y-4">
                     <div>
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-baseline gap-2.5 flex-wrap">
-                          <p className="text-2xl sm:text-3xl font-extrabold text-[#7a1c2b]">{Number(viewProduct.price || 0).toLocaleString()} ৳</p>
-                          {Number(viewProduct.regularPrice || 0) > Number(viewProduct.price || 0) && (
+                          <p className="text-2xl sm:text-3xl font-extrabold text-[#7a1c2b]">{Number(livePricing.price || 0).toLocaleString()} ৳</p>
+                          {Number(livePricing.regularPrice || 0) > Number(livePricing.price || 0) && (
                             <p className="text-sm sm:text-base font-bold text-slate-400 line-through">
-                              {Number(viewProduct.regularPrice).toLocaleString()} ৳
+                              {Number(livePricing.regularPrice).toLocaleString()} ৳
                             </p>
                           )}
                         </div>
@@ -31312,8 +31613,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
 
                       <div className="mt-3 flex items-center justify-between text-xs">
-                        <span className={`font-bold ${viewProduct.stock > 0 ? "text-green-700" : "text-red-600"}`}>
-                          {viewProduct.stock > 0 ? `স্টক আছে (${viewProduct.stock} টি)` : "স্টক আউট"}
+                        <span className={`font-bold ${liveStock > 0 ? "text-green-700" : "text-red-600"}`}>
+                          {liveStock > 0 ? `স্টক আছে (${liveStock} টি)` : "এই ভ্যারিয়েশনটি স্টক আউট"}
                         </span>
                         {viewProduct.sourceUrl && (
                           <a href={viewProduct.sourceUrl} target="_blank" rel="noreferrer" className="text-[#b8956a] hover:underline text-[11px]">
@@ -31322,44 +31623,84 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         )}
                       </div>
 
-                      {/* Color Variation Selection */}
+                      {/* Color Family Variation Selection with Thumbnail Cards Above Size */}
                       {viewProduct.colors && viewProduct.colors.length > 0 && (
                         <div className="mt-3 p-3 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
                               <span>🎨</span>
-                              <span>কালার / রং নির্বাচন করুন:</span>
+                              <span>কালার নির্বাচন করুন (Color Family):</span>
                             </span>
                             {(selectedProductColor || viewProduct.colors[0]) && (
                               <span className="text-[11px] text-[#7a1c2b] font-bold bg-white px-2.5 py-0.5 rounded-full border border-rose-200 shadow-2xs">
-                                নির্বাচিত: {selectedProductColor || viewProduct.colors[0]}
+                                {cleanVariation(selectedProductColor || viewProduct.colors[0])}
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {viewProduct.colors.map(col => {
-                              const isSelected = (selectedProductColor || viewProduct.colors[0]) === col;
-                              return (
-                                <button
-                                  key={col}
-                                  type="button"
-                                  onClick={() => setSelectedProductColor(col)}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
-                                    isSelected
-                                      ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-sm"
-                                      : "bg-white text-gray-700 border-[#f3e2d0] hover:border-[#7a1c2b]"
-                                  }`}
-                                >
-                                  {isSelected && <span className="text-[10px]">✓</span>}
-                                  <span>{cleanVariation(col)}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
+                          {hasVariantImages ? (
+                            <div className="flex gap-2.5 overflow-x-auto pb-1">
+                              {viewProduct.colors.map(col => {
+                                const isSelected = (selectedProductColor || viewProduct.colors[0]) === col;
+                                const thumb = (viewProduct.variantImages && viewProduct.variantImages[col]) || viewProduct.images?.[0] || imgSharee;
+                                return (
+                                  <button
+                                    key={col}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedProductColor(col);
+                                      setPreferDetailVariantImg(true);
+                                      const nextSt = resolveVariantStock(viewProduct, col, selectedProductSize);
+                                      if (nextSt > 0 && productQty > nextSt) setProductQty(nextSt);
+                                    }}
+                                    className={`w-20 shrink-0 rounded-xl overflow-hidden border-2 bg-white transition flex flex-col cursor-pointer ${
+                                      isSelected ? "border-[#f97316] ring-1 ring-[#f97316] shadow-sm" : "border-[#f3e2d0] hover:border-[#f97316]/60"
+                                    }`}
+                                  >
+                                    <img
+                                      src={thumb}
+                                      alt={col}
+                                      className="w-full h-16 object-cover bg-slate-100"
+                                      onError={(e) => { e.target.onerror = null; e.target.src = imgSharee; }}
+                                    />
+                                    <span className={`px-1.5 py-1 text-[10px] font-bold truncate w-full text-center ${
+                                      isSelected ? "bg-orange-50 text-[#ea580c]" : "text-slate-700"
+                                    }`}>
+                                      {cleanVariation(col)}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {viewProduct.colors.map(col => {
+                                const isSelected = (selectedProductColor || viewProduct.colors[0]) === col;
+                                return (
+                                  <button
+                                    key={col}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedProductColor(col);
+                                      const nextSt = resolveVariantStock(viewProduct, col, selectedProductSize);
+                                      if (nextSt > 0 && productQty > nextSt) setProductQty(nextSt);
+                                    }}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
+                                      isSelected
+                                        ? "bg-[#7a1c2b] text-white border-[#7a1c2b] shadow-sm"
+                                        : "bg-white text-gray-700 border-[#f3e2d0] hover:border-[#7a1c2b]"
+                                    }`}
+                                  >
+                                    {isSelected && <span className="text-[10px]">✓</span>}
+                                    <span>{cleanVariation(col)}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
 
-                      {/* Size Variation Selection */}
+                      {/* Size Variation Selection with Live Combination Stock */}
                       {viewProduct.sizes && viewProduct.sizes.length > 0 && (
                         <div className="mt-3 p-3 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] space-y-2">
                           <div className="flex items-center justify-between">
@@ -31385,15 +31726,24 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <div className="flex flex-wrap gap-2">
                             {viewProduct.sizes.map(sz => {
                               const isSelected = (selectedProductSize || viewProduct.sizes[0]) === sz;
+                              const szStock = (viewProduct.variations && viewProduct.variations.length > 0)
+                                ? resolveVariantStock(viewProduct, selectedProductColor, sz)
+                                : liveStock;
+                              const isOut = (viewProduct.variations && viewProduct.variations.length > 0) && szStock <= 0;
                               return (
                                 <button
                                   key={sz}
                                   type="button"
-                                  onClick={() => setSelectedProductSize(sz)}
+                                  onClick={() => {
+                                    setSelectedProductSize(sz);
+                                    if (szStock > 0 && productQty > szStock) setProductQty(szStock);
+                                  }}
                                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
                                     isSelected
                                       ? "bg-amber-600 text-white border-amber-600 shadow-sm"
-                                      : "bg-white text-gray-700 border-[#f3e2d0] hover:border-amber-600"
+                                      : isOut
+                                        ? "bg-slate-100 text-slate-400 border-slate-200 line-through"
+                                        : "bg-white text-gray-700 border-[#f3e2d0] hover:border-amber-600"
                                   }`}
                                 >
                                   {isSelected && <span className="text-[10px]">✓</span>}
@@ -31412,7 +31762,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         <div className="flex items-center gap-3 bg-white border border-[#f3e2d0] rounded-full p-1 shadow-sm">
                           <button onClick={() => setProductQty(Math.max(1, productQty - 1))} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200">-</button>
                           <span className="font-bold text-sm w-5 text-center">{productQty}</span>
-                          <button onClick={() => setProductQty(productQty + 1)} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200">+</button>
+                          <button onClick={() => setProductQty(Math.min(maxOrderQty, productQty + 1))} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200">+</button>
                         </div>
                       </div>
 
@@ -31459,18 +31809,20 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             setViewProduct(null);
                           }
                         }}
-                        disabled={viewProduct.stock <= 0}
+                        disabled={liveStock <= 0}
                         className={`w-full py-3.5 rounded-full font-bold text-sm shadow transition flex items-center justify-center gap-2 ${
-                          viewProduct.stock > 0 
+                          liveStock > 0 
                             ? "bg-[#7a1c2b] text-white hover:bg-[#681727]" 
                             : "bg-gray-200 text-gray-400 cursor-not-allowed"
                         }`}
                       >
                         <span>🛒</span>
-                        <span>কার্টে যোগ করুন ({viewProduct.price * productQty} ৳)</span>
+                        <span>{liveStock > 0 ? `কার্টে যোগ করুন (${(livePricing.price * productQty).toLocaleString()} ৳)` : "স্টক আউট"}</span>
                       </button>
                     </div>
                   </div>
+                    );
+                  })()}
                 </div>
 
                 {/* --------------------------------------------------------- */}
@@ -31812,7 +32164,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <button
                     type="button"
                     onClick={() => {
-                      if (productFormSubEditor) {
+                      if (productFormSubEditor === "variant_details") {
+                        setProductFormSubEditor("variants");
+                      } else if (productFormSubEditor) {
                         setProductFormSubEditor(null);
                       } else {
                         setIsProductModalOpen(false);
@@ -31831,7 +32185,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             category: "Select Category",
                             brand: "Select Brand",
                             attributes: "Product Attributes",
-                            variants: "Variants & Options",
+                            variants: "Variants",
+                            variant_details: "Variation Details",
                             special_period: "Special Price Periods",
                             shipping: "Shipping Information",
                             warranty: "Warranty Information",
@@ -32086,194 +32441,617 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
                     )}
 
-                    {/* SUB-EDITOR: VARIANTS (COLORS, SIZES, AGE GROUPS, SKU) */}
-                    {productFormSubEditor === "variants" && (
-                      <div className="space-y-3">
-                        {/* Colors */}
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-extrabold text-slate-800">🎨 কালার ভ্যারিয়েশন (Colors)</span>
-                            <span className="text-[11px] font-bold text-[#f97316]">{(productForm.colors || []).length}টি সিলেক্টেড</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {(productForm.colors || []).map((c, idx) => (
-                              <span key={idx} className="inline-flex items-center gap-1 bg-orange-50 border border-[#f97316]/50 text-[#ea580c] text-xs font-bold px-2.5 py-1 rounded-full">
-                                <span>{c}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setProductForm(prev => ({ ...prev, colors: prev.colors.filter((_, i) => i !== idx) }))}
-                                  className="text-red-600 font-black ml-0.5"
-                                >
-                                  ✕
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={customColorInput}
-                              onChange={(e) => setCustomColorInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  const val = cleanVariation(customColorInput.trim());
-                                  if (val && !productForm.colors?.includes(val)) {
-                                    setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
-                                    setCustomColorInput("");
-                                  }
-                                }
-                              }}
-                              placeholder="কাস্টম কালার লিখুন..."
-                              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const val = cleanVariation(customColorInput.trim());
-                                if (val && !productForm.colors?.includes(val)) {
-                                  setProductForm(prev => ({ ...prev, colors: [...(prev.colors || []), val] }));
-                                  setCustomColorInput("");
-                                }
-                              }}
-                              className="bg-[#f97316] text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
-                            >
-                              + যোগ
-                            </button>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {["কালো", "সাদা", "মেরুন", "রয়েল ব্লু", "নেভি ব্লু", "লাল", "গোলাপি", "সবুজ", "বটল গ্রিন", "হলুদ", "গোল্ডেন", "অলিভ", "অ্যাশ", "স্কিন", "ফিরোজা"].map((cname) => {
-                              const active = productForm.colors?.includes(cname);
-                              return (
-                                <button
-                                  key={cname}
-                                  type="button"
-                                  onClick={() => setProductForm(prev => {
-                                    const cur = prev.colors || [];
-                                    return { ...prev, colors: cur.includes(cname) ? cur.filter(x => x !== cname) : [...cur, cname] };
-                                  })}
-                                  className={`text-[11px] px-2.5 py-1 rounded-full font-semibold border transition cursor-pointer ${
-                                    active ? "bg-[#f97316] text-white border-[#f97316]" : "bg-slate-50 text-slate-700 border-slate-200 hover:border-[#f97316]"
-                                  }`}
-                                >
-                                  {active ? `✓ ${cname}` : `+ ${cname}`}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                    {/* SUB-EDITOR: DARAZ-STYLE VARIANTS (SIZE, COLOR FAMILY, VARIANT IMAGES, OPTIONS PICKER) */}
+                    {productFormSubEditor === "variants" && (() => {
+                      const hasColorSection = variantShowColorType || (productForm.colors || []).length > 0;
+                      const hasAgeSection = variantShowAgeType || (productForm.ageGroups || []).length > 0;
+                      const baseOrder = Array.isArray(productForm.variantOrder) && productForm.variantOrder.length > 0
+                        ? productForm.variantOrder
+                        : ["Size", "Color Family"];
+                      const visibleTypes = [
+                        ...baseOrder.filter(t => t === "Size" || (t === "Color Family" && hasColorSection) || (t === "Age Group" && hasAgeSection)),
+                        ...(hasColorSection && !baseOrder.includes("Color Family") ? ["Color Family"] : []),
+                        ...(hasAgeSection && !baseOrder.includes("Age Group") ? ["Age Group"] : [])
+                      ];
+                      if (!visibleTypes.includes("Size")) visibleTypes.unshift("Size");
 
-                        {/* Sizes & Presets */}
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-extrabold text-slate-800">📏 সাইজ ভ্যারিয়েশন (Sizes)</span>
-                            <span className="text-[11px] font-bold text-[#f97316]">{(productForm.sizes || []).length}টি সিলেক্টেড</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {(productForm.sizes || []).map((s, idx) => (
-                              <span key={idx} className="inline-flex items-center gap-1 bg-orange-50 border border-[#f97316]/50 text-[#ea580c] text-xs font-bold px-2.5 py-1 rounded-full">
-                                <span>{s}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setProductForm(prev => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== idx) }))}
-                                  className="text-red-600 font-black ml-0.5"
-                                >
-                                  ✕
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={customSizeInput}
-                              onChange={(e) => setCustomSizeInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  const val = cleanVariation(customSizeInput.trim());
-                                  if (val && !productForm.sizes?.includes(val)) {
-                                    setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
-                                    setCustomSizeInput("");
-                                  }
-                                }
-                              }}
-                              placeholder="নতুন সাইজ লিখুন (যেমন: XL / 36B)..."
-                              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
-                            />
+                      const getOptionsForType = (typeName) => {
+                        if (typeName === "Color Family") return productForm.colors || [];
+                        if (typeName === "Age Group") return productForm.ageGroups || [];
+                        return productForm.sizes || [];
+                      };
+                      const removeOptionFromType = (typeName, opt) => {
+                        setProductForm(prev => {
+                          const nextImgs = { ...(prev.variantImages || {}) };
+                          delete nextImgs[opt];
+                          if (typeName === "Color Family") {
+                            return { ...prev, colors: (prev.colors || []).filter(x => x !== opt), variantImages: nextImgs };
+                          }
+                          if (typeName === "Age Group") {
+                            return { ...prev, ageGroups: (prev.ageGroups || []).filter(x => x !== opt), variantImages: nextImgs };
+                          }
+                          return { ...prev, sizes: (prev.sizes || []).filter(x => x !== opt), variantImages: nextImgs };
+                        });
+                      };
+
+                      const totalSelectedCount = (productForm.sizes?.length || 0) + (productForm.colors?.length || 0) + (productForm.ageGroups?.length || 0);
+
+                      const goToVariationDetails = () => {
+                        if (totalSelectedCount === 0) {
+                          return notify("অন্তত ১টি Size বা Color অপশন সিলেক্ট করুন!");
+                        }
+                        const generated = buildCartesianVariations(
+                          productForm.sizes || [],
+                          productForm.colors || [],
+                          productForm.ageGroups || [],
+                          productForm.variations || [],
+                          {
+                            price: productForm.price,
+                            stock: productForm.stock,
+                            specialPrice: productForm.specialPriceEnabled ? productForm.offerPrice : 0,
+                            specialPriceStart: productForm.specialPriceStart,
+                            specialPriceEnd: productForm.specialPriceEnd,
+                            skuPrefix: productForm.sku || "SAJ"
+                          }
+                        );
+                        setProductForm(prev => ({ ...prev, variations: generated }));
+                        setProductFormSubEditor("variant_details");
+                      };
+
+                      const pickerOptionsPool = (() => {
+                        if (!variantPickerType) return [];
+                        const selected = getOptionsForType(variantPickerType);
+                        const base = variantPickerType === "Color Family"
+                          ? PRESET_COLOR_OPTIONS
+                          : variantPickerType === "Age Group"
+                            ? PRESET_AGE_OPTIONS
+                            : PRESET_SIZE_OPTIONS;
+                        return Array.from(new Set([...selected, ...base]));
+                      })();
+
+                      return (
+                        <div className="space-y-3 pb-4">
+                          {visibleTypes.length > 1 && (
                             <button
                               type="button"
                               onClick={() => {
-                                const val = cleanVariation(customSizeInput.trim());
-                                if (val && !productForm.sizes?.includes(val)) {
-                                  setProductForm(prev => ({ ...prev, sizes: [...(prev.sizes || []), val] }));
-                                  setCustomSizeInput("");
-                                }
+                                setProductForm(prev => ({
+                                  ...prev,
+                                  variantOrder: visibleTypes.length >= 2 ? [visibleTypes[1], visibleTypes[0], ...visibleTypes.slice(2)] : visibleTypes
+                                }));
                               }}
-                              className="bg-[#f97316] text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#ea580c] hover:text-[#c2410c] px-1 py-1 cursor-pointer"
                             >
-                              + যোগ
+                              <span>⇅</span>
+                              <span>Switch Variant Type Order</span>
                             </button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 pt-1">
-                            {[
-                              { label: "👕 টি-শার্ট / জামা", items: ["S", "M", "L", "XL", "XXL", "3XL"] },
-                              { label: "👖 প্যান্ট / ট্রাউজার", items: ["২৮", "৩০", "৩২", "৩৪", "৩৬", "৩৮", "৪০"] },
-                              { label: "👙 ইনার / ব্রা", items: ["32B", "34B", "36B", "38B", "40B", "34C", "36C"] },
-                              { label: "👶 বাচ্চাদের পোশাক", items: ["১৬", "১৮", "২০", "২২", "২৪", "২৬", "২৮", "৩০"] },
-                              { label: "💍 আংটি ও চুড়ি", items: ["৬", "৭", "৮", "২.২", "২.৪", "২.৬", "২.৮"] },
-                              { label: "✨ Free Size", items: ["Free Size"] }
-                            ].map((preset) => (
+                          )}
+
+                          {visibleTypes.map((typeName) => {
+                            const opts = getOptionsForType(typeName);
+                            const isImgActive = (productForm.variantImageType || "Color Family") === typeName;
+                            return (
+                              <div key={typeName} className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3 shadow-2xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-extrabold text-slate-900">
+                                    {typeName} <span className="text-red-500">*</span>
+                                  </span>
+                                  {typeName !== "Size" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (typeName === "Color Family") {
+                                          setVariantShowColorType(false);
+                                          setProductForm(prev => ({ ...prev, colors: [] }));
+                                        } else if (typeName === "Age Group") {
+                                          setVariantShowAgeType(false);
+                                          setProductForm(prev => ({ ...prev, ageGroups: [] }));
+                                        }
+                                      }}
+                                      className="text-xs font-bold text-slate-400 hover:text-red-600 cursor-pointer"
+                                    >
+                                      ✕ Remove
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Add Image Radio Row */}
+                                <button
+                                  type="button"
+                                  onClick={() => setProductForm(prev => ({
+                                    ...prev,
+                                    variantImageType: isImgActive ? "" : typeName
+                                  }))}
+                                  className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer"
+                                >
+                                  <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                    isImgActive ? "border-[#f97316]" : "border-slate-300"
+                                  }`}>
+                                    {isImgActive && <span className="w-2 h-2 rounded-full bg-[#f97316]" />}
+                                  </span>
+                                  <span>Add Image</span>
+                                </button>
+
+                                {/* Variant Image Attachment Strip for Selected Options */}
+                                {isImgActive && opts.length > 0 && (
+                                  <div className="flex gap-2.5 overflow-x-auto pb-1">
+                                    {opts.map(opt => {
+                                      const vImg = (productForm.variantImages || {})[opt] || "";
+                                      return (
+                                        <div key={opt} className="w-24 shrink-0 bg-slate-50 border border-slate-200 rounded-xl p-1.5 flex flex-col items-center gap-1 relative">
+                                          <label className="w-full h-16 rounded-lg overflow-hidden border border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-[#f97316]">
+                                            {vImg ? (
+                                              <img src={vImg} alt={opt} className="w-full h-full object-cover" />
+                                            ) : (
+                                              <span className="text-[10px] font-bold text-slate-500 text-center px-1">📷 ছবি দিন</span>
+                                            )}
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              className="hidden"
+                                              onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const compressed = await compressImage(file, 600, 600, 0.72);
+                                                if (compressed) {
+                                                  setProductForm(prev => ({
+                                                    ...prev,
+                                                    variantImages: { ...(prev.variantImages || {}), [opt]: compressed }
+                                                  }));
+                                                }
+                                                e.target.value = "";
+                                              }}
+                                            />
+                                          </label>
+                                          <span className="text-[10px] font-bold text-slate-700 truncate w-full text-center">{opt}</span>
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const url = window.prompt(`${opt} এর ছবির URL দিন:`, vImg);
+                                                if (url !== null) {
+                                                  setProductForm(prev => {
+                                                    const next = { ...(prev.variantImages || {}) };
+                                                    if (url.trim()) next[opt] = url.trim();
+                                                    else delete next[opt];
+                                                    return { ...prev, variantImages: next };
+                                                  });
+                                                }
+                                              }}
+                                              className="text-[9px] font-bold text-sky-600 hover:underline cursor-pointer"
+                                            >
+                                              URL
+                                            </button>
+                                            {vImg && (
+                                              <button
+                                                type="button"
+                                                onClick={() => setProductForm(prev => {
+                                                  const next = { ...(prev.variantImages || {}) };
+                                                  delete next[opt];
+                                                  return { ...prev, variantImages: next };
+                                                })}
+                                                className="text-[9px] font-bold text-red-500 cursor-pointer"
+                                              >
+                                                ✕
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Selected Option Chips */}
+                                {opts.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {opts.map(opt => (
+                                      <span key={opt} className="inline-flex items-center gap-1 bg-orange-50 border border-[#f97316]/50 text-[#ea580c] text-xs font-bold px-2.5 py-1 rounded-full">
+                                        <span>{opt}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeOptionFromType(typeName, opt)}
+                                          className="text-red-500 font-black ml-0.5 cursor-pointer"
+                                        >
+                                          ✕
+                                        </button>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* + Options Outlined Orange Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setVariantPickerCustomInput("");
+                                    setVariantPickerType(typeName);
+                                  }}
+                                  className="px-4 py-1.5 rounded-lg border border-[#f97316] text-[#ea580c] bg-white hover:bg-orange-50 text-xs font-extrabold cursor-pointer transition"
+                                >
+                                  + Options
+                                </button>
+                              </div>
+                            );
+                          })}
+
+                          {/* + Variant Type Card */}
+                          {(!hasColorSection || !hasAgeSection) && (
+                            <div className="bg-white rounded-2xl p-3 border border-slate-200">
                               <button
-                                key={preset.label}
                                 type="button"
-                                onClick={() => setProductForm(prev => ({ ...prev, sizes: Array.from(new Set([...(prev.sizes || []), ...preset.items])) }))}
-                                className="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-[#f97316] text-left text-xs font-bold text-slate-800 cursor-pointer"
+                                onClick={() => {
+                                  if (!hasColorSection) {
+                                    setVariantShowColorType(true);
+                                  } else if (!hasAgeSection) {
+                                    setVariantShowAgeType(true);
+                                  }
+                                }}
+                                className="w-full py-3 rounded-xl border-2 border-dashed border-[#f97316]/60 text-[#ea580c] font-extrabold text-sm flex items-center justify-center gap-1.5 hover:bg-orange-50/60 transition cursor-pointer"
                               >
-                                {preset.label}
+                                <span>+</span>
+                                <span>{!hasColorSection ? "Variant Type (Color Family)" : "Variant Type (Age Group)"}</span>
                               </button>
-                            ))}
-                          </div>
-                        </div>
+                            </div>
+                          )}
 
-                        {/* Kids Age Groups */}
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
-                          <span className="text-xs font-extrabold text-slate-800 block">👶 বাচ্চাদের বয়স গ্রুপ (Age Group)</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {["0-6m", "6-12m", "1-2y", "3-4y", "5-6y", "7-8y", "9-10y", "11-12y"].map((ag) => {
-                              const active = (productForm.ageGroups || []).includes(ag);
-                              return (
-                                <button
-                                  key={ag}
-                                  type="button"
-                                  onClick={() => setProductForm(prev => {
-                                    const cur = prev.ageGroups || [];
-                                    return { ...prev, ageGroups: cur.includes(ag) ? cur.filter(x => x !== ag) : [...cur, ag] };
+                          {/* Seller SKU */}
+                          <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-1.5">
+                            <label className="text-xs font-extrabold text-slate-800 block">Seller SKU Prefix</label>
+                            <input
+                              type="text"
+                              value={productForm.sku || ""}
+                              onChange={(e) => setProductForm(prev => ({ ...prev, sku: e.target.value }))}
+                              placeholder="SAJ-101"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono outline-none focus:border-[#f97316]"
+                            />
+                          </div>
+
+                          {/* Bottom Next: Set Price & Stock Button */}
+                          <button
+                            type="button"
+                            onClick={goToVariationDetails}
+                            className={`w-full py-3.5 rounded-full font-extrabold text-sm shadow transition cursor-pointer ${
+                              totalSelectedCount > 0
+                                ? "bg-[#f97316] hover:bg-[#ea580c] text-white"
+                                : "bg-slate-200 text-slate-500"
+                            }`}
+                          >
+                            Next: Set Price & Stock
+                          </button>
+
+                          {/* OPTIONS PICKER MODAL (Screenshot 3 look) */}
+                          {variantPickerType && (
+                            <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4">
+                              <div className="bg-white w-full sm:max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-fadeIn">
+                                <div className="px-4 py-3.5 border-b border-slate-200 flex items-center justify-between">
+                                  <h4 className="font-extrabold text-sm text-slate-900">
+                                    {variantPickerType} ({getOptionsForType(variantPickerType).length}/{pickerOptionsPool.length})
+                                  </h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => setVariantPickerType(null)}
+                                    className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center font-bold text-slate-600 cursor-pointer"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+
+                                {/* Add custom option */}
+                                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={variantPickerCustomInput}
+                                    onChange={(e) => setVariantPickerCustomInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        const val = cleanVariation(variantPickerCustomInput.trim());
+                                        if (val) {
+                                          setProductForm(prev => {
+                                            if (variantPickerType === "Color Family") {
+                                              return { ...prev, colors: prev.colors?.includes(val) ? prev.colors : [...(prev.colors || []), val] };
+                                            }
+                                            if (variantPickerType === "Age Group") {
+                                              return { ...prev, ageGroups: prev.ageGroups?.includes(val) ? prev.ageGroups : [...(prev.ageGroups || []), val] };
+                                            }
+                                            return { ...prev, sizes: prev.sizes?.includes(val) ? prev.sizes : [...(prev.sizes || []), val] };
+                                          });
+                                          setVariantPickerCustomInput("");
+                                        }
+                                      }
+                                    }}
+                                    placeholder={`নতুন ${variantPickerType} লিখুন...`}
+                                    className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const val = cleanVariation(variantPickerCustomInput.trim());
+                                      if (!val) return;
+                                      setProductForm(prev => {
+                                        if (variantPickerType === "Color Family") {
+                                          return { ...prev, colors: prev.colors?.includes(val) ? prev.colors : [...(prev.colors || []), val] };
+                                        }
+                                        if (variantPickerType === "Age Group") {
+                                          return { ...prev, ageGroups: prev.ageGroups?.includes(val) ? prev.ageGroups : [...(prev.ageGroups || []), val] };
+                                        }
+                                        return { ...prev, sizes: prev.sizes?.includes(val) ? prev.sizes : [...(prev.sizes || []), val] };
+                                      });
+                                      setVariantPickerCustomInput("");
+                                    }}
+                                    className="bg-[#f97316] text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                                  >
+                                    + Add
+                                  </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                                  {pickerOptionsPool.map(opt => {
+                                    const isSelected = getOptionsForType(variantPickerType).includes(opt);
+                                    return (
+                                      <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => {
+                                          setProductForm(prev => {
+                                            if (variantPickerType === "Color Family") {
+                                              const cur = prev.colors || [];
+                                              return { ...prev, colors: cur.includes(opt) ? cur.filter(x => x !== opt) : [...cur, opt] };
+                                            }
+                                            if (variantPickerType === "Age Group") {
+                                              const cur = prev.ageGroups || [];
+                                              return { ...prev, ageGroups: cur.includes(opt) ? cur.filter(x => x !== opt) : [...cur, opt] };
+                                            }
+                                            const cur = prev.sizes || [];
+                                            return { ...prev, sizes: cur.includes(opt) ? cur.filter(x => x !== opt) : [...cur, opt] };
+                                          });
+                                        }}
+                                        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 cursor-pointer"
+                                      >
+                                        <span className={`text-sm ${isSelected ? "font-extrabold text-[#ea580c]" : "font-medium text-slate-800"}`}>
+                                          {opt}
+                                        </span>
+                                        <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-[11px] font-black ${
+                                          isSelected ? "bg-[#f97316] border-[#f97316] text-white" : "border-slate-300 text-transparent"
+                                        }`}>
+                                          ✓
+                                        </span>
+                                      </button>
+                                    );
                                   })}
-                                  className={`text-xs px-3 py-1 rounded-full font-semibold border transition cursor-pointer ${
-                                    active ? "bg-[#f97316] text-white border-[#f97316]" : "bg-slate-50 text-slate-700 border-slate-200"
-                                  }`}
-                                >
-                                  {ag}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                                </div>
 
-                        {/* SKU */}
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-1.5">
-                          <label className="text-xs font-extrabold text-slate-800 block">Seller SKU</label>
-                          <input
-                            type="text"
-                            value={productForm.sku || ""}
-                            onChange={(e) => setProductForm(prev => ({ ...prev, sku: e.target.value }))}
-                            placeholder="SAJ-101"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono outline-none focus:border-[#f97316]"
-                          />
+                                <div className="p-3.5 border-t border-slate-200 bg-white">
+                                  <button
+                                    type="button"
+                                    onClick={() => setVariantPickerType(null)}
+                                    className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white py-3 rounded-full font-extrabold text-sm shadow cursor-pointer"
+                                  >
+                                    Save
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
+
+                    {/* SUB-EDITOR: VARIATION DETAILS (PER-COMBINATION PRICE, SPECIAL PRICE, DATES, STOCK, BULK EDIT) */}
+                    {productFormSubEditor === "variant_details" && (() => {
+                      const varsList = Array.isArray(productForm.variations) ? productForm.variations : [];
+                      const updateVarField = (varId, patch) => {
+                        setProductForm(prev => ({
+                          ...prev,
+                          variations: (prev.variations || []).map(v => v.id === varId ? { ...v, ...patch } : v)
+                        }));
+                      };
+                      const handleSaveVariationDetails = () => {
+                        const invalidActive = varsList.some(v => v.enabled !== false && (Number(v.price) || 0) <= 0);
+                        if (invalidActive) {
+                          return notify("সক্রিয় সব ভ্যারিয়েশনের Price (BDT) ১ বা তার বেশি দিন!");
+                        }
+                        const sum = summarizeVariations(varsList);
+                        setProductForm(prev => ({
+                          ...prev,
+                          stock: sum.totalStock,
+                          price: sum.minRegularPrice > 0 ? sum.minRegularPrice : prev.price,
+                          offerPrice: sum.minOfferPrice > 0 ? sum.minOfferPrice : "",
+                          specialPriceEnabled: sum.specialPriceEnabled,
+                          specialPriceStart: sum.specialPriceStart || prev.specialPriceStart || "",
+                          specialPriceEnd: sum.specialPriceEnd || prev.specialPriceEnd || ""
+                        }));
+                        setProductFormSubEditor(null);
+                      };
+
+                      return (
+                        <div className="space-y-3 pb-4">
+                          {/* Top Utility Bar: View/Hide Special Price Settings & Bulk Edit */}
+                          <div className="flex items-center justify-between gap-2 bg-white px-3.5 py-2.5 rounded-2xl border border-slate-200">
+                            <button
+                              type="button"
+                              onClick={() => setVariantShowSpecialSettings(prev => !prev)}
+                              className="text-xs font-extrabold text-[#ea580c] flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>👁</span>
+                              <span>{variantShowSpecialSettings ? "Hide Special Price Settings" : "View Special Price Settings"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVariantBulkForm({ price: "", specialPrice: "", specialStart: "", specialEnd: "", stock: "" });
+                                setVariantShowBulkModal(true);
+                              }}
+                              className="text-xs font-extrabold text-[#ea580c] bg-orange-50 px-3 py-1 rounded-full border border-orange-200 cursor-pointer"
+                            >
+                              Bulk Edit
+                            </button>
+                          </div>
+
+                          {/* Variation Cards */}
+                          {varsList.map((v) => {
+                            const comboTitle = [v.size, v.color, v.ageGroup].filter(Boolean).join(", ") || "Default";
+                            const headerLabel = [v.size ? "Size" : "", v.color ? "Color" : "", v.ageGroup ? "Age" : ""].filter(Boolean).join(", ") || "Variant";
+                            return (
+                              <div key={v.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100 shadow-2xs">
+                                <div className="px-4 py-3 flex items-center justify-between bg-slate-50/70">
+                                  <div className="min-w-0">
+                                    <span className="text-[11px] text-slate-400 font-bold block">{headerLabel}</span>
+                                    <span className="text-sm font-extrabold text-slate-900">{comboTitle}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={v.enabled !== false}
+                                    onClick={() => updateVarField(v.id, { enabled: v.enabled === false })}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${v.enabled !== false ? "bg-[#f97316]" : "bg-slate-300"}`}
+                                  >
+                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${v.enabled !== false ? "translate-x-5" : "translate-x-0.5"}`} />
+                                  </button>
+                                </div>
+
+                                {/* Price */}
+                                <div className="px-4 py-2.5 flex items-center justify-between gap-2">
+                                  <span className="text-xs font-bold text-slate-800">Price (BDT) <span className="text-red-500">*</span></span>
+                                  <input
+                                    type="number"
+                                    value={v.price || ""}
+                                    onChange={(e) => {
+                                      const raw = e.target.value.replace(/^0+(?=\d)/, "");
+                                      updateVarField(v.id, { price: raw === "" ? 0 : Math.max(0, Number(raw)) });
+                                    }}
+                                    placeholder="Input"
+                                    className="w-28 text-right bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 outline-none focus:border-[#f97316]"
+                                  />
+                                </div>
+
+                                {variantShowSpecialSettings && (
+                                  <>
+                                    {/* Special Price */}
+                                    <div className="px-4 py-2.5 flex items-center justify-between gap-2">
+                                      <span className="text-xs font-bold text-slate-800">Special Price (BDT)</span>
+                                      <input
+                                        type="number"
+                                        value={v.specialPrice || ""}
+                                        onChange={(e) => {
+                                          const raw = e.target.value.replace(/^0+(?=\d)/, "");
+                                          updateVarField(v.id, { specialPrice: raw === "" ? 0 : Math.max(0, Number(raw)) });
+                                        }}
+                                        placeholder="Input"
+                                        className="w-28 text-right bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#ea580c] outline-none focus:border-[#f97316]"
+                                      />
+                                    </div>
+
+                                    {/* Special Price Periods */}
+                                    <div className="px-4 py-2.5 space-y-1.5">
+                                      <span className="text-xs font-bold text-slate-800 block">Special Price Periods</span>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <input
+                                          type="date"
+                                          value={v.specialPriceStart || ""}
+                                          onChange={(e) => updateVarField(v.id, { specialPriceStart: e.target.value })}
+                                          className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[11px] outline-none focus:border-[#f97316]"
+                                        />
+                                        <input
+                                          type="date"
+                                          value={v.specialPriceEnd || ""}
+                                          onChange={(e) => updateVarField(v.id, { specialPriceEnd: e.target.value })}
+                                          className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[11px] outline-none focus:border-[#f97316]"
+                                        />
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+
+                                {/* Stock */}
+                                <div className="px-4 py-2.5 flex items-center justify-between gap-2">
+                                  <span className="text-xs font-bold text-slate-800">Stock <span className="text-red-500">*</span></span>
+                                  <input
+                                    type="number"
+                                    value={v.stock !== undefined && v.stock !== null ? v.stock : ""}
+                                    onChange={(e) => {
+                                      const raw = e.target.value.replace(/^0+(?=\d)/, "");
+                                      updateVarField(v.id, { stock: raw === "" ? 0 : Math.max(0, Number(raw)) });
+                                    }}
+                                    placeholder="0"
+                                    className="w-28 text-right bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 outline-none focus:border-[#f97316]"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Bottom Save Button */}
+                          <button
+                            type="button"
+                            onClick={handleSaveVariationDetails}
+                            className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white py-3.5 rounded-full font-extrabold text-sm shadow cursor-pointer"
+                          >
+                            Save
+                          </button>
+
+                          {/* Bulk Edit Modal */}
+                          {variantShowBulkModal && (
+                            <div className="fixed inset-0 z-[60] bg-black/55 backdrop-blur-xs flex items-center justify-center p-4">
+                              <div className="bg-white w-full max-w-sm rounded-3xl p-5 space-y-3.5 shadow-2xl">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-extrabold text-base text-slate-900">Bulk Edit Variations</h4>
+                                  <button type="button" onClick={() => setVariantShowBulkModal(false)} className="text-slate-500 font-bold cursor-pointer">✕</button>
+                                </div>
+                                <div className="space-y-2.5">
+                                  <div>
+                                    <label className="text-xs font-bold text-slate-700 block mb-1">Price (BDT)</label>
+                                    <input type="number" value={variantBulkForm.price} onChange={(e) => setVariantBulkForm(f => ({ ...f, price: e.target.value }))} placeholder="অপরিবর্তিত রাখলে খালি রাখুন" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]" />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs font-bold text-slate-700 block mb-1">Special Price (BDT)</label>
+                                    <input type="number" value={variantBulkForm.specialPrice} onChange={(e) => setVariantBulkForm(f => ({ ...f, specialPrice: e.target.value }))} placeholder="অপরিবর্তিত রাখলে খালি রাখুন" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]" />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Start Date</label>
+                                      <input type="date" value={variantBulkForm.specialStart} onChange={(e) => setVariantBulkForm(f => ({ ...f, specialStart: e.target.value }))} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2 py-1.5 text-xs outline-none" />
+                                    </div>
+                                    <div>
+                                      <label className="text-[11px] font-bold text-slate-700 block mb-1">End Date</label>
+                                      <input type="date" value={variantBulkForm.specialEnd} onChange={(e) => setVariantBulkForm(f => ({ ...f, specialEnd: e.target.value }))} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2 py-1.5 text-xs outline-none" />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-xs font-bold text-slate-700 block mb-1">Stock</label>
+                                    <input type="number" value={variantBulkForm.stock} onChange={(e) => setVariantBulkForm(f => ({ ...f, stock: e.target.value }))} placeholder="অপরিবর্তিত রাখলে খালি রাখুন" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-[#f97316]" />
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 pt-1">
+                                  <button type="button" onClick={() => setVariantShowBulkModal(false)} className="flex-1 py-2.5 rounded-full border border-slate-300 text-xs font-bold text-slate-700 cursor-pointer">Cancel</button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setProductForm(prev => ({
+                                        ...prev,
+                                        variations: (prev.variations || []).map(v => ({
+                                          ...v,
+                                          price: variantBulkForm.price !== "" ? Math.max(0, Number(variantBulkForm.price) || 0) : v.price,
+                                          specialPrice: variantBulkForm.specialPrice !== "" ? Math.max(0, Number(variantBulkForm.specialPrice) || 0) : v.specialPrice,
+                                          specialPriceStart: variantBulkForm.specialStart || v.specialPriceStart,
+                                          specialPriceEnd: variantBulkForm.specialEnd || v.specialPriceEnd,
+                                          stock: variantBulkForm.stock !== "" ? Math.max(0, Number(variantBulkForm.stock) || 0) : v.stock
+                                        }))
+                                      }));
+                                      setVariantShowBulkModal(false);
+                                    }}
+                                    className="flex-1 py-2.5 rounded-full bg-[#f97316] text-white text-xs font-extrabold cursor-pointer"
+                                  >
+                                    Apply All
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* SUB-EDITOR: SPECIAL PRICE PERIODS */}
                     {productFormSubEditor === "special_period" && (
@@ -32547,13 +33325,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       </div>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => setProductFormSubEditor(null)}
-                      className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white py-3 rounded-full font-bold text-sm shadow cursor-pointer"
-                    >
-                      Done
-                    </button>
+                    {productFormSubEditor !== "variants" && productFormSubEditor !== "variant_details" && (
+                      <button
+                        type="button"
+                        onClick={() => setProductFormSubEditor(null)}
+                        className="w-full bg-[#f97316] hover:bg-[#ea580c] text-white py-3 rounded-full font-bold text-sm shadow cursor-pointer"
+                      >
+                        Done
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#F4F6F9]">
@@ -32890,155 +33670,234 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
 
                     {/* BLOCK 3: VARIANTS * */}
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => setProductFormSubEditor("variants")}
-                        className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
-                      >
-                        <div className="text-left">
-                          <span className="text-sm font-bold text-slate-900 block">
-                            Variants <span className="text-red-500">*</span>
-                          </span>
-                          {((productForm.colors?.length || 0) === 0 && (productForm.sizes?.length || 0) === 0 && (productForm.ageGroups?.length || 0) === 0) ? (
-                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
-                          ) : (
-                            <span className="text-[11px] font-semibold text-emerald-700">
-                              {[
-                                (productForm.colors?.length || 0) > 0 ? `${productForm.colors.length} কালার` : "",
-                                (productForm.sizes?.length || 0) > 0 ? `${productForm.sizes.length} সাইজ` : "",
-                                (productForm.ageGroups?.length || 0) > 0 ? `${productForm.ageGroups.length} বয়স` : ""
-                              ].filter(Boolean).join(" • ")}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
-                          <span>Add Variations</span>
-                          <span className="text-slate-400 font-bold text-base">›</span>
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* BLOCK 4: PRICE + STOCK + AVAILABILITY + SPECIAL PRICE + PERIODS */}
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
-                      {/* 8. Price(BDT) * */}
-                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <span className="text-sm font-bold text-slate-900 block">
-                            Price(BDT) <span className="text-red-500">*</span>
-                          </span>
-                          {(!productForm.price || Number(productForm.price) <= 0) && (
-                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            value={productForm.price !== undefined && productForm.price !== null ? productForm.price : ""}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/^0+(?=\d)/, "");
-                              setProductForm(prev => ({ ...prev, price: val === "" ? "" : Number(val) }));
-                            }}
-                            placeholder="0"
-                            className="w-28 text-right bg-transparent text-sm font-bold text-slate-900 placeholder-slate-400 outline-none"
-                          />
-                          <span className="text-xs font-bold text-slate-400">BDT</span>
-                        </div>
-                      </div>
-
-                      {/* 9. Stock * */}
-                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <span className="text-sm font-bold text-slate-900 block">
-                            Stock <span className="text-red-500">*</span>
-                          </span>
-                          {(productForm.stock === "" || productForm.stock === null || productForm.stock === undefined) && (
-                            <span className="text-[11px] font-semibold text-red-500">This field is required</span>
-                          )}
-                        </div>
-                        <input
-                          type="number"
-                          value={productForm.stock !== undefined && productForm.stock !== null ? productForm.stock : ""}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/^0+(?=\d)/, "");
-                            setProductForm(prev => ({ ...prev, stock: val === "" ? "" : Number(val) }));
-                          }}
-                          placeholder="0"
-                          className="w-28 text-right bg-transparent text-sm font-bold text-slate-900 placeholder-slate-400 outline-none"
-                        />
-                      </div>
-
-                      {/* 10. Availability */}
-                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-900">Availability</span>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={productForm.isAvailable !== false}
-                          onClick={() => setProductForm(prev => ({ ...prev, isAvailable: prev.isAvailable === false }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${productForm.isAvailable !== false ? "bg-[#f97316]" : "bg-slate-300"}`}
-                        >
-                          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.isAvailable !== false ? "translate-x-5" : "translate-x-0.5"}`} />
-                        </button>
-                      </div>
-
-                      {/* 11. Special Price */}
-                      <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-900">Special Price</span>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={Boolean(productForm.specialPriceEnabled)}
-                          onClick={() => setProductForm(prev => ({ ...prev, specialPriceEnabled: !prev.specialPriceEnabled }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${productForm.specialPriceEnabled ? "bg-[#f97316]" : "bg-slate-300"}`}
-                        >
-                          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.specialPriceEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
-                        </button>
-                      </div>
-
-                      {productForm.specialPriceEnabled && (
+                    {(() => {
+                      const varsCount = (productForm.variations || []).length;
+                      const varSum = summarizeVariations(productForm.variations || []);
+                      const hasVars = varsCount > 0;
+                      const hasAnyVarSelections = hasVars || (productForm.colors?.length || 0) > 0 || (productForm.sizes?.length || 0) > 0 || (productForm.ageGroups?.length || 0) > 0;
+                      return (
                         <>
-                          {/* Special Price(BDT) */}
-                          <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-slate-900">Special Price(BDT)</span>
-                              {Number(productForm.offerPrice) > 0 && Number(productForm.price) > Number(productForm.offerPrice) && (
-                                <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
-                                  -{Math.round(((Number(productForm.price) - Number(productForm.offerPrice)) / Number(productForm.price)) * 100)}%
-                                </span>
-                              )}
-                            </div>
-                            <input
-                              type="number"
-                              value={productForm.offerPrice !== undefined && productForm.offerPrice !== null ? productForm.offerPrice : ""}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/^0+(?=\d)/, "");
-                                setProductForm(prev => ({ ...prev, offerPrice: val === "" ? "" : Number(val) }));
+                          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVariantShowColorType((productForm.colors?.length || 0) > 0);
+                                setVariantShowAgeType((productForm.ageGroups?.length || 0) > 0);
+                                setVariantPickerType(null);
+                                setProductFormSubEditor("variants");
                               }}
-                              placeholder="Input"
-                              className="w-28 text-right bg-transparent text-sm font-bold text-[#ea580c] placeholder-slate-400 outline-none"
-                            />
+                              className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                            >
+                              <div className="text-left">
+                                <span className="text-sm font-bold text-slate-900 block">
+                                  Variants <span className="text-red-500">*</span>
+                                </span>
+                                {!hasAnyVarSelections ? (
+                                  <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                                ) : (
+                                  <span className="text-[11px] font-semibold text-emerald-700">
+                                    {[
+                                      (productForm.sizes?.length || 0) > 0 ? `${productForm.sizes.length} সাইজ` : "",
+                                      (productForm.colors?.length || 0) > 0 ? `${productForm.colors.length} কালার` : "",
+                                      (productForm.ageGroups?.length || 0) > 0 ? `${productForm.ageGroups.length} বয়স` : ""
+                                    ].filter(Boolean).join(" • ")}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                                <span>{hasVars ? `${varsCount} Variations` : "Add Variations"}</span>
+                                <span className="text-slate-400 font-bold text-base">›</span>
+                              </span>
+                            </button>
                           </div>
 
-                          {/* Special Price Periods */}
-                          <button
-                            type="button"
-                            onClick={() => setProductFormSubEditor("special_period")}
-                            className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
-                          >
-                            <span className="text-sm font-bold text-slate-900">Special Price Periods</span>
-                            <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
-                              <span>
-                                {(productForm.specialPriceStart || productForm.specialPriceEnd)
-                                  ? `${productForm.specialPriceStart || "Start"} - ${productForm.specialPriceEnd || "End"}`
-                                  : "Start Date - End Date"}
-                              </span>
-                              <span className="text-slate-400 font-bold text-base">›</span>
-                            </span>
-                          </button>
+                          {/* BLOCK 4: PRICE + STOCK + AVAILABILITY + SPECIAL PRICE + PERIODS */}
+                          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                            {/* 8. Price(BDT) * */}
+                            {hasVars ? (
+                              <button
+                                type="button"
+                                onClick={() => setProductFormSubEditor("variant_details")}
+                                className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 cursor-pointer"
+                              >
+                                <span className="text-sm font-bold text-slate-900">
+                                  Price(BDT) <span className="text-red-500">*</span>
+                                </span>
+                                <span className="text-sm font-bold text-slate-900 flex items-center gap-1">
+                                  <span>{varSum.minRegularPrice > 0 ? `${varSum.minRegularPrice} BDT` : "Set Price"}</span>
+                                  <span className="text-slate-400 font-bold text-base">›</span>
+                                </span>
+                              </button>
+                            ) : (
+                              <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <span className="text-sm font-bold text-slate-900 block">
+                                    Price(BDT) <span className="text-red-500">*</span>
+                                  </span>
+                                  {(!productForm.price || Number(productForm.price) <= 0) && (
+                                    <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    value={productForm.price !== undefined && productForm.price !== null ? productForm.price : ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value.replace(/^0+(?=\d)/, "");
+                                      setProductForm(prev => ({ ...prev, price: val === "" ? "" : Number(val) }));
+                                    }}
+                                    placeholder="0"
+                                    className="w-28 text-right bg-transparent text-sm font-bold text-slate-900 placeholder-slate-400 outline-none"
+                                  />
+                                  <span className="text-xs font-bold text-slate-400">BDT</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 9. Stock * */}
+                            {hasVars ? (
+                              <button
+                                type="button"
+                                onClick={() => setProductFormSubEditor("variant_details")}
+                                className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 cursor-pointer"
+                              >
+                                <span className="text-sm font-bold text-slate-900">
+                                  Stock <span className="text-red-500">*</span>
+                                </span>
+                                <span className="text-sm font-bold text-slate-900 flex items-center gap-1">
+                                  <span>{varSum.totalStock}</span>
+                                  <span className="text-slate-400 font-bold text-base">›</span>
+                                </span>
+                              </button>
+                            ) : (
+                              <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <span className="text-sm font-bold text-slate-900 block">
+                                    Stock <span className="text-red-500">*</span>
+                                  </span>
+                                  {(productForm.stock === "" || productForm.stock === null || productForm.stock === undefined) && (
+                                    <span className="text-[11px] font-semibold text-red-500">This field is required</span>
+                                  )}
+                                </div>
+                                <input
+                                  type="number"
+                                  value={productForm.stock !== undefined && productForm.stock !== null ? productForm.stock : ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/^0+(?=\d)/, "");
+                                    setProductForm(prev => ({ ...prev, stock: val === "" ? "" : Number(val) }));
+                                  }}
+                                  placeholder="0"
+                                  className="w-28 text-right bg-transparent text-sm font-bold text-slate-900 placeholder-slate-400 outline-none"
+                                />
+                              </div>
+                            )}
+
+                            {/* 10. Availability */}
+                            <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between">
+                              <span className="text-sm font-bold text-slate-900">Availability</span>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={productForm.isAvailable !== false}
+                                onClick={() => setProductForm(prev => ({ ...prev, isAvailable: prev.isAvailable === false }))}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${productForm.isAvailable !== false ? "bg-[#f97316]" : "bg-slate-300"}`}
+                              >
+                                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.isAvailable !== false ? "translate-x-5" : "translate-x-0.5"}`} />
+                              </button>
+                            </div>
+
+                            {/* 11. Special Price */}
+                            <div className="px-3.5 sm:px-4 py-3 flex items-center justify-between">
+                              <span className="text-sm font-bold text-slate-900">Special Price</span>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={Boolean(productForm.specialPriceEnabled)}
+                                onClick={() => setProductForm(prev => {
+                                  const nextOn = !prev.specialPriceEnabled;
+                                  const todayIso = new Date().toISOString().split("T")[0];
+                                  const endIso = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+                                  return {
+                                    ...prev,
+                                    specialPriceEnabled: nextOn,
+                                    specialPriceStart: nextOn && !prev.specialPriceStart ? todayIso : prev.specialPriceStart,
+                                    specialPriceEnd: nextOn && !prev.specialPriceEnd ? endIso : prev.specialPriceEnd
+                                  };
+                                })}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${productForm.specialPriceEnabled ? "bg-[#f97316]" : "bg-slate-300"}`}
+                              >
+                                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${productForm.specialPriceEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                              </button>
+                            </div>
+
+                            {productForm.specialPriceEnabled && (
+                              hasVars ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setVariantShowSpecialSettings(true);
+                                    setProductFormSubEditor("variant_details");
+                                  }}
+                                  className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+                                >
+                                  <span className="text-sm font-bold text-slate-900">Special Price(BDT)</span>
+                                  <span className="text-sm text-[#ea580c] font-bold flex items-center gap-1">
+                                    <span>{varSum.minOfferPrice > 0 ? `${varSum.minOfferPrice} BDT` : "Set"}</span>
+                                    <span className="text-slate-400 font-bold text-base">›</span>
+                                  </span>
+                                </button>
+                              ) : (
+                                <>
+                                  {/* Special Price(BDT) */}
+                                  <div className="px-3.5 sm:px-4 py-3 space-y-1">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-bold text-slate-900">Special Price(BDT)</span>
+                                        {Number(productForm.offerPrice) > 0 && Number(productForm.price) > Number(productForm.offerPrice) && (
+                                          <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
+                                            -{Math.round(((Number(productForm.price) - Number(productForm.offerPrice)) / Number(productForm.price)) * 100)}%
+                                          </span>
+                                        )}
+                                      </div>
+                                      <input
+                                        type="number"
+                                        value={productForm.offerPrice !== undefined && productForm.offerPrice !== null ? productForm.offerPrice : ""}
+                                        onChange={(e) => {
+                                          const val = e.target.value.replace(/^0+(?=\d)/, "");
+                                          setProductForm(prev => ({ ...prev, offerPrice: val === "" ? "" : Number(val) }));
+                                        }}
+                                        placeholder="Input"
+                                        className="w-28 text-right bg-transparent text-sm font-bold text-[#ea580c] placeholder-slate-400 outline-none"
+                                      />
+                                    </div>
+                                    <p className="text-[11px] text-slate-500">
+                                      বর্তমান রেগুলার মূল্য: <strong>{Number(productForm.price) || 0} BDT</strong> • ডিসকাউন্টে বিক্রি করতে চাইলে শুধু Special Price লিখুন
+                                    </p>
+                                  </div>
+
+                                  {/* Special Price Periods */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setProductFormSubEditor("special_period")}
+                                    className="w-full px-3.5 sm:px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                                  >
+                                    <span className="text-sm font-bold text-slate-900">Special Price Periods</span>
+                                    <span className="text-sm text-slate-500 font-medium flex items-center gap-1">
+                                      <span>
+                                        {(productForm.specialPriceStart || productForm.specialPriceEnd)
+                                          ? `${productForm.specialPriceStart || "Start"} - ${productForm.specialPriceEnd || "End"}`
+                                          : "Start Date - End Date"}
+                                      </span>
+                                      <span className="text-slate-400 font-bold text-base">›</span>
+                                    </span>
+                                  </button>
+                                </>
+                              )
+                            )}
+                          </div>
                         </>
-                      )}
-                    </div>
+                      );
+                    })()}
 
                     {/* BLOCK 5: SHIPPING INFORMATION * + WARRANTY INFORMATION */}
                     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
@@ -33198,7 +34057,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     if (!productForm.name?.trim()) {
                       return notify("প্রোডাক্টের নাম লিখুন!");
                     }
-                    if (!saveAsDraft && (!productForm.price || Number(productForm.price) <= 0)) {
+                    const finalVars = Array.isArray(productForm.variations) ? productForm.variations : [];
+                    const hasFinalVars = finalVars.length > 0;
+                    const varSummary = hasFinalVars ? summarizeVariations(finalVars) : null;
+                    const resolvedInputRegular = hasFinalVars && varSummary.minRegularPrice > 0
+                      ? varSummary.minRegularPrice
+                      : (Number(productForm.price) || 0);
+
+                    if (!saveAsDraft && resolvedInputRegular <= 0) {
                       return notify("Publish করতে Price(BDT) আবশ্যক!");
                     }
                     const allImages = [...(productForm.images || [])];
@@ -33207,11 +34073,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     }
                     const finalImages = allImages.length > 0 ? allImages : [imgSharee];
 
-                    const cleanRegular = Number(productForm.price) || 0;
-                    const cleanOffer = productForm.specialPriceEnabled ? (Number(productForm.offerPrice) || 0) : 0;
+                    const cleanRegular = resolvedInputRegular;
+                    const cleanOffer = hasFinalVars
+                      ? varSummary.minOfferPrice
+                      : (productForm.specialPriceEnabled ? (Number(productForm.offerPrice) || 0) : 0);
                     const hasValidOffer = cleanOffer > 0 && cleanOffer < cleanRegular;
                     const cleanPrice = hasValidOffer ? cleanOffer : cleanRegular;
-                    const cleanStock = productForm.stock === "" ? 0 : (Number(productForm.stock) || 0);
+                    const cleanStock = hasFinalVars
+                      ? varSummary.totalStock
+                      : (productForm.stock === "" ? 0 : (Number(productForm.stock) || 0));
                     const finalColors = (productForm.colors || []).map(cleanVariation).filter(Boolean);
                     const finalSizes = (productForm.sizes || []).map(cleanVariation).filter(Boolean);
 
@@ -33231,6 +34101,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       stock: cleanStock,
                       colors: finalColors,
                       sizes: finalSizes,
+                      variations: finalVars,
+                      variantImages: (productForm.variantImages && typeof productForm.variantImages === "object") ? productForm.variantImages : {},
+                      variantOrder: Array.isArray(productForm.variantOrder) && productForm.variantOrder.length > 0 ? productForm.variantOrder : ["Size", "Color Family"],
+                      variantImageType: productForm.variantImageType || "Color Family",
                       images: finalImages,
                       videoEnabled: finalVideoEnabled,
                       videoType: normalizedVideoType,
@@ -33241,7 +34115,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       isBestDeal: Boolean(productForm.isBestDeal),
                       isAvailable: productForm.isAvailable !== false,
                       isDraft: Boolean(saveAsDraft),
-                      specialPriceEnabled: Boolean(productForm.specialPriceEnabled),
+                      specialPriceEnabled: hasFinalVars ? varSummary.specialPriceEnabled : Boolean(productForm.specialPriceEnabled),
+                      specialPriceStart: (hasFinalVars ? varSummary.specialPriceStart : productForm.specialPriceStart) || "",
+                      specialPriceEnd: (hasFinalVars ? varSummary.specialPriceEnd : productForm.specialPriceEnd) || "",
                       enabledForPos: productForm.enabledForPos !== false,
                       enabledForWeb: productForm.enabledForWeb !== false
                     };
@@ -34110,10 +34986,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             >
                               <div
                                 className="aspect-square bg-white/90 overflow-hidden relative cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setMediaViewerState({ product: p, activeIndex: 0 });
-                                }}
+                                onClick={openModalProduct}
+                                title="পন্যটি দেখুন"
                               >
                                 <img
                                   src={primaryMedia?.thumbUrl || p.images?.[0] || imgSharee}

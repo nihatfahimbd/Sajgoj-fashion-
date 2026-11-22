@@ -87,6 +87,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.ai.SajgojAiService
 import com.example.data.model.Category
 import com.example.data.model.Product
+import com.example.data.model.ProductVariantHelper
+import com.example.data.model.ProductVariation
 import com.example.util.ProductMediaHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -162,6 +164,12 @@ fun SellerCenterProductFormDialog(
   var colors by remember(product) { mutableStateOf(product?.colors ?: emptyList()) }
   var sizes by remember(product) { mutableStateOf(product?.sizes ?: emptyList()) }
   var ageGroups by remember(product) { mutableStateOf(product?.ageGroups ?: emptyList()) }
+  var variations by remember(product) { mutableStateOf(product?.variations ?: emptyList()) }
+  var variantImages by remember(product) { mutableStateOf(product?.variantImages ?: emptyMap()) }
+  var variantOrder by remember(product) { mutableStateOf(product?.variantOrder ?: listOf("Size", "Color Family")) }
+  var variantImageType by remember(product) { mutableStateOf(product?.variantImageType ?: "Color Family") }
+  var startInVariantDetails by remember { mutableStateOf(false) }
+  var startWithSpecialSettings by remember { mutableStateOf(false) }
   var sku by remember(product) { mutableStateOf(product?.sku ?: "SAJ-${(100..999).random()}") }
   var isHotSale by remember(product) { mutableStateOf(product?.isHotSale ?: false) }
   var isBestDeal by remember(product) { mutableStateOf(product?.isBestDeal ?: false) }
@@ -265,10 +273,15 @@ fun SellerCenterProductFormDialog(
       return
     }
 
-    val finalRegular = regularParsed.coerceAtLeast(0)
-    val finalOffer = if (hasValidOffer) offerParsed else 0
-    val effectivePrice = if (hasValidOffer) finalOffer else finalRegular
-    val cleanStock = (stockStr.toIntOrNull() ?: 0).coerceAtLeast(0)
+    val variantSummary = if (variations.isNotEmpty()) ProductVariantHelper.summarizeVariations(variations) else null
+    val finalRegular = (variantSummary?.minRegularPrice?.takeIf { it > 0 } ?: regularParsed).coerceAtLeast(0)
+    val finalOffer = when {
+      variantSummary != null && variantSummary.minOfferPrice in 1 until finalRegular -> variantSummary.minOfferPrice
+      hasValidOffer -> offerParsed
+      else -> 0
+    }
+    val effectivePrice = if (finalOffer in 1 until finalRegular) finalOffer else finalRegular
+    val cleanStock = (variantSummary?.totalStock ?: (stockStr.toIntOrNull() ?: 0)).coerceAtLeast(0)
     val finalImages = if (imageList.isNotEmpty()) imageList else listOf("res://banner_eid_special_1792530116809")
 
     val cleanVideoUrl = videoUrl.trim()
@@ -311,9 +324,9 @@ fun SellerCenterProductFormDialog(
       attributes = attributes,
       isAvailable = isAvailable,
       isDraft = saveAsDraft,
-      specialPriceEnabled = specialPriceEnabled,
-      specialPriceStart = specialPriceStart.trim(),
-      specialPriceEnd = specialPriceEnd.trim(),
+      specialPriceEnabled = (variantSummary?.specialPriceEnabled ?: specialPriceEnabled),
+      specialPriceStart = (variantSummary?.specialPriceStart?.ifBlank { specialPriceStart } ?: specialPriceStart).trim(),
+      specialPriceEnd = (variantSummary?.specialPriceEnd?.ifBlank { specialPriceEnd } ?: specialPriceEnd).trim(),
       shippingWeightKg = shippingWeightKg.trim(),
       shippingDimensions = shippingDimensions.trim(),
       shippingDangerousGoods = shippingDangerousGoods,
@@ -324,7 +337,11 @@ fun SellerCenterProductFormDialog(
       warrantyPolicy = warrantyPolicy.trim(),
       highlights = highlights,
       enabledForWeb = enabledForWeb,
-      enabledForPos = enabledForPos
+      enabledForPos = enabledForPos,
+      variations = variations,
+      variantImages = variantImages,
+      variantOrder = variantOrder,
+      variantImageType = variantImageType
     )
     onSave(built)
   }
@@ -739,20 +756,28 @@ fun SellerCenterProductFormDialog(
           // =========================================================
           SellerCard {
             // 7. Variants *
+            val enabledVarCount = variations.count { it.enabled }.takeIf { it > 0 } ?: variations.size
             val variantCount = colors.size + sizes.size + ageGroups.size
-            val variantSummary = buildList {
-              if (colors.isNotEmpty()) add("${colors.size} Colors")
-              if (sizes.isNotEmpty()) add("${sizes.size} Sizes")
-              if (ageGroups.isNotEmpty()) add("${ageGroups.size} Ages")
-            }.joinToString(" • ")
+            val variantSummary = when {
+              variations.isNotEmpty() -> "$enabledVarCount Variations"
+              else -> buildList {
+                if (sizes.isNotEmpty()) add("${sizes.size} Sizes")
+                if (colors.isNotEmpty()) add("${colors.size} Colors")
+                if (ageGroups.isNotEmpty()) add("${ageGroups.size} Ages")
+              }.joinToString(" • ")
+            }
 
             SellerNavRow(
               label = "Variants",
               required = true,
-              helperWarning = if (variantCount == 0) "This field is required" else null,
+              helperWarning = if (variantCount == 0 && variations.isEmpty()) "This field is required" else null,
               value = if (variantSummary.isNotBlank()) variantSummary else "Add Variations",
-              valueColor = if (variantSummary.isNotBlank()) SellerOrangeDeep else SellerMutedInk,
-              onClick = { activeSubEditor = SellerSubEditor.VARIANTS }
+              valueColor = if (variations.isNotEmpty()) SellerLabelInk else if (variantSummary.isNotBlank()) SellerOrangeDeep else SellerMutedInk,
+              onClick = {
+                startInVariantDetails = false
+                startWithSpecialSettings = false
+                activeSubEditor = SellerSubEditor.VARIANTS
+              }
             )
           }
 
@@ -760,92 +785,151 @@ fun SellerCenterProductFormDialog(
           // CARD 4: Price(BDT) *, Stock *, Availability, Special Price, Special Price(BDT), Special Price Periods
           // =========================================================
           SellerCard {
-            // 8. Price(BDT) *
-            SellerInlineNumberRow(
-              label = "Price(BDT)",
-              required = true,
-              helperWarning = if (regularParsed <= 0) "This field is required" else null,
-              value = priceStr,
-              placeholder = "BDT",
-              onValueChange = {
-                priceStr = it.filter { ch -> ch.isDigit() }
-                validationError = null
-              },
-              testTag = "product_form_price_input"
-            )
-
-            SellerRowDivider()
-
-            // 9. Stock *
-            SellerInlineNumberRow(
-              label = "Stock",
-              required = true,
-              helperWarning = if (stockStr.isBlank()) "This field is required" else null,
-              value = stockStr,
-              placeholder = "0",
-              onValueChange = {
-                stockStr = it.filter { ch -> ch.isDigit() }
-                validationError = null
-              },
-              testTag = "product_form_stock_input"
-            )
-
-            SellerRowDivider()
-
-            // 10. Availability
-            SellerSwitchRow(
-              label = "Availability",
-              checked = isAvailable,
-              onCheckedChange = { isAvailable = it },
-              testTag = "product_form_availability_switch"
-            )
-
-            SellerRowDivider()
-
-            // 11a. Special Price
-            SellerSwitchRow(
-              label = "Special Price",
-              checked = specialPriceEnabled,
-              onCheckedChange = { specialPriceEnabled = it },
-              testTag = "product_form_special_price_switch"
-            )
-
-            AnimatedVisibility(visible = specialPriceEnabled) {
-              Column {
-                SellerRowDivider()
-                // 11b. Special Price(BDT)
-                SellerInlineNumberRow(
-                  label = "Special Price(BDT)",
-                  required = false,
-                  helperWarning = if (hasValidOffer) {
-                    val pct = ((regularParsed - offerParsed) * 100) / regularParsed
-                    "-$pct% ছাড় (গ্রাহক দেখবে ৳$offerParsed)"
-                  } else null,
-                  helperColor = Color(0xFF059669),
-                  value = offerPriceStr,
-                  placeholder = "Input",
-                  onValueChange = {
-                    offerPriceStr = it.filter { ch -> ch.isDigit() }
-                    if (offerPriceStr.isNotBlank()) specialPriceEnabled = true
-                  },
-                  testTag = "product_form_offer_price_input"
-                )
-
-                SellerRowDivider()
-
-                // 11c. Special Price Periods
-                val periodText = if (specialPriceStart.isNotBlank() || specialPriceEnd.isNotBlank()) {
-                  "${specialPriceStart.ifBlank { "Start" }} - ${specialPriceEnd.ifBlank { "End" }}"
-                } else {
-                  "Start Date - End Date"
+            if (variations.isNotEmpty()) {
+              // Auto-synced summary rows (Screenshots 6 & 8) -> tap jumps to Variation Details
+              SellerNavRow(
+                label = "Price(BDT)",
+                required = true,
+                helperWarning = if (regularParsed <= 0) "This field is required" else null,
+                value = priceStr.ifBlank { "BDT" },
+                valueColor = if (regularParsed > 0) SellerLabelInk else SellerMutedInk,
+                onClick = {
+                  startInVariantDetails = true
+                  startWithSpecialSettings = false
+                  activeSubEditor = SellerSubEditor.VARIANTS
                 }
-                SellerNavRow(
-                  label = "Special Price Periods",
-                  required = false,
-                  value = periodText,
-                  valueColor = if (specialPriceStart.isNotBlank() || specialPriceEnd.isNotBlank()) SellerLabelInk else SellerMutedInk,
-                  onClick = { activeSubEditor = SellerSubEditor.SPECIAL_PERIOD }
-                )
+              )
+
+              SellerRowDivider()
+
+              SellerNavRow(
+                label = "Stock",
+                required = true,
+                helperWarning = if (stockStr.isBlank()) "This field is required" else null,
+                value = stockStr.ifBlank { "0" },
+                valueColor = if (stockStr.isNotBlank()) SellerLabelInk else SellerMutedInk,
+                onClick = {
+                  startInVariantDetails = true
+                  startWithSpecialSettings = false
+                  activeSubEditor = SellerSubEditor.VARIANTS
+                }
+              )
+
+              SellerRowDivider()
+
+              SellerSwitchRow(
+                label = "Availability",
+                checked = isAvailable,
+                onCheckedChange = { isAvailable = it },
+                testTag = "product_form_availability_switch"
+              )
+
+              SellerRowDivider()
+
+              SellerNavRow(
+                label = "Special Price(BDT)",
+                required = false,
+                value = if (hasValidOffer) "$offerParsed BDT" else "Set",
+                valueColor = if (hasValidOffer) Color(0xFF059669) else SellerMutedInk,
+                onClick = {
+                  startInVariantDetails = true
+                  startWithSpecialSettings = true
+                  activeSubEditor = SellerSubEditor.VARIANTS
+                }
+              )
+            } else {
+              // Single / Non-variant Pricing & Stock rows
+              SellerInlineNumberRow(
+                label = "Price(BDT)",
+                required = true,
+                helperWarning = if (regularParsed <= 0) "This field is required" else null,
+                value = priceStr,
+                placeholder = "BDT",
+                onValueChange = {
+                  priceStr = it.filter { ch -> ch.isDigit() }
+                  validationError = null
+                },
+                testTag = "product_form_price_input"
+              )
+
+              SellerRowDivider()
+
+              SellerInlineNumberRow(
+                label = "Stock",
+                required = true,
+                helperWarning = if (stockStr.isBlank()) "This field is required" else null,
+                value = stockStr,
+                placeholder = "0",
+                onValueChange = {
+                  stockStr = it.filter { ch -> ch.isDigit() }
+                  validationError = null
+                },
+                testTag = "product_form_stock_input"
+              )
+
+              SellerRowDivider()
+
+              SellerSwitchRow(
+                label = "Availability",
+                checked = isAvailable,
+                onCheckedChange = { isAvailable = it },
+                testTag = "product_form_availability_switch"
+              )
+
+              SellerRowDivider()
+
+              SellerSwitchRow(
+                label = "Special Price",
+                checked = specialPriceEnabled,
+                onCheckedChange = { enabled ->
+                  specialPriceEnabled = enabled
+                  if (enabled) {
+                    if (specialPriceStart.isBlank()) specialPriceStart = LocalDate.now().toString()
+                    if (specialPriceEnd.isBlank()) specialPriceEnd = LocalDate.now().plusDays(7).toString()
+                  }
+                },
+                testTag = "product_form_special_price_switch"
+              )
+
+              AnimatedVisibility(visible = specialPriceEnabled) {
+                Column {
+                  SellerRowDivider()
+                  SellerInlineNumberRow(
+                    label = "Special Price(BDT)",
+                    required = false,
+                    helperWarning = when {
+                      hasValidOffer -> {
+                        val pct = ((regularParsed - offerParsed) * 100) / regularParsed
+                        "-$pct% ছাড় (গ্রাহক দেখবে ৳$offerParsed)"
+                      }
+                      regularParsed > 0 -> "বর্তমান দাম ৳$regularParsed — শুধু অফার প্রাইস লিখুন"
+                      else -> null
+                    },
+                    helperColor = if (hasValidOffer) Color(0xFF059669) else SellerOrangeDeep,
+                    value = offerPriceStr,
+                    placeholder = if (regularParsed > 0) "$regularParsed (Offer)" else "Input",
+                    onValueChange = {
+                      offerPriceStr = it.filter { ch -> ch.isDigit() }
+                      if (offerPriceStr.isNotBlank()) specialPriceEnabled = true
+                    },
+                    testTag = "product_form_offer_price_input"
+                  )
+
+                  SellerRowDivider()
+
+                  val periodText = if (specialPriceStart.isNotBlank() || specialPriceEnd.isNotBlank()) {
+                    "${specialPriceStart.ifBlank { "Start" }} - ${specialPriceEnd.ifBlank { "End" }}"
+                  } else {
+                    "Start Date - End Date"
+                  }
+                  SellerNavRow(
+                    label = "Special Price Periods",
+                    required = false,
+                    value = periodText,
+                    valueColor = if (specialPriceStart.isNotBlank() || specialPriceEnd.isNotBlank()) SellerLabelInk else SellerMutedInk,
+                    onClick = { activeSubEditor = SellerSubEditor.SPECIAL_PERIOD }
+                  )
+                }
               }
             }
           }
@@ -1272,119 +1356,48 @@ fun SellerCenterProductFormDialog(
     }
 
     SellerSubEditor.VARIANTS -> {
-      SellerSubModal(title = "Variants & Merchandising", onDismiss = { activeSubEditor = SellerSubEditor.NONE }) {
-        var customColorInput by remember { mutableStateOf("") }
-        var customSizeInput by remember { mutableStateOf("") }
-        var customAgeInput by remember { mutableStateOf("") }
-        var showColors by remember { mutableStateOf(true) }
-        var showSizes by remember { mutableStateOf(true) }
-        var showAges by remember { mutableStateOf(ageGroups.isNotEmpty()) }
-
-        OutlinedTextField(
-          value = sku,
-          onValueChange = { sku = it },
-          label = { Text("SKU Code") },
-          singleLine = true,
-          shape = RoundedCornerShape(12.dp),
-          modifier = Modifier.fillMaxWidth()
-        )
-
-        VariantAccordionCard(
-          title = "🎨 কালার (Colors)",
-          count = colors.size,
-          expanded = showColors,
-          accentColor = SellerOrangeDeep,
-          onToggleExpand = { showColors = !showColors },
-          onClear = if (colors.isNotEmpty()) ({ colors = emptyList() }) else null
-        ) {
-          VariantTagSectionContent(
-            selected = colors,
-            presets = listOf("লাল", "মেরুন", "কালো", "সবুজ", "নীল", "গোল্ডেন", "গোলাপী", "সাদা", "হলুদ", "পার্পল"),
-            customInput = customColorInput,
-            onCustomInputChange = { customColorInput = it },
-            placeholder = "নতুন কালার লিখুন...",
-            addButtonText = "+ কালার",
-            activeBg = SellerOrangeDeep,
-            presetSelectedBg = Color(0xFFFFF7ED),
-            presetSelectedFg = SellerOrangeDeep,
-            onAddCustom = {
-              val t = customColorInput.trim()
-              if (t.isNotBlank() && !colors.contains(t)) {
-                colors = colors + t
-                customColorInput = ""
-              }
-            },
-            onToggleItem = { col -> colors = if (colors.contains(col)) colors.filterNot { it == col } else colors + col }
-          )
+      SellerVariantsFlowDialog(
+        initialSizes = sizes,
+        initialColors = colors,
+        initialAgeGroups = ageGroups,
+        initialVariations = variations,
+        initialVariantImages = variantImages,
+        initialVariantOrder = variantOrder,
+        initialVariantImageType = variantImageType,
+        initialSku = sku,
+        defaultPrice = regularParsed,
+        defaultStock = stockStr.toIntOrNull() ?: 0,
+        defaultSpecialPrice = offerParsed,
+        defaultSpecialStart = specialPriceStart,
+        defaultSpecialEnd = specialPriceEnd,
+        startInDetails = startInVariantDetails,
+        startWithSpecialSettings = startWithSpecialSettings,
+        onDismiss = { activeSubEditor = SellerSubEditor.NONE },
+        onCommitAll = { nextSizes, nextColors, nextAges, nextVariations, nextVariantImages, nextOrder, nextImgType ->
+          sizes = nextSizes
+          colors = nextColors
+          ageGroups = nextAges
+          variations = nextVariations
+          variantImages = nextVariantImages
+          variantOrder = nextOrder
+          variantImageType = nextImgType
+          val summary = ProductVariantHelper.summarizeVariations(nextVariations)
+          if (summary.minRegularPrice > 0) {
+            priceStr = summary.minRegularPrice.toString()
+          }
+          stockStr = summary.totalStock.toString()
+          if (summary.specialPriceEnabled && summary.minOfferPrice > 0) {
+            specialPriceEnabled = true
+            offerPriceStr = summary.minOfferPrice.toString()
+            if (summary.specialPriceStart.isNotBlank()) specialPriceStart = summary.specialPriceStart
+            if (summary.specialPriceEnd.isNotBlank()) specialPriceEnd = summary.specialPriceEnd
+          } else {
+            offerPriceStr = ""
+          }
+          validationError = null
+          activeSubEditor = SellerSubEditor.NONE
         }
-
-        VariantAccordionCard(
-          title = "📏 সাইজ (Sizes)",
-          count = sizes.size,
-          expanded = showSizes,
-          accentColor = Color(0xFF2563EB),
-          onToggleExpand = { showSizes = !showSizes },
-          onClear = if (sizes.isNotEmpty()) ({ sizes = emptyList() }) else null
-        ) {
-          VariantTagSectionContent(
-            selected = sizes,
-            presets = listOf("Free Size", "S", "M", "L", "XL", "XXL", "3XL", "28", "30", "32", "34", "36", "38"),
-            customInput = customSizeInput,
-            onCustomInputChange = { customSizeInput = it },
-            placeholder = "নতুন সাইজ লিখুন...",
-            addButtonText = "+ সাইজ",
-            activeBg = Color(0xFF2563EB),
-            presetSelectedBg = Color(0xFFEFF6FF),
-            presetSelectedFg = Color(0xFF1D4ED8),
-            onAddCustom = {
-              val t = customSizeInput.trim()
-              if (t.isNotBlank() && !sizes.contains(t)) {
-                sizes = sizes + t
-                customSizeInput = ""
-              }
-            },
-            onToggleItem = { sz -> sizes = if (sizes.contains(sz)) sizes.filterNot { it == sz } else sizes + sz }
-          )
-        }
-
-        VariantAccordionCard(
-          title = "👶 বাচ্চাদের বয়সের মাপ",
-          count = ageGroups.size,
-          expanded = showAges,
-          accentColor = AdminV2Amber,
-          onToggleExpand = { showAges = !showAges },
-          onClear = if (ageGroups.isNotEmpty()) ({ ageGroups = emptyList() }) else null
-        ) {
-          VariantTagSectionContent(
-            selected = ageGroups,
-            presets = listOf("০-৬ মাস", "৬-১২ মাস", "১-২ বছর", "২-৩ বছর", "৩-৪ বছর", "৫-৬ বছর", "৭-৮ বছর", "৯-১০ বছর"),
-            customInput = customAgeInput,
-            onCustomInputChange = { customAgeInput = it },
-            placeholder = "বয়স লিখুন...",
-            addButtonText = "+ বয়স",
-            activeBg = AdminAmberGradStart,
-            presetSelectedBg = AdminV2AmberSoft,
-            presetSelectedFg = AdminAmberGradStart,
-            onAddCustom = {
-              val t = customAgeInput.trim()
-              if (t.isNotBlank() && !ageGroups.contains(t)) {
-                ageGroups = ageGroups + t
-                customAgeInput = ""
-              }
-            },
-            onToggleItem = { age -> ageGroups = if (ageGroups.contains(age)) ageGroups.filterNot { it == age } else ageGroups + age }
-          )
-        }
-
-        Button(
-          onClick = { activeSubEditor = SellerSubEditor.NONE },
-          colors = ButtonDefaults.buttonColors(containerColor = SellerOrange, contentColor = Color.White),
-          shape = RoundedCornerShape(12.dp),
-          modifier = Modifier.fillMaxWidth().height(46.dp)
-        ) {
-          Text("Done", fontWeight = FontWeight.Bold)
-        }
-      }
+      )
     }
 
     SellerSubEditor.SPECIAL_PERIOD -> {

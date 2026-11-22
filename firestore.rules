@@ -88,6 +88,10 @@ service cloud.firestore {
         (!('sourceUrl' in data) || (data.sourceUrl is string && data.sourceUrl.size() <= 1500)) &&
         (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
         (!('reviewsCount' in data) || (data.reviewsCount is int && data.reviewsCount >= 0)) &&
+        (!('variations' in data) || (data.variations is list && data.variations.size() <= 150)) &&
+        (!('variantImages' in data) || (data.variantImages is map && data.variantImages.size() <= 50)) &&
+        (!('variantOrder' in data) || isValidStringList(data.variantOrder, 10)) &&
+        (!('variantImageType' in data) || (data.variantImageType is string && data.variantImageType.size() <= 40)) &&
         data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
 
@@ -262,6 +266,7 @@ service cloud.firestore {
           'shippingExpressChandpur', 'shippingNote',
           'warrantyType', 'warrantyPeriod', 'warrantyPolicy', 'highlights',
           'enabledForWeb', 'enabledForPos', 'bogo', 'bogoText', 'sourceUrl',
+          'variations', 'variantImages', 'variantOrder', 'variantImageType',
           'rating', 'reviewsCount', 'updatedAt'
         ]) &&
         isValidProduct(incoming());
@@ -282,9 +287,10 @@ service cloud.firestore {
             'shippingExpressChandpur', 'shippingNote',
             'warrantyType', 'warrantyPeriod', 'warrantyPolicy', 'highlights',
             'enabledForWeb', 'enabledForPos', 'bogo', 'bogoText', 'sourceUrl',
+            'variations', 'variantImages', 'variantOrder', 'variantImageType',
             'updatedAt'
           ]) ||
-          incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'stockUpdatedAt', 'lastSyncSource', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'variations', 'stockUpdatedAt', 'lastSyncSource', 'updatedAt']) ||
           incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'reviewsCount', 'updatedAt'])
         );
 

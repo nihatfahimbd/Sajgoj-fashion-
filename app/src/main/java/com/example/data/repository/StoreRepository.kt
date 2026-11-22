@@ -19,6 +19,7 @@ import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
+import com.example.data.model.ProductVariantHelper
 import com.example.data.model.ReelItem
 import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
@@ -888,7 +889,18 @@ class StoreRepository(private val context: Context) {
                 warrantyPolicy = doc.getString("warrantyPolicy") ?: "",
                 highlights = (doc.get("highlights") as? List<*>)?.mapNotNull { it?.toString()?.trim()?.takeIf { s -> s.isNotEmpty() } } ?: emptyList(),
                 enabledForWeb = doc.getBoolean("enabledForWeb") ?: true,
-                enabledForPos = doc.getBoolean("enabledForPos") ?: true
+                enabledForPos = doc.getBoolean("enabledForPos") ?: true,
+                variations = ProductVariantHelper.parseVariations(doc.get("variations")),
+                variantImages = (doc.get("variantImages") as? Map<*, *>)
+                  ?.entries
+                  ?.mapNotNull { (k, v) ->
+                    val ks = k?.toString()?.trim().orEmpty()
+                    val vs = v?.toString()?.trim().orEmpty()
+                    if (ks.isNotBlank() && vs.isNotBlank()) ks to vs else null
+                  }?.toMap() ?: emptyMap(),
+                variantOrder = (doc.get("variantOrder") as? List<*>)?.mapNotNull { it?.toString()?.trim()?.takeIf { s -> s.isNotEmpty() } }?.ifEmpty { listOf("Size", "Color Family") }
+                  ?: listOf("Size", "Color Family"),
+                variantImageType = doc.getString("variantImageType") ?: "Color Family"
               )
             } catch (e: Exception) {
               inventorySyncService.recordSyncError(
@@ -1221,22 +1233,47 @@ class StoreRepository(private val context: Context) {
     size: String = "",
     ageGroup: String = ""
   ): Boolean {
-    if (product.stock <= 0) return false
+    val firstAvailableVar = product.variations.firstOrNull { it.enabled && it.stock > 0 }
+      ?: product.variations.firstOrNull { it.enabled }
+    val resolvedColor = if (color.isBlank() && product.colors.isNotEmpty()) {
+      firstAvailableVar?.color?.takeIf { it.isNotBlank() } ?: product.colors.first()
+    } else color
+    val resolvedSize = if (size.isBlank() && product.sizes.isNotEmpty()) {
+      product.variations.firstOrNull {
+        it.enabled && it.stock > 0 && (resolvedColor.isBlank() || it.color == resolvedColor) && it.size.isNotBlank()
+      }?.size ?: firstAvailableVar?.size?.takeIf { it.isNotBlank() } ?: product.sizes.first()
+    } else size
+    val resolvedAgeGroup = if (ageGroup.isBlank() && product.ageGroups.isNotEmpty()) {
+      firstAvailableVar?.ageGroup?.takeIf { it.isNotBlank() } ?: product.ageGroups.first()
+    } else ageGroup
+
+    val variantStock = ProductVariantHelper.resolveStock(product, resolvedColor, resolvedSize, resolvedAgeGroup)
+    if (variantStock <= 0) return false
+    val (resolvedSellPrice, resolvedRegPrice) = ProductVariantHelper.resolvePricing(product, resolvedColor, resolvedSize, resolvedAgeGroup)
+    val resolvedImg = ProductVariantHelper.resolveImage(product, resolvedColor, resolvedSize)
     val current = _cart.value.toMutableList()
-    val targetKey = "${product.id}_${color}_${size}_${ageGroup}"
+    val targetKey = "${product.id}_${resolvedColor}_${resolvedSize}_${resolvedAgeGroup}"
     val index = current.indexOfFirst { !it.isFreeGift && it.itemKey == targetKey }
     if (index >= 0) {
       val existing = current[index]
-      val newQty = (existing.quantity + quantity).coerceAtMost(product.stock)
-      current[index] = existing.copy(quantity = newQty)
+      val newQty = (existing.quantity + quantity).coerceAtMost(variantStock)
+      current[index] = existing.copy(
+        quantity = newQty,
+        variantPrice = resolvedSellPrice,
+        variantImageUrl = resolvedImg,
+        originalPrice = resolvedRegPrice
+      )
     } else {
       current.add(
         CartItem(
           product = product,
-          quantity = quantity.coerceAtMost(product.stock),
-          selectedColor = color,
-          selectedSize = size,
-          selectedAgeGroup = ageGroup
+          quantity = quantity.coerceAtMost(variantStock),
+          selectedColor = resolvedColor,
+          selectedSize = resolvedSize,
+          selectedAgeGroup = resolvedAgeGroup,
+          originalPrice = resolvedRegPrice,
+          variantPrice = resolvedSellPrice,
+          variantImageUrl = resolvedImg
         )
       )
     }
@@ -1284,7 +1321,12 @@ class StoreRepository(private val context: Context) {
       if (newQty <= 0) {
         current.removeAt(index)
       } else {
-        val maxStock = item.product.stock
+        val maxStock = ProductVariantHelper.resolveStock(
+          item.product,
+          item.selectedColor,
+          item.selectedSize,
+          item.selectedAgeGroup
+        )
         current[index] = item.copy(quantity = newQty.coerceAtMost(maxStock))
       }
       _cart.value = current
@@ -1322,7 +1364,7 @@ class StoreRepository(private val context: Context) {
     val cartItems = _cart.value
     if (cartItems.isEmpty()) return null
 
-    val subtotal = cartItems.filterNot { it.isFreeGift }.sumOf { it.product.price * it.quantity }
+    val subtotal = cartItems.filterNot { it.isFreeGift }.sumOf { it.effectiveUnitPrice * it.quantity }
     val resolvedDeliveryType = if (deliveryType.equals("Express", ignoreCase = true) &&
       BangladeshLocations.isChandpurDistrict(district)
     ) {
@@ -1365,7 +1407,7 @@ class StoreRepository(private val context: Context) {
           productId = it.product.id,
           name = it.product.name,
           quantity = it.quantity,
-          price = if (it.isFreeGift) 0 else it.product.price,
+          price = if (it.isFreeGift) 0 else it.effectiveUnitPrice,
           color = it.selectedColor,
           size = it.selectedSize,
           ageGroup = it.selectedAgeGroup,
@@ -1869,6 +1911,10 @@ class StoreRepository(private val context: Context) {
             "enabledForWeb" to stamped.enabledForWeb,
             "enabledForPos" to stamped.enabledForPos,
             "sourceUrl" to stamped.sourceUrl,
+            "variations" to stamped.variations.map(ProductVariantHelper::variationToMap),
+            "variantImages" to stamped.variantImages,
+            "variantOrder" to stamped.variantOrder,
+            "variantImageType" to stamped.variantImageType,
             "updatedAt" to FieldValue.serverTimestamp()
           )
         )?.addOnFailureListener { e ->
@@ -1959,6 +2005,10 @@ class StoreRepository(private val context: Context) {
             "enabledForWeb" to stamped.enabledForWeb,
             "enabledForPos" to stamped.enabledForPos,
             "sourceUrl" to stamped.sourceUrl,
+            "variations" to stamped.variations.map(ProductVariantHelper::variationToMap),
+            "variantImages" to stamped.variantImages,
+            "variantOrder" to stamped.variantOrder,
+            "variantImageType" to stamped.variantImageType,
             "updatedAt" to FieldValue.serverTimestamp()
           ),
           SetOptions.merge()

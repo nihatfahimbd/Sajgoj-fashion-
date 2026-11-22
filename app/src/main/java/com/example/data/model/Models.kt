@@ -1,5 +1,19 @@
 package com.example.data.model
 
+data class ProductVariation(
+  val id: String = "",
+  val size: String = "",
+  val color: String = "",
+  val ageGroup: String = "",
+  val price: Int = 0,
+  val specialPrice: Int = 0,
+  val specialPriceStart: String = "",
+  val specialPriceEnd: String = "",
+  val stock: Int = 0,
+  val enabled: Boolean = true,
+  val sku: String = ""
+)
+
 data class Product(
   val id: String,
   val name: String,
@@ -45,7 +59,11 @@ data class Product(
   val warrantyPolicy: String = "",
   val highlights: List<String> = emptyList(),
   val enabledForWeb: Boolean = true,
-  val enabledForPos: Boolean = true
+  val enabledForPos: Boolean = true,
+  val variations: List<ProductVariation> = emptyList(),
+  val variantImages: Map<String, String> = emptyMap(),
+  val variantOrder: List<String> = listOf("Size", "Color Family"),
+  val variantImageType: String = "Color Family"
 )
 
 data class HomeSectionConfig(
@@ -103,7 +121,9 @@ data class CartItem(
   val selectedAgeGroup: String = "",
   val isFreeGift: Boolean = false,
   val freeGiftOriginId: String = "",
-  val originalPrice: Int = 0
+  val originalPrice: Int = 0,
+  val variantPrice: Int = 0,
+  val variantImageUrl: String = ""
 ) {
   val itemKey: String
     get() = if (isFreeGift) {
@@ -111,6 +131,211 @@ data class CartItem(
     } else {
       "${product.id}_${selectedColor}_${selectedSize}_${selectedAgeGroup}"
     }
+
+  val effectiveUnitPrice: Int
+    get() = when {
+      isFreeGift -> 0
+      variantPrice > 0 -> variantPrice
+      else -> product.price
+    }
+
+  val effectiveImageUrl: String
+    get() = variantImageUrl.ifBlank { product.imageUrl }
+}
+
+data class VariantSummaryResult(
+  val totalStock: Int,
+  val minRegularPrice: Int,
+  val minOfferPrice: Int,
+  val effectiveSellingPrice: Int,
+  val specialPriceEnabled: Boolean,
+  val specialPriceStart: String,
+  val specialPriceEnd: String
+)
+
+object ProductVariantHelper {
+  fun findVariation(
+    product: Product,
+    color: String,
+    size: String,
+    ageGroup: String = ""
+  ): ProductVariation? {
+    if (product.variations.isEmpty()) return null
+    val normC = color.trim()
+    val normS = size.trim()
+    val normA = ageGroup.trim()
+    return product.variations.firstOrNull { v ->
+      (v.color.isBlank() || normC.isBlank() || v.color.equals(normC, ignoreCase = true)) &&
+        (v.size.isBlank() || normS.isBlank() || v.size.equals(normS, ignoreCase = true)) &&
+        (v.ageGroup.isBlank() || normA.isBlank() || v.ageGroup.equals(normA, ignoreCase = true)) &&
+        (v.color.equals(normC, ignoreCase = true) || (v.color.isBlank() && normC.isBlank())) &&
+        (v.size.equals(normS, ignoreCase = true) || (v.size.isBlank() && normS.isBlank()))
+    } ?: product.variations.firstOrNull { v ->
+      val cMatch = normC.isBlank() || v.color.equals(normC, ignoreCase = true)
+      val sMatch = normS.isBlank() || v.size.equals(normS, ignoreCase = true)
+      cMatch && sMatch
+    }
+  }
+
+  fun isWithinDatePeriod(start: String, end: String, todayIso: String = ""): Boolean {
+    val s = start.trim()
+    val e = end.trim()
+    if (s.isBlank() && e.isBlank()) return true
+    val refDate = todayIso.ifBlank {
+      try {
+        java.time.LocalDate.now().toString()
+      } catch (_: Exception) {
+        ""
+      }
+    }
+    if (refDate.isBlank()) return true
+    if (s.isNotBlank() && refDate < s) return false
+    if (e.isNotBlank() && refDate > e) return false
+    return true
+  }
+
+  fun resolvePricing(
+    product: Product,
+    color: String,
+    size: String,
+    ageGroup: String = "",
+    todayIso: String = ""
+  ): Pair<Int, Int> {
+    val matched = findVariation(product, color, size, ageGroup)
+    if (matched != null && matched.price > 0) {
+      val reg = matched.price
+      val start = matched.specialPriceStart.ifBlank { product.specialPriceStart }
+      val end = matched.specialPriceEnd.ifBlank { product.specialPriceEnd }
+      val validSpecial = matched.specialPrice in 1 until reg && isWithinDatePeriod(start, end, todayIso)
+      val sell = if (validSpecial) matched.specialPrice else reg
+      return sell to reg
+    }
+    val reg = if (product.regularPrice > product.price) product.regularPrice else product.price
+    val periodOk = isWithinDatePeriod(product.specialPriceStart, product.specialPriceEnd, todayIso)
+    val offer = if (product.specialPriceEnabled && product.offerPrice in 1 until reg && periodOk) {
+      product.offerPrice
+    } else {
+      0
+    }
+    val sell = if (offer > 0) offer else product.price
+    return sell to reg
+  }
+
+  fun resolveStock(
+    product: Product,
+    color: String,
+    size: String,
+    ageGroup: String = ""
+  ): Int {
+    if (product.variations.isEmpty()) return product.stock.coerceAtLeast(0)
+    val matched = findVariation(product, color, size, ageGroup)
+    return if (matched != null) {
+      if (matched.enabled) matched.stock.coerceAtLeast(0) else 0
+    } else {
+      product.stock.coerceAtLeast(0)
+    }
+  }
+
+  fun resolveImage(product: Product, color: String, size: String = ""): String {
+    if (color.isNotBlank()) {
+      product.variantImages[color]?.takeIf { it.isNotBlank() }?.let { return it }
+    }
+    if (size.isNotBlank()) {
+      product.variantImages[size]?.takeIf { it.isNotBlank() }?.let { return it }
+    }
+    return product.imageUrl
+  }
+
+  fun summarizeVariations(variations: List<ProductVariation>): VariantSummaryResult {
+    val active = variations.filter { it.enabled }
+    val totalStock = active.sumOf { it.stock.coerceAtLeast(0) }
+    val positivePrices = active.mapNotNull { it.price.takeIf { p -> p > 0 } }
+    val minReg = positivePrices.minOrNull() ?: 0
+    val validSpecials = active.filter { it.price > 0 && it.specialPrice in 1 until it.price }
+    val minOffer = validSpecials.minOfOrNull { it.specialPrice } ?: 0
+    val firstStart = validSpecials.firstOrNull { it.specialPriceStart.isNotBlank() }?.specialPriceStart ?: ""
+    val firstEnd = validSpecials.firstOrNull { it.specialPriceEnd.isNotBlank() }?.specialPriceEnd ?: ""
+    val effSelling = if (minOffer > 0) minOffer else minReg
+    return VariantSummaryResult(
+      totalStock = totalStock,
+      minRegularPrice = minReg,
+      minOfferPrice = minOffer,
+      effectiveSellingPrice = effSelling,
+      specialPriceEnabled = minOffer > 0,
+      specialPriceStart = firstStart,
+      specialPriceEnd = firstEnd
+    )
+  }
+
+  fun applyVariantStockDeltas(
+    product: Product,
+    variantDeltas: List<Triple<String, String, Int>>,
+    fallbackTotalDelta: Int
+  ): Product {
+    if (product.variations.isEmpty()) {
+      return product.copy(stock = (product.stock + fallbackTotalDelta).coerceAtLeast(0))
+    }
+    val hasSpecificVariants = variantDeltas.any { it.first.isNotBlank() || it.second.isNotBlank() }
+    if (!hasSpecificVariants) {
+      return product.copy(stock = (product.stock + fallbackTotalDelta).coerceAtLeast(0))
+    }
+    var remainingList = product.variations.toMutableList()
+    var appliedAny = false
+    variantDeltas.forEach { (col, sz, d) ->
+      if (d == 0) return@forEach
+      val idx = remainingList.indexOfFirst { v ->
+        (col.isBlank() || v.color.equals(col, ignoreCase = true)) &&
+          (sz.isBlank() || v.size.equals(sz, ignoreCase = true) || v.ageGroup.equals(sz, ignoreCase = true))
+      }
+      if (idx >= 0) {
+        val current = remainingList[idx]
+        remainingList[idx] = current.copy(stock = (current.stock + d).coerceAtLeast(0))
+        appliedAny = true
+      }
+    }
+    if (!appliedAny) {
+      return product.copy(stock = (product.stock + fallbackTotalDelta).coerceAtLeast(0))
+    }
+    val recalculatedTotal = remainingList.filter { it.enabled }.sumOf { it.stock.coerceAtLeast(0) }
+    return product.copy(
+      variations = remainingList,
+      stock = recalculatedTotal
+    )
+  }
+
+  fun variationToMap(v: ProductVariation): Map<String, Any> = mapOf(
+    "id" to v.id,
+    "size" to v.size,
+    "color" to v.color,
+    "ageGroup" to v.ageGroup,
+    "price" to v.price,
+    "specialPrice" to v.specialPrice,
+    "specialPriceStart" to v.specialPriceStart,
+    "specialPriceEnd" to v.specialPriceEnd,
+    "stock" to v.stock,
+    "enabled" to v.enabled,
+    "sku" to v.sku
+  )
+
+  fun parseVariations(raw: Any?): List<ProductVariation> {
+    val list = raw as? List<*> ?: return emptyList()
+    return list.mapIndexedNotNull { idx, item ->
+      val m = item as? Map<*, *> ?: return@mapIndexedNotNull null
+      ProductVariation(
+        id = m["id"]?.toString()?.ifBlank { "var_$idx" } ?: "var_$idx",
+        size = m["size"]?.toString() ?: "",
+        color = m["color"]?.toString() ?: "",
+        ageGroup = m["ageGroup"]?.toString() ?: "",
+        price = (m["price"] as? Number)?.toInt() ?: m["price"]?.toString()?.toIntOrNull() ?: 0,
+        specialPrice = (m["specialPrice"] as? Number)?.toInt() ?: m["specialPrice"]?.toString()?.toIntOrNull() ?: 0,
+        specialPriceStart = m["specialPriceStart"]?.toString() ?: "",
+        specialPriceEnd = m["specialPriceEnd"]?.toString() ?: "",
+        stock = ((m["stock"] as? Number)?.toInt() ?: m["stock"]?.toString()?.toIntOrNull() ?: 0).coerceAtLeast(0),
+        enabled = (m["enabled"] as? Boolean) ?: true,
+        sku = m["sku"]?.toString() ?: ""
+      )
+    }
+  }
 }
 
 data class OrderItem(

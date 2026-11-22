@@ -3,6 +3,7 @@ package com.example.data.sync
 import android.content.SharedPreferences
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
+import com.example.data.model.ProductVariation
 import com.example.data.model.SyncErrorLog
 import org.json.JSONArray
 import org.json.JSONObject
@@ -253,7 +254,11 @@ class LocalInventoryStorageSync(
               videoType = o.optString("videoType", "upload"),
               videoUrl = o.optString("videoUrl", ""),
               videoThumbUrl = o.optString("videoThumbUrl", ""),
-              additionalImages = jsonArrayToStrings(o.optJSONArray("additionalImages"))
+              additionalImages = jsonArrayToStrings(o.optJSONArray("additionalImages")),
+              variations = jsonArrayToVariations(o.optJSONArray("variations")),
+              variantImages = jsonObjectToStringMap(o.optJSONObject("variantImages")),
+              variantOrder = jsonArrayToStrings(o.optJSONArray("variantOrder")).ifEmpty { listOf("Size", "Color Family") },
+              variantImageType = o.optString("variantImageType", "Color Family")
             )
           )
         }
@@ -426,6 +431,10 @@ class LocalInventoryStorageSync(
         put("videoUrl", p.videoUrl)
         put("videoThumbUrl", p.videoThumbUrl)
         put("additionalImages", JSONArray(p.additionalImages))
+        put("variations", variationsToJsonArray(p.variations))
+        put("variantImages", stringMapToJsonObject(p.variantImages))
+        put("variantOrder", JSONArray(p.variantOrder))
+        put("variantImageType", p.variantImageType)
       }
       arr.put(o)
     }
@@ -469,5 +478,71 @@ class LocalInventoryStorageSync(
         if (v.isNotBlank()) add(v)
       }
     }
+  }
+
+  private fun variationsToJsonArray(variations: List<ProductVariation>): JSONArray {
+    val arr = JSONArray()
+    variations.forEach { v ->
+      arr.put(
+        JSONObject().apply {
+          put("id", v.id)
+          put("size", v.size)
+          put("color", v.color)
+          put("ageGroup", v.ageGroup)
+          put("price", v.price)
+          put("specialPrice", v.specialPrice)
+          put("specialPriceStart", v.specialPriceStart)
+          put("specialPriceEnd", v.specialPriceEnd)
+          put("stock", v.stock)
+          put("enabled", v.enabled)
+          put("sku", v.sku)
+        }
+      )
+    }
+    return arr
+  }
+
+  private fun jsonArrayToVariations(arr: JSONArray?): List<ProductVariation> {
+    if (arr == null) return emptyList()
+    return buildList {
+      for (i in 0 until arr.length()) {
+        val o = arr.optJSONObject(i) ?: continue
+        add(
+          ProductVariation(
+            id = o.optString("id", "var_$i"),
+            size = o.optString("size", ""),
+            color = o.optString("color", ""),
+            ageGroup = o.optString("ageGroup", ""),
+            price = o.optInt("price", 0),
+            specialPrice = o.optInt("specialPrice", 0),
+            specialPriceStart = o.optString("specialPriceStart", ""),
+            specialPriceEnd = o.optString("specialPriceEnd", ""),
+            stock = o.optInt("stock", 0).coerceAtLeast(0),
+            enabled = o.optBoolean("enabled", true),
+            sku = o.optString("sku", "")
+          )
+        )
+      }
+    }
+  }
+
+  private fun stringMapToJsonObject(map: Map<String, String>): JSONObject {
+    val obj = JSONObject()
+    map.forEach { (k, v) ->
+      if (k.isNotBlank() && v.isNotBlank()) obj.put(k, v)
+    }
+    return obj
+  }
+
+  private fun jsonObjectToStringMap(obj: JSONObject?): Map<String, String> {
+    if (obj == null) return emptyMap()
+    val result = linkedMapOf<String, String>()
+    val keys = obj.keys()
+    while (keys.hasNext()) {
+      val k = keys.next()
+      val v = obj.optString(k, "")
+      if (k.isNotBlank() && v.isNotBlank()) result[k] = v
+    }
+    return result
   }
 }

@@ -69,6 +69,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.Product
 import com.example.data.model.ProductReview
+import com.example.data.model.ProductVariantHelper
 import com.example.data.model.StoreConfig
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.AntiqueGoldDark
@@ -89,15 +90,36 @@ fun ProductDetailDialog(
   onAddReview: (rating: Int, customerName: String, comment: String) -> Unit = { _, _, _ -> },
   onAskAiForProduct: (Product) -> Unit = {}
 ) {
+  val initialVariation = remember(product.id) {
+    product.variations.firstOrNull { it.enabled && it.stock > 0 }
+      ?: product.variations.firstOrNull { it.enabled }
+  }
   var quantity by remember { mutableIntStateOf(1) }
-  var selectedColor by remember { mutableStateOf(product.colors.firstOrNull() ?: "") }
-  var selectedSize by remember { mutableStateOf(product.sizes.firstOrNull() ?: "") }
-  var selectedAgeGroup by remember { mutableStateOf(product.ageGroups.firstOrNull() ?: "") }
+  var selectedColor by remember {
+    mutableStateOf(initialVariation?.color?.takeIf { it.isNotBlank() } ?: product.colors.firstOrNull() ?: "")
+  }
+  var selectedSize by remember {
+    mutableStateOf(initialVariation?.size?.takeIf { it.isNotBlank() } ?: product.sizes.firstOrNull() ?: "")
+  }
+  var selectedAgeGroup by remember {
+    mutableStateOf(initialVariation?.ageGroup?.takeIf { it.isNotBlank() } ?: product.ageGroups.firstOrNull() ?: "")
+  }
   var selectionError by remember { mutableStateOf<String?>(null) }
+  var preferVariantHeroPhoto by remember { mutableStateOf(false) }
 
   val mediaGallery = remember(product) { ProductMediaHelper.buildMediaGallery(product) }
   var selectedMediaIdx by remember(product.id) { mutableIntStateOf(0) }
   var showOriginalMediaViewer by remember { mutableStateOf(false) }
+
+  val (liveSellPrice, liveRegPrice) = remember(product, selectedColor, selectedSize, selectedAgeGroup) {
+    ProductVariantHelper.resolvePricing(product, selectedColor, selectedSize, selectedAgeGroup)
+  }
+  val liveStock = remember(product, selectedColor, selectedSize, selectedAgeGroup) {
+    ProductVariantHelper.resolveStock(product, selectedColor, selectedSize, selectedAgeGroup)
+  }
+  val activeVariantImg = remember(product, selectedColor, selectedSize) {
+    ProductVariantHelper.resolveImage(product, selectedColor, selectedSize)
+  }
 
   // Review Form States
   var isReviewFormOpen by remember { mutableStateOf(false) }
@@ -180,8 +202,13 @@ fun ProductDetailDialog(
               .clickable { showOriginalMediaViewer = true }
               .testTag("product_detail_media_box")
           ) {
+            val heroImageModel = if (preferVariantHeroPhoto && activeVariantImg.isNotBlank()) {
+              activeVariantImg
+            } else {
+              activeMedia?.thumbUrl ?: product.imageUrl
+            }
             AppImage(
-              model = activeMedia?.thumbUrl ?: product.imageUrl,
+              model = heroImageModel,
               contentDescription = product.name,
               modifier = Modifier.fillMaxSize()
             )
@@ -271,10 +298,13 @@ fun ProductDetailDialog(
                     .clip(RoundedCornerShape(12.dp))
                     .border(
                       width = if (isSelected) 2.dp else 1.dp,
-                      color = if (isSelected) RoyalMaroon else BorderGold,
+                      color = if (!preferVariantHeroPhoto && isSelected) RoyalMaroon else BorderGold,
                       shape = RoundedCornerShape(12.dp)
                     )
-                    .clickable { selectedMediaIdx = idx }
+                    .clickable {
+                      preferVariantHeroPhoto = false
+                      selectedMediaIdx = idx
+                    }
                 ) {
                   AppImage(
                     model = item.thumbUrl,
@@ -333,14 +363,14 @@ fun ProductDetailDialog(
               horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
               Text(
-                text = "${product.price} ৳",
+                text = "$liveSellPrice ৳",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = RoyalMaroon
               )
-              if (product.regularPrice > product.price) {
+              if (liveRegPrice > liveSellPrice) {
                 Text(
-                  text = "${product.regularPrice} ৳",
+                  text = "$liveRegPrice ৳",
                   fontSize = 14.sp,
                   fontWeight = FontWeight.SemiBold,
                   color = Color.Gray,
@@ -489,18 +519,18 @@ fun ProductDetailDialog(
           }
 
           // ------------------------------------------
-          // COLOR SELECTION (যদি কালার অপশন থাকে)
+          // COLOR FAMILY SELECTION WITH VARIANT PHOTOS ABOVE SIZE (Screenshot 2.1)
           // ------------------------------------------
           if (product.colors.isNotEmpty()) {
             Spacer(modifier = Modifier.height(14.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Text(
-                  text = "কালার নির্বাচন করুন:",
+                  text = "কালার নির্বাচন করুন (Color Family):",
                   fontSize = 13.sp,
                   fontWeight = FontWeight.Bold,
                   color = RoyalMaroon
@@ -522,44 +552,99 @@ fun ProductDetailDialog(
                 }
               }
 
+              val hasColorImages = product.colors.any { !product.variantImages[it].isNullOrBlank() }
               Row(
                 modifier = Modifier
                   .fillMaxWidth()
-                  .padding(top = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                  .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
               ) {
                 product.colors.forEach { col ->
                   val isSelected = selectedColor == col
-                  Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) RoyalMaroon else CreamSurface,
-                    border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
-                    modifier = Modifier
-                      .clickable {
-                        selectedColor = col
-                        selectionError = null
-                      }
-                      .testTag("color_option_$col")
-                  ) {
-                    Row(
-                      modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(4.dp)
+                  val thumb = product.variantImages[col]?.takeIf { it.isNotBlank() }
+                  if (hasColorImages || !thumb.isNullOrBlank()) {
+                    Surface(
+                      shape = RoundedCornerShape(10.dp),
+                      color = Color.White,
+                      border = BorderStroke(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) Color(0xFFF97316) else BorderGold
+                      ),
+                      modifier = Modifier
+                        .width(86.dp)
+                        .clickable {
+                          selectedColor = col
+                          preferVariantHeroPhoto = true
+                          selectionError = null
+                          val newMax = ProductVariantHelper.resolveStock(product, col, selectedSize, selectedAgeGroup)
+                          if (newMax > 0 && quantity > newMax) quantity = newMax
+                        }
+                        .testTag("color_option_$col")
                     ) {
-                      if (isSelected) {
-                        Icon(
-                          imageVector = Icons.Default.CheckCircle,
-                          contentDescription = null,
-                          tint = Color.White,
-                          modifier = Modifier.size(13.dp)
+                      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                          modifier = Modifier
+                            .fillMaxWidth()
+                            .height(74.dp)
+                            .background(Color(0xFFF8FAFC))
+                        ) {
+                          AppImage(
+                            model = thumb ?: product.imageUrl,
+                            contentDescription = col,
+                            modifier = Modifier.fillMaxSize()
+                          )
+                        }
+                        Box(
+                          modifier = Modifier
+                            .fillMaxWidth()
+                            .background(if (isSelected) Color(0xFFFFF7ED) else CreamSurface)
+                            .padding(horizontal = 4.dp, vertical = 5.dp),
+                          contentAlignment = Alignment.Center
+                        ) {
+                          Text(
+                            text = col,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color(0xFFEA580C) else DarkEspresso,
+                            maxLines = 1
+                          )
+                        }
+                      }
+                    }
+                  } else {
+                    Surface(
+                      shape = RoundedCornerShape(12.dp),
+                      color = if (isSelected) RoyalMaroon else CreamSurface,
+                      border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+                      modifier = Modifier
+                        .clickable {
+                          selectedColor = col
+                          selectionError = null
+                          val newMax = ProductVariantHelper.resolveStock(product, col, selectedSize, selectedAgeGroup)
+                          if (newMax > 0 && quantity > newMax) quantity = newMax
+                        }
+                        .testTag("color_option_$col")
+                    ) {
+                      Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                      ) {
+                        if (isSelected) {
+                          Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(13.dp)
+                          )
+                        }
+                        Text(
+                          text = col,
+                          fontSize = 12.sp,
+                          fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                          color = if (isSelected) Color.White else DarkEspresso
                         )
                       }
-                      Text(
-                        text = col,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else DarkEspresso
-                      )
                     }
                   }
                 }
@@ -579,7 +664,7 @@ fun ProductDetailDialog(
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Text(
-                  text = "সাইজ নির্বাচন করুন:",
+                  text = "সাইজ নির্বাচন করুন (Size):",
                   fontSize = 13.sp,
                   fontWeight = FontWeight.Bold,
                   color = RoyalMaroon
@@ -604,31 +689,46 @@ fun ProductDetailDialog(
               Row(
                 modifier = Modifier
                   .fillMaxWidth()
+                  .horizontalScroll(rememberScrollState())
                   .padding(top = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
               ) {
                 product.sizes.forEach { sz ->
                   val isSelected = selectedSize == sz
+                  val sizeStock = ProductVariantHelper.resolveStock(product, selectedColor, sz, selectedAgeGroup)
+                  val inStock = sizeStock > 0
                   Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) DarkEspresso else Color.White,
-                    border = BorderStroke(1.dp, if (isSelected) DarkEspresso else BorderGold),
+                    shape = RoundedCornerShape(10.dp),
+                    color = when {
+                      isSelected -> Color(0xFFFFF7ED)
+                      !inStock -> Color(0xFFF1F5F9)
+                      else -> Color.White
+                    },
+                    border = BorderStroke(
+                      width = if (isSelected) 1.5.dp else 1.dp,
+                      color = if (isSelected) Color(0xFFF97316) else if (inStock) BorderGold else Color(0xFFE2E8F0)
+                    ),
                     modifier = Modifier
                       .clickable {
                         selectedSize = sz
                         selectionError = null
+                        if (sizeStock > 0 && quantity > sizeStock) quantity = sizeStock
                       }
                       .testTag("size_option_$sz")
                   ) {
                     Box(
-                      modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                      modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                       contentAlignment = Alignment.Center
                     ) {
                       Text(
-                        text = sz,
+                        text = if (inStock || product.variations.isEmpty()) sz else "$sz (শেষ)",
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else DarkEspresso
+                        color = when {
+                          isSelected -> Color(0xFFEA580C)
+                          !inStock && product.variations.isNotEmpty() -> Color.Gray
+                          else -> DarkEspresso
+                        }
                       )
                     }
                   }
@@ -728,13 +828,21 @@ fun ProductDetailDialog(
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
             Text(
-              text = if (product.stock > 0) "স্টক আছে (${product.stock} পিস)" else "স্টক আউট",
+              text = when {
+                liveStock <= 0 -> "স্টক আউট"
+                liveStock <= 5 -> "⏰ প্রায় শেষ! মাত্র $liveStock পিস বাকি"
+                else -> "স্টক আছে ($liveStock পিস)"
+              },
               fontSize = 12.sp,
               fontWeight = FontWeight.Bold,
-              color = if (product.stock > 0) Color(0xFF2E7D32) else Color.Red
+              color = when {
+                liveStock <= 0 -> Color.Red
+                liveStock <= 5 -> Color(0xFFEA580C)
+                else -> Color(0xFF2E7D32)
+              }
             )
 
-            if (product.stock > 0) {
+            if (liveStock > 0) {
               Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -758,7 +866,7 @@ fun ProductDetailDialog(
                 )
 
                 IconButton(
-                  onClick = { if (quantity < product.stock) quantity++ },
+                  onClick = { if (quantity < liveStock) quantity++ },
                   modifier = Modifier.size(28.dp)
                 ) {
                   Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(16.dp))
@@ -794,10 +902,14 @@ fun ProductDetailDialog(
                 selectionError = "অনুগ্রহ করে বাচ্চার বয়স নির্বাচন করুন!"
                 return@Button
               }
+              if (liveStock <= 0) {
+                selectionError = "নির্বাচিত ভ্যারিয়েন্টটি বর্তমানে স্টক আউট!"
+                return@Button
+              }
               onAddToCart(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
               onDismiss()
             },
-            enabled = product.stock > 0,
+            enabled = liveStock > 0,
             colors = ButtonDefaults.buttonColors(
               containerColor = RoyalMaroon,
               contentColor = Color.White
@@ -811,7 +923,7 @@ fun ProductDetailDialog(
             Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-              text = "কার্টে যোগ করুন (${product.price * quantity} ৳)",
+              text = if (liveStock > 0) "কার্টে যোগ করুন (${liveSellPrice * quantity} ৳)" else "স্টক আউট",
               fontSize = 14.sp,
               fontWeight = FontWeight.Bold
             )
