@@ -474,18 +474,27 @@ fun ProductDetailDialog(
           Spacer(modifier = Modifier.height(12.dp))
 
           // Description Card
-          Box(
+          Column(
             modifier = Modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(14.dp))
               .background(CreamBackground)
-              .padding(12.dp)
+              .border(1.dp, BorderGold.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+              .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
           ) {
+            Text(
+              text = "বিবরণ",
+              fontSize = 12.sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = Color.Black
+            )
             Text(
               text = product.description,
               fontSize = 13.sp,
-              color = DarkEspresso,
-              lineHeight = 18.sp
+              fontWeight = FontWeight.Medium,
+              color = Color.Black,
+              lineHeight = 19.sp
             )
           }
 

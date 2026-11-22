@@ -25915,8 +25915,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           {/* RING & BANGLE SIZE GUIDE MODAL (আংটি ও চুড়ির সাইজ গাইড) */}
           {/* ========================================================= */}
           {isSizeGuideOpen && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
-              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 border border-[#f3e2d0] shadow-2xl space-y-5">
+            <div onClick={() => setIsSizeGuideOpen(false)} className="fixed inset-0 z-[85] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 border border-[#f3e2d0] shadow-2xl space-y-5">
                 {/* Header */}
                 <div className="flex justify-between items-start pb-3 border-b border-[#f3e2d0]">
                   <div className="flex items-center gap-2.5">
@@ -26690,7 +26690,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           {/* CAMERA QR & BARCODE SCANNER MODAL (লাইভ ক্যামেরা স্ক্যানার) */}
           {/* ========================================================= */}
           {isScannerOpen && (
-            <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+            <div className="fixed inset-0 z-[95] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
               <div className="bg-[#1c120c] text-white rounded-3xl w-full max-w-md overflow-hidden border border-[#d4a574]/40 shadow-2xl space-y-4">
                 {/* Header */}
                 <div className="p-4 sm:p-5 bg-gradient-to-r from-[#7a1c2b] to-[#450e18] flex items-center justify-between border-b border-[#d4a574]/30">
@@ -26848,8 +26848,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           {/* PRODUCT QR CODE & SMART TAG MODAL (প্রোডাক্ট কিউআর কোড) */}
           {/* ========================================================= */}
           {qrModalProduct && (
-            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
-              <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden border border-[#f3e2d0] shadow-2xl space-y-4">
+            <div onClick={() => setQrModalProduct(null)} className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto border border-[#f3e2d0] shadow-2xl space-y-4">
                 {/* Header */}
                 <div className="p-4 sm:p-5 bg-gradient-to-r from-[#7a1c2b] to-[#450e18] text-white flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -31628,8 +31628,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       )}
                       <div className="mt-3 bg-[#fffaf5] p-3.5 rounded-2xl border border-[#f3e2d0]">
-                        <h5 className="text-xs font-bold text-[#b8956a] uppercase tracking-wider mb-1">বিবরণ</h5>
-                        <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">{viewProduct.description}</p>
+                        <h5 className="text-xs font-extrabold text-black uppercase tracking-wider mb-1">বিবরণ</h5>
+                        <p className="text-xs sm:text-sm text-black font-medium leading-relaxed whitespace-pre-line">{viewProduct.description}</p>
                       </div>
 
                       <div className="mt-3 flex items-center justify-between text-xs">
@@ -36309,7 +36309,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
           {/* Toast Notification */}
           {toast && (
-            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#2c1810] text-[#fff8f0] px-6 py-3 rounded-full text-xs sm:text-sm font-semibold shadow-2xl border border-[#d4a574] animate-fadeIn">
+            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[120] bg-[#2c1810] text-[#fff8f0] px-6 py-3 rounded-full text-xs sm:text-sm font-semibold shadow-2xl border border-[#d4a574] animate-fadeIn">
               {toast}
             </div>
           )}
