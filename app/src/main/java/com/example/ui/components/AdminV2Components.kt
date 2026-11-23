@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,6 +66,7 @@ fun adminV2GreetingBn(): String {
 private fun adminTabIcon(tab: AdminTab): ImageVector = when (tab) {
   AdminTab.DASHBOARD -> Icons.Default.Dashboard
   AdminTab.HOME_PAGE_SETTING -> Icons.Default.Home
+  AdminTab.PAGE_CONFIG -> Icons.Default.Tune
   AdminTab.PRODUCTS -> Icons.Default.Inventory2
   AdminTab.ORDERS -> Icons.Default.LocalShipping
   AdminTab.SHIPPING_INFO -> Icons.Default.LocalShipping
@@ -82,7 +84,7 @@ fun AdminV2SidebarContent(
   onLogout: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  val overviewTabs = listOf(AdminTab.DASHBOARD, AdminTab.HOME_PAGE_SETTING)
+  val overviewTabs = listOf(AdminTab.DASHBOARD, AdminTab.HOME_PAGE_SETTING, AdminTab.PAGE_CONFIG)
   val managementTabs = listOf(
     AdminTab.PRODUCTS,
     AdminTab.ORDERS,

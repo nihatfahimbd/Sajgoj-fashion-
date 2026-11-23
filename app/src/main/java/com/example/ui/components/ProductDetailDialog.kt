@@ -61,7 +61,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,6 +80,7 @@ import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.parseColorHex
 
 @Composable
 fun ProductDetailDialog(
@@ -136,13 +139,64 @@ fun ProductDetailDialog(
     product.rating
   }
 
+  val dp = storeConfig.pageConfig.detailPage
+  val masterCfg = storeConfig.pageConfig.master
+  val dpFont = resolvePageFontFamily(dp.fontFamily)
+  val cardRadius = dp.cardRadiusPx.coerceIn(0, 32).dp
+  val btnRadius = dp.buttonRadiusPx.coerceIn(0, 50).dp
+  val borderW = dp.borderWidthPx.coerceIn(0, 4).dp
+  val modalBg = parseColorHex(dp.modalBgColor, Color.White)
+  val headerBg = parseColorHex(dp.headerBgColor, Color.White)
+  val headerTextCol = parseColorHex(dp.headerTextColor, RoyalMaroon)
+  val skuCol = parseColorHex(dp.skuTextColor, AntiqueGoldDark)
+  val priceCol = parseColorHex(dp.priceColor, RoyalMaroon)
+  val regPriceCol = parseColorHex(dp.regularPriceColor, Color.Gray)
+  val stockInCol = parseColorHex(dp.stockInColor, Color(0xFF2E7D32))
+  val stockOutCol = parseColorHex(dp.stockOutColor, Color.Red)
+  val descBgCol = parseColorHex(dp.descBlockBg, CreamBackground)
+  val descBorderCol = parseColorHex(dp.descBlockBorder, BorderGold)
+  val descHeadCol = if (masterCfg.highContrastMode) Color.Black else parseColorHex(dp.descHeadingColor, Color.Black)
+  val descTxtCol = if (masterCfg.highContrastMode) Color.Black else parseColorHex(dp.descTextColor, Color.Black)
+  val varBlkBg = parseColorHex(dp.variantBlockBg, CreamSurface)
+  val varBlkBorder = parseColorHex(dp.variantBlockBorder, BorderGold)
+  val varLabelCol = parseColorHex(dp.variantLabelColor, RoyalMaroon)
+  val chipBg = parseColorHex(dp.variantChipBg, Color.White)
+  val chipTxt = parseColorHex(dp.variantChipText, DarkEspresso)
+  val chipBdr = parseColorHex(dp.variantChipBorder, BorderGold)
+  val chipActiveBg = parseColorHex(dp.variantActiveBg, RoyalMaroon)
+  val chipActiveTxt = parseColorHex(dp.variantActiveText, Color.White)
+  val sizeActiveCol = parseColorHex(dp.variantSizeActiveBg, Color(0xFFF97316))
+  val tblHdrBg = parseColorHex(dp.tableHeaderBg, Color(0xFF0F294A))
+  val tblHdrTxt = parseColorHex(dp.tableHeaderText, Color.White)
+  val tblBg = parseColorHex(dp.tableBgColor, Color.White)
+  val tblAltBg = parseColorHex(dp.tableAltRowBg, CreamBackground)
+  val tblTxt = if (masterCfg.highContrastMode) Color.Black else parseColorHex(dp.tableTextColor, Color.Black)
+  val tblBdr = parseColorHex(dp.tableBorderColor, BorderGold)
+  val qtyBlkBg = parseColorHex(dp.qtyBlockBg, Color.White)
+  val qtyBlkBdr = parseColorHex(dp.qtyBlockBorder, BorderGold)
+  val qtyBtnBgCol = parseColorHex(dp.qtyBtnBg, Color(0xFFF3F4F6))
+  val qtyBtnTxtCol = parseColorHex(dp.qtyBtnText, Color(0xFF374151))
+  val atcBgStart = parseColorHex(dp.addToCartBtnBg, RoyalMaroon)
+  val atcBgEnd = parseColorHex(dp.addToCartBtnBgEnd, RoyalMaroon)
+  val atcTxt = parseColorHex(dp.addToCartBtnText, Color.White)
+  val revSecBg = parseColorHex(dp.reviewSectionBg, CreamBackground)
+  val revSecBdr = parseColorHex(dp.reviewSectionBorder, BorderGold)
+  val revCardBgCol = parseColorHex(dp.reviewCardBg, Color.White)
+  val revCardBdrCol = parseColorHex(dp.reviewCardBorder, BorderGold)
+  val revHeadCol = parseColorHex(dp.reviewHeadingColor, RoyalMaroon)
+  val revTxtCol = if (masterCfg.highContrastMode) Color.Black else parseColorHex(dp.reviewTextColor, DarkEspresso)
+  val revBtnBgCol = parseColorHex(dp.reviewBtnBg, Color.Transparent)
+  val revBtnTxtCol = parseColorHex(dp.reviewBtnText, RoyalMaroon)
+  val revBtnBdrCol = parseColorHex(dp.reviewBtnBorder, RoyalMaroon)
+  val currencySym = masterCfg.currencySymbol.ifBlank { "৳" }
+
   Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false)
   ) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = Color.White,
+      color = modalBg,
       modifier = Modifier
         .fillMaxWidth(0.92f)
         .padding(vertical = 24.dp)
@@ -157,13 +211,15 @@ fun ProductDetailDialog(
         Box(
           modifier = Modifier
             .fillMaxWidth()
+            .background(headerBg)
             .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
           Text(
             text = "পণ্যের বিবরণ",
+            fontFamily = dpFont,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = RoyalMaroon,
+            color = headerTextCol,
             modifier = Modifier.align(Alignment.CenterStart)
           )
 
@@ -347,12 +403,15 @@ fun ProductDetailDialog(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Product Details
+        // Product Details (Dynamically ordered via PageConfiguration)
         Column(
           modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
         ) {
+          dp.sectionOrder.filterNot { dp.hiddenSections.contains(it) }.forEach { sectionId ->
+            when (sectionId) {
+              "price" -> {
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -363,17 +422,19 @@ fun ProductDetailDialog(
               horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
               Text(
-                text = "$liveSellPrice ৳",
+                text = "$liveSellPrice $currencySym",
+                fontFamily = dpFont,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = RoyalMaroon
+                color = priceCol
               )
               if (liveRegPrice > liveSellPrice) {
                 Text(
-                  text = "$liveRegPrice ৳",
+                  text = "$liveRegPrice $currencySym",
+                  fontFamily = dpFont,
                   fontSize = 14.sp,
                   fontWeight = FontWeight.SemiBold,
-                  color = Color.Gray,
+                  color = regPriceCol,
                   textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
                 )
               }
@@ -384,7 +445,7 @@ fun ProductDetailDialog(
               horizontalArrangement = Arrangement.spacedBy(4.dp),
               modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
-                .background(CreamSurface)
+                .background(varBlkBg)
                 .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
               Icon(
@@ -395,9 +456,10 @@ fun ProductDetailDialog(
               )
               Text(
                 text = "$avgRating (${if (totalReviews > 0) totalReviews else product.reviewsCount} রিভিউ)",
+                fontFamily = dpFont,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = DarkEspresso
+                color = descTxtCol
               )
             }
           }
@@ -406,25 +468,31 @@ fun ProductDetailDialog(
 
           Text(
             text = product.name,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = DarkEspresso
+            fontFamily = dpFont,
+            fontSize = dp.titleSize.coerceIn(12, 32).sp,
+            fontWeight = if (dp.titleBold) FontWeight.Bold else FontWeight.Normal,
+            fontStyle = if (dp.titleItalic) FontStyle.Italic else FontStyle.Normal,
+            color = headerTextCol
           )
 
           Text(
             text = "SKU: ${product.sku}  |  ক্যাটাগরি: ${product.category}",
+            fontFamily = dpFont,
             fontSize = 11.sp,
-            color = AntiqueGoldDark,
+            color = skuCol,
             fontWeight = FontWeight.Medium
           )
+          Spacer(modifier = Modifier.height(8.dp))
+              }
 
+              "offers" -> {
           // Show Buy 2 Get 1 Free banner ONLY when Admin explicitly selected this product
           val isEligibleB2G1 = storeConfig.b2g1.enabled && storeConfig.b2g1.eligibleProductIds.contains(product.id)
           if (isEligibleB2G1) {
             val giftProd = allProducts.find { it.id == storeConfig.b2g1.freeProductId }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Surface(
-              shape = RoundedCornerShape(14.dp),
+              shape = RoundedCornerShape(cardRadius),
               color = Color(0xFF047857),
               modifier = Modifier
                 .fillMaxWidth()
@@ -441,6 +509,7 @@ fun ProductDetailDialog(
                 ) {
                   Text(
                     text = "🎁 ${storeConfig.b2g1.title} প্রযোজ্য",
+                    fontFamily = dpFont,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White
@@ -464,37 +533,43 @@ fun ProductDetailDialog(
                   } else {
                     storeConfig.b2g1.subtitle
                   },
+                  fontFamily = dpFont,
                   fontSize = 11.sp,
                   color = Color(0xFFECFDF5)
                 )
               }
             }
+            Spacer(modifier = Modifier.height(8.dp))
           }
+              }
 
-          Spacer(modifier = Modifier.height(12.dp))
-
+              "description" -> {
           // Description Card
           Column(
             modifier = Modifier
               .fillMaxWidth()
-              .clip(RoundedCornerShape(14.dp))
-              .background(CreamBackground)
-              .border(1.dp, BorderGold.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+              .clip(RoundedCornerShape(cardRadius))
+              .background(descBgCol)
+              .border(borderW, descBorderCol, RoundedCornerShape(cardRadius))
               .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
           ) {
             Text(
-              text = "বিবরণ",
-              fontSize = 12.sp,
-              fontWeight = FontWeight.ExtraBold,
-              color = Color.Black
+              text = dp.descTitle.ifBlank { "বিবরণ" },
+              fontFamily = dpFont,
+              fontSize = dp.headingSize.coerceIn(10, 24).sp,
+              fontWeight = if (dp.headingBold) FontWeight.ExtraBold else FontWeight.Normal,
+              fontStyle = if (dp.headingItalic) FontStyle.Italic else FontStyle.Normal,
+              color = descHeadCol
             )
             Text(
               text = product.description,
-              fontSize = 13.sp,
-              fontWeight = FontWeight.Medium,
-              color = Color.Black,
-              lineHeight = 19.sp
+              fontFamily = dpFont,
+              fontSize = dp.descSize.coerceIn(10, 24).sp,
+              fontWeight = if (dp.descBold) FontWeight.Bold else FontWeight.Medium,
+              fontStyle = if (dp.descItalic) FontStyle.Italic else FontStyle.Normal,
+              color = descTxtCol,
+              lineHeight = (dp.descSize + 6).sp
             )
           }
 
@@ -503,12 +578,12 @@ fun ProductDetailDialog(
           // AI Styling & Matching Assistant trigger for this item
           OutlinedButton(
             onClick = { onAskAiForProduct(product) },
-            border = BorderStroke(1.dp, RoyalMaroon.copy(alpha = 0.65f)),
+            border = BorderStroke(1.dp, priceCol.copy(alpha = 0.65f)),
             colors = ButtonDefaults.outlinedButtonColors(
-              containerColor = CreamSurface,
-              contentColor = RoyalMaroon
+              containerColor = varBlkBg,
+              contentColor = priceCol
             ),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(btnRadius),
             modifier = Modifier
               .fillMaxWidth()
               .testTag("product_detail_ai_tip_button")
@@ -522,27 +597,117 @@ fun ProductDetailDialog(
             Spacer(modifier = Modifier.width(6.dp))
             Text(
               text = "এই পণ্যের সাথে স্টাইলিং ও ম্যাচিং টিপস দেখুন",
+              fontFamily = dpFont,
               fontSize = 12.sp,
               fontWeight = FontWeight.Bold
             )
           }
+          Spacer(modifier = Modifier.height(10.dp))
+              }
+
+              "specs_table" -> if (masterCfg.showSpecsTableOnDetails) {
+          val specRows = buildList {
+            add("SKU" to product.sku)
+            add("ক্যাটাগরি" to product.category)
+            if (product.brand.isNotBlank() && product.brand != "No Brand") {
+              add("ব্র্যান্ড" to product.brand)
+            }
+            product.attributes.forEach { (k, v) -> if (v.isNotBlank()) add(k to v) }
+            if (product.colors.isNotEmpty()) add("কালার অপশন" to product.colors.joinToString(", "))
+            if (product.sizes.isNotEmpty()) add("সাইজ অপশন" to product.sizes.joinToString(", "))
+            if (product.variations.isNotEmpty()) {
+              val varSummary = product.variations.take(4).joinToString(" | ") { v ->
+                listOf(v.color, v.size).filter { it.isNotBlank() }.joinToString("/") + ": ${v.stock} পিস"
+              }
+              add("ভ্যারিয়েন্ট স্টক" to varSummary)
+            } else {
+              add("মোট স্টক" to "${product.stock} পিস")
+            }
+          }
+          Surface(
+            shape = RoundedCornerShape(cardRadius),
+            color = tblBg,
+            border = BorderStroke(borderW, tblBdr),
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(bottom = 10.dp)
+              .testTag("product_detail_specs_table")
+          ) {
+            Column {
+              Box(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .background(tblHdrBg)
+                  .padding(horizontal = 12.dp, vertical = 8.dp)
+              ) {
+                Text(
+                  text = dp.specsTableTitle.ifBlank { "পণ্যের স্পেসিফিকেশন ও স্টক টেবিল" },
+                  fontFamily = dpFont,
+                  fontSize = (dp.tableSize + 1).coerceIn(10, 22).sp,
+                  fontWeight = FontWeight.Bold,
+                  color = tblHdrTxt
+                )
+              }
+              specRows.forEachIndexed { idx, (k, v) ->
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (idx % 2 == 1) tblAltBg else tblBg)
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                  Text(
+                    text = k,
+                    fontFamily = dpFont,
+                    fontSize = dp.tableSize.coerceIn(9, 20).sp,
+                    fontWeight = if (dp.tableBold) FontWeight.Bold else FontWeight.SemiBold,
+                    fontStyle = if (dp.tableItalic) FontStyle.Italic else FontStyle.Normal,
+                    color = tblTxt,
+                    modifier = Modifier.weight(0.42f)
+                  )
+                  Text(
+                    text = v,
+                    fontFamily = dpFont,
+                    fontSize = dp.tableSize.coerceIn(9, 20).sp,
+                    fontWeight = FontWeight.Bold,
+                    fontStyle = if (dp.tableItalic) FontStyle.Italic else FontStyle.Normal,
+                    color = tblTxt,
+                    modifier = Modifier.weight(0.58f)
+                  )
+                }
+                if (idx < specRows.lastIndex) {
+                  HorizontalDivider(color = tblBdr)
+                }
+              }
+            }
+          }
+              }
+
+              "variants" -> {
 
           // ------------------------------------------
           // COLOR FAMILY SELECTION WITH VARIANT PHOTOS ABOVE SIZE (Screenshot 2.1)
           // ------------------------------------------
           if (product.colors.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(14.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Surface(
+              shape = RoundedCornerShape(cardRadius),
+              color = varBlkBg,
+              border = BorderStroke(borderW, varBlkBorder),
+              modifier = Modifier.fillMaxWidth()
+            ) {
+            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Text(
-                  text = "কালার নির্বাচন করুন (Color Family):",
+                  text = dp.colorLabel.ifBlank { "কালার নির্বাচন করুন (Color Family):" },
+                  fontFamily = dpFont,
                   fontSize = 13.sp,
                   fontWeight = FontWeight.Bold,
-                  color = RoyalMaroon
+                  color = varLabelCol
                 )
                 if (selectedColor.isNotBlank()) {
                   Surface(
@@ -622,9 +787,9 @@ fun ProductDetailDialog(
                     }
                   } else {
                     Surface(
-                      shape = RoundedCornerShape(12.dp),
-                      color = if (isSelected) RoyalMaroon else CreamSurface,
-                      border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+                      shape = RoundedCornerShape(btnRadius),
+                      color = if (isSelected) chipActiveBg else chipBg,
+                      border = BorderStroke(1.dp, if (isSelected) chipActiveBg else chipBdr),
                       modifier = Modifier
                         .clickable {
                           selectedColor = col
@@ -643,15 +808,16 @@ fun ProductDetailDialog(
                           Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = chipActiveTxt,
                             modifier = Modifier.size(13.dp)
                           )
                         }
                         Text(
                           text = col,
+                          fontFamily = dpFont,
                           fontSize = 12.sp,
                           fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                          color = if (isSelected) Color.White else DarkEspresso
+                          color = if (isSelected) chipActiveTxt else chipTxt
                         )
                       }
                     }
@@ -659,13 +825,14 @@ fun ProductDetailDialog(
                 }
               }
             }
+            }
           }
 
           // ------------------------------------------
           // SIZE SELECTION (যদি সাইজ অপশন থাকে)
           // ------------------------------------------
           if (product.sizes.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
               Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -673,10 +840,11 @@ fun ProductDetailDialog(
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Text(
-                  text = "সাইজ নির্বাচন করুন (Size):",
+                  text = dp.sizeLabel.ifBlank { "সাইজ নির্বাচন করুন (Size):" },
+                  fontFamily = dpFont,
                   fontSize = 13.sp,
                   fontWeight = FontWeight.Bold,
-                  color = RoyalMaroon
+                  color = varLabelCol
                 )
                 if (selectedSize.isNotBlank()) {
                   Surface(
@@ -707,15 +875,15 @@ fun ProductDetailDialog(
                   val sizeStock = ProductVariantHelper.resolveStock(product, selectedColor, sz, selectedAgeGroup)
                   val inStock = sizeStock > 0
                   Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(btnRadius),
                     color = when {
-                      isSelected -> Color(0xFFFFF7ED)
+                      isSelected -> sizeActiveCol.copy(alpha = 0.14f)
                       !inStock -> Color(0xFFF1F5F9)
-                      else -> Color.White
+                      else -> chipBg
                     },
                     border = BorderStroke(
                       width = if (isSelected) 1.5.dp else 1.dp,
-                      color = if (isSelected) Color(0xFFF97316) else if (inStock) BorderGold else Color(0xFFE2E8F0)
+                      color = if (isSelected) sizeActiveCol else if (inStock) chipBdr else Color(0xFFE2E8F0)
                     ),
                     modifier = Modifier
                       .clickable {
@@ -731,12 +899,13 @@ fun ProductDetailDialog(
                     ) {
                       Text(
                         text = if (inStock || product.variations.isEmpty()) sz else "$sz (শেষ)",
+                        fontFamily = dpFont,
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = when {
-                          isSelected -> Color(0xFFEA580C)
+                          isSelected -> sizeActiveCol
                           !inStock && product.variations.isNotEmpty() -> Color.Gray
-                          else -> DarkEspresso
+                          else -> chipTxt
                         }
                       )
                     }
@@ -827,63 +996,82 @@ fun ProductDetailDialog(
               }
             }
           }
+              }
 
-          Spacer(modifier = Modifier.height(14.dp))
+              "quantity" -> {
+          Spacer(modifier = Modifier.height(10.dp))
 
           // Stock Info & Quantity Selector
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+          Surface(
+            shape = RoundedCornerShape(cardRadius),
+            color = qtyBlkBg,
+            border = BorderStroke(borderW, qtyBlkBdr),
+            modifier = Modifier.fillMaxWidth()
           ) {
-            Text(
-              text = when {
-                liveStock <= 0 -> "স্টক আউট"
-                liveStock <= 5 -> "⏰ প্রায় শেষ! মাত্র $liveStock পিস বাকি"
-                else -> "স্টক আছে ($liveStock পিস)"
-              },
-              fontSize = 12.sp,
-              fontWeight = FontWeight.Bold,
-              color = when {
-                liveStock <= 0 -> Color.Red
-                liveStock <= 5 -> Color(0xFFEA580C)
-                else -> Color(0xFF2E7D32)
-              }
-            )
-
-            if (liveStock > 0) {
-              Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                  .clip(RoundedCornerShape(20.dp))
-                  .border(1.dp, BorderGold, RoundedCornerShape(20.dp))
-                  .padding(4.dp)
-              ) {
-                IconButton(
-                  onClick = { if (quantity > 1) quantity-- },
-                  modifier = Modifier.size(28.dp)
-                ) {
-                  Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(16.dp))
-                }
-
+            Row(
+              modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+              if (masterCfg.showStockOnDetails) {
                 Text(
-                  text = quantity.toString(),
-                  fontSize = 14.sp,
+                  text = when {
+                    liveStock <= 0 -> dp.stockOutLabel.ifBlank { "স্টক আউট" }
+                    liveStock <= 5 -> "⏰ প্রায় শেষ! মাত্র $liveStock পিস বাকি"
+                    else -> "${dp.stockInLabel.ifBlank { "স্টক আছে" }} ($liveStock পিস)"
+                  },
+                  fontFamily = dpFont,
+                  fontSize = 12.sp,
                   fontWeight = FontWeight.Bold,
-                  modifier = Modifier.padding(horizontal = 6.dp)
+                  color = when {
+                    liveStock <= 0 -> stockOutCol
+                    liveStock <= 5 -> Color(0xFFEA580C)
+                    else -> stockInCol
+                  }
                 )
+              } else {
+                Text(dp.qtyLabel, fontFamily = dpFont, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = varLabelCol)
+              }
 
-                IconButton(
-                  onClick = { if (quantity < liveStock) quantity++ },
-                  modifier = Modifier.size(28.dp)
+              if (liveStock > 0) {
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(btnRadius))
+                    .background(qtyBtnBgCol)
+                    .border(1.dp, qtyBlkBdr, RoundedCornerShape(btnRadius))
+                    .padding(4.dp)
                 ) {
-                  Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(16.dp))
+                  IconButton(
+                    onClick = { if (quantity > 1) quantity-- },
+                    modifier = Modifier.size(28.dp)
+                  ) {
+                    Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", tint = qtyBtnTxtCol, modifier = Modifier.size(16.dp))
+                  }
+
+                  Text(
+                    text = quantity.toString(),
+                    fontFamily = dpFont,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = qtyBtnTxtCol,
+                    modifier = Modifier.padding(horizontal = 6.dp)
+                  )
+
+                  IconButton(
+                    onClick = { if (quantity < liveStock) quantity++ },
+                    modifier = Modifier.size(28.dp)
+                  ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", tint = qtyBtnTxtCol, modifier = Modifier.size(16.dp))
+                  }
                 }
               }
             }
           }
+              }
 
+              "actions" -> {
           if (selectionError != null) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -894,53 +1082,60 @@ fun ProductDetailDialog(
             )
           }
 
-          Spacer(modifier = Modifier.height(16.dp))
+          Spacer(modifier = Modifier.height(12.dp))
 
           // Add to cart button
-          Button(
-            onClick = {
-              if (product.colors.isNotEmpty() && selectedColor.isBlank()) {
-                selectionError = "অনুগ্রহ করে একটি কালার নির্বাচন করুন!"
-                return@Button
-              }
-              if (product.sizes.isNotEmpty() && selectedSize.isBlank()) {
-                selectionError = "অনুগ্রহ করে একটি সাইজ নির্বাচন করুন!"
-                return@Button
-              }
-              if (product.ageGroups.isNotEmpty() && selectedAgeGroup.isBlank()) {
-                selectionError = "অনুগ্রহ করে বাচ্চার বয়স নির্বাচন করুন!"
-                return@Button
-              }
-              if (liveStock <= 0) {
-                selectionError = "নির্বাচিত ভ্যারিয়েন্টটি বর্তমানে স্টক আউট!"
-                return@Button
-              }
-              onAddToCart(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
-              onDismiss()
-            },
-            enabled = liveStock > 0,
-            colors = ButtonDefaults.buttonColors(
-              containerColor = RoyalMaroon,
-              contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(20.dp),
+          Box(
             modifier = Modifier
               .fillMaxWidth()
               .height(48.dp)
-              .testTag("detail_add_to_cart_button")
+              .clip(RoundedCornerShape(btnRadius))
+              .background(
+                if (liveStock > 0) Brush.horizontalGradient(listOf(atcBgStart, atcBgEnd))
+                else Brush.horizontalGradient(listOf(Color(0xFF94A3B8), Color(0xFF94A3B8)))
+              )
+              .clickable(enabled = liveStock > 0) {
+                if (product.colors.isNotEmpty() && selectedColor.isBlank()) {
+                  selectionError = "অনুগ্রহ করে একটি কালার নির্বাচন করুন!"
+                  return@clickable
+                }
+                if (product.sizes.isNotEmpty() && selectedSize.isBlank()) {
+                  selectionError = "অনুগ্রহ করে একটি সাইজ নির্বাচন করুন!"
+                  return@clickable
+                }
+                if (product.ageGroups.isNotEmpty() && selectedAgeGroup.isBlank()) {
+                  selectionError = "অনুগ্রহ করে বাচ্চার বয়স নির্বাচন করুন!"
+                  return@clickable
+                }
+                if (liveStock <= 0) {
+                  selectionError = "নির্বাচিত ভ্যারিয়েন্টটি বর্তমানে স্টক আউট!"
+                  return@clickable
+                }
+                onAddToCart(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
+                onDismiss()
+              }
+              .testTag("detail_add_to_cart_button"),
+            contentAlignment = Alignment.Center
           ) {
-            Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-              text = if (liveStock > 0) "কার্টে যোগ করুন (${liveSellPrice * quantity} ৳)" else "স্টক আউট",
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+              Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, tint = atcTxt, modifier = Modifier.size(18.dp))
+              Spacer(modifier = Modifier.width(8.dp))
+              Text(
+                text = if (liveStock > 0) "${dp.addToCartLabel.ifBlank { "কার্টে যোগ করুন" }} (${liveSellPrice * quantity} $currencySym)" else dp.stockOutLabel.ifBlank { "স্টক আউট" },
+                fontFamily = dpFont,
+                fontSize = dp.buttonSize.coerceIn(10, 22).sp,
+                fontWeight = if (dp.buttonBold) FontWeight.Bold else FontWeight.Normal,
+                fontStyle = if (dp.buttonItalic) FontStyle.Italic else FontStyle.Normal,
+                color = atcTxt
+              )
+            }
           }
+              }
 
-          Spacer(modifier = Modifier.height(24.dp))
-          HorizontalDivider(color = BorderGold.copy(alpha = 0.5f))
-          Spacer(modifier = Modifier.height(20.dp))
+              "reviews" -> if (masterCfg.showReviewsOnDetails) {
+          Spacer(modifier = Modifier.height(18.dp))
+          HorizontalDivider(color = revSecBdr)
+          Spacer(modifier = Modifier.height(14.dp))
 
           // ==========================================
           // CUSTOMER REVIEWS & RATINGS SECTION
@@ -950,27 +1145,30 @@ fun ProductDetailDialog(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Column {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
               Text(
-                text = "গ্রাহক রিভিউ ও রেটিং",
-                fontSize = 16.sp,
+                text = dp.reviewsTitle.ifBlank { "গ্রাহক রিভিউ ও রেটিং" },
+                fontFamily = dpFont,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = RoyalMaroon
+                color = revHeadCol
               )
               Text(
                 text = "${totalReviews} জন ক্রেতার মূল্যায়ন",
+                fontFamily = dpFont,
                 fontSize = 11.sp,
-                color = DarkEspresso.copy(alpha = 0.7f)
+                color = revTxtCol.copy(alpha = 0.7f)
               )
             }
 
             OutlinedButton(
               onClick = { isReviewFormOpen = !isReviewFormOpen },
               colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = RoyalMaroon
+                containerColor = revBtnBgCol,
+                contentColor = revBtnTxtCol
               ),
-              border = androidx.compose.foundation.BorderStroke(1.dp, RoyalMaroon),
-              shape = RoundedCornerShape(20.dp),
+              border = androidx.compose.foundation.BorderStroke(1.dp, revBtnBdrCol),
+              shape = RoundedCornerShape(btnRadius),
               modifier = Modifier.testTag("write_review_button")
             ) {
               Icon(
@@ -980,7 +1178,8 @@ fun ProductDetailDialog(
               )
               Spacer(modifier = Modifier.width(6.dp))
               Text(
-                text = if (isReviewFormOpen) "বন্ধ করুন" else "রিভিউ দিন",
+                text = if (isReviewFormOpen) "বন্ধ করুন" else dp.writeReviewBtnLabel.ifBlank { "রিভিউ দিন" },
+                fontFamily = dpFont,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
               )
@@ -993,9 +1192,9 @@ fun ProductDetailDialog(
           Box(
             modifier = Modifier
               .fillMaxWidth()
-              .clip(RoundedCornerShape(16.dp))
-              .background(CreamBackground)
-              .border(1.dp, BorderGold.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+              .clip(RoundedCornerShape(cardRadius))
+              .background(revSecBg)
+              .border(borderW, revSecBdr, RoundedCornerShape(cardRadius))
               .padding(14.dp)
           ) {
             Row(
@@ -1284,9 +1483,9 @@ fun ProductDetailDialog(
                 Box(
                   modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .border(1.dp, BorderGold.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                    .background(Color.White)
+                    .clip(RoundedCornerShape(cardRadius))
+                    .border(borderW, revCardBdrCol, RoundedCornerShape(cardRadius))
+                    .background(revCardBgCol)
                     .padding(12.dp)
                     .testTag("review_item_${rev.id}")
                 ) {
@@ -1388,6 +1587,9 @@ fun ProductDetailDialog(
                 }
               }
             }
+              }
+            }
+          }
           }
 
           Spacer(modifier = Modifier.height(20.dp))

@@ -757,12 +757,14 @@ private fun MiniTagChip(text: String, bg: Color, fg: Color) {
 fun ProductFormDialog(
   product: Product?,
   categories: List<Category>,
+  storeConfig: com.example.data.model.StoreConfig = com.example.data.model.StoreConfig(),
   onDismiss: () -> Unit,
   onSave: (Product) -> Unit
 ) {
   SellerCenterProductFormDialog(
     product = product,
     categories = categories,
+    storeConfig = storeConfig,
     onDismiss = onDismiss,
     onSave = onSave
   )

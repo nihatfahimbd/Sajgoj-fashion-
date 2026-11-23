@@ -527,7 +527,8 @@ data class StoreConfig(
   val smsDelaySeconds: Int = 4,
   val design: StoreDesignConfig = StoreDesignConfig(),
   val shippingInfo: ShippingInfoConfig = ShippingInfoConfig(),
-  val b2g1: B2G1Config = B2G1Config()
+  val b2g1: B2G1Config = B2G1Config(),
+  val pageConfig: PageConfiguration = PageConfiguration()
 )
 
 data class CourierConfig(

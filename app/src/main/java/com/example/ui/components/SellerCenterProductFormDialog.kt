@@ -88,12 +88,17 @@ import com.example.ai.SajgojAiService
 import com.example.data.model.Category
 import com.example.data.model.Product
 import com.example.data.model.ProductVariantHelper
+import com.example.data.model.AddProductPageConfig
+import com.example.data.model.MasterPageConfig
 import com.example.data.model.ProductVariation
+import com.example.data.model.StoreConfig
+import com.example.ui.theme.parseColorHex
 import com.example.util.ProductMediaHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import androidx.compose.ui.text.font.FontStyle
 
 private val SellerOrange = Color(0xFFF97316)
 private val SellerOrangeDeep = Color(0xFFEA580C)
@@ -123,9 +128,32 @@ private enum class SellerSubEditor {
 fun SellerCenterProductFormDialog(
   product: Product?,
   categories: List<Category>,
+  storeConfig: StoreConfig = StoreConfig(),
   onDismiss: () -> Unit,
   onSave: (Product) -> Unit
 ) {
+  val ap = storeConfig.pageConfig.addProductPage
+  val masterCfg = storeConfig.pageConfig.master
+  val pageBg = parseColorHex(ap.pageBgColor, SellerPageBg)
+  val topBarBg = parseColorHex(ap.topBarBgColor, Color.White)
+  val topBarText = parseColorHex(ap.topBarTextColor, SellerLabelInk)
+  val blkBg = parseColorHex(ap.blockBgColor, Color.White)
+  val blkBorder = parseColorHex(ap.blockBorderColor, SellerCardBorder)
+  val accentCol = parseColorHex(ap.accentColor, SellerOrange)
+  val labelCol = if (masterCfg.highContrastMode) Color.Black else parseColorHex(ap.labelTextColor, SellerLabelInk)
+  val subCol = parseColorHex(ap.subTextColor, SellerMutedInk)
+  val inBg = parseColorHex(ap.inputBgColor, Color(0xFFF8FAFC))
+  val inBdr = parseColorHex(ap.inputBorderColor, Color(0xFFCBD5E1))
+  val inText = if (masterCfg.highContrastMode) Color.Black else parseColorHex(ap.inputTextColor, SellerLabelInk)
+  val pubBg = parseColorHex(ap.publishBtnBg, accentCol)
+  val pubTxt = parseColorHex(ap.publishBtnText, Color.White)
+  val drfBg = parseColorHex(ap.draftBtnBg, Color.White)
+  val drfTxt = parseColorHex(ap.draftBtnText, accentCol)
+  val drfBdr = parseColorHex(ap.draftBtnBorder, accentCol)
+  val apFont = resolvePageFontFamily(ap.fontFamily)
+  val cardShape = RoundedCornerShape(ap.cardRadiusPx.coerceIn(0, 32).dp)
+  val cardBorderStroke = BorderStroke(ap.borderWidthPx.coerceIn(0, 4).dp, blkBorder)
+
   val context = LocalContext.current
   val formScope = rememberCoroutineScope()
 
@@ -352,7 +380,7 @@ fun SellerCenterProductFormDialog(
   ) {
     Surface(
       shape = RoundedCornerShape(24.dp),
-      color = SellerPageBg,
+      color = pageBg,
       shadowElevation = 16.dp,
       modifier = Modifier
         .fillMaxWidth(0.96f)
@@ -365,7 +393,7 @@ fun SellerCenterProductFormDialog(
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(topBarBg)
             .padding(horizontal = 8.dp, vertical = 8.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
@@ -377,15 +405,16 @@ fun SellerCenterProductFormDialog(
             Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Back",
-              tint = SellerLabelInk
+              tint = topBarText
             )
           }
 
           Text(
-            text = if (product != null) "Edit Product" else "Add Product",
-            fontSize = 18.sp,
+            text = if (product != null) ap.editTitle.ifBlank { "Edit Product" } else ap.addTitle.ifBlank { "Add Product" },
+            fontFamily = apFont,
+            fontSize = ap.headingSize.coerceIn(12, 26).sp,
             fontWeight = FontWeight.Bold,
-            color = SellerLabelInk
+            color = topBarText
           )
 
           IconButton(
@@ -398,14 +427,14 @@ fun SellerCenterProductFormDialog(
             Icon(
               imageVector = Icons.Outlined.EditNote,
               contentDescription = "Image URL & Presets",
-              tint = SellerLabelInk
+              tint = topBarText
             )
           }
         }
 
         HorizontalDivider(color = SellerDivider)
 
-        // SERIALIZED SELLER-CENTER BODY
+        // SERIALIZED SELLER-CENTER BODY (Dynamically ordered via PageConfiguration)
         Column(
           modifier = Modifier
             .weight(1f, fill = false)
@@ -413,10 +442,14 @@ fun SellerCenterProductFormDialog(
             .padding(horizontal = 12.dp, vertical = 12.dp),
           verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+          val orderedBlocks = ap.blockOrder.filterNot { ap.hiddenBlocks.contains(it) }
+          orderedBlocks.forEach { blockKey ->
+            when (blockKey) {
+              "media_identity" -> {
           // =========================================================
           // CARD 1: Product Image (Unlimited) *, Product Name *, Category *, Video
           // =========================================================
-          SellerCard {
+          SellerCard(color = blkBg, shape = cardShape, border = cardBorderStroke) {
             // 1. Product Image (Main Photo + Small Gallery Strip Below) *
             Column(
               modifier = Modifier
@@ -429,7 +462,7 @@ fun SellerCenterProductFormDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
               ) {
-                RequiredLabel(text = "Product Image (${imageList.size}টি)", required = true)
+                RequiredLabel(text = "${ap.imageLabel} (${imageList.size}টি)", required = true, color = labelCol, ap = ap)
                 Text(
                   text = "+ URL / Preset",
                   fontSize = 11.5.sp,
@@ -658,8 +691,8 @@ fun SellerCenterProductFormDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
               ) {
-                RequiredLabel(text = "প্রোডাক্টের নাম / Product Name", required = true)
-                Text("বাংলা / English", fontSize = 10.5.sp, color = SellerMutedInk, fontWeight = FontWeight.Medium)
+                RequiredLabel(text = ap.nameLabel, required = true, color = labelCol, ap = ap)
+                Text("বাংলা / English", fontFamily = apFont, fontSize = 10.5.sp, color = subCol, fontWeight = FontWeight.Medium)
               }
               BasicTextField(
                 value = name,
@@ -667,16 +700,27 @@ fun SellerCenterProductFormDialog(
                   name = it
                   validationError = null
                 },
-                textStyle = TextStyle(fontSize = 14.sp, color = SellerLabelInk, fontWeight = FontWeight.Medium),
-                cursorBrush = SolidColor(SellerOrange),
+                textStyle = TextStyle(
+                  fontFamily = apFont,
+                  fontSize = ap.inputSize.sp,
+                  color = inText,
+                  fontWeight = if (ap.inputBold) FontWeight.Bold else FontWeight.Medium,
+                  fontStyle = if (ap.inputItalic) FontStyle.Italic else FontStyle.Normal
+                ),
+                cursorBrush = SolidColor(accentCol),
                 singleLine = true,
                 modifier = Modifier
                   .fillMaxWidth()
+                  .clip(RoundedCornerShape(10.dp))
+                  .background(inBg)
+                  .border(1.dp, inBdr, RoundedCornerShape(10.dp))
+                  .padding(horizontal = 10.dp, vertical = 10.dp)
                   .testTag("product_form_name_input"),
                 decorationBox = { inner ->
                   if (name.isEmpty()) {
                     Text(
                       text = "যেমন: এক্সক্লুসিভ জামদানি শাড়ি / Bridal Choker Set",
+                      fontFamily = apFont,
                       fontSize = 13.5.sp,
                       color = Color(0xFFC0C8D2)
                     )
@@ -690,10 +734,12 @@ fun SellerCenterProductFormDialog(
 
             // 3. Category *
             SellerNavRow(
-              label = "Category",
+              label = ap.categoryLabel,
               required = true,
               value = if (subCategoryText.isNotBlank()) "$category > $subCategoryText" else category.ifBlank { "Select Category" },
-              valueColor = SellerLabelInk,
+              valueColor = labelCol,
+              labelColor = labelCol,
+              ap = ap,
               onClick = { activeSubEditor = SellerSubEditor.CATEGORY }
             )
 
@@ -701,9 +747,12 @@ fun SellerCenterProductFormDialog(
 
             // 4. Video (Toggle Switch)
             SellerSwitchRow(
-              label = "Video",
+              label = ap.videoLabel,
               checked = videoEnabled,
               onCheckedChange = { videoEnabled = it },
+              labelColor = labelCol,
+              accentColor = accentCol,
+              ap = ap,
               testTag = "product_form_video_switch"
             )
             AnimatedVisibility(
@@ -727,34 +776,42 @@ fun SellerCenterProductFormDialog(
               }
             }
           }
+              }
 
+              "details_specs" -> {
           // =========================================================
           // CARD 2: Brand & Attributes
           // =========================================================
-          SellerCard {
+          SellerCard(color = blkBg, shape = cardShape, border = cardBorderStroke) {
             // 5. Brand
             SellerNavRow(
-              label = "Brand",
+              label = ap.brandLabel,
               required = false,
               value = brand.ifBlank { "No Brand" },
-              valueColor = SellerLabelInk,
+              valueColor = labelCol,
+              labelColor = labelCol,
+              ap = ap,
               onClick = { activeSubEditor = SellerSubEditor.BRAND }
             )
             SellerRowDivider()
             // 6. Attributes
             SellerNavRow(
-              label = "Attributes",
+              label = ap.attributesLabel,
               required = false,
               value = if (attributes.isEmpty()) "Set" else "${attributes.size} set",
-              valueColor = if (attributes.isEmpty()) SellerMutedInk else SellerOrangeDeep,
+              valueColor = if (attributes.isEmpty()) subCol else accentCol,
+              labelColor = labelCol,
+              ap = ap,
               onClick = { activeSubEditor = SellerSubEditor.ATTRIBUTES }
             )
           }
+              }
 
+              "variants_pricing" -> {
           // =========================================================
           // CARD 3: Variants *
           // =========================================================
-          SellerCard {
+          SellerCard(color = blkBg, shape = cardShape, border = cardBorderStroke) {
             // 7. Variants *
             val enabledVarCount = variations.count { it.enabled }.takeIf { it > 0 } ?: variations.size
             val variantCount = colors.size + sizes.size + ageGroups.size
@@ -768,11 +825,13 @@ fun SellerCenterProductFormDialog(
             }
 
             SellerNavRow(
-              label = "Variants",
+              label = ap.variantsLabel,
               required = true,
               helperWarning = if (variantCount == 0 && variations.isEmpty()) "This field is required" else null,
               value = if (variantSummary.isNotBlank()) variantSummary else "Add Variations",
-              valueColor = if (variations.isNotEmpty()) SellerLabelInk else if (variantSummary.isNotBlank()) SellerOrangeDeep else SellerMutedInk,
+              valueColor = if (variations.isNotEmpty()) labelCol else if (variantSummary.isNotBlank()) accentCol else subCol,
+              labelColor = labelCol,
+              ap = ap,
               onClick = {
                 startInVariantDetails = false
                 startWithSpecialSettings = false
@@ -784,7 +843,7 @@ fun SellerCenterProductFormDialog(
           // =========================================================
           // CARD 4: Price(BDT) *, Stock *, Availability, Special Price, Special Price(BDT), Special Price Periods
           // =========================================================
-          SellerCard {
+          SellerCard(color = blkBg, shape = cardShape, border = cardBorderStroke) {
             if (variations.isNotEmpty()) {
               // Auto-synced summary rows (Screenshots 6 & 8) -> tap jumps to Variation Details
               SellerNavRow(
@@ -933,11 +992,13 @@ fun SellerCenterProductFormDialog(
               }
             }
           }
+              }
 
+              "shipping_warranty" -> {
           // =========================================================
           // CARD 5: Shipping Information *, Warranty Information
           // =========================================================
-          SellerCard {
+          SellerCard(color = blkBg, shape = cardShape, border = cardBorderStroke) {
             // 12. Shipping Information *
             val shipValue = if (hasShippingSet) {
               listOfNotNull(
@@ -947,10 +1008,12 @@ fun SellerCenterProductFormDialog(
             } else "Set"
 
             SellerNavRow(
-              label = "Shipping Information",
+              label = ap.shippingLabel,
               required = true,
               value = shipValue,
-              valueColor = if (hasShippingSet) Color(0xFF059669) else SellerMutedInk,
+              valueColor = if (hasShippingSet) Color(0xFF059669) else subCol,
+              labelColor = labelCol,
+              ap = ap,
               onClick = { activeSubEditor = SellerSubEditor.SHIPPING }
             )
 
@@ -962,24 +1025,30 @@ fun SellerCenterProductFormDialog(
             } else "Set"
 
             SellerNavRow(
-              label = "Warranty Information",
+              label = ap.warrantyLabel,
               required = false,
               value = warValue,
-              valueColor = if (hasWarrantySet) SellerOrangeDeep else SellerMutedInk,
+              valueColor = if (hasWarrantySet) accentCol else subCol,
+              labelColor = labelCol,
+              ap = ap,
               onClick = { activeSubEditor = SellerSubEditor.WARRANTY }
             )
           }
+              }
 
+              "description_highlights" -> {
           // =========================================================
           // CARD 6: Description *, Highlights *
           // =========================================================
-          SellerCard {
+          SellerCard(color = blkBg, shape = cardShape, border = cardBorderStroke) {
             // 14. Description * (বাংলায়)
             SellerNavRow(
-              label = "পণ্যের বিবরণ (Description)",
+              label = ap.descriptionLabel,
               required = true,
               value = if (description.isBlank()) "লিখুন" else "${description.length} অক্ষর",
-              valueColor = if (description.isBlank()) SellerMutedInk else Color(0xFF059669),
+              valueColor = if (description.isBlank()) subCol else Color(0xFF059669),
+              labelColor = labelCol,
+              ap = ap,
               onClick = { activeSubEditor = SellerSubEditor.DESCRIPTION }
             )
 
@@ -987,16 +1056,22 @@ fun SellerCenterProductFormDialog(
 
             // 15. Highlights *
             SellerNavRow(
-              label = "Highlights",
+              label = ap.highlightsLabel,
               required = true,
               value = if (highlights.isEmpty()) "Set" else "${highlights.size} points",
-              valueColor = if (highlights.isEmpty()) SellerMutedInk else Color(0xFF059669),
+              valueColor = if (highlights.isEmpty()) subCol else Color(0xFF059669),
+              labelColor = labelCol,
+              ap = ap,
               onClick = { activeSubEditor = SellerSubEditor.HIGHLIGHTS }
             )
           }
+              }
+            }
+          }
 
           // Compact Sajgoj Merchandising & Channel Strip
-          SellerCard {
+          if (ap.showChannelsStrip) {
+          SellerCard(color = blkBg, shape = cardShape, border = cardBorderStroke) {
             Column(
               modifier = Modifier
                 .fillMaxWidth()
@@ -1034,6 +1109,7 @@ fun SellerCenterProductFormDialog(
               }
             }
           }
+          }
 
           if (validationError != null) {
             Surface(
@@ -1061,17 +1137,17 @@ fun SellerCenterProductFormDialog(
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(topBarBg)
             .padding(horizontal = 14.dp, vertical = 12.dp),
           horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
           OutlinedButton(
             onClick = { buildAndSave(saveAsDraft = true) },
             shape = RoundedCornerShape(50),
-            border = BorderStroke(1.5.dp, SellerOrange),
+            border = BorderStroke(1.5.dp, drfBdr),
             colors = ButtonDefaults.outlinedButtonColors(
-              containerColor = Color.White,
-              contentColor = SellerOrange
+              containerColor = drfBg,
+              contentColor = drfTxt
             ),
             modifier = Modifier
               .weight(1f)
@@ -1079,18 +1155,19 @@ fun SellerCenterProductFormDialog(
               .testTag("save_draft_button")
           ) {
             Text(
-              text = "Save as Draft",
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Bold,
-              color = SellerOrange
+              text = ap.draftBtnLabel.ifBlank { "Save as Draft" },
+              fontFamily = apFont,
+              fontSize = ap.buttonSize.coerceIn(10, 22).sp,
+              fontWeight = if (ap.buttonBold) FontWeight.Bold else FontWeight.Medium,
+              color = drfTxt
             )
           }
 
           Button(
             onClick = { buildAndSave(saveAsDraft = false) },
             colors = ButtonDefaults.buttonColors(
-              containerColor = SellerOrange,
-              contentColor = Color.White
+              containerColor = pubBg,
+              contentColor = pubTxt
             ),
             shape = RoundedCornerShape(50),
             modifier = Modifier
@@ -1099,9 +1176,11 @@ fun SellerCenterProductFormDialog(
               .testTag("publish_product_button")
           ) {
             Text(
-              text = "Publish Product",
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Bold
+              text = ap.publishBtnLabel.ifBlank { "Publish Product" },
+              fontFamily = apFont,
+              fontSize = ap.buttonSize.coerceIn(10, 22).sp,
+              fontWeight = if (ap.buttonBold) FontWeight.Bold else FontWeight.Medium,
+              color = pubTxt
             )
           }
         }
@@ -1580,46 +1659,48 @@ fun SellerCenterProductFormDialog(
 
     SellerSubEditor.DESCRIPTION -> {
       SellerSubModal(title = "পণ্যের বিস্তারিত বিবরণ *", onDismiss = { activeSubEditor = SellerSubEditor.NONE }) {
-        OutlinedButton(
-          onClick = {
-            if (name.isBlank()) {
-              aiDescError = "আগে প্রোডাক্টের নাম লিখুন।"
-              return@OutlinedButton
+        if (ap.enableAiHelper) {
+          OutlinedButton(
+            onClick = {
+              if (name.isBlank()) {
+                aiDescError = "আগে প্রোডাক্টের নাম লিখুন।"
+                return@OutlinedButton
+              }
+              aiDescError = null
+              isGeneratingAiDesc = true
+              formScope.launch {
+                val eff = if (hasValidOffer) offerParsed else regularParsed
+                val res = SajgojAiService.generateProductDescription(
+                  productName = name.trim(),
+                  category = category.trim(),
+                  price = eff,
+                  colors = colors,
+                  sizes = sizes,
+                  ageGroups = ageGroups
+                )
+                isGeneratingAiDesc = false
+                res.onSuccess { generated -> description = generated }
+                  .onFailure { err -> aiDescError = err.localizedMessage ?: "AI বিবরণ তৈরি করতে পারেনি।" }
+              }
+            },
+            enabled = !isGeneratingAiDesc,
+            border = BorderStroke(1.dp, AdminV2CyanDeep),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth().height(44.dp).testTag("product_form_ai_desc_button")
+          ) {
+            if (isGeneratingAiDesc) {
+              CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp), color = AdminV2CyanDeep)
+              Spacer(modifier = Modifier.width(6.dp))
+              Text("তৈরি হচ্ছে...", color = AdminV2CyanDeep, fontWeight = FontWeight.Bold)
+            } else {
+              Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(6.dp))
+              Text("✨ AI দিয়ে বাংলা বিবরণ লিখুন", color = AdminV2CyanDeep, fontWeight = FontWeight.Bold)
             }
-            aiDescError = null
-            isGeneratingAiDesc = true
-            formScope.launch {
-              val eff = if (hasValidOffer) offerParsed else regularParsed
-              val res = SajgojAiService.generateProductDescription(
-                productName = name.trim(),
-                category = category.trim(),
-                price = eff,
-                colors = colors,
-                sizes = sizes,
-                ageGroups = ageGroups
-              )
-              isGeneratingAiDesc = false
-              res.onSuccess { generated -> description = generated }
-                .onFailure { err -> aiDescError = err.localizedMessage ?: "AI বিবরণ তৈরি করতে পারেনি।" }
-            }
-          },
-          enabled = !isGeneratingAiDesc,
-          border = BorderStroke(1.dp, AdminV2CyanDeep),
-          shape = RoundedCornerShape(12.dp),
-          modifier = Modifier.fillMaxWidth().height(44.dp).testTag("product_form_ai_desc_button")
-        ) {
-          if (isGeneratingAiDesc) {
-            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(16.dp), color = AdminV2CyanDeep)
-            Spacer(modifier = Modifier.width(6.dp))
-            Text("তৈরি হচ্ছে...", color = AdminV2CyanDeep, fontWeight = FontWeight.Bold)
-          } else {
-            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text("✨ AI দিয়ে বাংলা বিবরণ লিখুন", color = AdminV2CyanDeep, fontWeight = FontWeight.Bold)
           }
-        }
-        if (aiDescError != null) {
-          Text(aiDescError!!, color = SellerReqRed, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+          if (aiDescError != null) {
+            Text(aiDescError!!, color = SellerReqRed, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+          }
         }
         OutlinedTextField(
           value = description,
@@ -1723,11 +1804,16 @@ fun SellerCenterProductFormDialog(
 }
 
 @Composable
-private fun SellerCard(content: @Composable () -> Unit) {
+private fun SellerCard(
+  color: Color = Color.White,
+  shape: RoundedCornerShape = RoundedCornerShape(14.dp),
+  border: BorderStroke = BorderStroke(1.dp, SellerCardBorder),
+  content: @Composable () -> Unit
+) {
   Surface(
-    shape = RoundedCornerShape(14.dp),
-    color = Color.White,
-    border = BorderStroke(1.dp, SellerCardBorder),
+    shape = shape,
+    color = color,
+    border = border,
     shadowElevation = 1.dp,
     modifier = Modifier.fillMaxWidth()
   ) {
@@ -1743,13 +1829,20 @@ private fun SellerRowDivider() {
 }
 
 @Composable
-private fun RequiredLabel(text: String, required: Boolean) {
+private fun RequiredLabel(
+  text: String,
+  required: Boolean,
+  color: Color = SellerLabelInk,
+  ap: AddProductPageConfig = AddProductPageConfig()
+) {
   Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
     Text(
       text = text,
-      fontSize = 14.5.sp,
-      fontWeight = FontWeight.Bold,
-      color = SellerLabelInk
+      fontFamily = resolvePageFontFamily(ap.fontFamily),
+      fontSize = ap.labelSize.coerceIn(10, 22).sp,
+      fontWeight = if (ap.labelBold) FontWeight.Bold else FontWeight.Normal,
+      fontStyle = if (ap.labelItalic) FontStyle.Italic else FontStyle.Normal,
+      color = color
     )
     if (required) {
       Text(
@@ -1769,6 +1862,8 @@ private fun SellerNavRow(
   helperWarning: String? = null,
   value: String,
   valueColor: Color,
+  labelColor: Color = SellerLabelInk,
+  ap: AddProductPageConfig = AddProductPageConfig(),
   onClick: () -> Unit
 ) {
   Row(
@@ -1780,7 +1875,7 @@ private fun SellerNavRow(
     verticalAlignment = Alignment.CenterVertically
   ) {
     Column(modifier = Modifier.weight(1f)) {
-      RequiredLabel(text = label, required = required)
+      RequiredLabel(text = label, required = required, color = labelColor, ap = ap)
       if (!helperWarning.isNullOrBlank()) {
         Spacer(modifier = Modifier.height(2.dp))
         Text(
@@ -1795,7 +1890,8 @@ private fun SellerNavRow(
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
       Text(
         text = value,
-        fontSize = 13.5.sp,
+        fontFamily = resolvePageFontFamily(ap.fontFamily),
+        fontSize = ap.inputSize.coerceIn(10, 20).sp,
         fontWeight = FontWeight.Medium,
         color = valueColor,
         maxLines = 1,
@@ -1817,6 +1913,9 @@ private fun SellerSwitchRow(
   label: String,
   checked: Boolean,
   onCheckedChange: (Boolean) -> Unit,
+  labelColor: Color = SellerLabelInk,
+  accentColor: Color = SellerOrange,
+  ap: AddProductPageConfig = AddProductPageConfig(),
   testTag: String
 ) {
   Row(
@@ -1828,16 +1927,18 @@ private fun SellerSwitchRow(
   ) {
     Text(
       text = label,
-      fontSize = 14.5.sp,
-      fontWeight = FontWeight.Bold,
-      color = SellerLabelInk
+      fontFamily = resolvePageFontFamily(ap.fontFamily),
+      fontSize = ap.labelSize.coerceIn(10, 22).sp,
+      fontWeight = if (ap.labelBold) FontWeight.Bold else FontWeight.Normal,
+      fontStyle = if (ap.labelItalic) FontStyle.Italic else FontStyle.Normal,
+      color = labelColor
     )
     Switch(
       checked = checked,
       onCheckedChange = onCheckedChange,
       colors = SwitchDefaults.colors(
         checkedThumbColor = Color.White,
-        checkedTrackColor = SellerOrange,
+        checkedTrackColor = accentColor,
         uncheckedThumbColor = Color.White,
         uncheckedTrackColor = Color(0xFFD5DCE4),
         uncheckedBorderColor = Color.Transparent

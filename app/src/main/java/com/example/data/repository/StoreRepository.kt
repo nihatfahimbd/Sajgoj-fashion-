@@ -2223,6 +2223,7 @@ class StoreRepository(private val context: Context) {
         defB2G1
       }
       val defCfg = StoreConfig()
+      val pageConfig = com.example.data.model.PageConfigJson.fromJsonObject(o.optJSONObject("pageConfig"))
       StoreConfig(
         storeName = o.optString("storeName", defCfg.storeName),
         tagline = o.optString("tagline", defCfg.tagline),
@@ -2246,7 +2247,8 @@ class StoreRepository(private val context: Context) {
         smsDelaySeconds = o.optInt("smsDelaySeconds", defCfg.smsDelaySeconds).coerceIn(2, 15),
         design = design,
         shippingInfo = shippingInfo,
-        b2g1 = b2g1
+        b2g1 = b2g1,
+        pageConfig = pageConfig
       )
     } catch (_: Exception) {
       StoreConfig()
@@ -2363,6 +2365,7 @@ class StoreRepository(private val context: Context) {
       put("design", dObj)
       put("shippingInfo", sObj)
       put("b2g1", b2g1Obj)
+      put("pageConfig", com.example.data.model.PageConfigJson.toJsonObject(config.pageConfig))
     }
     prefs.edit().putString("sajgoj_store_config", root.toString()).apply()
   }

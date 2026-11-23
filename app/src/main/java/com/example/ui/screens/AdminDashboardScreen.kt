@@ -153,6 +153,7 @@ import com.example.ui.components.AdminSellerOrdersHub
 import com.example.ui.components.AdminShippingInfoHub
 import com.example.ui.components.AdminSmsGatewayHub
 import com.example.ui.components.AppImage
+import com.example.ui.components.PageConfigurationHub
 import com.example.ui.components.DailyRevenueTrendChartCard
 import com.example.ui.components.GlossyAdminCard
 import com.example.ui.components.GlossyGradientButton
@@ -508,6 +509,15 @@ fun AdminDashboardScreen(
           )
         }
 
+        AdminTab.PAGE_CONFIG -> {
+          PageConfigurationHub(
+            storeConfig = storeConfig,
+            products = products,
+            onSaveStoreConfig = onUpdateStoreConfig,
+            onShowToast = onShowToast
+          )
+        }
+
         AdminTab.PRODUCTS -> {
           AdminProductsHub(
             products = products,
@@ -684,6 +694,7 @@ fun AdminDashboardScreen(
     ProductFormDialog(
       product = editingProduct,
       categories = categories,
+      storeConfig = storeConfig,
       onDismiss = {
         showProductDialog = false
         editingProduct = null

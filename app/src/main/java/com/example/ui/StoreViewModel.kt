@@ -99,6 +99,7 @@ fun sortStorefrontProducts(
 enum class AdminTab(val title: String, val icon: String) {
   DASHBOARD("ড্যাশবোর্ড", "📊"),
   HOME_PAGE_SETTING("Home Page Setting", "🏠"),
+  PAGE_CONFIG("Page Configuration", "🛠️"),
   PRODUCTS("প্রোডাক্ট", "👗"),
   ORDERS("অর্ডার", "📦"),
   SHIPPING_INFO("Shipping info", "🚚"),
