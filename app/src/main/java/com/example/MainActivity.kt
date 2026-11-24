@@ -602,6 +602,9 @@ class MainActivity : ComponentActivity() {
                   onAddToCart = { prod, qty, color, size, ageGroup ->
                     viewModel.addToCart(prod, qty, color, size, ageGroup)
                   },
+                  onBuyNow = { prod, qty, color, size, ageGroup ->
+                    viewModel.buyNow(prod, qty, color, size, ageGroup)
+                  },
                   onAddReview = { rating, name, comment ->
                     viewModel.addReview(selectedProduct!!.id, name, rating, comment)
                   },

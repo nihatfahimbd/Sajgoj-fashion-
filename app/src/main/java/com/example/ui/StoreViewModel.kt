@@ -582,6 +582,28 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
+  fun buyNow(
+    product: Product,
+    quantity: Int = 1,
+    color: String = "",
+    size: String = "",
+    ageGroup: String = ""
+  ) {
+    val success = repository.addToCart(
+      product = product,
+      quantity = quantity,
+      color = color,
+      size = size,
+      ageGroup = ageGroup
+    )
+    if (success) {
+      _selectedProduct.value = null
+      _isCartOpen.value = true
+    } else {
+      emitToast("দুঃখিত, এই পণ্যটি স্টক আউট!")
+    }
+  }
+
   fun addComboToCart(combo: ComboPack) {
     val success = repository.addComboToCart(combo)
     if (success) {

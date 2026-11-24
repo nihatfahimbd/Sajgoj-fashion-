@@ -1,11 +1,14 @@
 package com.example.ui.components
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
@@ -60,11 +65,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -90,9 +100,15 @@ fun ProductDetailDialog(
   allProducts: List<Product> = emptyList(),
   onDismiss: () -> Unit,
   onAddToCart: (Product, Int, String, String, String) -> Unit,
+  onBuyNow: (Product, Int, String, String, String) -> Unit = { prod, qty, c, s, a ->
+    onAddToCart(prod, qty, c, s, a)
+    onDismiss()
+  },
+  onWhatsAppClick: ((Product, Int, String, String, String) -> Unit)? = null,
   onAddReview: (rating: Int, customerName: String, comment: String) -> Unit = { _, _, _ -> },
   onAskAiForProduct: (Product) -> Unit = {}
 ) {
+  val context = LocalContext.current
   val initialVariation = remember(product.id) {
     product.variations.firstOrNull { it.enabled && it.stock > 0 }
       ?: product.variations.firstOrNull { it.enabled }
@@ -190,6 +206,59 @@ fun ProductDetailDialog(
   val revBtnBdrCol = parseColorHex(dp.reviewBtnBorder, RoyalMaroon)
   val currencySym = masterCfg.currencySymbol.ifBlank { "৳" }
 
+  fun validateSelection(): Boolean {
+    if (product.colors.isNotEmpty() && selectedColor.isBlank()) {
+      selectionError = "অনুগ্রহ করে একটি কালার নির্বাচন করুন!"
+      return false
+    }
+    if (product.sizes.isNotEmpty() && selectedSize.isBlank()) {
+      selectionError = "অনুগ্রহ করে একটি সাইজ নির্বাচন করুন!"
+      return false
+    }
+    if (product.ageGroups.isNotEmpty() && selectedAgeGroup.isBlank()) {
+      selectionError = "অনুগ্রহ করে বাচ্চার বয়স নির্বাচন করুন!"
+      return false
+    }
+    if (liveStock <= 0) {
+      selectionError = "নির্বাচিত ভ্যারিয়েন্টটি বর্তমানে স্টক আউট!"
+      return false
+    }
+    return true
+  }
+
+  fun launchProductWhatsAppInquiry() {
+    if (onWhatsAppClick != null) {
+      onWhatsAppClick.invoke(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
+      return
+    }
+    val variantSummary = listOfNotNull(
+      selectedColor.takeIf { it.isNotBlank() }?.let { "Color: $it" },
+      selectedSize.takeIf { it.isNotBlank() }?.let { "Size: $it" },
+      selectedAgeGroup.takeIf { it.isNotBlank() }?.let { "Age: $it" }
+    ).joinToString(", ")
+    val inquiryMsg = buildString {
+      append("আসসালামু আলাইকুম, আমি \"${product.name}\" (SKU: ${product.sku}) অর্ডার/তথ্য জানতে চাই।")
+      if (variantSummary.isNotBlank()) append(" [$variantSummary]")
+      append(" পরিমাণ: $quantity পিস, মোট: ${liveSellPrice * quantity} $currencySym")
+    }
+    val rawWhatsapp = storeConfig.whatsapp.ifBlank { storeConfig.phone }
+    val digitsOnly = rawWhatsapp.filter { it.isDigit() }
+    val waPhone = when {
+      digitsOnly.startsWith("880") -> digitsOnly
+      digitsOnly.startsWith("0") -> "88$digitsOnly"
+      else -> digitsOnly
+    }
+    try {
+      val uri = Uri.parse("https://api.whatsapp.com/send?phone=$waPhone&text=${Uri.encode(inquiryMsg)}")
+      context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+    } catch (_: Exception) {
+      try {
+        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${storeConfig.phone}")))
+      } catch (_: Exception) {
+      }
+    }
+  }
+
   Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -198,15 +267,17 @@ fun ProductDetailDialog(
       shape = RoundedCornerShape(24.dp),
       color = modalBg,
       modifier = Modifier
-        .fillMaxWidth(0.92f)
-        .padding(vertical = 24.dp)
+        .fillMaxWidth(0.94f)
+        .padding(vertical = 18.dp)
         .testTag("product_detail_dialog")
     ) {
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .verticalScroll(rememberScrollState())
-      ) {
+      Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f, fill = false)
+            .verticalScroll(rememberScrollState())
+        ) {
         // Top Header with Close
         Box(
           modifier = Modifier
@@ -1072,64 +1143,7 @@ fun ProductDetailDialog(
               }
 
               "actions" -> {
-          if (selectionError != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-              text = selectionError!!,
-              color = Color.Red,
-              fontSize = 12.sp,
-              fontWeight = FontWeight.Bold
-            )
-          }
-
-          Spacer(modifier = Modifier.height(12.dp))
-
-          // Add to cart button
-          Box(
-            modifier = Modifier
-              .fillMaxWidth()
-              .height(48.dp)
-              .clip(RoundedCornerShape(btnRadius))
-              .background(
-                if (liveStock > 0) Brush.horizontalGradient(listOf(atcBgStart, atcBgEnd))
-                else Brush.horizontalGradient(listOf(Color(0xFF94A3B8), Color(0xFF94A3B8)))
-              )
-              .clickable(enabled = liveStock > 0) {
-                if (product.colors.isNotEmpty() && selectedColor.isBlank()) {
-                  selectionError = "অনুগ্রহ করে একটি কালার নির্বাচন করুন!"
-                  return@clickable
-                }
-                if (product.sizes.isNotEmpty() && selectedSize.isBlank()) {
-                  selectionError = "অনুগ্রহ করে একটি সাইজ নির্বাচন করুন!"
-                  return@clickable
-                }
-                if (product.ageGroups.isNotEmpty() && selectedAgeGroup.isBlank()) {
-                  selectionError = "অনুগ্রহ করে বাচ্চার বয়স নির্বাচন করুন!"
-                  return@clickable
-                }
-                if (liveStock <= 0) {
-                  selectionError = "নির্বাচিত ভ্যারিয়েন্টটি বর্তমানে স্টক আউট!"
-                  return@clickable
-                }
-                onAddToCart(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
-                onDismiss()
-              }
-              .testTag("detail_add_to_cart_button"),
-            contentAlignment = Alignment.Center
-          ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-              Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, tint = atcTxt, modifier = Modifier.size(18.dp))
-              Spacer(modifier = Modifier.width(8.dp))
-              Text(
-                text = if (liveStock > 0) "${dp.addToCartLabel.ifBlank { "কার্টে যোগ করুন" }} (${liveSellPrice * quantity} $currencySym)" else dp.stockOutLabel.ifBlank { "স্টক আউট" },
-                fontFamily = dpFont,
-                fontSize = dp.buttonSize.coerceIn(10, 22).sp,
-                fontWeight = if (dp.buttonBold) FontWeight.Bold else FontWeight.Normal,
-                fontStyle = if (dp.buttonItalic) FontStyle.Italic else FontStyle.Normal,
-                color = atcTxt
-              )
-            }
-          }
+                // Inline Add-to-Cart button moved to the sticky bottom action bar (WhatsApp, Buy Now, Add To Cart)
               }
 
               "reviews" -> if (masterCfg.showReviewsOnDetails) {
@@ -1592,9 +1606,185 @@ fun ProductDetailDialog(
           }
           }
 
-          Spacer(modifier = Modifier.height(20.dp))
+          Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        if (selectionError != null) {
+          Surface(
+            color = Color(0xFFFEF2F2),
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("detail_selection_error_banner")
+          ) {
+            Text(
+              text = selectionError!!,
+              color = Color(0xFFB91C1C),
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Bold,
+              modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+            )
+          }
+        }
+
+        // Fixed / Non-Scrolling Bottom Action Bar (Exclusive to Product Detail Dialog)
+        ProductDetailBottomBar(
+          isInStock = liveStock > 0,
+          stockOutLabel = dp.stockOutLabel.ifBlank { "Stock Out" },
+          onWhatsAppClick = { launchProductWhatsAppInquiry() },
+          onBuyNowClick = {
+            if (validateSelection()) {
+              onBuyNow(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
+            }
+          },
+          onAddToCartClick = {
+            if (validateSelection()) {
+              onAddToCart(product, quantity, selectedColor, selectedSize, selectedAgeGroup)
+              onDismiss()
+            }
+          }
+        )
+      }
+    }
+  }
+}
+
+@Composable
+fun ProductDetailBottomBar(
+  isInStock: Boolean,
+  stockOutLabel: String = "Stock Out",
+  onWhatsAppClick: () -> Unit,
+  onBuyNowClick: () -> Unit,
+  onAddToCartClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  Surface(
+    color = Color.White,
+    shadowElevation = 10.dp,
+    modifier = modifier
+      .fillMaxWidth()
+      .testTag("product_detail_bottom_bar")
+  ) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+      HorizontalDivider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        // 1. WhatsApp Logo Button
+        Surface(
+          shape = RoundedCornerShape(10.dp),
+          color = Color(0xFF25D366),
+          border = BorderStroke(1.dp, Color(0xFF1EBE5D)),
+          shadowElevation = 2.dp,
+          modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onWhatsAppClick() }
+            .testTag("detail_bottom_whatsapp_button")
+        ) {
+          Box(contentAlignment = Alignment.Center) {
+            WhatsAppLogoIcon(modifier = Modifier.size(28.dp))
+          }
+        }
+
+        // 2. Buy Now Button (Black)
+        Button(
+          onClick = onBuyNowClick,
+          enabled = isInStock,
+          colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF0A0A0A),
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFF94A3B8),
+            disabledContentColor = Color.White
+          ),
+          shape = RoundedCornerShape(8.dp),
+          modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)
+            .testTag("detail_bottom_buy_now_button")
+        ) {
+          Text(
+            text = "Buy Now",
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis
+          )
+        }
+
+        // 3. Add To Cart Button (Red)
+        Button(
+          onClick = onAddToCartClick,
+          enabled = isInStock,
+          colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFEF1C25),
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFF94A3B8),
+            disabledContentColor = Color.White
+          ),
+          shape = RoundedCornerShape(8.dp),
+          modifier = Modifier
+            .weight(1.1f)
+            .heightIn(min = 48.dp)
+            .testTag("detail_bottom_add_to_cart_button")
+        ) {
+          Text(
+            text = if (isInStock) "Add To Cart" else stockOutLabel,
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis
+          )
         }
       }
     }
+  }
+}
+
+@Composable
+private fun WhatsAppLogoIcon(modifier: Modifier = Modifier) {
+  Box(
+    modifier = modifier,
+    contentAlignment = Alignment.Center
+  ) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+      val w = size.width
+      val h = size.height
+      val strokeW = w * 0.095f
+      val radius = w * 0.39f
+      val cx = w * 0.52f
+      val cy = h * 0.47f
+
+      drawCircle(
+        color = Color.White,
+        radius = radius,
+        center = androidx.compose.ui.geometry.Offset(cx, cy),
+        style = Stroke(width = strokeW)
+      )
+
+      val tailPath = Path().apply {
+        moveTo(w * 0.24f, h * 0.72f)
+        lineTo(w * 0.14f, h * 0.89f)
+        lineTo(w * 0.34f, h * 0.82f)
+        close()
+      }
+      drawPath(
+        path = tailPath,
+        color = Color.White
+      )
+    }
+    Icon(
+      imageVector = Icons.Default.Call,
+      contentDescription = "WhatsApp এ মেসেজ করুন",
+      tint = Color.White,
+      modifier = Modifier
+        .size(14.dp)
+        .padding(start = 1.dp, bottom = 1.dp)
+    )
   }
 }
