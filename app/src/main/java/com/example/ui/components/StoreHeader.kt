@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
@@ -94,7 +96,9 @@ fun StoreHeader(
   onClearAllSearch: () -> Unit = { onSearchChange("") },
   authUser: AuthUserSummary? = null,
   isAuthBusy: Boolean = false,
-  onGoogleAuthClick: () -> Unit = {}
+  onGoogleAuthClick: () -> Unit = {},
+  unreadNotificationCount: Int = 0,
+  onOpenNotifications: () -> Unit = {}
 ) {
   var isCategoryMenuExpanded by remember { mutableStateOf(false) }
   val d = config.design
@@ -179,10 +183,10 @@ fun StoreHeader(
         }
       }
 
-      // Actions: Google Account, Switch Admin & Open Cart
+      // Actions: Google Account, Notifications, Switch Admin & Open Cart
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
       ) {
         // Google Sign-In / Signed-in Logout Pill
         Surface(
@@ -196,7 +200,7 @@ fun StoreHeader(
             .testTag("header_google_auth_button")
         ) {
           Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
@@ -213,11 +217,53 @@ fun StoreHeader(
                 else -> "লগইন"
               },
               color = if (authUser != null) Color(0xFFBE123C) else DarkEspresso,
-              fontSize = 11.5.sp,
+              fontSize = 11.sp,
               fontWeight = FontWeight.Bold,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
             )
+          }
+        }
+
+        // Order Status Notifications Bell Button
+        if (currentScreen == AppScreen.STOREFRONT) {
+          IconButton(
+            onClick = onOpenNotifications,
+            modifier = Modifier
+              .size(48.dp)
+              .testTag("header_notifications_button")
+          ) {
+            BadgedBox(
+              badge = {
+                if (unreadNotificationCount > 0) {
+                  Badge(
+                    containerColor = Color(0xFFEF4444),
+                    contentColor = Color.White
+                  ) {
+                    Text(
+                      text = if (unreadNotificationCount > 9) "9+" else unreadNotificationCount.toString(),
+                      fontSize = 9.sp,
+                      fontWeight = FontWeight.Bold
+                    )
+                  }
+                }
+              }
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(38.dp)
+                  .clip(CircleShape)
+                  .background(CreamSurface),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = if (unreadNotificationCount > 0) Icons.Default.NotificationsActive else Icons.Default.Notifications,
+                  contentDescription = "অর্ডার নোটিফিকেশন",
+                  tint = brandTitleColor,
+                  modifier = Modifier.size(20.dp)
+                )
+              }
+            }
           }
         }
 

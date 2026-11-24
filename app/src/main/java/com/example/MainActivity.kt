@@ -1,7 +1,9 @@
 package com.example
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.widget.Toast
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.firebase.configureAppCheck
+import com.example.notifications.OrderNotificationHelper
 import com.example.ui.AppScreen
 import com.example.ui.StoreViewModel
 import com.example.ui.components.AiStylistDialog
@@ -62,6 +65,8 @@ import com.example.ui.components.CartAndCheckoutDialog
 import com.example.ui.components.CustomerAccountDialog
 import com.example.ui.components.InvoiceDialog
 import com.example.ui.components.LiveSupportChatDialog
+import com.example.ui.components.OrderNotificationsDialog
+import com.example.ui.components.OrderStatusAlertBanner
 import com.example.ui.components.ProductDetailDialog
 import com.example.ui.components.ShippingLabelDialog
 import com.example.ui.components.StoreHeader
@@ -84,10 +89,21 @@ import java.util.Locale
 
 class MainActivity : ComponentActivity() {
   private val viewModel: StoreViewModel by viewModels()
+  private val deepLinkOrderIdState = mutableStateOf<String?>(null)
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    val orderId = intent.getStringExtra(OrderNotificationHelper.EXTRA_ORDER_ID)
+    if (!orderId.isNullOrBlank()) {
+      deepLinkOrderIdState.value = orderId
+    }
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     configureAppCheck(this, intent)
+    deepLinkOrderIdState.value = intent?.getStringExtra(OrderNotificationHelper.EXTRA_ORDER_ID)
     enableEdgeToEdge()
 
     setContent {
@@ -145,6 +161,10 @@ class MainActivity : ComponentActivity() {
         val adminSelectedChatMessagesState by viewModel.adminSelectedChatMessagesState.collectAsStateWithLifecycle()
         val adminUnreadSupportCount by viewModel.adminUnreadSupportCount.collectAsStateWithLifecycle()
         val isSendingSupportChat by viewModel.isSendingSupportChat.collectAsStateWithLifecycle()
+        val orderNotifications by viewModel.orderNotifications.collectAsStateWithLifecycle()
+        val unreadOrderNotificationCount by viewModel.unreadOrderNotificationCount.collectAsStateWithLifecycle()
+        val activeOrderBannerAlert by viewModel.activeOrderBannerAlert.collectAsStateWithLifecycle()
+        val pendingDeepLinkOrderId by deepLinkOrderIdState
 
         var showVoiceFallbackDialog by remember { mutableStateOf(false) }
         var voiceFallbackInput by remember { mutableStateOf("") }
@@ -157,6 +177,10 @@ class MainActivity : ComponentActivity() {
         var isOffersDialogOpen by remember { mutableStateOf(false) }
         var showAccountDialog by remember { mutableStateOf(false) }
         var showLiveSupportDialog by remember { mutableStateOf(false) }
+        var showNotificationsDialog by remember { mutableStateOf(false) }
+        var hasPushPermission by remember {
+          mutableStateOf(OrderNotificationHelper.hasNotificationPermission(context))
+        }
 
         // Zero-permission Photo Picker for Visual Image Search
         val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -213,9 +237,49 @@ class MainActivity : ComponentActivity() {
           }
         }
 
+        val notificationPermissionLauncher = rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.RequestPermission()
+        ) { granted ->
+          hasPushPermission = granted || OrderNotificationHelper.hasNotificationPermission(context)
+          viewModel.onPushPermissionResult(hasPushPermission)
+        }
+
+        fun requestPushPermission() {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (OrderNotificationHelper.hasNotificationPermission(context)) {
+              hasPushPermission = true
+              viewModel.onPushPermissionResult(true)
+            } else {
+              notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+          } else {
+            hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
+            viewModel.onPushPermissionResult(hasPushPermission)
+          }
+        }
+
+        LaunchedEffect(Unit) {
+          OrderNotificationHelper.ensureNotificationChannel(context)
+        }
+
+        LaunchedEffect(pendingDeepLinkOrderId) {
+          val orderId = pendingDeepLinkOrderId
+          if (!orderId.isNullOrBlank()) {
+            viewModel.openOrderById(orderId)
+            deepLinkOrderIdState.value = null
+          }
+        }
+
+        LaunchedEffect(activeOrderBannerAlert?.id) {
+          val alert = activeOrderBannerAlert
+          if (alert != null && alert.channel != "fcm" && OrderNotificationHelper.hasNotificationPermission(context)) {
+            OrderNotificationHelper.postSystemNotification(context, alert)
+          }
+        }
+
         // Toast listener
         LaunchedEffect(Unit) {
-          viewModel.toastEvent.collectLatest { msg ->
+          viewModel.toastEvent.collect { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
           }
         }
@@ -231,9 +295,11 @@ class MainActivity : ComponentActivity() {
             showScannerDialog ||
             showAiStylistDialog ||
             showAccountDialog ||
-            showLiveSupportDialog
+            showLiveSupportDialog ||
+            showNotificationsDialog
         ) {
           when {
+            showNotificationsDialog -> showNotificationsDialog = false
             showLiveSupportDialog -> showLiveSupportDialog = false
             showAccountDialog -> showAccountDialog = false
             showAiStylistDialog -> showAiStylistDialog = false
@@ -364,6 +430,11 @@ class MainActivity : ComponentActivity() {
                 } else {
                   viewModel.signInWithGoogle(context, unlockAdminIfVerified = false)
                 }
+              },
+              unreadNotificationCount = unreadOrderNotificationCount,
+              onOpenNotifications = {
+                hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
+                showNotificationsDialog = true
               }
             )
 
@@ -445,6 +516,7 @@ class MainActivity : ComponentActivity() {
                     onUpdateProduct = { viewModel.updateProduct(it) },
                     onDeleteProduct = { viewModel.deleteProduct(it) },
                     onUpdateOrderStatus = { id, status -> viewModel.updateOrderStatus(id, status) },
+                    onDeleteOrder = { viewModel.deleteOrder(it) },
                     onDispatchCourier = { id, provider -> viewModel.dispatchCourier(id, provider) },
                     onUpdateDeliveredBy = { id, partner -> viewModel.updateOrderDeliveryPartner(id, partner) },
                     onViewInvoice = { viewModel.openInvoice(it) },
@@ -509,6 +581,14 @@ class MainActivity : ComponentActivity() {
                   )
                 }
               }
+
+              // Floating Automated Order Status Alert Banner
+              OrderStatusAlertBanner(
+                notification = activeOrderBannerAlert,
+                onViewOrder = { notif -> viewModel.openOrderFromNotification(notif) },
+                onDismiss = { viewModel.dismissOrderBannerAlert() },
+                modifier = Modifier.align(Alignment.TopCenter)
+              )
 
               // Overlays & Modals
               if (selectedProduct != null) {
@@ -758,6 +838,7 @@ class MainActivity : ComponentActivity() {
               orders = orders,
               storeConfig = storeConfig,
               unreadSupportCount = customerUnreadSupportCount,
+              unreadNotificationCount = unreadOrderNotificationCount,
               onGoogleAuthClick = {
                 if (authUser != null) {
                   viewModel.signOutGoogle(context)
@@ -767,7 +848,27 @@ class MainActivity : ComponentActivity() {
               },
               onOpenOrderInvoice = { order -> viewModel.openInvoice(order) },
               onOpenLiveSupport = { showLiveSupportDialog = true },
+              onOpenNotifications = {
+                hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
+                showNotificationsDialog = true
+              },
               onDismiss = { showAccountDialog = false }
+            )
+          }
+
+          if (showNotificationsDialog) {
+            OrderNotificationsDialog(
+              notifications = orderNotifications,
+              hasPushPermission = hasPushPermission,
+              fcmTokenPresent = OrderNotificationHelper.getSavedFcmToken(context).isNotBlank(),
+              onRequestPushPermission = { requestPushPermission() },
+              onNotificationClick = { notif ->
+                showNotificationsDialog = false
+                viewModel.openOrderFromNotification(notif)
+              },
+              onMarkAllRead = { viewModel.markAllOrderNotificationsRead() },
+              onClearAll = { viewModel.clearOrderNotifications() },
+              onDismiss = { showNotificationsDialog = false }
             )
           }
 

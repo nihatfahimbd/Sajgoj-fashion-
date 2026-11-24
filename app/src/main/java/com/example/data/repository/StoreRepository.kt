@@ -15,6 +15,7 @@ import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
+import com.example.data.model.OrderStatusNotification
 import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
@@ -32,6 +33,7 @@ import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.data.sync.InventorySyncService
 import com.example.data.sync.LocalInventoryStorageSync
+import com.example.notifications.OrderNotificationHelper
 import com.example.sms.SmsHelper
 import com.example.firebase.GoogleAuthHelper
 import com.example.firebase.OperationType
@@ -43,8 +45,12 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
@@ -714,6 +720,16 @@ class StoreRepository(private val context: Context) {
   private val _smsQueue = MutableStateFlow<List<SmsQueueItem>>(loadSmsQueueFromPrefs())
   val smsQueue: StateFlow<List<SmsQueueItem>> = _smsQueue.asStateFlow()
 
+  private val _orderNotifications = MutableStateFlow<List<OrderStatusNotification>>(loadOrderNotificationsFromPrefs())
+  val orderNotifications: StateFlow<List<OrderStatusNotification>> = _orderNotifications.asStateFlow()
+
+  private val _latestStatusAlert = MutableSharedFlow<OrderStatusNotification>(extraBufferCapacity = 32)
+  val latestStatusAlert: SharedFlow<OrderStatusNotification> = _latestStatusAlert.asSharedFlow()
+
+  private val lastKnownOrderStatuses: MutableMap<String, String> = loadOrderStatusSnapshot()
+  private val orderOwnerUids: MutableMap<String, String> = mutableMapOf()
+  private val alertedTransitionKeys: MutableSet<String> = mutableSetOf()
+
   private val firestore: FirebaseFirestore? by lazy {
     try {
       GoogleAuthHelper.createFirestore(context)
@@ -725,6 +741,7 @@ class StoreRepository(private val context: Context) {
   private var ordersListener: ListenerRegistration? = null
   private var returnsListener: ListenerRegistration? = null
   private var smsQueueListener: ListenerRegistration? = null
+  private var orderNotificationsListener: ListenerRegistration? = null
 
   private fun currentAuthUid(): String? = try {
     Firebase.auth.currentUser?.uid
@@ -780,6 +797,7 @@ class StoreRepository(private val context: Context) {
         inventorySyncService.mirrorCatalogToPos(updatedProducts, source = source, pushToCloud = true)
       }
     )
+    seedMissingOrderStatusSnapshots(_orders.value)
     initFirestoreSync()
   }
 
@@ -974,12 +992,16 @@ class StoreRepository(private val context: Context) {
     returnsListener = null
     smsQueueListener?.remove()
     smsQueueListener = null
+    orderNotificationsListener?.remove()
+    orderNotificationsListener = null
 
     val db = firestore ?: return
     if (user == null) {
       inventorySyncService.stopListening()
       return
     }
+
+    syncCustomerFcmToken(user)
 
     val isAdmin = GoogleAuthHelper.toSummary(user)?.isAdmin == true
     val ordersQuery = if (isAdmin) {
@@ -996,6 +1018,10 @@ class StoreRepository(private val context: Context) {
       if (snapshot != null && !snapshot.isEmpty) {
         val list = snapshot.documents.mapNotNull { doc ->
           try {
+            val resolvedOrderId = doc.getString("id") ?: doc.id
+            doc.getString("userId")?.takeIf { it.isNotBlank() }?.let { ownerUid ->
+              orderOwnerUids[resolvedOrderId] = ownerUid
+            }
             val itemsList = (doc.get("items") as? List<*>)?.mapNotNull { itemMap ->
               val m = itemMap as? Map<*, *> ?: return@mapNotNull null
               OrderItem(
@@ -1012,7 +1038,7 @@ class StoreRepository(private val context: Context) {
             } ?: emptyList()
 
             Order(
-              id = doc.getString("id") ?: doc.id,
+              id = resolvedOrderId,
               customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
               phone = doc.getString("phone") ?: "",
               district = doc.getString("district") ?: "ঢাকা (Dhaka)",
@@ -1044,10 +1070,48 @@ class StoreRepository(private val context: Context) {
           }
         }
         if (list.isNotEmpty()) {
+          detectAndNotifyOrderStatusChanges(list, sourceChannel = "firestore")
           _orders.value = list
         }
       }
     }
+
+    orderNotificationsListener = db.collection("order_notifications")
+      .whereEqualTo("userId", user.uid)
+      .addSnapshotListener { snapshot, error ->
+        if (error != null) {
+          handleFirestoreError(error, OperationType.LIST, "order_notifications")
+          return@addSnapshotListener
+        }
+        if (snapshot != null) {
+          val remoteNotifs = snapshot.documents.mapNotNull { doc ->
+            try {
+              OrderStatusNotification(
+                id = doc.id,
+                orderId = doc.getString("orderId") ?: return@mapNotNull null,
+                userId = doc.getString("userId") ?: user.uid,
+                customerName = doc.getString("customerName") ?: "",
+                previousStatus = doc.getString("previousStatus") ?: "Pending",
+                newStatus = doc.getString("newStatus") ?: return@mapNotNull null,
+                title = doc.getString("title") ?: "",
+                message = doc.getString("message") ?: "",
+                trackingId = doc.getString("trackingId") ?: "",
+                deliveredBy = doc.getString("deliveredBy") ?: "",
+                channel = doc.getString("channel") ?: "firestore",
+                read = doc.getBoolean("read") ?: false,
+                createdAtMs = doc.getTimestamp("createdAt")?.toDate()?.time
+                  ?: doc.getLong("createdAtMs")
+                  ?: System.currentTimeMillis()
+              )
+            } catch (_: Exception) {
+              null
+            }
+          }
+          if (remoteNotifs.isNotEmpty()) {
+            mergeCloudOrderNotifications(remoteNotifs)
+          }
+        }
+      }
 
     if (isAdmin) {
       returnsListener = db.collection("returns").addSnapshotListener { snapshot, error ->
@@ -1510,6 +1574,10 @@ class StoreRepository(private val context: Context) {
       handleFirestoreError(e, OperationType.CREATE, "orders/${newOrder.id}")
     }
 
+    lastKnownOrderStatuses[newOrder.id] = newOrder.status
+    saveOrderStatusSnapshot()
+    currentAuthUid()?.let { uid -> orderOwnerUids[newOrder.id] = uid }
+
     // Clear cart
     clearCart()
 
@@ -1688,6 +1756,7 @@ class StoreRepository(private val context: Context) {
     _orders.value = _orders.value.map {
       if (it.id == orderId) it.copy(status = newStatus, stockRestockedOnCancel = nextRestockedFlag) else it
     }
+    detectAndNotifyOrderStatusChanges(_orders.value, sourceChannel = "in_app", pushToCloud = true)
     if (isVerifiedAdmin()) {
       try {
         firestore?.collection("orders")?.document(orderId)?.update(
@@ -1734,6 +1803,7 @@ class StoreRepository(private val context: Context) {
     _orders.value = _orders.value.map {
       if (it.id == orderId) it.copy(status = "Shipped", trackingId = tracking, deliveredBy = cleanProvider) else it
     }
+    detectAndNotifyOrderStatusChanges(_orders.value, sourceChannel = "in_app", pushToCloud = true)
     if (isVerifiedAdmin()) {
       try {
         firestore?.collection("orders")?.document(orderId)?.update(
@@ -1782,6 +1852,23 @@ class StoreRepository(private val context: Context) {
         }
       } catch (e: Exception) {
         handleFirestoreError(e, OperationType.UPDATE, "orders/$orderId")
+      }
+    }
+  }
+
+  fun deleteOrder(orderId: String) {
+    _orders.value = _orders.value.filterNot { it.id == orderId }
+    lastKnownOrderStatuses.remove(orderId)
+    orderOwnerUids.remove(orderId)
+    saveOrderStatusSnapshot()
+    if (isVerifiedAdmin()) {
+      try {
+        firestore?.collection("orders")?.document(orderId)?.delete()
+          ?.addOnFailureListener { e ->
+            handleFirestoreError(e, OperationType.DELETE, "orders/$orderId")
+          }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.DELETE, "orders/$orderId")
       }
     }
   }
@@ -2988,5 +3075,320 @@ class StoreRepository(private val context: Context) {
         )
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Automated Order Status Notifications & FCM Token Synchronization
+  // ---------------------------------------------------------------------------
+
+  private fun seedMissingOrderStatusSnapshots(orders: List<Order>) {
+    var modified = false
+    orders.forEach { order ->
+      if (!lastKnownOrderStatuses.containsKey(order.id)) {
+        lastKnownOrderStatuses[order.id] = order.status
+        modified = true
+      }
+    }
+    if (modified) {
+      saveOrderStatusSnapshot()
+    }
+  }
+
+  fun detectAndNotifyOrderStatusChanges(
+    updatedOrders: List<Order>,
+    sourceChannel: String = "in_app",
+    pushToCloud: Boolean = false
+  ) {
+    var snapshotModified = false
+    updatedOrders.forEach { order ->
+      val prevStatus = lastKnownOrderStatuses[order.id]
+      if (prevStatus == null) {
+        lastKnownOrderStatuses[order.id] = order.status
+        snapshotModified = true
+      } else if (!prevStatus.equals(order.status, ignoreCase = true)) {
+        lastKnownOrderStatuses[order.id] = order.status
+        snapshotModified = true
+
+        val key = OrderNotificationHelper.transitionKey(order.id, order.status)
+        if (alertedTransitionKeys.add(key)) {
+          val ownerUid = orderOwnerUids[order.id].orEmpty()
+          val notification = OrderNotificationHelper.buildStatusChangeNotification(
+            order = order,
+            previousStatus = prevStatus,
+            channel = sourceChannel,
+            userId = ownerUid
+          )
+          publishOrderStatusNotification(notification)
+          if (pushToCloud && isVerifiedAdmin() && ownerUid.isNotBlank()) {
+            writeOrderNotificationToFirestore(notification)
+          }
+        }
+      }
+    }
+    if (snapshotModified) {
+      saveOrderStatusSnapshot()
+    }
+  }
+
+  fun recordIncomingNotification(notification: OrderStatusNotification) {
+    val key = OrderNotificationHelper.transitionKey(notification.orderId, notification.newStatus)
+    if (notification.orderId.isNotBlank() && notification.newStatus.isNotBlank()) {
+      alertedTransitionKeys.add(key)
+    }
+    publishOrderStatusNotification(notification, postSystemAlert = false)
+  }
+
+  private fun publishOrderStatusNotification(
+    notification: OrderStatusNotification,
+    postSystemAlert: Boolean = true
+  ) {
+    val updated = (listOf(notification) + _orderNotifications.value.filterNot { it.id == notification.id })
+      .distinctBy { it.id }
+      .take(100)
+    _orderNotifications.value = updated
+    saveOrderNotificationsToPrefs(updated)
+    _latestStatusAlert.tryEmit(notification)
+    if (postSystemAlert) {
+      OrderNotificationHelper.postSystemNotification(context, notification)
+    }
+  }
+
+  private fun mergeCloudOrderNotifications(remoteList: List<OrderStatusNotification>) {
+    val current = _orderNotifications.value
+    val existingIds = current.map { it.id }.toSet()
+    val mergedById = (remoteList + current).distinctBy { it.id }
+      .sortedByDescending { it.createdAtMs }
+      .take(100)
+    _orderNotifications.value = mergedById
+    saveOrderNotificationsToPrefs(mergedById)
+
+    // Emit live alert for brand-new unread cloud notifications that weren't alerted yet in this session
+    remoteList
+      .filter { !it.read && !existingIds.contains(it.id) }
+      .forEach { notif ->
+        val key = OrderNotificationHelper.transitionKey(notif.orderId, notif.newStatus)
+        if (alertedTransitionKeys.add(key)) {
+          _latestStatusAlert.tryEmit(notif)
+          OrderNotificationHelper.postSystemNotification(context, notif)
+        }
+      }
+  }
+
+  private fun writeOrderNotificationToFirestore(notification: OrderStatusNotification) {
+    val db = firestore ?: return
+    val uid = notification.userId
+    if (uid.isBlank()) return
+    try {
+      db.collection("order_notifications").document(notification.id).set(
+        mapOf(
+          "userId" to uid,
+          "orderId" to notification.orderId,
+          "customerName" to notification.customerName,
+          "previousStatus" to notification.previousStatus,
+          "newStatus" to notification.newStatus,
+          "title" to notification.title,
+          "message" to notification.message,
+          "trackingId" to notification.trackingId,
+          "deliveredBy" to notification.deliveredBy,
+          "channel" to "firestore",
+          "read" to false,
+          "createdAtMs" to notification.createdAtMs,
+          "createdAt" to FieldValue.serverTimestamp(),
+          "updatedAt" to FieldValue.serverTimestamp()
+        )
+      ).addOnFailureListener { e ->
+        handleFirestoreError(e, OperationType.CREATE, "order_notifications/${notification.id}")
+      }
+    } catch (e: Exception) {
+      handleFirestoreError(e, OperationType.CREATE, "order_notifications/${notification.id}")
+    }
+  }
+
+  fun markOrderNotificationRead(notificationId: String) {
+    val updated = _orderNotifications.value.map {
+      if (it.id == notificationId) it.copy(read = true) else it
+    }
+    _orderNotifications.value = updated
+    saveOrderNotificationsToPrefs(updated)
+
+    val uid = currentAuthUid() ?: return
+    val target = updated.find { it.id == notificationId } ?: return
+    if (target.userId == uid) {
+      try {
+        firestore?.collection("order_notifications")?.document(notificationId)
+          ?.update(mapOf("read" to true, "updatedAt" to FieldValue.serverTimestamp()))
+          ?.addOnFailureListener { e ->
+            handleFirestoreError(e, OperationType.UPDATE, "order_notifications/$notificationId")
+          }
+      } catch (e: Exception) {
+        handleFirestoreError(e, OperationType.UPDATE, "order_notifications/$notificationId")
+      }
+    }
+  }
+
+  fun markAllOrderNotificationsRead() {
+    val unreadIds = _orderNotifications.value.filter { !it.read }.map { it.id }
+    val updated = _orderNotifications.value.map { it.copy(read = true) }
+    _orderNotifications.value = updated
+    saveOrderNotificationsToPrefs(updated)
+
+    val uid = currentAuthUid() ?: return
+    unreadIds.forEach { notifId ->
+      val target = updated.find { it.id == notifId }
+      if (target?.userId == uid) {
+        try {
+          firestore?.collection("order_notifications")?.document(notifId)
+            ?.update(mapOf("read" to true, "updatedAt" to FieldValue.serverTimestamp()))
+        } catch (_: Exception) {
+        }
+      }
+    }
+  }
+
+  fun clearOrderNotifications() {
+    _orderNotifications.value = emptyList()
+    saveOrderNotificationsToPrefs(emptyList())
+  }
+
+  fun syncCustomerFcmToken(user: FirebaseUser? = null) {
+    val targetUser = user ?: try {
+      Firebase.auth.currentUser
+    } catch (_: Exception) {
+      null
+    } ?: return
+    try {
+      FirebaseMessaging.getInstance().token
+        .addOnSuccessListener { token ->
+          if (!token.isNullOrBlank()) {
+            OrderNotificationHelper.saveFcmToken(context, token)
+            persistCustomerFcmTokenToFirestore(targetUser, token)
+          }
+        }
+    } catch (_: Exception) {
+      val cached = OrderNotificationHelper.getSavedFcmToken(context)
+      if (cached.isNotBlank()) {
+        persistCustomerFcmTokenToFirestore(targetUser, cached)
+      }
+    }
+  }
+
+  private fun persistCustomerFcmTokenToFirestore(user: FirebaseUser, token: String) {
+    val db = firestore ?: return
+    val docRef = db.collection("customers").document(user.uid)
+    val displayName = user.displayName.orEmpty().ifBlank {
+      user.email.orEmpty().substringBefore("@").ifBlank { "সাজগোজ গ্রাহক" }
+    }
+    try {
+      docRef.get()
+        .addOnSuccessListener { snap ->
+          if (snap.exists()) {
+            docRef.update(
+              mapOf(
+                "fcmToken" to token,
+                "notificationsEnabled" to true,
+                "updatedAt" to FieldValue.serverTimestamp()
+              )
+            ).addOnFailureListener { e ->
+              handleFirestoreError(e, OperationType.UPDATE, "customers/${user.uid}")
+            }
+          } else {
+            docRef.set(
+              mapOf(
+                "userId" to user.uid,
+                "name" to displayName,
+                "email" to user.email.orEmpty(),
+                "fcmToken" to token,
+                "notificationsEnabled" to true,
+                "createdAt" to FieldValue.serverTimestamp(),
+                "updatedAt" to FieldValue.serverTimestamp()
+              )
+            ).addOnFailureListener { e ->
+              handleFirestoreError(e, OperationType.CREATE, "customers/${user.uid}")
+            }
+          }
+        }
+        .addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.GET, "customers/${user.uid}")
+        }
+    } catch (e: Exception) {
+      handleFirestoreError(e, OperationType.UPDATE, "customers/${user.uid}")
+    }
+  }
+
+  private fun loadOrderStatusSnapshot(): MutableMap<String, String> {
+    val result = mutableMapOf<String, String>()
+    val raw = prefs.getString("sajgoj_order_status_snapshot", null) ?: return result
+    return try {
+      val obj = JSONObject(raw)
+      val keys = obj.keys()
+      while (keys.hasNext()) {
+        val k = keys.next()
+        result[k] = obj.optString(k, "")
+      }
+      result
+    } catch (_: Exception) {
+      result
+    }
+  }
+
+  private fun saveOrderStatusSnapshot() {
+    val obj = JSONObject()
+    lastKnownOrderStatuses.forEach { (k, v) -> obj.put(k, v) }
+    prefs.edit().putString("sajgoj_order_status_snapshot", obj.toString()).apply()
+  }
+
+  private fun loadOrderNotificationsFromPrefs(): List<OrderStatusNotification> {
+    val raw = prefs.getString("sajgoj_order_notifications", null) ?: return emptyList()
+    return try {
+      val arr = JSONArray(raw)
+      val list = mutableListOf<OrderStatusNotification>()
+      for (i in 0 until arr.length()) {
+        val o = arr.getJSONObject(i)
+        list.add(
+          OrderStatusNotification(
+            id = o.optString("id"),
+            orderId = o.optString("orderId"),
+            userId = o.optString("userId"),
+            customerName = o.optString("customerName"),
+            previousStatus = o.optString("previousStatus"),
+            newStatus = o.optString("newStatus"),
+            title = o.optString("title"),
+            message = o.optString("message"),
+            trackingId = o.optString("trackingId"),
+            deliveredBy = o.optString("deliveredBy"),
+            channel = o.optString("channel", "in_app"),
+            read = o.optBoolean("read", false),
+            createdAtMs = o.optLong("createdAtMs", System.currentTimeMillis())
+          )
+        )
+      }
+      list.sortedByDescending { it.createdAtMs }
+    } catch (_: Exception) {
+      emptyList()
+    }
+  }
+
+  private fun saveOrderNotificationsToPrefs(list: List<OrderStatusNotification>) {
+    val arr = JSONArray()
+    list.take(100).forEach { n ->
+      arr.put(
+        JSONObject().apply {
+          put("id", n.id)
+          put("orderId", n.orderId)
+          put("userId", n.userId)
+          put("customerName", n.customerName)
+          put("previousStatus", n.previousStatus)
+          put("newStatus", n.newStatus)
+          put("title", n.title)
+          put("message", n.message)
+          put("trackingId", n.trackingId)
+          put("deliveredBy", n.deliveredBy)
+          put("channel", n.channel)
+          put("read", n.read)
+          put("createdAtMs", n.createdAtMs)
+        }
+      )
+    }
+    prefs.edit().putString("sajgoj_order_notifications", arr.toString()).apply()
   }
 }

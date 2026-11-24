@@ -243,9 +243,11 @@ fun CustomerAccountDialog(
   orders: List<Order>,
   storeConfig: StoreConfig,
   unreadSupportCount: Int = 0,
+  unreadNotificationCount: Int = 0,
   onGoogleAuthClick: () -> Unit,
   onOpenOrderInvoice: (Order) -> Unit,
   onOpenLiveSupport: () -> Unit = {},
+  onOpenNotifications: () -> Unit = {},
   onDismiss: () -> Unit
 ) {
   Dialog(onDismissRequest = onDismiss) {
@@ -349,6 +351,8 @@ fun CustomerAccountDialog(
           }
         }
 
+        CustomerOrderStatisticsCard(orders = orders)
+
         Text(
           text = "📦 সাম্প্রতিক অর্ডার (${orders.size})",
           fontSize = 14.sp,
@@ -414,6 +418,30 @@ fun CustomerAccountDialog(
               }
             }
           }
+        }
+
+        OutlinedButton(
+          onClick = {
+            onDismiss()
+            onOpenNotifications()
+          },
+          border = BorderStroke(1.dp, BorderGold),
+          shape = RoundedCornerShape(14.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .testTag("account_notifications_button")
+        ) {
+          Text(
+            text = if (unreadNotificationCount > 0) {
+              "🔔 অর্ডার নোটিফিকেশন ($unreadNotificationCount টি নতুন)"
+            } else {
+              "🔔 অর্ডার নোটিফিকেশন ইনবক্স"
+            },
+            color = RoyalMaroon,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold
+          )
         }
 
         Button(

@@ -551,3 +551,95 @@ test("support_chats & messages: owner-isolated customer chat, verified admin inb
   );
 });
 
+// ---------------------------------------------------------------------------
+// 7. Customer FCM Token & Order Status Notifications (`customers`, `order_notifications`)
+// ---------------------------------------------------------------------------
+test("customers & order_notifications: owner saves FCM token, admin dispatches notification, owner reads & marks read", async () => {
+  const unauthDb = testEnv.unauthenticatedContext().firestore();
+  const aliceDb = customerCtx(CUSTOMER_UID).firestore();
+  const bobDb = customerCtx(OTHER_UID).firestore();
+  const admDb = adminCtx().firestore();
+
+  // Alice registers profile with FCM token
+  await assertSucceeds(
+    aliceDb.collection("customers").doc(CUSTOMER_UID).set({
+      userId: CUSTOMER_UID,
+      name: "ফাতেমা আক্তার",
+      email: "alice@example.com",
+      fcmToken: "fcm_token_alice_001",
+      notificationsEnabled: true,
+      createdAt: nowPast(),
+      updatedAt: nowPast(),
+    })
+  );
+
+  // Bob cannot read or overwrite Alice's customer profile / FCM token
+  await assertFails(bobDb.collection("customers").doc(CUSTOMER_UID).get());
+  await assertFails(
+    bobDb.collection("customers").doc(CUSTOMER_UID).update({
+      fcmToken: "hijacked_token",
+      updatedAt: nowPast(),
+    })
+  );
+
+  // Alice updates her own FCM token
+  await assertSucceeds(
+    aliceDb.collection("customers").doc(CUSTOMER_UID).update({
+      fcmToken: "fcm_token_alice_002",
+      notificationsEnabled: true,
+      updatedAt: nowPast(),
+    })
+  );
+
+  const notifDoc = {
+    userId: CUSTOMER_UID,
+    orderId: "ORD-1001",
+    customerName: "ফাতেমা আক্তার",
+    previousStatus: "Pending",
+    newStatus: "Shipped",
+    title: "অর্ডার #ORD-1001 শিপড হয়েছে 🚚",
+    message: "আপনার অর্ডারটি কুরিয়ারে পাঠানো হয়েছে (SteadFast: ST-554433)।",
+    trackingId: "ST-554433",
+    deliveredBy: "SteadFast",
+    channel: "firestore",
+    read: false,
+    createdAtMs: 1795000000000,
+    createdAt: nowPast(),
+    updatedAt: nowPast(),
+  };
+
+  // Unauthenticated & customer cannot spoof creating order status notifications
+  await assertFails(unauthDb.collection("order_notifications").doc("notif_1").set(notifDoc));
+  await assertFails(aliceDb.collection("order_notifications").doc("notif_1").set(notifDoc));
+  await assertFails(bobDb.collection("order_notifications").doc("notif_1").set({ ...notifDoc, userId: OTHER_UID }));
+
+  // Verified admin creates notification
+  await assertSucceeds(admDb.collection("order_notifications").doc("notif_1").set(notifDoc));
+
+  // Unfiltered list or cross-user read denied
+  await assertFails(aliceDb.collection("order_notifications").get());
+  await assertFails(bobDb.collection("order_notifications").doc("notif_1").get());
+
+  // Owner queries own notifications and marks read
+  await assertSucceeds(
+    aliceDb.collection("order_notifications").where("userId", "==", CUSTOMER_UID).get()
+  );
+  await assertSucceeds(
+    aliceDb.collection("order_notifications").doc("notif_1").update({
+      read: true,
+      updatedAt: nowPast(),
+    })
+  );
+
+  // Owner cannot tamper with newStatus or delete notification
+  await assertFails(
+    aliceDb.collection("order_notifications").doc("notif_1").update({
+      newStatus: "Delivered",
+      updatedAt: nowPast(),
+    })
+  );
+  await assertFails(aliceDb.collection("order_notifications").doc("notif_1").delete());
+  await assertSucceeds(admDb.collection("order_notifications").doc("notif_1").delete());
+});
+
+

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -252,9 +254,12 @@ fun AdminSellerOrdersHub(
   onUpdateCourierConfig: (CourierConfig) -> Unit,
   onOpenQrScanner: () -> Unit = {},
   onShowToast: (String) -> Unit,
-  onEnqueueOrderSms: (Order) -> Unit = {}
+  onEnqueueOrderSms: (Order) -> Unit = {},
+  onDeleteOrder: (String) -> Unit = {}
 ) {
   val context = LocalContext.current
+
+  var pendingDeleteOrder by remember { mutableStateOf<Order?>(null) }
 
   var selectedSellerTab by remember { mutableStateOf("ALL") }
   var showSearchBar by remember { mutableStateOf(false) }
@@ -814,7 +819,8 @@ fun AdminSellerOrdersHub(
             onUpdateStatus = { st -> onUpdateStatus(order.id, st) },
             onDispatchCourier = { partner -> onDispatchCourier(order.id, partner) },
             onSetDeliveredBy = { partner -> onUpdateDeliveredBy(order.id, partner) },
-            onOpenReturn = { onOpenReturn(order) }
+            onOpenReturn = { onOpenReturn(order) },
+            onRequestDelete = { pendingDeleteOrder = order }
           )
         }
       }
@@ -976,6 +982,125 @@ fun AdminSellerOrdersHub(
       }
     )
   }
+
+  pendingDeleteOrder?.let { targetOrder ->
+    DeleteOrderConfirmationDialog(
+      order = targetOrder,
+      onConfirmDelete = {
+        onDeleteOrder(targetOrder.id)
+        pendingDeleteOrder = null
+      },
+      onDismiss = { pendingDeleteOrder = null }
+    )
+  }
+}
+
+@Composable
+fun DeleteOrderConfirmationDialog(
+  order: Order,
+  onConfirmDelete: () -> Unit,
+  onDismiss: () -> Unit
+) {
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    modifier = Modifier.testTag("delete_order_confirmation_dialog"),
+    containerColor = Color.White,
+    icon = {
+      Box(
+        modifier = Modifier
+          .size(52.dp)
+          .clip(CircleShape)
+          .background(Color(0xFFFEE2E2)),
+        contentAlignment = Alignment.Center
+      ) {
+        Icon(
+          imageVector = Icons.Default.WarningAmber,
+          contentDescription = "সতর্কতা",
+          tint = Color(0xFFDC2626),
+          modifier = Modifier.size(28.dp)
+        )
+      }
+    },
+    title = {
+      Text(
+        text = "অর্ডারটি স্থায়ীভাবে মুছে ফেলবেন?",
+        fontSize = 17.sp,
+        fontWeight = FontWeight.Black,
+        color = AdminInkPrimary
+      )
+    },
+    text = {
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color(0xFFFEF2F2),
+          border = BorderStroke(1.dp, Color(0xFFFECACA)),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Text(
+              text = "অর্ডার নাম্বার: #${order.id}",
+              fontSize = 13.sp,
+              fontWeight = FontWeight.ExtraBold,
+              color = Color(0xFF991B1B)
+            )
+            Text(
+              text = "গ্রাহক: ${order.customerName} (${order.phone})",
+              fontSize = 12.sp,
+              fontWeight = FontWeight.SemiBold,
+              color = AdminInkPrimary
+            )
+            Text(
+              text = "মোট: BDT ${order.total}.00 • স্ট্যাটাস: ${order.status}",
+              fontSize = 12.sp,
+              color = AdminInkSecondary
+            )
+          }
+        }
+        Text(
+          text = "একবার মুছে ফেললে এই অর্ডারটি ড্যাশবোর্ড এবং ক্লাউড ডাটাবেজ থেকে স্থায়ীভাবে মুছে যাবে এবং আর পুনরুদ্ধার করা যাবে না।",
+          fontSize = 12.sp,
+          lineHeight = 18.sp,
+          color = AdminInkSecondary
+        )
+      }
+    },
+    confirmButton = {
+      Button(
+        onClick = onConfirmDelete,
+        colors = ButtonDefaults.buttonColors(
+          containerColor = Color(0xFFDC2626),
+          contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+          .heightIn(min = 48.dp)
+          .testTag("confirm_delete_order_btn")
+      ) {
+        Icon(
+          imageVector = Icons.Default.DeleteForever,
+          contentDescription = null,
+          modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text("হ্যাঁ, মুছে ফেলুন", fontWeight = FontWeight.Bold)
+      }
+    },
+    dismissButton = {
+      OutlinedButton(
+        onClick = onDismiss,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+          .heightIn(min = 48.dp)
+          .testTag("cancel_delete_order_btn")
+      ) {
+        Text("বাতিল করুন", fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+      }
+    }
+  )
 }
 
 @Composable
@@ -1041,7 +1166,8 @@ private fun SellerCenterOrderCard(
   onUpdateStatus: (String) -> Unit,
   onDispatchCourier: (String) -> Unit,
   onSetDeliveredBy: (String) -> Unit,
-  onOpenReturn: () -> Unit
+  onOpenReturn: () -> Unit,
+  onRequestDelete: () -> Unit
 ) {
   var showCardMenu by remember { mutableStateOf(false) }
 
@@ -1406,6 +1532,28 @@ private fun SellerCenterOrderCard(
                 showCardMenu = false
                 onOpenReturn()
               }
+            )
+            HorizontalDivider(color = AdminCardBorderSoft)
+            DropdownMenuItem(
+              text = {
+                Text(
+                  text = "অর্ডার মুছুন (Delete)",
+                  fontWeight = FontWeight.Bold,
+                  color = Color(0xFFDC2626)
+                )
+              },
+              leadingIcon = {
+                Icon(
+                  imageVector = Icons.Default.DeleteForever,
+                  contentDescription = "অর্ডার মুছুন",
+                  tint = Color(0xFFDC2626)
+                )
+              },
+              onClick = {
+                showCardMenu = false
+                onRequestDelete()
+              },
+              modifier = Modifier.testTag("order_delete_menu_item_${order.id}")
             )
           }
         }

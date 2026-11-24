@@ -18,6 +18,7 @@ import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
+import com.example.data.model.OrderStatusNotification
 import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
@@ -36,6 +37,8 @@ import com.example.data.repository.SupportChatRepository
 import com.example.firebase.AuthUserSummary
 import com.example.firebase.GoogleAuthHelper
 import com.example.firebase.GoogleAuthHelper.authStateFlow
+import com.example.notifications.OrderNotificationBus
+import com.example.notifications.OrderNotificationHelper
 import com.example.sms.SimSmsGatewayManager
 import com.example.util.VisualImageSearchHelper
 import com.example.util.VisualSearchAnalysis
@@ -141,6 +144,13 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val syncHealth: StateFlow<SyncHealthState> = repository.syncHealth
   val syncErrorLogs: StateFlow<List<SyncErrorLog>> = repository.syncErrorLogs
   val smsQueue: StateFlow<List<SmsQueueItem>> = repository.smsQueue
+  val orderNotifications: StateFlow<List<OrderStatusNotification>> = repository.orderNotifications
+  val unreadOrderNotificationCount: StateFlow<Int> = repository.orderNotifications
+    .map { list -> list.count { !it.read } }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+  private val _activeOrderBannerAlert = MutableStateFlow<OrderStatusNotification?>(null)
+  val activeOrderBannerAlert: StateFlow<OrderStatusNotification?> = _activeOrderBannerAlert.asStateFlow()
 
   private val _isProcessingSmsQueue = MutableStateFlow(false)
   val isProcessingSmsQueue: StateFlow<Boolean> = _isProcessingSmsQueue.asStateFlow()
@@ -188,7 +198,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   private val _isCheckoutOpen = MutableStateFlow(false)
   val isCheckoutOpen: StateFlow<Boolean> = _isCheckoutOpen.asStateFlow()
 
-  private val _toastEvent = MutableSharedFlow<String>()
+  private val _toastEvent = MutableSharedFlow<String>(extraBufferCapacity = 32)
   val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
 
   private val _authUser = MutableStateFlow<AuthUserSummary?>(null)
@@ -286,6 +296,21 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         ) {
           processPendingSmsQueueInternal(requireGatewaySwitch = true)
         }
+      }
+    }
+
+    // Automated order status alert listener (Firestore real-time updates + local status transitions)
+    viewModelScope.launch {
+      repository.latestStatusAlert.collect { notif ->
+        _activeOrderBannerAlert.value = notif
+        _toastEvent.emit(OrderNotificationHelper.toastSummary(notif))
+      }
+    }
+
+    // Incoming Firebase Cloud Messaging (FCM) push listener
+    viewModelScope.launch {
+      OrderNotificationBus.events.collect { fcmNotif ->
+        repository.recordIncomingNotification(fcmNotif)
       }
     }
   }
@@ -645,6 +670,11 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     } else {
       emitToast("অর্ডার $orderId এর স্ট্যাটাস \"$status\" এ আপডেট করা হয়েছে।")
     }
+  }
+
+  fun deleteOrder(orderId: String) {
+    repository.deleteOrder(orderId)
+    emitToast("🗑️ অর্ডার #$orderId স্থায়ীভাবে মুছে ফেলা হয়েছে।")
   }
 
   fun recordPosSale(
@@ -1018,6 +1048,51 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       }.onFailure { err ->
         emitToast("⚠️ স্ট্যাটাস আপডেট ব্যর্থ: ${err.localizedMessage ?: ""}")
       }
+    }
+  }
+
+  fun dismissOrderBannerAlert() {
+    _activeOrderBannerAlert.value = null
+  }
+
+  fun markOrderNotificationRead(notificationId: String) {
+    repository.markOrderNotificationRead(notificationId)
+  }
+
+  fun markAllOrderNotificationsRead() {
+    repository.markAllOrderNotificationsRead()
+  }
+
+  fun clearOrderNotifications() {
+    repository.clearOrderNotifications()
+    _activeOrderBannerAlert.value = null
+  }
+
+  fun openOrderFromNotification(notification: OrderStatusNotification) {
+    repository.markOrderNotificationRead(notification.id)
+    if (_activeOrderBannerAlert.value?.id == notification.id) {
+      _activeOrderBannerAlert.value = null
+    }
+    openOrderById(notification.orderId)
+  }
+
+  fun openOrderById(orderId: String) {
+    if (orderId.isBlank()) return
+    val matched = repository.orders.value.find { it.id.equals(orderId, ignoreCase = true) }
+    if (matched != null) {
+      _currentScreen.value = AppScreen.STOREFRONT
+      openInvoice(matched)
+    } else {
+      emitToast("🔔 অর্ডার #$orderId এর আপডেট দেখতে অ্যাকাউন্ট পোর্টালে যান।")
+    }
+  }
+
+  fun onPushPermissionResult(granted: Boolean) {
+    if (granted) {
+      repository.syncCustomerFcmToken()
+      emitToast("🔔 অর্ডার স্ট্যাটাস পুশ নোটিফিকেশন চালু হয়েছে!")
+    } else {
+      emitToast("ℹ️ পুশ অনুমতি দেওয়া হয়নি — ইন-অ্যাপ অ্যালার্ট ও টোস্ট চালু থাকবে।")
     }
   }
 

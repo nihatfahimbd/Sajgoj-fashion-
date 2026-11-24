@@ -205,6 +205,7 @@ fun AdminDashboardScreen(
   onUpdateProduct: (Product) -> Unit,
   onDeleteProduct: (String) -> Unit,
   onUpdateOrderStatus: (String, String) -> Unit,
+  onDeleteOrder: (String) -> Unit = {},
   onDispatchCourier: (String, String) -> Unit,
   onUpdateDeliveredBy: (String, String) -> Unit = { _, _ -> },
   onViewInvoice: (Order) -> Unit,
@@ -595,7 +596,8 @@ fun AdminDashboardScreen(
             onEnqueueOrderSms = { order ->
               val msg = SmsHelper.buildOrderStatusSms(order, storeConfig.storeName)
               onEnqueueSingleSms(order.phone, order.customerName, msg, order.id, "order_alert")
-            }
+            },
+            onDeleteOrder = onDeleteOrder
           )
         }
 

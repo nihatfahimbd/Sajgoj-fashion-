@@ -225,6 +225,8 @@ service cloud.firestore {
         (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
         (!('email' in data) || (data.email is string && data.email.size() <= 160)) &&
         (!('address' in data) || (data.address is string && data.address.size() <= 400)) &&
+        (!('fcmToken' in data) || (data.fcmToken is string && data.fcmToken.size() <= 512)) &&
+        (!('notificationsEnabled' in data) || data.notificationsEnabled is bool) &&
         data.createdAt is timestamp && data.createdAt <= request.time &&
         (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
     }
@@ -267,6 +269,23 @@ service cloud.firestore {
         data.text is string && data.text.size() >= 1 && data.text.size() <= 1000 &&
         (!('orderId' in data) || (data.orderId is string && data.orderId.size() <= 128)) &&
         data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidOrderNotification(data) {
+      return data.userId is string && isValidId(data.userId) &&
+        data.orderId is string && isValidId(data.orderId) &&
+        (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 120)) &&
+        data.previousStatus is string && data.previousStatus.size() >= 1 && data.previousStatus.size() <= 40 &&
+        data.newStatus is string && data.newStatus in ['Pending', 'Confirmed', 'Processing', 'To Ship', 'Shipped', 'Shipping', 'Delivered', 'Failed Delivered', 'Cancelled', 'Cancellation'] &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+        data.message is string && data.message.size() >= 1 && data.message.size() <= 600 &&
+        (!('trackingId' in data) || (data.trackingId is string && data.trackingId.size() <= 80)) &&
+        (!('deliveredBy' in data) || (data.deliveredBy is string && data.deliveredBy.size() <= 40)) &&
+        (!('channel' in data) || (data.channel is string && data.channel in ['in_app', 'fcm', 'firestore'])) &&
+        data.read is bool &&
+        (!('createdAtMs' in data) || (data.createdAtMs is int && data.createdAtMs >= 0)) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
 
     // 4. Collection Security Rules
@@ -487,8 +506,8 @@ service cloud.firestore {
     match /customers/{customerId} {
       allow get: if isValidId(customerId) && isSignedIn() && (request.auth.uid == customerId || isAdmin());
       allow list: if isAdmin();
-      allow create: if isSignedIn() && isValidId(customerId) && request.auth.uid == customerId && incoming().userId == request.auth.uid && incoming().keys().hasAll(['userId', 'name', 'createdAt']) && incoming().keys().hasOnly(['userId', 'name', 'phone', 'email', 'address', 'createdAt', 'updatedAt']) && isValidCustomerProfile(incoming());
-      allow update: if isSignedIn() && isValidId(customerId) && isValidCustomerProfile(incoming()) && (request.auth.uid == customerId || isAdmin()) && incoming().userId == existing().userId && incoming().createdAt == existing().createdAt && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'email', 'address', 'updatedAt']);
+      allow create: if isSignedIn() && isValidId(customerId) && request.auth.uid == customerId && incoming().userId == request.auth.uid && incoming().keys().hasAll(['userId', 'name', 'createdAt']) && incoming().keys().hasOnly(['userId', 'name', 'phone', 'email', 'address', 'fcmToken', 'notificationsEnabled', 'createdAt', 'updatedAt']) && isValidCustomerProfile(incoming());
+      allow update: if isSignedIn() && isValidId(customerId) && isValidCustomerProfile(incoming()) && (request.auth.uid == customerId || isAdmin()) && incoming().userId == existing().userId && incoming().createdAt == existing().createdAt && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'email', 'address', 'fcmToken', 'notificationsEnabled', 'updatedAt']);
       allow delete: if isAdmin() && isValidId(customerId);
     }
 
@@ -595,6 +614,35 @@ service cloud.firestore {
 
         allow update, delete: if false;
       }
+    }
+
+    // Automated Order Status Notifications (verified admin creates, customer owner reads & marks read)
+    match /order_notifications/{notifId} {
+      allow get: if isValidId(notifId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+
+      allow create: if isAdmin() &&
+        isValidId(notifId) &&
+        incoming().keys().hasAll(['userId', 'orderId', 'previousStatus', 'newStatus', 'title', 'message', 'read', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly([
+          'userId', 'orderId', 'customerName', 'previousStatus', 'newStatus',
+          'title', 'message', 'trackingId', 'deliveredBy', 'channel',
+          'read', 'createdAtMs', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidOrderNotification(incoming());
+
+      allow update: if isSignedIn() &&
+        isValidId(notifId) &&
+        isValidOrderNotification(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().orderId == existing().orderId &&
+        incoming().createdAt == existing().createdAt &&
+        (
+          (existing().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt'])) ||
+          isAdmin()
+        );
+
+      allow delete: if isAdmin() && isValidId(notifId);
     }
   }
 }

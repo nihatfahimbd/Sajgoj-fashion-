@@ -248,6 +248,28 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
       },
       "required": ["senderId", "senderName", "senderRole", "text", "createdAt"]
+    },
+    "OrderStatusNotification": {
+      "title": "OrderStatusNotification",
+      "description": "Real-time order status change notification dispatched to customer inbox and FCM",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "previousStatus": { "type": "string" },
+        "newStatus": { "type": "string", "enum": ["Pending", "Confirmed", "Processing", "To Ship", "Shipped", "Shipping", "Delivered", "Failed Delivered", "Cancelled", "Cancellation"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "trackingId": { "type": "string" },
+        "deliveredBy": { "type": "string" },
+        "channel": { "type": "string", "enum": ["in_app", "fcm", "firestore"] },
+        "read": { "type": "boolean" },
+        "createdAtMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "orderId", "previousStatus", "newStatus", "title", "message", "read", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -294,6 +316,10 @@
     "/support_chats/{chatId}/messages/{messageId}": {
       "schema": "SupportChatMessage",
       "description": "Real-time support chat messages subcollection (customer owner or verified admin)"
+    },
+    "/order_notifications/{notifId}": {
+      "schema": "OrderStatusNotification",
+      "description": "Automated order status alerts readable by the order owner or verified admin"
     }
   }
 }

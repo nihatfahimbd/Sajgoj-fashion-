@@ -690,3 +690,19 @@ data class SmsTemplate(
   val body: String
 )
 
+data class OrderStatusNotification(
+  val id: String = "",
+  val orderId: String = "",
+  val userId: String = "",
+  val customerName: String = "",
+  val previousStatus: String = "",
+  val newStatus: String = "",
+  val title: String = "",
+  val message: String = "",
+  val trackingId: String = "",
+  val deliveredBy: String = "",
+  val channel: String = "in_app", // in_app, fcm, firestore
+  val read: Boolean = false,
+  val createdAtMs: Long = System.currentTimeMillis()
+)
+
