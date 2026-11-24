@@ -245,6 +245,30 @@ service cloud.firestore {
         (!('sentAt' in data) || (data.sentAt is int && data.sentAt >= 0));
     }
 
+    function isValidSupportChat(data) {
+      return data.userId is string && isValidId(data.userId) &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+        (!('customerEmail' in data) || (data.customerEmail is string && data.customerEmail.size() <= 160)) &&
+        (!('customerPhotoUrl' in data) || (data.customerPhotoUrl is string && data.customerPhotoUrl.size() <= 1000)) &&
+        data.lastMessage is string && data.lastMessage.size() >= 1 && data.lastMessage.size() <= 1000 &&
+        data.lastSenderRole is string && data.lastSenderRole in ['customer', 'admin'] &&
+        data.status is string && data.status in ['open', 'resolved'] &&
+        data.unreadByAdmin is int && data.unreadByAdmin >= 0 && data.unreadByAdmin <= 10000 &&
+        data.unreadByCustomer is int && data.unreadByCustomer >= 0 && data.unreadByCustomer <= 10000 &&
+        (!('orderId' in data) || (data.orderId is string && data.orderId.size() <= 128)) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSupportMessage(data) {
+      return data.senderId is string && isValidId(data.senderId) &&
+        data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 120 &&
+        data.senderRole is string && data.senderRole in ['customer', 'admin'] &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 1000 &&
+        (!('orderId' in data) || (data.orderId is string && data.orderId.size() <= 128)) &&
+        data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
     // 4. Collection Security Rules
 
     // Public catalog: anyone may browse products; only verified admin may create/update/delete
@@ -499,6 +523,78 @@ service cloud.firestore {
         ]);
 
       allow delete: if isAdmin() && isValidId(smsId);
+    }
+
+    // Real-time Customer Support Chat Threads & Messages (owner-isolated or verified admin)
+    match /support_chats/{chatId} {
+      allow get: if isValidId(chatId) && isSignedIn() && (request.auth.uid == chatId || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+        isValidId(chatId) &&
+        chatId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().lastSenderRole == 'customer' &&
+        incoming().status == 'open' &&
+        incoming().unreadByCustomer == 0 &&
+        incoming().keys().hasAll([
+          'userId', 'customerName', 'lastMessage', 'lastSenderRole', 'status',
+          'unreadByAdmin', 'unreadByCustomer', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().keys().hasOnly([
+          'userId', 'customerName', 'customerEmail', 'customerPhotoUrl',
+          'lastMessage', 'lastSenderRole', 'status', 'unreadByAdmin',
+          'unreadByCustomer', 'orderId', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidSupportChat(incoming());
+
+      allow update: if isSignedIn() &&
+        isValidId(chatId) &&
+        isValidSupportChat(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        (
+          (
+            request.auth.uid == chatId &&
+            incoming().lastSenderRole == 'customer' &&
+            incoming().status == 'open' &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'customerName', 'customerEmail', 'customerPhotoUrl',
+              'lastMessage', 'lastSenderRole', 'status', 'unreadByAdmin',
+              'orderId', 'updatedAt'
+            ])
+          ) ||
+          (
+            request.auth.uid == chatId &&
+            incoming().unreadByCustomer == 0 &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['unreadByCustomer', 'updatedAt'])
+          ) ||
+          (
+            isAdmin() &&
+            (incoming().lastSenderRole == existing().lastSenderRole || incoming().lastSenderRole == 'admin') &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'lastMessage', 'lastSenderRole', 'status', 'unreadByAdmin',
+              'unreadByCustomer', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get, list: if isValidId(chatId) && isSignedIn() && (request.auth.uid == chatId || isAdmin());
+
+        allow create: if isSignedIn() &&
+          isValidId(chatId) &&
+          isValidId(messageId) &&
+          incoming().senderId == request.auth.uid &&
+          ((request.auth.uid == chatId && incoming().senderRole == 'customer') || (isAdmin() && incoming().senderRole == 'admin')) &&
+          incoming().keys().hasAll(['senderId', 'senderName', 'senderRole', 'text', 'createdAt']) &&
+          incoming().keys().hasOnly(['senderId', 'senderName', 'senderRole', 'text', 'orderId', 'createdAt']) &&
+          isValidSupportMessage(incoming());
+
+        allow update, delete: if false;
+      }
     }
   }
 }

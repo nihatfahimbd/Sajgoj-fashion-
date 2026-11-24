@@ -398,3 +398,156 @@ test("sms_queue: admin creates, updates status, and deletes; non-admin & invalid
   await assertSucceeds(admDb.collection("sms_queue").doc("SMS-1001").delete());
 });
 
+// ---------------------------------------------------------------------------
+// 6. Real-Time Customer Support Chat (`support_chats` & `messages`)
+// ---------------------------------------------------------------------------
+test("support_chats & messages: owner-isolated customer chat, verified admin inbox/reply, and anti-spoofing rules", async () => {
+  const unauthDb = testEnv.unauthenticatedContext().firestore();
+  const aliceDb = customerCtx(CUSTOMER_UID).firestore();
+  const bobDb = customerCtx(OTHER_UID).firestore();
+  const spoofDb = unverifiedSpoofAdminCtx().firestore();
+  const admDb = adminCtx().firestore();
+
+  const aliceThread = {
+    userId: CUSTOMER_UID,
+    customerName: "সুমাইয়া রহমান",
+    customerEmail: "sumaiya@example.com",
+    customerPhotoUrl: "",
+    lastMessage: "আমার অর্ডার #ORD-1001 কখন ডেলিভারি হবে?",
+    lastSenderRole: "customer",
+    status: "open",
+    unreadByAdmin: 1,
+    unreadByCustomer: 0,
+    orderId: "ORD-1001",
+    createdAt: nowPast(),
+    updatedAt: nowPast(),
+  };
+
+  const aliceMsg1 = {
+    senderId: CUSTOMER_UID,
+    senderName: "সুমাইয়া রহমান",
+    senderRole: "customer",
+    text: "আমার অর্ডার #ORD-1001 কখন ডেলিভারি হবে?",
+    orderId: "ORD-1001",
+    createdAt: nowPast(),
+  };
+
+  // Unauthenticated access denied
+  await assertFails(unauthDb.collection("support_chats").doc(CUSTOMER_UID).set(aliceThread));
+  await assertFails(unauthDb.collection("support_chats").doc(CUSTOMER_UID).get());
+  await assertFails(unauthDb.collection("support_chats").get());
+  await assertFails(
+    unauthDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").doc("msg1").set(aliceMsg1)
+  );
+
+  // Customer cannot create thread under another UID or spoof role/unreadByCustomer/future time/id field
+  await assertFails(aliceDb.collection("support_chats").doc(OTHER_UID).set(aliceThread));
+  await assertFails(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).set({ ...aliceThread, lastSenderRole: "admin" })
+  );
+  await assertFails(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).set({ ...aliceThread, unreadByCustomer: 3 })
+  );
+  await assertFails(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).set({ ...aliceThread, createdAt: futureDate() })
+  );
+  await assertFails(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).set({ ...aliceThread, id: CUSTOMER_UID })
+  );
+
+  // Alice creates her own thread & first message
+  await assertSucceeds(aliceDb.collection("support_chats").doc(CUSTOMER_UID).set(aliceThread));
+  await assertSucceeds(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").doc("msg_1").set(aliceMsg1)
+  );
+
+  // Customer cannot spoof admin role in message subcollection
+  await assertFails(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").doc("msg_spoof").set({
+      ...aliceMsg1,
+      senderRole: "admin",
+    })
+  );
+
+  // Cross-user isolation: Bob & unverified-email spoofed admin cannot read/list/write Alice's thread or messages
+  await assertFails(bobDb.collection("support_chats").doc(CUSTOMER_UID).get());
+  await assertFails(bobDb.collection("support_chats").get());
+  await assertFails(bobDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").get());
+  await assertFails(
+    bobDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").doc("msg_bob").set({
+      ...aliceMsg1,
+      senderId: OTHER_UID,
+    })
+  );
+  await assertFails(spoofDb.collection("support_chats").get());
+  await assertFails(
+    spoofDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").doc("msg_spoof2").set({
+      senderId: "spoof_uid",
+      senderName: "Fake Admin",
+      senderRole: "admin",
+      text: "Spoof",
+      createdAt: nowPast(),
+    })
+  );
+
+  // Alice can read her own thread and messages (filtered list & direct get)
+  await assertSucceeds(aliceDb.collection("support_chats").doc(CUSTOMER_UID).get());
+  await assertSucceeds(aliceDb.collection("support_chats").where("userId", "==", CUSTOMER_UID).get());
+  await assertSucceeds(aliceDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").get());
+
+  // Admin can list all threads, read Alice's messages, mark read, and reply
+  await assertSucceeds(admDb.collection("support_chats").get());
+  await assertSucceeds(admDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").get());
+  await assertSucceeds(
+    admDb.collection("support_chats").doc(CUSTOMER_UID).update({
+      unreadByAdmin: 0,
+      updatedAt: nowPast(),
+    })
+  );
+  await assertSucceeds(
+    admDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").doc("msg_2").set({
+      senderId: ADMIN_UID,
+      senderName: "SAJGOJ সাপোর্ট টিম",
+      senderRole: "admin",
+      text: "আপনার পার্সেলটি আজ ডেলিভারির জন্য বের হয়েছে!",
+      createdAt: nowPast(),
+    })
+  );
+  await assertSucceeds(
+    admDb.collection("support_chats").doc(CUSTOMER_UID).update({
+      lastMessage: "আপনার পার্সেলটি আজ ডেলিভারির জন্য বের হয়েছে!",
+      lastSenderRole: "admin",
+      status: "open",
+      unreadByAdmin: 0,
+      unreadByCustomer: 1,
+      updatedAt: nowPast(),
+    })
+  );
+
+  // Alice marks thread read (unreadByCustomer -> 0), cannot tamper unreadByCustomer to >0 or mutate createdAt
+  await assertFails(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).update({
+      unreadByCustomer: 5,
+      updatedAt: nowPast(),
+    })
+  );
+  await assertSucceeds(
+    aliceDb.collection("support_chats").doc(CUSTOMER_UID).update({
+      unreadByCustomer: 0,
+      updatedAt: nowPast(),
+    })
+  );
+
+  // Admin resolves thread; Alice cannot delete thread or messages
+  await assertSucceeds(
+    admDb.collection("support_chats").doc(CUSTOMER_UID).update({
+      status: "resolved",
+      updatedAt: nowPast(),
+    })
+  );
+  await assertFails(aliceDb.collection("support_chats").doc(CUSTOMER_UID).delete());
+  await assertFails(
+    admDb.collection("support_chats").doc(CUSTOMER_UID).collection("messages").doc("msg_1").delete()
+  );
+});
+

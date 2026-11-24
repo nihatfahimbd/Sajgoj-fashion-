@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
@@ -69,6 +70,7 @@ private fun adminTabIcon(tab: AdminTab): ImageVector = when (tab) {
   AdminTab.PAGE_CONFIG -> Icons.Default.Tune
   AdminTab.PRODUCTS -> Icons.Default.Inventory2
   AdminTab.ORDERS -> Icons.Default.LocalShipping
+  AdminTab.SUPPORT_CHAT -> Icons.Default.Forum
   AdminTab.SHIPPING_INFO -> Icons.Default.LocalShipping
   AdminTab.MARKETING -> Icons.Default.Campaign
   AdminTab.SMS_GATEWAY -> Icons.Default.Sms
@@ -80,6 +82,7 @@ fun AdminV2SidebarContent(
   currentTab: AdminTab,
   pendingOrdersCount: Int,
   productsCount: Int,
+  unreadSupportCount: Int = 0,
   onSelectTab: (AdminTab) -> Unit,
   onLogout: () -> Unit,
   modifier: Modifier = Modifier
@@ -88,6 +91,7 @@ fun AdminV2SidebarContent(
   val managementTabs = listOf(
     AdminTab.PRODUCTS,
     AdminTab.ORDERS,
+    AdminTab.SUPPORT_CHAT,
     AdminTab.SHIPPING_INFO,
     AdminTab.MARKETING,
     AdminTab.SMS_GATEWAY,
@@ -187,6 +191,7 @@ fun AdminV2SidebarContent(
       managementTabs.forEach { tab ->
         val badge = when (tab) {
           AdminTab.ORDERS -> if (pendingOrdersCount > 0) pendingOrdersCount else null
+          AdminTab.SUPPORT_CHAT -> if (unreadSupportCount > 0) unreadSupportCount else null
           AdminTab.PRODUCTS -> productsCount
           else -> null
         }
@@ -329,7 +334,7 @@ private fun AdminV2SidebarNavItem(
       Surface(
         shape = RoundedCornerShape(8.dp),
         color = when {
-          tab == AdminTab.ORDERS -> AdminV2Rose
+          tab == AdminTab.ORDERS || tab == AdminTab.SUPPORT_CHAT -> AdminV2Rose
           selected -> Color.White.copy(alpha = 0.24f)
           else -> AdminV2SkySoft
         }
@@ -338,7 +343,7 @@ private fun AdminV2SidebarNavItem(
           text = badgeCount.toString(),
           fontSize = 10.sp,
           fontWeight = FontWeight.ExtraBold,
-          color = if (tab == AdminTab.ORDERS || selected) Color.White else AdminV2CyanDeep,
+          color = if (tab == AdminTab.ORDERS || tab == AdminTab.SUPPORT_CHAT || selected) Color.White else AdminV2CyanDeep,
           modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
       }

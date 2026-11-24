@@ -61,6 +61,7 @@ import com.example.ui.components.AiStylistDialog
 import com.example.ui.components.CartAndCheckoutDialog
 import com.example.ui.components.CustomerAccountDialog
 import com.example.ui.components.InvoiceDialog
+import com.example.ui.components.LiveSupportChatDialog
 import com.example.ui.components.ProductDetailDialog
 import com.example.ui.components.ShippingLabelDialog
 import com.example.ui.components.StoreHeader
@@ -136,6 +137,15 @@ class MainActivity : ComponentActivity() {
         val isProcessingSmsQueue by viewModel.isProcessingSmsQueue.collectAsStateWithLifecycle()
         val smsGatewayLastLog by viewModel.smsGatewayLastLog.collectAsStateWithLifecycle()
 
+        val customerSupportThreadState by viewModel.customerSupportThreadState.collectAsStateWithLifecycle()
+        val customerSupportMessagesState by viewModel.customerSupportMessagesState.collectAsStateWithLifecycle()
+        val customerUnreadSupportCount by viewModel.customerUnreadSupportCount.collectAsStateWithLifecycle()
+        val adminSupportThreadsState by viewModel.adminSupportThreadsState.collectAsStateWithLifecycle()
+        val selectedAdminChatId by viewModel.selectedAdminChatId.collectAsStateWithLifecycle()
+        val adminSelectedChatMessagesState by viewModel.adminSelectedChatMessagesState.collectAsStateWithLifecycle()
+        val adminUnreadSupportCount by viewModel.adminUnreadSupportCount.collectAsStateWithLifecycle()
+        val isSendingSupportChat by viewModel.isSendingSupportChat.collectAsStateWithLifecycle()
+
         var showVoiceFallbackDialog by remember { mutableStateOf(false) }
         var voiceFallbackInput by remember { mutableStateOf("") }
         var showScannerDialog by remember { mutableStateOf(false) }
@@ -146,6 +156,7 @@ class MainActivity : ComponentActivity() {
         var openOffersTrigger by remember { mutableStateOf(0) }
         var isOffersDialogOpen by remember { mutableStateOf(false) }
         var showAccountDialog by remember { mutableStateOf(false) }
+        var showLiveSupportDialog by remember { mutableStateOf(false) }
 
         // Zero-permission Photo Picker for Visual Image Search
         val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -219,9 +230,11 @@ class MainActivity : ComponentActivity() {
             showVoiceFallbackDialog ||
             showScannerDialog ||
             showAiStylistDialog ||
-            showAccountDialog
+            showAccountDialog ||
+            showLiveSupportDialog
         ) {
           when {
+            showLiveSupportDialog -> showLiveSupportDialog = false
             showAccountDialog -> showAccountDialog = false
             showAiStylistDialog -> showAiStylistDialog = false
             showScannerDialog -> showScannerDialog = false
@@ -399,7 +412,16 @@ class MainActivity : ComponentActivity() {
                       storeBottomTab = StorefrontBottomTab.SHOPPING
                     },
                     openOffersTrigger = openOffersTrigger,
-                    onOffersVisibilityChange = { isOffersDialogOpen = it }
+                    onOffersVisibilityChange = { isOffersDialogOpen = it },
+                    authUser = authUser,
+                    isAuthBusy = isAuthBusy,
+                    supportThreadState = customerSupportThreadState,
+                    supportMessagesState = customerSupportMessagesState,
+                    customerUnreadSupportCount = customerUnreadSupportCount,
+                    isSendingSupportChat = isSendingSupportChat,
+                    onGoogleSignIn = { viewModel.signInWithGoogle(context, unlockAdminIfVerified = false) },
+                    onSendSupportMessage = { text, ordId -> viewModel.sendCustomerSupportMessage(text, ordId) },
+                    onMarkSupportRead = { viewModel.markCustomerSupportRead() }
                   )
                 }
 
@@ -475,7 +497,15 @@ class MainActivity : ComponentActivity() {
                     onRetrySmsItem = { viewModel.retrySmsQueueItem(it) },
                     onMarkSmsSentViaIntent = { viewModel.markSmsSentViaPlaySafeIntent(it) },
                     onDeleteSmsItem = { viewModel.deleteSmsQueueItem(it) },
-                    onClearCompletedSms = { viewModel.clearCompletedSmsQueue() }
+                    onClearCompletedSms = { viewModel.clearCompletedSmsQueue() },
+                    unreadSupportCount = adminUnreadSupportCount,
+                    supportThreadsState = adminSupportThreadsState,
+                    selectedSupportChatId = selectedAdminChatId,
+                    supportMessagesState = adminSelectedChatMessagesState,
+                    isSendingSupportReply = isSendingSupportChat,
+                    onSelectSupportThread = { viewModel.selectAdminSupportThread(it) },
+                    onSendSupportReply = { chatId, text -> viewModel.sendAdminSupportReply(chatId, text) },
+                    onToggleSupportThreadStatus = { chatId, status -> viewModel.toggleAdminSupportThreadStatus(chatId, status) }
                   )
                 }
               }
@@ -727,6 +757,7 @@ class MainActivity : ComponentActivity() {
               isAuthBusy = isAuthBusy,
               orders = orders,
               storeConfig = storeConfig,
+              unreadSupportCount = customerUnreadSupportCount,
               onGoogleAuthClick = {
                 if (authUser != null) {
                   viewModel.signOutGoogle(context)
@@ -735,7 +766,24 @@ class MainActivity : ComponentActivity() {
                 }
               },
               onOpenOrderInvoice = { order -> viewModel.openInvoice(order) },
+              onOpenLiveSupport = { showLiveSupportDialog = true },
               onDismiss = { showAccountDialog = false }
+            )
+          }
+
+          if (showLiveSupportDialog) {
+            LiveSupportChatDialog(
+              config = storeConfig,
+              authUser = authUser,
+              isAuthBusy = isAuthBusy,
+              orders = orders,
+              threadState = customerSupportThreadState,
+              messagesState = customerSupportMessagesState,
+              isSending = isSendingSupportChat,
+              onGoogleSignIn = { viewModel.signInWithGoogle(context, unlockAdminIfVerified = false) },
+              onSendMessage = { text, ordId -> viewModel.sendCustomerSupportMessage(text, ordId) },
+              onMarkRead = { viewModel.markCustomerSupportRead() },
+              onDismiss = { showLiveSupportDialog = false }
             )
           }
           }

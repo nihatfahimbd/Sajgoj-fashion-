@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Refresh
@@ -79,6 +80,10 @@ import com.example.data.model.Coupon
 import com.example.data.model.Order
 import com.example.data.model.Product
 import com.example.data.model.StoreConfig
+import com.example.data.model.SupportChatFeedState
+import com.example.data.model.SupportChatMessage
+import com.example.data.model.SupportChatThread
+import com.example.firebase.AuthUserSummary
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AntiqueGold
 import com.example.ui.theme.BorderGold
@@ -355,6 +360,15 @@ fun FreeFaqChatbotDialog(
   onProductClick: (Product) -> Unit,
   onOpenStoreMap: () -> Unit,
   onOpenShopping: () -> Unit = {},
+  authUser: AuthUserSummary? = null,
+  isAuthBusy: Boolean = false,
+  supportThreadState: SupportChatFeedState<SupportChatThread?> = SupportChatFeedState.Idle,
+  supportMessagesState: SupportChatFeedState<List<SupportChatMessage>> = SupportChatFeedState.Idle,
+  customerUnreadSupportCount: Int = 0,
+  isSendingSupportChat: Boolean = false,
+  onGoogleSignIn: () -> Unit = {},
+  onSendSupportMessage: (String, String) -> Unit = { _, _ -> },
+  onMarkSupportRead: () -> Unit = {},
   onDismiss: () -> Unit
 ) {
   val context = LocalContext.current
@@ -362,6 +376,7 @@ fun FreeFaqChatbotDialog(
     mutableStateListOf(FaqBotEngine.welcomeMessage(config))
   }
   var inputText by remember { mutableStateOf("") }
+  var activeChatMode by remember { mutableStateOf("faq") }
   val listState = rememberLazyListState()
 
   LaunchedEffect(messages.size) {
@@ -516,6 +531,94 @@ fun FreeFaqChatbotDialog(
           }
         }
 
+        // Mode Switcher: Free FAQ Bot vs Real-Time Admin Live Support Chat
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFEFF3F8))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          val isFaq = activeChatMode == "faq"
+          Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = if (isFaq) NavyBlue else Color.White,
+            border = BorderStroke(1.dp, if (isFaq) NavyBlue else BorderGold),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+              .clip(RoundedCornerShape(14.dp))
+              .clickable { activeChatMode = "faq" }
+              .testTag("support_mode_faq_tab")
+          ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
+              Text(
+                text = "🤖 স্মার্ট সহায়িকা",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isFaq) Color.White else NavyBlue,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+          Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = if (!isFaq) RoyalMaroon else Color.White,
+            border = BorderStroke(1.dp, if (!isFaq) RoyalMaroon else BorderGold),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+              .clip(RoundedCornerShape(14.dp))
+              .clickable { activeChatMode = "live" }
+              .testTag("support_mode_live_tab")
+          ) {
+            Row(
+              modifier = Modifier.padding(horizontal = 8.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Center
+            ) {
+              Text(
+                text = "💬 লাইভ অ্যাডমিন চ্যাট",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (!isFaq) Color.White else RoyalMaroon,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+              if (customerUnreadSupportCount > 0) {
+                Spacer(modifier = Modifier.width(5.dp))
+                Surface(
+                  shape = CircleShape,
+                  color = if (!isFaq) Color.White else RoyalMaroon
+                ) {
+                  Text(
+                    text = customerUnreadSupportCount.toString(),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    color = if (!isFaq) RoyalMaroon else Color.White,
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        if (activeChatMode == "live") {
+          CustomerLiveSupportChatPane(
+            authUser = authUser,
+            isAuthBusy = isAuthBusy,
+            orders = orders,
+            threadState = supportThreadState,
+            messagesState = supportMessagesState,
+            isSending = isSendingSupportChat,
+            onGoogleSignIn = onGoogleSignIn,
+            onSendMessage = onSendSupportMessage,
+            onMarkRead = onMarkSupportRead,
+            modifier = Modifier.weight(1f)
+          )
+        } else {
         // Persistent Direct Call & WhatsApp Bar inside Chatbot
         Row(
           modifier = Modifier
@@ -864,6 +967,20 @@ fun FreeFaqChatbotDialog(
                     ) {
                       if (msg.showSupportActions) {
                         Button(
+                          onClick = { activeChatMode = "live" },
+                          colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                          contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                          modifier = Modifier.heightIn(min = 40.dp)
+                        ) {
+                          Icon(
+                            imageVector = Icons.Default.Forum,
+                            contentDescription = "লাইভ চ্যাট",
+                            modifier = Modifier.size(15.dp)
+                          )
+                          Spacer(modifier = Modifier.width(5.dp))
+                          Text("লাইভ চ্যাট", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Button(
                           onClick = { openWhatsAppWithText(msg.handoffQuery) },
                           colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                           contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
@@ -976,6 +1093,7 @@ fun FreeFaqChatbotDialog(
               )
             }
           }
+        }
         }
       }
     }

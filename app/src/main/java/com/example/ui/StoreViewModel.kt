@@ -26,9 +26,13 @@ import com.example.data.model.ReelItem
 import com.example.data.model.ReturnRecord
 import com.example.data.model.SmsQueueItem
 import com.example.data.model.StoreConfig
+import com.example.data.model.SupportChatFeedState
+import com.example.data.model.SupportChatMessage
+import com.example.data.model.SupportChatThread
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.data.repository.StoreRepository
+import com.example.data.repository.SupportChatRepository
 import com.example.firebase.AuthUserSummary
 import com.example.firebase.GoogleAuthHelper
 import com.example.firebase.GoogleAuthHelper.authStateFlow
@@ -38,6 +42,7 @@ import com.example.util.VisualSearchAnalysis
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +53,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -102,14 +110,17 @@ enum class AdminTab(val title: String, val icon: String) {
   PAGE_CONFIG("Page Configuration", "🛠️"),
   PRODUCTS("প্রোডাক্ট", "👗"),
   ORDERS("অর্ডার", "📦"),
+  SUPPORT_CHAT("সাপোর্ট চ্যাট", "💬"),
   SHIPPING_INFO("Shipping info", "🚚"),
   MARKETING("মার্কেটিং", "🎁"),
   SMS_GATEWAY("SMS গেটওয়ে", "📲"),
   SETTINGS("সেটিংস", "⚙️")
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class StoreViewModel(application: Application) : AndroidViewModel(application) {
   private val repository = StoreRepository(application)
+  private val supportChatRepository = SupportChatRepository(application)
 
   val products: StateFlow<List<Product>> = repository.products
   val reviews: StateFlow<List<ProductReview>> = repository.reviews
@@ -191,6 +202,59 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
   private val _aiAdminInsightsState = MutableStateFlow<AiTaskState<String>>(AiTaskState.Idle)
   val aiAdminInsightsState: StateFlow<AiTaskState<String>> = _aiAdminInsightsState.asStateFlow()
+
+  private val _selectedAdminChatId = MutableStateFlow<String?>(null)
+  val selectedAdminChatId: StateFlow<String?> = _selectedAdminChatId.asStateFlow()
+
+  private val _isSendingSupportChat = MutableStateFlow(false)
+  val isSendingSupportChat: StateFlow<Boolean> = _isSendingSupportChat.asStateFlow()
+
+  val customerSupportThreadState: StateFlow<SupportChatFeedState<SupportChatThread?>> =
+    _authUser.flatMapLatest { user ->
+      if (user == null || user.uid.isBlank()) {
+        flowOf(SupportChatFeedState.Idle)
+      } else {
+        supportChatRepository.observeCustomerThread(user.uid)
+      }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SupportChatFeedState.Idle)
+
+  val customerSupportMessagesState: StateFlow<SupportChatFeedState<List<SupportChatMessage>>> =
+    _authUser.flatMapLatest { user ->
+      if (user == null || user.uid.isBlank()) {
+        flowOf(SupportChatFeedState.Idle)
+      } else {
+        supportChatRepository.observeMessages(user.uid)
+      }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SupportChatFeedState.Idle)
+
+  val adminSupportThreadsState: StateFlow<SupportChatFeedState<List<SupportChatThread>>> =
+    _authUser.flatMapLatest { user ->
+      if (user == null || !user.isAdmin) {
+        flowOf(SupportChatFeedState.Idle)
+      } else {
+        supportChatRepository.observeAdminThreads()
+      }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SupportChatFeedState.Idle)
+
+  val adminSelectedChatMessagesState: StateFlow<SupportChatFeedState<List<SupportChatMessage>>> =
+    combine(_authUser, _selectedAdminChatId) { user, chatId -> user to chatId }
+      .flatMapLatest { (user, chatId) ->
+        if (user == null || !user.isAdmin || chatId.isNullOrBlank()) {
+          flowOf(SupportChatFeedState.Idle)
+        } else {
+          supportChatRepository.observeMessages(chatId)
+        }
+      }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SupportChatFeedState.Idle)
+
+  val adminUnreadSupportCount: StateFlow<Int> =
+    adminSupportThreadsState.map { state ->
+      (state as? SupportChatFeedState.Ready)?.data?.sumOf { it.unreadByAdmin } ?: 0
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+  val customerUnreadSupportCount: StateFlow<Int> =
+    customerSupportThreadState.map { state ->
+      (state as? SupportChatFeedState.Ready)?.data?.unreadByCustomer ?: 0
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
   init {
     try {
@@ -875,6 +939,86 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun clearCompletedSmsQueue() {
     repository.clearCompletedSmsQueue()
     emitToast("🧹 সম্পন্ন হওয়া SMS লগ পরিষ্কার করা হয়েছে।")
+  }
+
+  // -------------------- REAL-TIME SUPPORT CHAT ACTIONS --------------------
+
+  fun sendCustomerSupportMessage(text: String, orderId: String = "") {
+    val user = _authUser.value
+    if (user == null || user.uid.isBlank()) {
+      emitToast("⚠️ লাইভ সাপোর্ট চ্যাট করতে প্রথমে Google দিয়ে সাইন-ইন করুন।")
+      return
+    }
+    if (text.isBlank()) return
+    viewModelScope.launch {
+      _isSendingSupportChat.value = true
+      val res = supportChatRepository.sendCustomerMessage(user = user, text = text, orderId = orderId)
+      _isSendingSupportChat.value = false
+      res.onFailure { err ->
+        emitToast("⚠️ বার্তা পাঠানো যায়নি: ${err.localizedMessage ?: "আবার চেষ্টা করুন"}")
+      }
+    }
+  }
+
+  fun markCustomerSupportRead() {
+    val user = _authUser.value ?: return
+    val currentThread = (customerSupportThreadState.value as? SupportChatFeedState.Ready)?.data
+    if (currentThread != null && currentThread.unreadByCustomer > 0) {
+      viewModelScope.launch {
+        supportChatRepository.markThreadReadByCustomer(user.uid)
+      }
+    }
+  }
+
+  fun selectAdminSupportThread(chatId: String?) {
+    _selectedAdminChatId.value = chatId
+    val user = _authUser.value
+    if (!chatId.isNullOrBlank() && user?.isAdmin == true) {
+      val target = (adminSupportThreadsState.value as? SupportChatFeedState.Ready)
+        ?.data
+        ?.firstOrNull { it.id == chatId || it.userId == chatId }
+      if (target == null || target.unreadByAdmin > 0) {
+        viewModelScope.launch {
+          supportChatRepository.markThreadReadByAdmin(chatId)
+        }
+      }
+    }
+  }
+
+  fun sendAdminSupportReply(chatId: String, text: String) {
+    val user = _authUser.value
+    if (user == null || !user.isAdmin) {
+      emitToast("⚠️ রিপ্লাই দিতে ভেরিফাইড অ্যাডমিন Google অ্যাকাউন্ট দিয়ে সাইন-ইন করুন।")
+      return
+    }
+    if (chatId.isBlank() || text.isBlank()) return
+    viewModelScope.launch {
+      _isSendingSupportChat.value = true
+      val res = supportChatRepository.sendAdminReply(adminUser = user, chatId = chatId, text = text)
+      _isSendingSupportChat.value = false
+      res.onFailure { err ->
+        emitToast("⚠️ উত্তর পাঠানো যায়নি: ${err.localizedMessage ?: "আবার চেষ্টা করুন"}")
+      }
+    }
+  }
+
+  fun toggleAdminSupportThreadStatus(chatId: String, currentStatus: String) {
+    val user = _authUser.value
+    if (user == null || !user.isAdmin) {
+      emitToast("⚠️ স্ট্যাটাস পরিবর্তনের জন্য ভেরিফাইড অ্যাডমিন সাইন-ইন প্রয়োজন।")
+      return
+    }
+    val nextStatus = if (currentStatus == "resolved") "open" else "resolved"
+    viewModelScope.launch {
+      supportChatRepository.updateThreadStatus(chatId, nextStatus).onSuccess {
+        emitToast(
+          if (nextStatus == "resolved") "✅ কথোপকথনটি সমাধানকৃত (Resolved) হিসেবে চিহ্নিত হয়েছে।"
+          else "🔄 কথোপকথনটি পুনরায় খোলা (Open) হয়েছে।"
+        )
+      }.onFailure { err ->
+        emitToast("⚠️ স্ট্যাটাস আপডেট ব্যর্থ: ${err.localizedMessage ?: ""}")
+      }
+    }
   }
 
   fun emitToast(msg: String) {

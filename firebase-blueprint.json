@@ -214,6 +214,40 @@
         "errorReason": { "type": "string" }
       },
       "required": ["phone", "message", "status", "createdAt", "updatedAt"]
+    },
+    "SupportChatThread": {
+      "title": "SupportChatThread",
+      "description": "Real-time customer support conversation thread keyed by customer UID",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhotoUrl": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "lastSenderRole": { "type": "string", "enum": ["customer", "admin"] },
+        "status": { "type": "string", "enum": ["open", "resolved"] },
+        "unreadByAdmin": { "type": "number" },
+        "unreadByCustomer": { "type": "number" },
+        "orderId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "customerName", "lastMessage", "lastSenderRole", "status", "unreadByAdmin", "unreadByCustomer", "createdAt", "updatedAt"]
+    },
+    "SupportChatMessage": {
+      "title": "SupportChatMessage",
+      "description": "Individual message inside a customer support chat thread",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string", "enum": ["customer", "admin"] },
+        "text": { "type": "string" },
+        "orderId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["senderId", "senderName", "senderRole", "text", "createdAt"]
     }
   },
   "firestore": {
@@ -252,6 +286,14 @@
     "/sms_queue/{smsId}": {
       "schema": "SmsQueueItem",
       "description": "Admin-only SMS queue for Personal Android SIM Gateway and 1-click SMS logs"
+    },
+    "/support_chats/{chatId}": {
+      "schema": "SupportChatThread",
+      "description": "Real-time customer support threads (customer owner or verified admin)"
+    },
+    "/support_chats/{chatId}/messages/{messageId}": {
+      "schema": "SupportChatMessage",
+      "description": "Real-time support chat messages subcollection (customer owner or verified admin)"
     }
   }
 }

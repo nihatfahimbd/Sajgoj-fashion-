@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -57,6 +58,7 @@ import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
+import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
 
 enum class StorefrontBottomTab {
@@ -240,8 +242,10 @@ fun CustomerAccountDialog(
   isAuthBusy: Boolean,
   orders: List<Order>,
   storeConfig: StoreConfig,
+  unreadSupportCount: Int = 0,
   onGoogleAuthClick: () -> Unit,
   onOpenOrderInvoice: (Order) -> Unit,
+  onOpenLiveSupport: () -> Unit = {},
   onDismiss: () -> Unit
 ) {
   Dialog(onDismissRequest = onDismiss) {
@@ -410,6 +414,29 @@ fun CustomerAccountDialog(
               }
             }
           }
+        }
+
+        Button(
+          onClick = {
+            onDismiss()
+            onOpenLiveSupport()
+          },
+          colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+          shape = RoundedCornerShape(14.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .testTag("account_live_support_btn")
+        ) {
+          Text(
+            text = if (unreadSupportCount > 0) {
+              "💬 লাইভ সাপোর্ট চ্যাট ($unreadSupportCount টি নতুন উত্তর)"
+            } else {
+              "💬 অ্যাডমিনের সাথে লাইভ সাপোর্ট চ্যাট"
+            },
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold
+          )
         }
 
         Surface(

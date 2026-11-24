@@ -86,6 +86,10 @@ import com.example.data.model.Product
 import com.example.data.model.ReelItem
 import com.example.data.model.StoreConfig
 import com.example.data.model.StoreDesignConfig
+import com.example.data.model.SupportChatFeedState
+import com.example.data.model.SupportChatMessage
+import com.example.data.model.SupportChatThread
+import com.example.firebase.AuthUserSummary
 import com.example.ui.ImageSearchState
 import com.example.ui.ProductSortOption
 import com.example.ui.components.AppImage
@@ -158,6 +162,15 @@ fun StorefrontScreen(
   onOpenShopping: () -> Unit = {},
   openOffersTrigger: Int = 0,
   onOffersVisibilityChange: (Boolean) -> Unit = {},
+  authUser: AuthUserSummary? = null,
+  isAuthBusy: Boolean = false,
+  supportThreadState: SupportChatFeedState<SupportChatThread?> = SupportChatFeedState.Idle,
+  supportMessagesState: SupportChatFeedState<List<SupportChatMessage>> = SupportChatFeedState.Idle,
+  customerUnreadSupportCount: Int = 0,
+  isSendingSupportChat: Boolean = false,
+  onGoogleSignIn: () -> Unit = {},
+  onSendSupportMessage: (String, String) -> Unit = { _, _ -> },
+  onMarkSupportRead: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -847,6 +860,20 @@ fun StorefrontScreen(
             modifier = Modifier.size(20.dp)
           )
           Text(text = "Help", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+          if (customerUnreadSupportCount > 0) {
+            Surface(
+              shape = CircleShape,
+              color = RoyalMaroon
+            ) {
+              Text(
+                text = customerUnreadSupportCount.toString(),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+              )
+            }
+          }
         }
       }
     }
@@ -937,6 +964,15 @@ fun StorefrontScreen(
           showFaqChatbot = false
           onOpenShopping()
         },
+        authUser = authUser,
+        isAuthBusy = isAuthBusy,
+        supportThreadState = supportThreadState,
+        supportMessagesState = supportMessagesState,
+        customerUnreadSupportCount = customerUnreadSupportCount,
+        isSendingSupportChat = isSendingSupportChat,
+        onGoogleSignIn = onGoogleSignIn,
+        onSendSupportMessage = onSendSupportMessage,
+        onMarkSupportRead = onMarkSupportRead,
         onDismiss = { showFaqChatbot = false }
       )
     }

@@ -109,6 +109,9 @@ import com.example.data.model.Product
 import com.example.data.model.ReturnRecord
 import com.example.data.model.SmsQueueItem
 import com.example.data.model.StoreConfig
+import com.example.data.model.SupportChatFeedState
+import com.example.data.model.SupportChatMessage
+import com.example.data.model.SupportChatThread
 import com.example.data.model.SyncErrorLog
 import com.example.data.model.SyncHealthState
 import com.example.firebase.AuthUserSummary
@@ -152,6 +155,7 @@ import com.example.ui.components.AdminQrScannerDialog
 import com.example.ui.components.AdminSellerOrdersHub
 import com.example.ui.components.AdminShippingInfoHub
 import com.example.ui.components.AdminSmsGatewayHub
+import com.example.ui.components.AdminSupportChatHub
 import com.example.ui.components.AppImage
 import com.example.ui.components.PageConfigurationHub
 import com.example.ui.components.DailyRevenueTrendChartCard
@@ -250,6 +254,14 @@ fun AdminDashboardScreen(
   onMarkSmsSentViaIntent: (String) -> Unit = {},
   onDeleteSmsItem: (String) -> Unit = {},
   onClearCompletedSms: () -> Unit = {},
+  unreadSupportCount: Int = 0,
+  supportThreadsState: SupportChatFeedState<List<SupportChatThread>> = SupportChatFeedState.Idle,
+  selectedSupportChatId: String? = null,
+  supportMessagesState: SupportChatFeedState<List<SupportChatMessage>> = SupportChatFeedState.Idle,
+  isSendingSupportReply: Boolean = false,
+  onSelectSupportThread: (String?) -> Unit = {},
+  onSendSupportReply: (String, String) -> Unit = { _, _ -> },
+  onToggleSupportThreadStatus: (String, String) -> Unit = { _, _ -> },
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -444,8 +456,13 @@ fun AdminDashboardScreen(
             ) {
               AdminTab.values().forEach { tab ->
                 val isSelected = currentTab == tab
+                val labelText = if (tab == AdminTab.SUPPORT_CHAT && unreadSupportCount > 0) {
+                  "${tab.icon} ${tab.title} ($unreadSupportCount)"
+                } else {
+                  "${tab.icon} ${tab.title}"
+                }
                 GlossySegmentPill(
-                  label = "${tab.icon} ${tab.title}",
+                  label = labelText,
                   selected = isSelected,
                   onClick = { onSelectTab(tab) },
                   modifier = Modifier.testTag("admin_tab_${tab.name}")
@@ -582,6 +599,21 @@ fun AdminDashboardScreen(
           )
         }
 
+        AdminTab.SUPPORT_CHAT -> {
+          AdminSupportChatHub(
+            authUser = authUser,
+            isAuthBusy = isAuthBusy,
+            threadsState = supportThreadsState,
+            selectedChatId = selectedSupportChatId,
+            messagesState = supportMessagesState,
+            isSendingReply = isSendingSupportReply,
+            onGoogleSignInAdmin = onGoogleSignInAdmin,
+            onSelectThread = onSelectSupportThread,
+            onSendReply = onSendSupportReply,
+            onToggleThreadStatus = onToggleSupportThreadStatus
+          )
+        }
+
         AdminTab.SHIPPING_INFO -> {
           AdminShippingInfoHub(
             storeConfig = storeConfig,
@@ -649,6 +681,7 @@ fun AdminDashboardScreen(
           currentTab = currentTab,
           pendingOrdersCount = pendingCountForNav,
           productsCount = products.size,
+          unreadSupportCount = unreadSupportCount,
           onSelectTab = onSelectTab,
           onLogout = onLogout,
           modifier = Modifier
@@ -671,6 +704,7 @@ fun AdminDashboardScreen(
               currentTab = currentTab,
               pendingOrdersCount = pendingCountForNav,
               productsCount = products.size,
+              unreadSupportCount = unreadSupportCount,
               onSelectTab = { tab ->
                 onSelectTab(tab)
                 scope.launch { drawerState.close() }
