@@ -393,6 +393,11 @@ class MainActivity : ComponentActivity() {
                       storeBottomTab = StorefrontBottomTab.HOME
                       viewModel.resetHomeFilters()
                     },
+                    onOpenShopping = {
+                      showAccountDialog = false
+                      viewModel.resetHomeFilters()
+                      storeBottomTab = StorefrontBottomTab.SHOPPING
+                    },
                     openOffersTrigger = openOffersTrigger,
                     onOffersVisibilityChange = { isOffersDialogOpen = it }
                   )

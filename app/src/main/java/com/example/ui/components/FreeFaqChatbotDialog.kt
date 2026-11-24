@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -125,7 +126,7 @@ object FaqBotEngine {
       isFromUser = false,
       text = "আসসালামু আলাইকুম! আমি ${config.storeName}-এর ১০০% ফ্রি ও আনলিমিটেড স্মার্ট সহায়িকা। " +
         "রিটার্ন পলিসি, ডেলিভারি চার্জ, অর্ডার ট্র্যাকিং বা কুপন সম্পর্কে নিচের বাটনে ট্যাপ করুন অথবা সরাসরি প্রশ্ন লিখুন।",
-      followUps = listOf("৭ দিনের রিটার্ন নিয়ম", "ডেলিভারি চার্জ কত?", "সক্রিয় কুপন দেখুন")
+      followUps = listOf("রিটার্ন ও রিফান্ড", "অর্ডার ট্র্যাকিং", "সক্রিয় কুপন দেখুন")
     )
   }
 
@@ -353,6 +354,7 @@ fun FreeFaqChatbotDialog(
   products: List<Product>,
   onProductClick: (Product) -> Unit,
   onOpenStoreMap: () -> Unit,
+  onOpenShopping: () -> Unit = {},
   onDismiss: () -> Unit
 ) {
   val context = LocalContext.current
@@ -553,7 +555,7 @@ fun FreeFaqChatbotDialog(
           Button(
             onClick = { openWhatsAppWithText("") },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
             modifier = Modifier
               .weight(1f)
               .heightIn(min = 48.dp)
@@ -564,13 +566,39 @@ fun FreeFaqChatbotDialog(
               contentDescription = "WhatsApp-এ যোগাযোগ",
               modifier = Modifier.size(16.dp)
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(5.dp))
             Text(
               text = "WhatsApp",
-              fontSize = 12.sp,
+              fontSize = 11.5.sp,
               fontWeight = FontWeight.Bold,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
+            )
+          }
+
+          Button(
+            onClick = {
+              onDismiss()
+              onOpenShopping()
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier
+              .heightIn(min = 48.dp)
+              .testTag("faq_chatbot_header_shopping_btn")
+          ) {
+            Icon(
+              imageVector = Icons.Default.ShoppingBag,
+              contentDescription = "শপিং",
+              modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+              text = "শপিং",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Bold,
+              maxLines = 1,
+              softWrap = false
             )
           }
         }

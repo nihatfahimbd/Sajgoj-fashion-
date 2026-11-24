@@ -3234,6 +3234,7 @@
       products,
       getStoreMapUrls,
       onSelectProduct,
+      onOpenShopping,
       onNavigateOrderTracking,
       notify
     }) {
@@ -3246,7 +3247,7 @@
         id: "welcome-" + Date.now(),
         isFromUser: false,
         text: `আসসালামু আলাইকুম! আমি ${storeName}-এর ১০০% ফ্রি স্মার্ট সহায়িকা।\nরিটার্ন পলিসি, ডেলিভারি চার্জ, অর্ডার ট্র্যাকিং বা কুপন জানতে নিচের বাটনে ট্যাপ করুন অথবা সরাসরি প্রশ্ন লিখুন। প্রয়োজনে উপরের বাটন থেকে কল বা WhatsApp করতে পারবেন।`,
-        followUps: ["৭ দিনের রিটার্ন নিয়ম", "ডেলিভারি চার্জ কত?", "সক্রিয় কুপন দেখুন"],
+        followUps: ["রিটার্ন ও রিফান্ড", "অর্ডার ট্র্যাকিং", "সক্রিয় কুপন দেখুন"],
         showSupportActions: false
       });
 
@@ -3546,18 +3547,18 @@
                 <span>💬</span>
                 <span>WhatsApp</span>
               </a>
-              {config?.showGoogleMap !== false && (
-                <a
-                  href={mapUrls.openUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="শোরুম ম্যাপ দেখুন"
-                  className="py-2 px-2.5 rounded-xl bg-[#0f294a] hover:bg-[#091c34] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition shrink-0"
-                >
-                  <span>🗺️</span>
-                  <span className="hidden xs:inline">ম্যাপ</span>
-                </a>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onOpenShopping) onOpenShopping();
+                }}
+                title="সকল প্রোডাক্ট শপিং করুন"
+                className="py-2 px-3 rounded-xl bg-[#0f294a] hover:bg-[#091c34] text-white text-xs font-extrabold flex items-center justify-center gap-1 shadow-xs transition shrink-0 cursor-pointer"
+              >
+                <span>🛍️</span>
+                <span>শপিং</span>
+              </button>
             </div>
 
             {/* Quick Topic Chips */}
@@ -38943,6 +38944,17 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
               setSelectedDetailImg(0);
               setProductQty(1);
             }}
+            onOpenShopping={() => {
+              if (isOrderTrackingRoute) navigateHash("/");
+              setSelectedCat("All");
+              setSelectedSubCat("All");
+              setStoreSearch("");
+              setImageSearchResult(null);
+              setShoppingCat("All");
+              setStoreBottomTab("shopping");
+              setActiveTab("Storefront");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             onNavigateOrderTracking={(q) => {
               navigateHash("/order-tracking/" + encodeURIComponent(q));
             }}
@@ -38953,14 +38965,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             type="button"
             onClick={() => setIsFaqChatOpen(prev => !prev)}
             className={`fixed ${activeTab === "Storefront" ? "bottom-20 right-4" : "bottom-5 right-5"} z-40 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#0f294a] via-[#1b3f72] to-[#7a1c2b] text-white flex items-center gap-2 shadow-2xl border-2 border-[#d4a574] hover:scale-105 transition duration-300 cursor-pointer`}
-            title="সাজগোজ স্মার্ট চ্যাটবট (কল ও WhatsApp)"
-            aria-label="সাজগোজ চ্যাটবট খুলুন"
+            title="সাজগোজ Help (কল, WhatsApp ও শপিং)"
+            aria-label="Help খুলুন"
           >
             <span className="relative flex items-center justify-center text-xl leading-none">
               🤖
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white animate-pulse"></span>
             </span>
-            <span className="text-xs font-black tracking-wide">চ্যাটবট</span>
+            <span className="text-xs font-black tracking-wide">Help</span>
           </button>
 
           {/* 5-Tab Bottom Navigation Bar (হোম, শপিং, অফার, একাউন্ট, কার্ট) */}

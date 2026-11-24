@@ -155,6 +155,7 @@ fun StorefrontScreen(
   onOpenAiStylist: () -> Unit = {},
   isShoppingAllMode: Boolean = false,
   onExitShoppingAllMode: () -> Unit = {},
+  onOpenShopping: () -> Unit = {},
   openOffersTrigger: Int = 0,
   onOffersVisibilityChange: (Boolean) -> Unit = {},
   modifier: Modifier = Modifier
@@ -841,11 +842,11 @@ fun StorefrontScreen(
         ) {
           Icon(
             imageVector = Icons.Default.SupportAgent,
-            contentDescription = "সাজগোজ চ্যাটবট",
+            contentDescription = "Help",
             tint = AntiqueGold,
             modifier = Modifier.size(20.dp)
           )
-          Text(text = "চ্যাটবট", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+          Text(text = "Help", fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -931,6 +932,10 @@ fun StorefrontScreen(
         onOpenStoreMap = {
           showFaqChatbot = false
           activeFooterTopic = "contact"
+        },
+        onOpenShopping = {
+          showFaqChatbot = false
+          onOpenShopping()
         },
         onDismiss = { showFaqChatbot = false }
       )
