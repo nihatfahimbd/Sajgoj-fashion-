@@ -509,7 +509,7 @@ data class StoreConfig(
   val tagline: String = "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
   val announcementText: String = "🔥 Eid Special: ২০০০ টাকার অর্ডারে সারা দেশে ডেলিভারি সম্পূর্ণ ফ্রি!",
   val isAnnouncementEnabled: Boolean = true,
-  val phone: String = "+8801805119888",
+  val phone: String = "+8809697489330",
   val whatsapp: String = "+8801805119888",
   val email: String = "contact@sajgoj.com",
   val address: String = "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",

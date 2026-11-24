@@ -514,6 +514,69 @@ fun FreeFaqChatbotDialog(
           }
         }
 
+        // Persistent Direct Call & WhatsApp Bar inside Chatbot
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFF3F6FA))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Button(
+            onClick = {
+              val dial = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${config.phone}"))
+              context.startActivity(dial)
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+              .testTag("faq_chatbot_header_call_btn")
+          ) {
+            Icon(
+              imageVector = Icons.Default.Phone,
+              contentDescription = "সরাসরি কল করুন",
+              modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = "কল করুন",
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Bold,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+
+          Button(
+            onClick = { openWhatsAppWithText("") },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 48.dp)
+              .testTag("faq_chatbot_header_whatsapp_btn")
+          ) {
+            Icon(
+              imageVector = Icons.Default.Chat,
+              contentDescription = "WhatsApp-এ যোগাযোগ",
+              modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = "WhatsApp",
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Bold,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+        }
+
+        HorizontalDivider(color = BorderGold.copy(alpha = 0.6f))
+
         // Quick Topic Chips Strip
         Row(
           modifier = Modifier

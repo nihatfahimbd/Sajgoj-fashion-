@@ -1677,9 +1677,9 @@
       logo: "./pwa-512x512.png",
       favicon: "./favicon.ico",
       tagline: "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
-      whatsapp: "88018051198888",
+      whatsapp: "+8801805119888",
       email: "contact@sajgoj.com",
-      phone: "018051198888",
+      phone: "+8809697489330",
       address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
       showGoogleMap: true,
       googleMapQuery: "Eastern Plaza, Hatirpool, Dhaka-1205",
@@ -1936,7 +1936,7 @@
       footer: {
         about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
         email: "support@sajgoj.com",
-        phone: "018051198888",
+        phone: "+8809697489330",
         address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
         fb: "https://facebook.com/sajgojfashion",
         insta: "https://instagram.com/sajgojfashion",
@@ -2058,16 +2058,26 @@
           ...(rPg.master || {})
         }
       };
+      const legacyPhoneSet = new Set(["", "018051198888", "88018051198888", "+8801805119888", "01805119888", "8801805119888", "01700000000", "8801700000000"]);
+      const legacyWhatsappSet = new Set(["", "88018051198888", "018051198888", "01805119888", "8801805119888"]);
+      const rawPhone = String(r.phone !== undefined ? r.phone : (b.phone !== undefined ? b.phone : initialStoreConfig.phone)).trim();
+      const rawWhatsapp = String(r.whatsapp !== undefined ? r.whatsapp : (b.whatsapp !== undefined ? b.whatsapp : initialStoreConfig.whatsapp)).trim();
+      const mergedFooter = { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) };
+      if (legacyPhoneSet.has(String(mergedFooter.phone || "").trim())) {
+        mergedFooter.phone = initialStoreConfig.footer.phone;
+      }
       return {
         ...initialStoreConfig,
         ...b,
         ...r,
+        phone: legacyPhoneSet.has(rawPhone) ? initialStoreConfig.phone : rawPhone,
+        whatsapp: legacyWhatsappSet.has(rawWhatsapp) ? initialStoreConfig.whatsapp : rawWhatsapp,
         announcement: { ...initialStoreConfig.announcement, ...(b.announcement || {}), ...(r.announcement || {}) },
         b2g1: mergedB2g1,
         header: { ...initialStoreConfig.header, ...(b.header || {}), ...(r.header || {}) },
         design: { ...initialStoreConfig.design, ...(b.design || {}), ...(r.design || {}) },
         pageConfig: mergedPageConfig,
-        footer: { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) },
+        footer: mergedFooter,
         shippingInfo: mergedShipping
       };
     };
@@ -2738,7 +2748,7 @@
 
       const handleNotifyViaSms = () => {
         if (!activeOrder) return;
-        const rawPhone = String(config.phone || config.whatsapp || "018051198888").replace(/[^0-9+]/g, "");
+        const rawPhone = String(config.phone || config.whatsapp || "+8809697489330").replace(/[^0-9+]/g, "");
         const customerPhone = activeOrder.phone || activeOrder.customerPhone || "";
         const prefilledMsg = `Notify me via SMS — সাজগোজ অর্ডার #${activeOrder.id}${
           activeOrder.trackingId ? ` (ট্র্যাকিং: ${activeOrder.trackingId})` : ""
@@ -3209,6 +3219,552 @@
             </div>
           )}
         </main>
+      );
+    }
+
+    // =========================================================
+    // 100% FREE & UNLIMITED SAJGOJ SMART FAQ CHATBOT (NO API COST)
+    // =========================================================
+    function SajgojFreeFaqChatbot({
+      isOpen,
+      onClose,
+      config,
+      orders,
+      coupons,
+      products,
+      getStoreMapUrls,
+      onSelectProduct,
+      onNavigateOrderTracking,
+      notify
+    }) {
+      const storeName = config?.storeName || "SAJGOJ FASHION";
+      const storePhone = config?.phone || "+8809697489330";
+      const storeWhatsapp = config?.whatsapp || "+8801805119888";
+      const cleanWaDigits = String(storeWhatsapp || storePhone || "8801805119888").replace(/[^0-9]/g, "");
+
+      const buildWelcomeMsg = () => ({
+        id: "welcome-" + Date.now(),
+        isFromUser: false,
+        text: `আসসালামু আলাইকুম! আমি ${storeName}-এর ১০০% ফ্রি স্মার্ট সহায়িকা।\nরিটার্ন পলিসি, ডেলিভারি চার্জ, অর্ডার ট্র্যাকিং বা কুপন জানতে নিচের বাটনে ট্যাপ করুন অথবা সরাসরি প্রশ্ন লিখুন। প্রয়োজনে উপরের বাটন থেকে কল বা WhatsApp করতে পারবেন।`,
+        followUps: ["৭ দিনের রিটার্ন নিয়ম", "ডেলিভারি চার্জ কত?", "সক্রিয় কুপন দেখুন"],
+        showSupportActions: false
+      });
+
+      const [messages, setMessages] = React.useState(() => [buildWelcomeMsg()]);
+      const [inputText, setInputText] = React.useState("");
+      const endRef = React.useRef(null);
+
+      React.useEffect(() => {
+        if (isOpen && endRef.current) {
+          setTimeout(() => {
+            try { endRef.current.scrollIntoView({ behavior: "smooth" }); } catch (e) {}
+          }, 80);
+        }
+      }, [isOpen, messages.length]);
+
+      if (!isOpen) return null;
+
+      const quickTopics = [
+        { label: "🔄 রিটার্ন ও রিফান্ড", query: "রিটার্ন ও রিফান্ড পলিসি কী?" },
+        { label: "🚚 ডেলিভারি চার্জ", query: "ডেলিভারি চার্জ ও সময় কত?" },
+        { label: "📦 অর্ডার ট্র্যাকিং", query: "আমার অর্ডার ট্র্যাক করতে চাই" },
+        { label: "💳 পেমেন্ট ও COD", query: "পেমেন্ট মাধ্যম ও ক্যাশ অন ডেলিভারি" },
+        { label: "🎁 কুপন ও ছাড়", query: "কুপন কোড ও বিশেষ অফার কী আছে?" },
+        { label: "📞 যোগাযোগ ও ঠিকানা", query: "শোরুম ঠিকানা ও যোগাযোগ নম্বর" }
+      ];
+
+      const matchesAny = (txt, list) => list.some(k => txt.includes(k));
+
+      const computeBotReply = (rawQuery) => {
+        const q = String(rawQuery || "").trim();
+        const lower = q.toLowerCase();
+        const mkId = () => "bot-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6);
+
+        if (!q) {
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: "অনুগ্রহ করে আপনার প্রশ্নটি লিখুন অথবা উপরের দ্রুত বাটনগুলো থেকে একটি বিষয় বেছে নিন।"
+          };
+        }
+
+        // 1. Order ID / Tracking / Phone lookup
+        const digitsOnly = q.replace(/[^0-9]/g, "");
+        const looksLikeOrder = lower.includes("ord-") || lower.includes("trk") || (digitsOnly.length >= 6 && !lower.includes("টাকা") && !lower.includes("দাম"));
+        if (looksLikeOrder) {
+          const matched = (orders || []).filter(ord => {
+            const oId = String(ord.id || "").toLowerCase();
+            const oTrk = String(ord.trackingId || "").toLowerCase();
+            const oPh = String(ord.phone || ord.customerPhone || "").replace(/[^0-9]/g, "");
+            return oId.includes(lower) || oTrk.includes(lower) || (digitsOnly.length >= 6 && oPh.includes(digitsOnly));
+          }).slice(0, 4);
+
+          if (matched.length > 0) {
+            return {
+              id: mkId(),
+              isFromUser: false,
+              text: `আপনার তথ্যের সাথে মিলে যাওয়া ${matched.length}টি অর্ডারের বর্তমান অবস্থান নিচে দেওয়া হলো:`,
+              matchedOrders: matched,
+              showSupportActions: true,
+              handoffQuery: `আমার অর্ডার #${matched[0].id} সম্পর্কে জানতে চাই।`
+            };
+          }
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `"${q}" দিয়ে লোকাল তালিকায় কোনো অর্ডার পাওয়া যায়নি। অর্ডার ট্র্যাকিং পেজে ক্লাউড থেকে খুঁজতে পারেন অথবা সরাসরি কল/WhatsApp করুন।`,
+            trackQueryFallback: q,
+            showSupportActions: true,
+            handoffQuery: `হ্যালো, আমি আমার অর্ডার (${q}) ট্র্যাক করতে চাই।`
+          };
+        }
+
+        // 2. Greeting
+        if (matchesAny(lower, ["হাই", "হ্যালো", "সালাম", "আসসালামু", "নমস্কার", "hi", "hello", "hey", "salam"])) {
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `ওয়ালাইকুম আসসালাম! ${storeName}-এ স্বাগতম। আজকে আপনাকে কীভাবে সাহায্য করতে পারি?\nআপনি ডেলিভারি চার্জ, রিটার্ন পলিসি, কুপন, অর্ডার ট্র্যাকিং বা পণ্যের দাম জানতে পারেন।`,
+            followUps: ["রিটার্ন ও রিফান্ড নিয়ম", "ডেলিভারি চার্জ কত?", "কুপন ও ছাড়"]
+          };
+        }
+
+        // 3. Return, Refund & Exchange
+        if (matchesAny(lower, ["রিটার্ন", "রিফান্ড", "ফেরত", "এক্সচেঞ্জ", "বদল", "পরিবর্তন", "ভাঙা", "নষ্ট", "ত্রুটি", "return", "refund", "exchange", "damage", "faulty", "broken"])) {
+          const days = Number(config?.returnPolicyDays) > 0 ? Number(config.returnPolicyDays) : 7;
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `🔄 রিটার্ন, এক্সচেঞ্জ ও রিফান্ড নীতিমালা (${days} দিন):\n\n• ডেলিভারি পাওয়ার ${days} দিনের মধ্যে ত্রুটিপূর্ণ, ভুল বা ক্ষতিগ্রস্ত পণ্য ১০০% রিটার্ন/রিফান্ড সুবিধা পাবেন।\n• পণ্যটি অবশ্যই অব্যবহৃত থাকতে হবে এবং অরিজিনাল ট্যাগ ও প্যাকেজিং অক্ষত থাকতে হবে।\n• সাইজ বা কালার পরিবর্তনের ক্ষেত্রে আমাদের ভুল হলে ডেলিভারি চার্জ সম্পূর্ণ ফ্রি।\n• রিটার্ন যাচাইয়ের ২-৩ কর্মদিবসের মধ্যে bKash, Nagad বা ব্যাংক অ্যাকাউন্টে রিফান্ড পাঠানো হয়।`,
+            showSupportActions: true,
+            handoffQuery: "হ্যালো, আমার একটি অর্ডারের রিটার্ন/এক্সচেঞ্জ সম্পর্কে সাহায্য প্রয়োজন।",
+            followUps: ["অর্ডার বাতিলের নিয়ম", "যোগাযোগ ও হটলাইন"]
+          };
+        }
+
+        // 4. Order Cancellation
+        if (matchesAny(lower, ["বাতিল", "ক্যানসেল", "cancel", "cancellation"])) {
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `✖️ অর্ডার বাতিলের নিয়ম:\n\n• পার্সেল কুরিয়ারে হস্তান্তরের (Shipped) আগে যেকোনো সময় অর্ডার বাতিল করা যাবে।\n• দ্রুত বাতিল করতে অর্ডার ID সহ হটলাইন (${storePhone}) বা WhatsApp-এ যোগাযোগ করুন।`,
+            showSupportActions: true,
+            handoffQuery: "হ্যালো, আমি আমার একটি অর্ডার বাতিল (Cancel) করতে চাচ্ছি।"
+          };
+        }
+
+        // 5. Order Tracking Prompt
+        if (matchesAny(lower, ["ট্র্যাক", "অর্ডার", "পার্সেল", "কোথায়", "কবে পাব", "অবস্থা", "track", "tracking", "status", "order"])) {
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `📦 লাইভ অর্ডার ট্র্যাকিং:\n\nআপনার অর্ডার ID (যেমন: ORD-1002), ট্র্যাকিং কোড অথবা অর্ডারের মোবাইল নম্বরটি নিচে লিখে পাঠান—সাথে সাথে স্ট্যাটাস দেখিয়ে দেব!`,
+            showSupportActions: true,
+            handoffQuery: "হ্যালো সাজগোজ, আমি আমার অর্ডারের বর্তমান অবস্থা জানতে চাই।"
+          };
+        }
+
+        // 6. Shipping & Delivery Charges
+        if (matchesAny(lower, ["ডেলিভারি", "চার্জ", "কুরিয়ার", "শিপিং", "চাঁদপুর", "ঢাকা", "সময়", "ফ্রি ডেলিভারি", "delivery", "shipping", "courier", "fee", "express", "standard"])) {
+          const opts = Array.isArray(config?.shippingInfo?.options) ? config.shippingInfo.options : [];
+          const stdOpt = opts.find(o => String(o.deliveryType || "").toLowerCase() === "standard");
+          const expOpt = opts.find(o => String(o.deliveryType || "").toLowerCase() === "express");
+          const chandpurStdFee = config?.shippingInfo?.chandpurStandardFee ?? 60;
+          const outsideFee = stdOpt?.fee ?? config?.deliveryOutsideDhaka ?? 120;
+          const freeAbove = stdOpt?.freeAbove ?? config?.freeDeliveryThreshold ?? 2000;
+          const expFee = expOpt?.fee ?? 200;
+          const expDays = expOpt?.estimatedDays || "২৪ ঘন্টা / একই দিন";
+          const stdDays = stdOpt?.estimatedDays || "২-৪ কার্যদিবস";
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `🚚 ডেলিভারি চার্জ ও সময়সূচি:\n\n• চাঁদপুর জেলা: Standard ৳${chandpurStdFee} · Express ৳${expFee} (${expDays})\n• সারা দেশে ৬৪ জেলা (Standard): ৳${outsideFee} (${stdDays})${freeAbove > 0 ? `\n• 🎁 ফ্রি ডেলিভারি: ৳${freeAbove}+ টাকার Standard অর্ডারে ডেলিভারি চার্জ সম্পূর্ণ ফ্রি!` : ""}\n• ডেলিভারি ম্যানের সামনে প্যাকেট খুলে পণ্য যাচাইয়ের সুবিধা রয়েছে।`,
+            followUps: ["পেমেন্ট মাধ্যমসমূহ", "রিটার্ন ও রিফান্ড নিয়ম"]
+          };
+        }
+
+        // 7. Payment & COD
+        if (matchesAny(lower, ["পেমেন্ট", "বিকাশ", "নগদ", "রকেট", "ক্যাশ", "কার্ড", "অগ্রিম", "bkash", "nagad", "rocket", "cod", "cash", "payment", "visa", "mastercard"])) {
+          const f = config?.footer || {};
+          const methods = [
+            f.bkash !== false && "bKash",
+            f.nagad !== false && "Nagad",
+            f.rocket !== false && "Rocket",
+            f.cod !== false && "Cash on Delivery (COD)",
+            f.visa !== false && "Visa / Mastercard"
+          ].filter(Boolean).join(", ");
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `💳 পেমেন্ট সুবিধাসমূহ:\n\n• উপলব্ধ মাধ্যম: ${methods || "Cash on Delivery, bKash, Nagad"}\n• সারা দেশে পণ্য হাতে পেয়ে ও চেক করে ক্যাশ অন ডেলিভারিতে (COD) মূল্য পরিশোধ করতে পারবেন।`,
+            followUps: ["ডেলিভারি চার্জ কত?", "কুপন ও ছাড়"]
+          };
+        }
+
+        // 8. Coupons & B2G1
+        if (matchesAny(lower, ["কুপন", "ছাড়", "ডিসকাউন্ট", "ভাউচার", "অফার", "ফ্রি গিফট", "b2g1", "coupon", "discount", "voucher", "promo", "offer"])) {
+          const activeCoupons = (coupons || []).filter(c => c && c.active !== false && c.isActive !== false).slice(0, 5);
+          const b2g1Line = config?.b2g1?.enabled
+            ? `\n🎁 ${config.b2g1.title}: ${config.b2g1.subtitle}`
+            : "";
+          const text = activeCoupons.length > 0
+            ? `🏷️ বর্তমানে সক্রিয় কুপন ও বিশেষ অফারসমূহ (চেকআউটে ব্যবহার করুন):${b2g1Line}`
+            : `🎁 আমাদের স্টোরের অফার:${b2g1Line}\n• হোমপেজের ভাউচার স্ট্রিপ ও ভাগ্যচাকা স্পিন থেকে নিয়মিত বিশেষ ছাড় ও কুপন সংগ্রহ করতে পারবেন।`;
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text,
+            coupons: activeCoupons,
+            followUps: ["ডেলিভারি চার্জ কত?", "প্রোডাক্ট খুঁজুন"]
+          };
+        }
+
+        // 9. Contact, Showroom & Map
+        if (matchesAny(lower, ["যোগাযোগ", "ঠিকানা", "শোরুম", "দোকান", "ম্যাপ", "নম্বর", "ফোন", "হটলাইন", "হোয়াটসঅ্যাপ", "হোয়াটসঅ্যাপ", "ইমেইল", "contact", "address", "location", "map", "phone", "whatsapp", "email", "helpline"])) {
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: `📞 যোগাযোগ ও শোরুম ঠিকানা:\n\n• হটলাইন: ${storePhone}\n• WhatsApp: ${storeWhatsapp}\n• ইমেইল: ${config?.email || "contact@sajgoj.com"}\n• ঠিকানা: ${config?.address || "Dhaka"}`,
+            showSupportActions: true,
+            showMapAction: config?.showGoogleMap !== false,
+            handoffQuery: `আসসালামু আলাইকুম, আমি ${storeName} সম্পর্কে জানতে চাই।`
+          };
+        }
+
+        // 10. Product search
+        const activeProds = (products || []).filter(p => p && p.enabledForWeb !== false);
+        const words = lower.split(/\s+/).filter(w => w.length >= 2);
+        const matchedProds = activeProds.filter(p => {
+          const pn = String(p.name || "").toLowerCase();
+          const pc = String(p.category || "").toLowerCase();
+          return words.some(w => pn.includes(w) || pc.includes(w));
+        }).slice(0, 3);
+
+        if (matchedProds.length > 0) {
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: "🛍️ আপনার খোঁজের সাথে মিলে যাওয়া কিছু কালেকশন (বিস্তারিত দেখতে কার্ডে ট্যাপ করুন):",
+            matchedProducts: matchedProds
+          };
+        }
+
+        if (matchesAny(lower, ["দাম", "প্রাইস", "স্টক", "শাড়ি", "জুয়েলারি", "গয়না", "আংটি", "চুড়ি", "পণ্য", "প্রোডাক্ট", "price", "stock", "saree", "jewelry", "product"])) {
+          return {
+            id: mkId(),
+            isFromUser: false,
+            text: "🛍️ নির্দিষ্ট কোনো পণ্যের দাম বা স্টক জানতে পণ্যের নাম লিখুন (যেমন: 'শাড়ি' বা 'চুড়ি')। আমাদের জনপ্রিয় কিছু কালেকশন:",
+            matchedProducts: activeProds.slice(0, 3)
+          };
+        }
+
+        // 11. Smart Fallback
+        return {
+          id: mkId(),
+          isFromUser: false,
+          text: "আমি আপনার প্রশ্নটি পুরোপুরি বুঝতে পারিনি, তবে রিটার্ন পলিসি, ডেলিভারি চার্জ, পেমেন্ট, কুপন বা অর্ডার ট্র্যাকিং বিষয়ে সাথে সাথে সাহায্য করতে পারি। চাইলে নিচের বাটন থেকে সরাসরি কল বা WhatsApp করতে পারেন।",
+          showSupportActions: true,
+          handoffQuery: q,
+          followUps: ["রিটার্ন ও রিফান্ড নিয়ম", "ডেলিভারি চার্জ কত?", "আমার অর্ডার ট্র্যাক করুন"]
+        };
+      };
+
+      const sendQuery = (raw) => {
+        const clean = String(raw || "").trim();
+        if (!clean) return;
+        const userMsg = { id: "usr-" + Date.now(), isFromUser: true, text: clean };
+        const botMsg = computeBotReply(clean);
+        setMessages(prev => [...prev, userMsg, botMsg]);
+        setInputText("");
+      };
+
+      const getWaHref = (msgText) => {
+        const text = msgText || `আসসালামু আলাইকুম, আমি ${storeName} সম্পর্কে জানতে চাই।`;
+        return `https://wa.me/${cleanWaDigits}?text=${encodeURIComponent(text)}`;
+      };
+
+      const mapUrls = getStoreMapUrls ? getStoreMapUrls(config) : { openUrl: config?.googleMapUrl || "#" };
+
+      return (
+        <div
+          className="fixed inset-0 z-[95] bg-black/55 backdrop-blur-xs flex items-end sm:items-end justify-center sm:justify-end p-2 sm:p-5 animate-fadeIn"
+          onClick={onClose}
+        >
+          <div
+            className="bg-white w-full sm:w-[410px] h-[86vh] sm:h-[620px] max-h-[88vh] rounded-3xl shadow-2xl border border-[#d4a574] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Chatbot Header */}
+            <div className="bg-gradient-to-r from-[#0f294a] via-[#1b3f72] to-[#7a1c2b] text-white px-4 py-3 flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-white/15 border border-[#d4a574]/60 flex items-center justify-center text-xl shrink-0">
+                  🤖
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-black text-sm truncate">সাজগোজ স্মার্ট সহায়িকা</h3>
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <span className="bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">১০০% আজীবন ফ্রি</span>
+                    <span className="text-white/85 truncate">• তাৎক্ষণিক উত্তর</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMessages([buildWelcomeMsg()])}
+                  title="চ্যাট রিসেট করুন"
+                  className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-sm cursor-pointer transition"
+                >
+                  🔄
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title="বন্ধ করুন"
+                  className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center font-bold text-sm cursor-pointer transition"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Persistent Direct Call & WhatsApp Bar */}
+            <div className="bg-[#f3f6fa] border-b border-[#e5d5c3] px-3 py-2 flex items-center gap-2 shrink-0">
+              <a
+                href={`tel:${storePhone}`}
+                className="flex-1 py-2 px-3 rounded-xl bg-[#7a1c2b] hover:bg-[#611521] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-xs transition"
+              >
+                <span>📞</span>
+                <span>কল করুন</span>
+              </a>
+              <a
+                href={getWaHref("")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2 px-3 rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-xs transition"
+              >
+                <span>💬</span>
+                <span>WhatsApp</span>
+              </a>
+              {config?.showGoogleMap !== false && (
+                <a
+                  href={mapUrls.openUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="শোরুম ম্যাপ দেখুন"
+                  className="py-2 px-2.5 rounded-xl bg-[#0f294a] hover:bg-[#091c34] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition shrink-0"
+                >
+                  <span>🗺️</span>
+                  <span className="hidden xs:inline">ম্যাপ</span>
+                </a>
+              )}
+            </div>
+
+            {/* Quick Topic Chips */}
+            <div className="bg-[#fffaf5] border-b border-[#f3e2d0] px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+              {quickTopics.map((t, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => sendQuery(t.query)}
+                  className="px-3 py-1.5 rounded-full bg-white border border-[#d4a574] text-[#7a1c2b] hover:bg-[#7a1c2b] hover:text-white text-[11px] font-bold whitespace-nowrap cursor-pointer transition shrink-0"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Messages Thread */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#fafbfd]">
+              {messages.map(msg => (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col ${msg.isFromUser ? "items-end" : "items-start"}`}
+                >
+                  <div
+                    className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed whitespace-pre-line shadow-xs ${
+                      msg.isFromUser
+                        ? "bg-[#7a1c2b] text-white rounded-br-xs"
+                        : "bg-[#fff8f0] text-[#2c1810] border border-[#e6cfa8] rounded-bl-xs"
+                    }`}
+                  >
+                    <p>{msg.text}</p>
+
+                    {/* Matched Orders */}
+                    {Array.isArray(msg.matchedOrders) && msg.matchedOrders.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        {msg.matchedOrders.map(ord => (
+                          <div key={ord.id} className="bg-white rounded-xl p-2.5 border border-[#d4a574] text-[#2c1810] space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-black text-[#7a1c2b]">#{ord.id}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                {ord.status || "Pending"}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-600">
+                              ক্রেতা: {ord.customerName || ord.customer || "সম্মানিত গ্রাহক"} • মোট: ৳{Number(ord.total || 0).toLocaleString()}
+                            </p>
+                            {ord.trackingId && (
+                              <p className="text-[11px] font-bold text-[#0f294a]">
+                                🚚 ট্র্যাকিং: {ord.trackingId}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Fallback Order Tracking Page Link */}
+                    {msg.trackQueryFallback && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onNavigateOrderTracking(msg.trackQueryFallback);
+                        }}
+                        className="mt-2 w-full py-1.5 px-3 rounded-xl bg-[#0f294a] text-white text-[11px] font-bold cursor-pointer hover:opacity-90 transition"
+                      >
+                        🔍 অর্ডার ট্র্যাকিং পেজে খুঁজুন →
+                      </button>
+                    )}
+
+                    {/* Active Coupons */}
+                    {Array.isArray(msg.coupons) && msg.coupons.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        {msg.coupons.map(cp => (
+                          <div key={cp.id || cp.code} className="bg-white rounded-xl p-2.5 border border-[#d4a574] flex items-center justify-between gap-2">
+                            <div>
+                              <span className="font-black text-[#7a1c2b] block">{cp.code}</span>
+                              <span className="text-[10px] text-gray-600">
+                                {cp.type === "%" ? `${cp.value}% ছাড়` : `৳${cp.value} ছাড়`} • ন্যূনতম ৳{cp.minOrder || 0}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                try {
+                                  navigator.clipboard?.writeText(cp.code);
+                                  notify && notify(`কুপন "${cp.code}" কপি হয়েছে! 📋`);
+                                } catch (e) {}
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-[#fff8f0] border border-[#7a1c2b]/40 text-[#7a1c2b] text-[10px] font-extrabold cursor-pointer hover:bg-[#7a1c2b] hover:text-white transition"
+                            >
+                              কপি
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Matched Products */}
+                    {Array.isArray(msg.matchedProducts) && msg.matchedProducts.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        {msg.matchedProducts.map(prod => (
+                          <button
+                            key={prod.id}
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              onSelectProduct(prod);
+                            }}
+                            className="w-full text-left bg-white rounded-xl p-2.5 border border-[#d4a574] hover:border-[#7a1c2b] flex items-center justify-between gap-2 cursor-pointer transition"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-bold text-[#2c1810] block truncate">{prod.name}</span>
+                              <span className={`text-[10px] font-semibold ${Number(prod.stock) > 0 ? "text-emerald-700" : "text-red-600"}`}>
+                                ৳{Number(prod.price || 0).toLocaleString()} • {Number(prod.stock) > 0 ? `স্টকে আছে (${prod.stock})` : "স্টক শেষ"}
+                              </span>
+                            </div>
+                            <span className="text-[11px] font-black text-[#0f294a] shrink-0">দেখুন →</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Follow-up Suggestion Chips */}
+                    {Array.isArray(msg.followUps) && msg.followUps.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {msg.followUps.map((sug, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => sendQuery(sug)}
+                            className="px-2.5 py-1 rounded-full bg-white border border-[#0f294a]/25 text-[#0f294a] hover:bg-[#0f294a] hover:text-white text-[10px] font-bold cursor-pointer transition"
+                          >
+                            {sug}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Inline Support Handoff Buttons */}
+                    {(msg.showSupportActions || msg.showMapAction) && (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        {msg.showSupportActions && (
+                          <>
+                            <a
+                              href={getWaHref(msg.handoffQuery)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 rounded-full bg-[#25D366] text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-xs"
+                            >
+                              <span>💬</span>
+                              <span>WhatsApp</span>
+                            </a>
+                            <a
+                              href={`tel:${storePhone}`}
+                              className="px-3 py-1.5 rounded-full bg-[#7a1c2b] text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-xs"
+                            >
+                              <span>📞</span>
+                              <span>কল করুন</span>
+                            </a>
+                          </>
+                        )}
+                        {msg.showMapAction && (
+                          <a
+                            href={mapUrls.openUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 rounded-full bg-[#0f294a] text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-xs"
+                          >
+                            <span>🗺️</span>
+                            <span>ম্যাপ দেখুন</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div ref={endRef} />
+            </div>
+
+            {/* Composer */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendQuery(inputText);
+              }}
+              className="p-2.5 bg-white border-t border-[#e5d5c3] flex items-center gap-2 shrink-0"
+            >
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="প্রশ্ন বা অর্ডার ID লিখুন..."
+                className="flex-1 bg-[#fffaf5] border border-[#d4a574] rounded-full px-4 py-2 text-xs text-gray-900 placeholder-gray-500 outline-none focus:border-[#0f294a]"
+              />
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className="w-10 h-10 rounded-full bg-[#0f294a] disabled:opacity-40 text-white flex items-center justify-center font-bold text-sm cursor-pointer transition shrink-0"
+                title="পাঠান"
+              >
+                ➤
+              </button>
+            </form>
+          </div>
+        </div>
       );
     }
 
@@ -5156,7 +5712,7 @@
           // Website / Helpline Footer
           ctx.fillStyle = "#2c1810";
           ctx.font = "bold 15px sans-serif";
-          ctx.fillText(`হটলাইন: ${config.phone || '018051198888'}`, canvas.width / 2, 765);
+          ctx.fillText(`হটলাইন: ${config.phone || '+8809697489330'}`, canvas.width / 2, 765);
 
           ctx.fillStyle = "#888888";
           ctx.font = "12px sans-serif";
@@ -5227,7 +5783,7 @@
               </div>
               <div class="instructions">📱 স্ক্যান করে সরাসরি অর্ডার করুন</div>
               <div class="sub-inst">Scan to View & Buy Online</div>
-              <div class="footer">হটলাইন: ${config.phone || '018051198888'}</div>
+              <div class="footer">হটলাইন: ${config.phone || '+8809697489330'}</div>
             </div>
             <script>
               window.onload = function() {
@@ -5609,7 +6165,7 @@
 
             ctx.fillStyle = "#666666";
             ctx.font = "10px sans-serif";
-            ctx.fillText(`হটলাইন: ${config?.phone || '018051198888'}  •  Online Delivery`, width / 2, 458);
+            ctx.fillText(`হটলাইন: ${config?.phone || '+8809697489330'}  •  Online Delivery`, width / 2, 458);
 
             resolve(canvas.toDataURL("image/png"));
           };
@@ -8534,7 +9090,7 @@
                   <img src="${qrSrc}" alt="QR" />
                 </div>
                 <div class="scan-text">📱 ক্যামেরা দিয়ে স্ক্যান করে অর্ডার করুন</div>
-                <div class="tag-footer">হটলাইন: ${config?.phone || '018051198888'}</div>
+                <div class="tag-footer">হটলাইন: ${config?.phone || '+8809697489330'}</div>
               </div>
             </div>
           `;
@@ -9017,7 +9573,7 @@
 
         const isA4 = format === "a4";
         const storeName = config?.storeName || "SAJGOJ FASHION";
-        const storePhone = config?.phone || "018051198888";
+        const storePhone = config?.phone || "+8809697489330";
         const storeAddr = config?.address || "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205";
 
         const escHtml = (str) => String(str ?? "")
@@ -10216,7 +10772,7 @@
                 <h1 class="store-name">${config?.storeName || 'SAJGOJ FASHION'}</h1>
                 <div class="store-tagline">ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ</div>
                 <div class="store-contact">${config?.address || 'Shop 12, Eastern Plaza, Hatirpool, Dhaka'}</div>
-                <div class="store-contact">হটলাইন: ${config?.phone || '018051198888'}</div>
+                <div class="store-contact">হটলাইন: ${config?.phone || '+8809697489330'}</div>
               </div>
 
               <div class="meta-row">
@@ -11393,6 +11949,7 @@
       const [sizeCalcInput, setSizeCalcInput] = useState("");
       const [footerInfoTopic, setFooterInfoTopic] = useState(null);
       const [footerTrackQuery, setFooterTrackQuery] = useState("");
+      const [isFaqChatOpen, setIsFaqChatOpen] = useState(false);
 
       // Home Page Sections Management Helpers
       const saveHomeSections = (nextList) => {
@@ -15409,8 +15966,8 @@ ${order.address || ""}${order.thana ? `, ${order.thana}` : ""}${order.district ?
 📞 কন্টাক্ট নম্বর: ${order.phone || order.customerPhone || ""}
 ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভারি নির্দেশনা:* ${order.orderNote || order.note}\n` : ""}${order.trackingId ? `🚚 কুরিয়ার ট্র্যাকিং কোড: *${order.trackingId}*\n` : ""}
 যে কোনো জিজ্ঞাসা বা পণ্য সংক্রান্ত প্রয়োজনে আমাদের সাথে সরাসরি যোগাযোগ করতে পারেন:
-📞 হেল্পলাইন: ${config.phone || "018051198888"}
-💬 WhatsApp: ${config.whatsapp || "88018051198888"}
+📞 হেল্পলাইন: ${config.phone || "+8809697489330"}
+💬 WhatsApp: ${config.whatsapp || "+8801805119888"}
 
 আমাদের সাথে কেনাকাটা করার জন্য আপনাকে আন্তরিক ধন্যবাদ! 👑`;
       };
@@ -28141,7 +28698,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       </div>
                       <a
-                        href={`https://wa.me/${config.phone?.replace(/[^0-9]/g, "") || "8801700000000"}?text=${encodeURIComponent("হ্যালো, আমি একটি আংটি/চুড়ি কিনতে চাচ্ছি। আমার সঠিক সাইজ জানতে সাহায্য করবেন?")}`}
+                        href={`https://wa.me/${(config.whatsapp || config.phone)?.replace(/[^0-9]/g, "") || "8801805119888"}?text=${encodeURIComponent("হ্যালো, আমি একটি আংটি/চুড়ি কিনতে চাচ্ছি। আমার সঠিক সাইজ জানতে সাহায্য করবেন?")}`}
                         target="_blank"
                         rel="noreferrer"
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-bold shadow-xs transition flex items-center gap-1.5 shrink-0 self-stretch sm:self-auto justify-center"
@@ -31588,7 +32145,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     <div className="bg-black text-white rounded-lg px-3 py-2 flex items-center justify-between gap-2">
                       <div>
                         <p className="text-xs font-black tracking-wide uppercase">{config?.storeName || "SAJGOJ FASHION"}</p>
-                        <p className="text-[10px] text-slate-200">PARCEL SHIPPING LABEL • {config?.phone || "018051198888"}</p>
+                        <p className="text-[10px] text-slate-200">PARCEL SHIPPING LABEL • {config?.phone || "+8809697489330"}</p>
                       </div>
                       <span className="bg-white text-black text-[9px] font-black px-2 py-0.5 rounded uppercase">
                         {ord.courier && ord.courier !== "None" ? ord.courier : "SHIPPED"}
@@ -31651,7 +32208,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
 
                     <p className="text-[9px] text-slate-600 border-t border-slate-300 pt-1.5 leading-tight">
-                      <b>প্রেরক (FROM):</b> {config?.storeName || "SAJGOJ FASHION"} • {config?.address || "Dhaka"} • 📞 {config?.phone || "018051198888"}
+                      <b>প্রেরক (FROM):</b> {config?.storeName || "SAJGOJ FASHION"} • {config?.address || "Dhaka"} • 📞 {config?.phone || "+8809697489330"}
                     </p>
                   </div>
 
@@ -31707,7 +32264,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       {config.storeName || "SAJGOJ FASHION"}
                     </h4>
                     <p className="text-[10px] text-gray-600">{config.tagline || "প্রিমিয়াম এক্সক্লুসিভ ফ্যাশন হাউস"}</p>
-                    <p className="text-[10px] text-gray-500">📞 {config.storePhone || "01700000000"}</p>
+                    <p className="text-[10px] text-gray-500">📞 {config.phone || config.storePhone || "+8809697489330"}</p>
                     <div className="pt-1 text-[11px] font-bold text-gray-800">
                       *** ইন-স্টোর ক্যাশ রসিদ ***
                     </div>
@@ -38254,15 +38811,38 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             </div>
           )}
 
-          <a 
-            href={`https://wa.me/${config.whatsapp}?text=Hello%20SAJGOJ%20FASHION,%20I%20want%20to%20order`} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-2xl border-2 border-white hover:scale-110 transition duration-300"
-            title="WhatsApp Helpline"
+          <SajgojFreeFaqChatbot
+            isOpen={isFaqChatOpen}
+            onClose={() => setIsFaqChatOpen(false)}
+            config={config}
+            orders={orders}
+            coupons={coupons}
+            products={products}
+            getStoreMapUrls={getStoreMapUrls}
+            onSelectProduct={(prod) => {
+              setViewProduct(prod);
+              setSelectedDetailImg(0);
+              setProductQty(1);
+            }}
+            onNavigateOrderTracking={(q) => {
+              navigateHash("/order-tracking/" + encodeURIComponent(q));
+            }}
+            notify={notify}
+          />
+
+          <button
+            type="button"
+            onClick={() => setIsFaqChatOpen(prev => !prev)}
+            className="fixed bottom-5 right-5 z-40 px-4 py-3 rounded-full bg-gradient-to-r from-[#0f294a] via-[#1b3f72] to-[#7a1c2b] text-white flex items-center gap-2 shadow-2xl border-2 border-[#d4a574] hover:scale-105 transition duration-300 cursor-pointer"
+            title="সাজগোজ স্মার্ট চ্যাটবট (কল ও WhatsApp)"
+            aria-label="সাজগোজ চ্যাটবট খুলুন"
           >
-            <span className="text-2xl font-bold">💬</span>
-          </a>
+            <span className="relative flex items-center justify-center text-xl leading-none">
+              🤖
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white animate-pulse"></span>
+            </span>
+            <span className="text-xs font-black tracking-wide">চ্যাটবট</span>
+          </button>
 
           {/* Toast Notification */}
           {toast && (

@@ -2223,14 +2223,18 @@ class StoreRepository(private val context: Context) {
         defB2G1
       }
       val defCfg = StoreConfig()
+      val legacyPhones = setOf("", "018051198888", "88018051198888", "+8801805119888", "01805119888", "8801805119888", "01700000000", "8801700000000")
+      val legacyWhatsapps = setOf("", "88018051198888", "018051198888", "01805119888", "8801805119888")
+      val loadedPhone = o.optString("phone", defCfg.phone).trim().let { if (it in legacyPhones) defCfg.phone else it }
+      val loadedWhatsapp = o.optString("whatsapp", defCfg.whatsapp).trim().let { if (it in legacyWhatsapps) defCfg.whatsapp else it }
       val pageConfig = com.example.data.model.PageConfigJson.fromJsonObject(o.optJSONObject("pageConfig"))
       StoreConfig(
         storeName = o.optString("storeName", defCfg.storeName),
         tagline = o.optString("tagline", defCfg.tagline),
         announcementText = o.optString("announcementText", defCfg.announcementText),
         isAnnouncementEnabled = o.optBoolean("isAnnouncementEnabled", defCfg.isAnnouncementEnabled),
-        phone = o.optString("phone", defCfg.phone),
-        whatsapp = o.optString("whatsapp", defCfg.whatsapp),
+        phone = loadedPhone,
+        whatsapp = loadedWhatsapp,
         email = o.optString("email", defCfg.email),
         address = o.optString("address", defCfg.address),
         showGoogleMap = o.optBoolean("showGoogleMap", defCfg.showGoogleMap),

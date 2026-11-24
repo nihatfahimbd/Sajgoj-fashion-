@@ -13,7 +13,7 @@ class FreeFaqBotEngineTest {
 
   private val sampleConfig = StoreConfig(
     storeName = "SAJGOJ FASHION",
-    phone = "+8801805119888",
+    phone = "+8809697489330",
     whatsapp = "+8801805119888",
     returnPolicyDays = 7
   )
@@ -99,6 +99,7 @@ class FreeFaqBotEngineTest {
   @Test
   fun contactQuery_includesPhoneAndMapAction() {
     val msg = FaqBotEngine.reply("শোরুম ঠিকানা ও যোগাযোগ নম্বর", sampleConfig, sampleOrders, sampleCoupons, sampleProducts)
+    assertTrue(msg.text.contains("+8809697489330"))
     assertTrue(msg.text.contains("+8801805119888"))
     assertTrue(msg.showSupportActions)
     assertTrue(msg.showMapAction)

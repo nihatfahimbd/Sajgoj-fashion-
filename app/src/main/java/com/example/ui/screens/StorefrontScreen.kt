@@ -7,6 +7,7 @@ import android.net.Uri
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,6 +42,7 @@ import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -89,6 +91,7 @@ import com.example.ui.ProductSortOption
 import com.example.ui.components.AppImage
 import com.example.ui.components.BannerCarousel
 import com.example.ui.components.CompactProductCard
+import com.example.ui.components.FreeFaqChatbotDialog
 import com.example.ui.components.FullSectionCollectionDialog
 import com.example.ui.components.ProductCard
 import com.example.ui.components.ProductSortDropdown
@@ -163,7 +166,12 @@ fun StorefrontScreen(
   var allProductsInlineCat by remember { mutableStateOf("All") }
   var wishlistIds by remember { mutableStateOf(setOf<String>()) }
   var activeFooterTopic by remember { mutableStateOf<String?>(null) }
+  var showFaqChatbot by remember { mutableStateOf(false) }
   val design = config.design
+
+  BackHandler(enabled = showFaqChatbot) {
+    showFaqChatbot = false
+  }
   val toggleWishlist: (String) -> Unit = { pid ->
     wishlistIds = if (wishlistIds.contains(pid)) wishlistIds - pid else wishlistIds + pid
   }
@@ -661,19 +669,24 @@ fun StorefrontScreen(
       }
 
       FloatingActionButton(
-        onClick = { openWhatsApp() },
-        containerColor = Color(0xFF25D366),
+        onClick = { showFaqChatbot = true },
+        containerColor = NavyBlue,
         contentColor = Color.White,
         shape = CircleShape,
-        modifier = Modifier.testTag("whatsapp_fab")
+        modifier = Modifier.testTag("faq_chatbot_fab")
       ) {
         Row(
-          modifier = Modifier.padding(horizontal = 12.dp),
+          modifier = Modifier.padding(horizontal = 14.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-          Icon(imageVector = Icons.Default.Chat, contentDescription = "WhatsApp", modifier = Modifier.size(20.dp))
-          Text(text = "WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+          Icon(
+            imageVector = Icons.Default.SupportAgent,
+            contentDescription = "সাজগোজ চ্যাটবট",
+            tint = AntiqueGold,
+            modifier = Modifier.size(20.dp)
+          )
+          Text(text = "চ্যাটবট", fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -743,6 +756,24 @@ fun StorefrontScreen(
         coupons = coupons,
         onDismiss = { activeFooterTopic = null },
         onOpenWhatsApp = { openWhatsApp() }
+      )
+    }
+
+    if (showFaqChatbot) {
+      FreeFaqChatbotDialog(
+        config = config,
+        orders = orders,
+        coupons = coupons,
+        products = products,
+        onProductClick = { prod ->
+          showFaqChatbot = false
+          onProductClick(prod)
+        },
+        onOpenStoreMap = {
+          showFaqChatbot = false
+          activeFooterTopic = "contact"
+        },
+        onDismiss = { showFaqChatbot = false }
       )
     }
   }
