@@ -153,6 +153,10 @@ fun StorefrontScreen(
   onLikeReel: (String) -> Unit = {},
   onBannerClick: (BannerItem) -> Unit,
   onOpenAiStylist: () -> Unit = {},
+  isShoppingAllMode: Boolean = false,
+  onExitShoppingAllMode: () -> Unit = {},
+  openOffersTrigger: Int = 0,
+  onOffersVisibilityChange: (Boolean) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -164,13 +168,28 @@ fun StorefrontScreen(
   var collectionDialogSection by remember { mutableStateOf<HomeSectionConfig?>(null) }
   var activeReelForPlayback by remember { mutableStateOf<ReelItem?>(null) }
   var allProductsInlineCat by remember { mutableStateOf("All") }
+  var shoppingInlineCat by remember { mutableStateOf("All") }
   var wishlistIds by remember { mutableStateOf(setOf<String>()) }
   var activeFooterTopic by remember { mutableStateOf<String?>(null) }
   var showFaqChatbot by remember { mutableStateOf(false) }
   val design = config.design
 
+  LaunchedEffect(openOffersTrigger) {
+    if (openOffersTrigger > 0) {
+      voucherCenterTab = "all"
+      showVoucherCenter = true
+    }
+  }
+
+  LaunchedEffect(showVoucherCenter) {
+    onOffersVisibilityChange(showVoucherCenter)
+  }
+
   BackHandler(enabled = showFaqChatbot) {
     showFaqChatbot = false
+  }
+  BackHandler(enabled = isShoppingAllMode && !showFaqChatbot && !showVoucherCenter) {
+    onExitShoppingAllMode()
   }
   val toggleWishlist: (String) -> Unit = { pid ->
     wishlistIds = if (wishlistIds.contains(pid)) wishlistIds - pid else wishlistIds + pid
@@ -211,9 +230,12 @@ fun StorefrontScreen(
     result
   }
 
-  LaunchedEffect(scrollToTopTrigger) {
-    if (scrollToTopTrigger > 0) {
+  LaunchedEffect(scrollToTopTrigger, isShoppingAllMode) {
+    if (scrollToTopTrigger > 0 || isShoppingAllMode) {
       expandedSectionIds = emptySet()
+      if (isShoppingAllMode) {
+        shoppingInlineCat = "All"
+      }
       listState.animateScrollToItem(0)
     }
   }
@@ -327,7 +349,7 @@ fun StorefrontScreen(
   Box(modifier = pageModifier) {
     LazyColumn(
       state = listState,
-      contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 84.dp),
+      contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 152.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp),
       modifier = Modifier
         .fillMaxSize()
@@ -420,6 +442,143 @@ fun StorefrontScreen(
           }
         } else {
           items(sortedDisplayProducts.chunked(2)) { rowItems ->
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+              rowItems.forEach { product ->
+                ProductCard(
+                  product = product,
+                  onProductClick = onProductClick,
+                  onAddToCart = onAddToCart,
+                  design = design,
+                  isWishlisted = wishlistIds.contains(product.id),
+                  onToggleWishlist = { toggleWishlist(product.id) },
+                  onMediaClick = onProductClick,
+                  modifier = Modifier.weight(1f)
+                )
+              }
+              if (rowItems.size == 1) {
+                Spacer(modifier = Modifier.weight(1f))
+              }
+            }
+          }
+        }
+      } else if (isShoppingAllMode) {
+        val shoppingBase = if (shoppingInlineCat == "All") {
+          sortedDisplayProducts
+        } else {
+          sortedDisplayProducts.filter { it.category.equals(shoppingInlineCat, ignoreCase = true) }
+        }
+
+        item(key = "shopping_header_card") {
+          Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = CreamSurface,
+            border = BorderStroke(1.dp, BorderGold),
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Column(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+              verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Column(modifier = Modifier.weight(1f)) {
+                  Text(
+                    text = "🛍️ শপিং — সকল প্রোডাক্ট",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                    color = RoyalMaroon
+                  )
+                  Text(
+                    text = "স্টোরের সব প্রোডাক্ট (${shoppingBase.size} টি)",
+                    fontSize = 11.sp,
+                    color = AntiqueGoldDark,
+                    fontWeight = FontWeight.SemiBold
+                  )
+                }
+                Surface(
+                  shape = RoundedCornerShape(12.dp),
+                  color = Color.White,
+                  border = BorderStroke(1.dp, BorderGold),
+                  modifier = Modifier
+                    .clickable { onExitShoppingAllMode() }
+                    .testTag("shopping_back_home_button")
+                ) {
+                  Text(
+                    text = "🏠 হোম",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = RoyalMaroon,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                  )
+                }
+              }
+
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+              ) {
+                val allSelected = shoppingInlineCat == "All"
+                Surface(
+                  shape = RoundedCornerShape(50),
+                  color = if (allSelected) RoyalMaroon else Color.White,
+                  border = BorderStroke(1.dp, if (allSelected) RoyalMaroon else BorderGold),
+                  modifier = Modifier.clickable { shoppingInlineCat = "All" }
+                ) {
+                  Text(
+                    text = "সব (${sortedDisplayProducts.size})",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (allSelected) Color.White else RoyalMaroon,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                  )
+                }
+                categories.forEach { cat ->
+                  val count = sortedDisplayProducts.count { it.category.equals(cat.name, ignoreCase = true) }
+                  if (count > 0) {
+                    val isSelected = shoppingInlineCat.equals(cat.name, ignoreCase = true)
+                    Surface(
+                      shape = RoundedCornerShape(50),
+                      color = if (isSelected) RoyalMaroon else Color.White,
+                      border = BorderStroke(1.dp, if (isSelected) RoyalMaroon else BorderGold),
+                      modifier = Modifier.clickable { shoppingInlineCat = cat.name }
+                    ) {
+                      Text(
+                        text = "${cat.icon.ifBlank { "✨" }} ${cat.name} ($count)",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) Color.White else RoyalMaroon,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                      )
+                    }
+                  }
+                }
+              }
+
+              StorefrontCatalogSortBar(
+                productCount = shoppingBase.size,
+                sortOption = sortOption,
+                onSortOptionSelected = onSortOptionSelected
+              )
+            }
+          }
+        }
+
+        if (shoppingBase.isEmpty()) {
+          item {
+            EmptySearchResultBox()
+          }
+        } else {
+          items(shoppingBase.chunked(2)) { rowItems ->
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.spacedBy(10.dp)

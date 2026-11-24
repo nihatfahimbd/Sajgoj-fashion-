@@ -59,10 +59,13 @@ import com.example.ui.AppScreen
 import com.example.ui.StoreViewModel
 import com.example.ui.components.AiStylistDialog
 import com.example.ui.components.CartAndCheckoutDialog
+import com.example.ui.components.CustomerAccountDialog
 import com.example.ui.components.InvoiceDialog
 import com.example.ui.components.ProductDetailDialog
 import com.example.ui.components.ShippingLabelDialog
 import com.example.ui.components.StoreHeader
+import com.example.ui.components.StorefrontBottomNavBar
+import com.example.ui.components.StorefrontBottomTab
 import com.example.ui.screens.AdminDashboardScreen
 import com.example.ui.screens.StorefrontScreen
 import com.example.ui.theme.BorderGold
@@ -139,6 +142,10 @@ class MainActivity : ComponentActivity() {
         var manualScanInput by remember { mutableStateOf("") }
         var showAiStylistDialog by remember { mutableStateOf(false) }
         var aiStylistInitialPrompt by remember { mutableStateOf("") }
+        var storeBottomTab by remember { mutableStateOf(StorefrontBottomTab.HOME) }
+        var openOffersTrigger by remember { mutableStateOf(0) }
+        var isOffersDialogOpen by remember { mutableStateOf(false) }
+        var showAccountDialog by remember { mutableStateOf(false) }
 
         // Zero-permission Photo Picker for Visual Image Search
         val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -211,9 +218,11 @@ class MainActivity : ComponentActivity() {
             selectedShippingLabelOrder != null ||
             showVoiceFallbackDialog ||
             showScannerDialog ||
-            showAiStylistDialog
+            showAiStylistDialog ||
+            showAccountDialog
         ) {
           when {
+            showAccountDialog -> showAccountDialog = false
             showAiStylistDialog -> showAiStylistDialog = false
             showScannerDialog -> showScannerDialog = false
             showVoiceFallbackDialog -> showVoiceFallbackDialog = false
@@ -231,8 +240,44 @@ class MainActivity : ComponentActivity() {
         } else {
           CreamBackground
         }
+        val activeBottomBarTab = when {
+          isCartOpen -> StorefrontBottomTab.CART
+          showAccountDialog -> StorefrontBottomTab.ACCOUNT
+          isOffersDialogOpen -> StorefrontBottomTab.OFFERS
+          storeBottomTab == StorefrontBottomTab.SHOPPING -> StorefrontBottomTab.SHOPPING
+          else -> StorefrontBottomTab.HOME
+        }
         Scaffold(
           containerColor = scaffoldBg,
+          bottomBar = {
+            if (currentScreen == AppScreen.STOREFRONT) {
+              StorefrontBottomNavBar(
+                activeTab = activeBottomBarTab,
+                cartItemCount = cartItems.sumOf { it.quantity },
+                onSelectHome = {
+                  showAccountDialog = false
+                  storeBottomTab = StorefrontBottomTab.HOME
+                  viewModel.resetHomeFilters()
+                },
+                onSelectShopping = {
+                  showAccountDialog = false
+                  viewModel.resetHomeFilters()
+                  storeBottomTab = StorefrontBottomTab.SHOPPING
+                },
+                onSelectOffers = {
+                  showAccountDialog = false
+                  openOffersTrigger += 1
+                },
+                onSelectAccount = {
+                  showAccountDialog = true
+                },
+                onSelectCart = {
+                  showAccountDialog = false
+                  viewModel.setCartOpen(true)
+                }
+              )
+            }
+          },
           modifier = Modifier
             .fillMaxSize()
             .background(scaffoldBg)
@@ -275,8 +320,14 @@ class MainActivity : ComponentActivity() {
               onOpenCart = { viewModel.setCartOpen(true) },
               categories = categories,
               selectedCategory = selectedCategory,
-              onCategorySelected = { viewModel.setSelectedCategory(it) },
-              onHomeReset = { viewModel.resetHomeFilters() },
+              onCategorySelected = {
+                storeBottomTab = StorefrontBottomTab.HOME
+                viewModel.setSelectedCategory(it)
+              },
+              onHomeReset = {
+                storeBottomTab = StorefrontBottomTab.HOME
+                viewModel.resetHomeFilters()
+              },
               onVoiceSearchClick = { launchVoiceSearch() },
               onImageSearchClick = {
                 photoPickerLauncher.launch(
@@ -336,7 +387,14 @@ class MainActivity : ComponentActivity() {
                     onOpenAiStylist = {
                       aiStylistInitialPrompt = ""
                       showAiStylistDialog = true
-                    }
+                    },
+                    isShoppingAllMode = storeBottomTab == StorefrontBottomTab.SHOPPING,
+                    onExitShoppingAllMode = {
+                      storeBottomTab = StorefrontBottomTab.HOME
+                      viewModel.resetHomeFilters()
+                    },
+                    openOffersTrigger = openOffersTrigger,
+                    onOffersVisibilityChange = { isOffersDialogOpen = it }
                   )
                 }
 
@@ -657,6 +715,24 @@ class MainActivity : ComponentActivity() {
             },
             onShowToast = { viewModel.emitToast(it) }
           )
+
+          if (showAccountDialog) {
+            CustomerAccountDialog(
+              authUser = authUser,
+              isAuthBusy = isAuthBusy,
+              orders = orders,
+              storeConfig = storeConfig,
+              onGoogleAuthClick = {
+                if (authUser != null) {
+                  viewModel.signOutGoogle(context)
+                } else {
+                  viewModel.signInWithGoogle(context, unlockAdminIfVerified = false)
+                }
+              },
+              onOpenOrderInvoice = { order -> viewModel.openInvoice(order) },
+              onDismiss = { showAccountDialog = false }
+            )
+          }
           }
         }
       }
