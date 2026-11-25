@@ -1,5 +1,5 @@
 // SAJGOJ FASHION - PWA Offline Service Worker with IndexedDB Catalog Cache & Order Background Sync
-const CACHE_NAME = 'sajgoj-offline-v3';
+const CACHE_NAME = 'sajgoj-offline-v4';
 const CATALOG_MEDIA_CACHE = 'sajgoj-catalog-media-v2';
 const IDB_NAME = 'sajgoj_fashion_db';
 const IDB_VERSION = 2;
