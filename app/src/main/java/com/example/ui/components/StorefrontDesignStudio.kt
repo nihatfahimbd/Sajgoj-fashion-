@@ -944,6 +944,39 @@ fun StorefrontDesignStudioPanel(
             )
           }
 
+          Text(text = "প্রাইস ডিসকাউন্ট ডিসপ্লে:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+          FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            listOf(
+              "auto" to "প্রোডাক্ট অনুযায়ী",
+              "percent" to "% ডিসকাউন্ট (৳490 -45%)",
+              "crossed" to "রেগুলার + অফার (৳450 ৳400)"
+            ).forEach { (styleKey, styleLabel) ->
+              val selected = draft.cardPriceDiscountStyle == styleKey
+              Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (selected) AdminV2CyanDeep else Color.White,
+                border = BorderStroke(1.dp, if (selected) AdminV2CyanDeep else Color(0xFFBAE6FD)),
+                modifier = Modifier
+                  .heightIn(min = 38.dp)
+                  .clip(RoundedCornerShape(10.dp))
+                  .clickable { draft = draft.copy(cardPriceDiscountStyle = styleKey) }
+                  .testTag("price_discount_style_$styleKey")
+              ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
+                  Text(
+                    text = styleLabel,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (selected) Color.White else AdminInkPrimary
+                  )
+                }
+              }
+            }
+          }
+
           Text(text = "বাটন স্টাইল:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
           FlowRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1293,15 +1326,16 @@ private fun DesignLivePreviewBox(design: StoreDesignConfig) {
           horizontalArrangement = Arrangement.Center
         ) {
           Surface(
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, parseColorHex(design.cardBorderColor, Color.White)),
-            modifier = Modifier.width(142.dp)
+            shape = RoundedCornerShape(10.dp),
+            color = Color.White,
+            border = BorderStroke(1.dp, Color(0xFFE5E7EB)),
+            modifier = Modifier.width(148.dp)
           ) {
             Column(
               modifier = Modifier
-                .background(Brush.verticalGradient(listOf(bodyStart, bodyEnd)))
-                .padding(7.dp),
-              verticalArrangement = Arrangement.spacedBy(4.dp)
+                .background(Color.White)
+                .padding(8.dp),
+              verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
               Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1311,78 +1345,30 @@ private fun DesignLivePreviewBox(design: StoreDesignConfig) {
                   modifier = Modifier
                     .size(22.dp)
                     .clip(CircleShape)
-                    .background(parseColorHex(design.cardWishlistCircleBg, Color.White)),
+                    .background(parseColorHex(design.cardWishlistCircleBg, Color.White))
+                    .border(0.8.dp, Color(0xFFE5E7EB), CircleShape),
                   contentAlignment = Alignment.Center
                 ) {
                   Text(text = design.cardWishlistIcon.ifBlank { "❤️" }, fontSize = 10.sp)
                 }
               }
 
-              Box(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .clip(RoundedCornerShape(7.dp))
-                  .background(Brush.horizontalGradient(listOf(titleBg, titleEnd)))
-                  .padding(horizontal = 6.dp, vertical = 4.dp)
-              ) {
-                Text(
-                  text = "রয়েল জামদানি শাড়ি",
-                  color = titleTxt,
-                  fontSize = 10.sp,
-                  fontWeight = FontWeight.Bold,
-                  maxLines = 1
-                )
-              }
+              Text(
+                text = "রয়েল জামদানি শাড়ি",
+                color = Color(0xFF1F2937),
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
 
-              Column(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .clip(RoundedCornerShape(8.dp))
-                  .background(priceBg)
-                  .border(1.dp, priceBorder, RoundedCornerShape(8.dp))
-                  .padding(horizontal = 6.dp, vertical = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-              ) {
-                Text(
-                  text = "৳4,200",
-                  color = regColor,
-                  fontSize = 8.5.sp,
-                  fontWeight = FontWeight.Bold,
-                  textDecoration = TextDecoration.LineThrough
-                )
-                Text(
-                  text = "৳3,500",
-                  color = offerColor,
-                  fontSize = 11.5.sp,
-                  fontWeight = FontWeight.Black
-                )
-              }
-
-              Box(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .clip(btnShape)
-                  .then(
-                    if (design.cardBtnStyle == "outline") {
-                      Modifier
-                        .background(Color.Transparent)
-                        .border(1.5.dp, btnBg, btnShape)
-                    } else {
-                      Modifier
-                        .background(Brush.horizontalGradient(listOf(btnBg, btnEnd)))
-                        .border(1.dp, Color.White.copy(alpha = 0.7f), btnShape)
-                    }
-                  )
-                  .padding(vertical = 5.dp),
-                contentAlignment = Alignment.Center
-              ) {
-                Text(
-                  text = design.cardActionLabel.ifBlank { "পন্যটি দেখুন" },
-                  color = if (design.cardBtnStyle == "outline") btnBg else btnText,
-                  fontSize = 9.5.sp,
-                  fontWeight = FontWeight.Black
-                )
-              }
+              CleanCardPriceRow(
+                sellingPrice = 3500,
+                regularPrice = 4200,
+                isPercentDiscount = design.cardPriceDiscountStyle == "percent",
+                discountPercent = 17,
+                design = design
+              )
             }
           }
         }

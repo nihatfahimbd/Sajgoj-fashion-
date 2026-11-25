@@ -230,6 +230,18 @@ fun SellerCenterProductFormDialog(
     mutableStateOf(product?.specialPriceEnabled ?: initialOfferStr.isNotBlank())
   }
   var offerPriceStr by remember(product) { mutableStateOf(initialOfferStr) }
+  var discountInputMode by remember(product) {
+    mutableStateOf(
+      if (product?.attributes?.get(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_MODE) == "percent") "percent" else "amount"
+    )
+  }
+  var discountPercentStr by remember(product) {
+    val existingPct = product?.attributes?.get(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_PERCENT)
+    val fallbackPct = if (product != null && product.regularPrice > product.price && product.regularPrice > 0) {
+      (((product.regularPrice - product.price) * 100) / product.regularPrice).coerceIn(1, 99).toString()
+    } else ""
+    mutableStateOf(existingPct?.takeIf { it.isNotBlank() } ?: fallbackPct)
+  }
   var specialPriceStart by remember(product) { mutableStateOf(product?.specialPriceStart ?: "") }
   var specialPriceEnd by remember(product) { mutableStateOf(product?.specialPriceEnd ?: "") }
 
@@ -303,12 +315,26 @@ fun SellerCenterProductFormDialog(
 
     val variantSummary = if (variations.isNotEmpty()) ProductVariantHelper.summarizeVariations(variations) else null
     val finalRegular = (variantSummary?.minRegularPrice?.takeIf { it > 0 } ?: regularParsed).coerceAtLeast(0)
+    val pctParsed = (discountPercentStr.toIntOrNull() ?: 0).coerceIn(0, 99)
+    val computedPercentOffer = if (discountInputMode == "percent" && specialPriceEnabled && finalRegular > 0 && pctParsed in 1..99) {
+      ((finalRegular * (100 - pctParsed)) / 100).coerceIn(1, finalRegular - 1)
+    } else 0
     val finalOffer = when {
       variantSummary != null && variantSummary.minOfferPrice in 1 until finalRegular -> variantSummary.minOfferPrice
+      computedPercentOffer in 1 until finalRegular -> computedPercentOffer
       hasValidOffer -> offerParsed
       else -> 0
     }
     val effectivePrice = if (finalOffer in 1 until finalRegular) finalOffer else finalRegular
+    val savedAttributes = attributes.toMutableMap().apply {
+      if (specialPriceEnabled && discountInputMode == "percent" && pctParsed in 1..99 && finalOffer in 1 until finalRegular) {
+        put(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_MODE, "percent")
+        put(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_PERCENT, pctParsed.toString())
+      } else {
+        remove(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_MODE)
+        remove(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_PERCENT)
+      }
+    }
     val cleanStock = (variantSummary?.totalStock ?: (stockStr.toIntOrNull() ?: 0)).coerceAtLeast(0)
     val finalImages = if (imageList.isNotEmpty()) imageList else listOf("res://banner_eid_special_1792530116809")
 
@@ -349,7 +375,7 @@ fun SellerCenterProductFormDialog(
       videoUrl = cleanVideoUrl,
       videoThumbUrl = resolvedThumb,
       brand = brand.ifBlank { "No Brand" },
-      attributes = attributes,
+      attributes = savedAttributes,
       isAvailable = isAvailable,
       isDraft = saveAsDraft,
       specialPriceEnabled = (variantSummary?.specialPriceEnabled ?: specialPriceEnabled),
@@ -953,26 +979,101 @@ fun SellerCenterProductFormDialog(
               AnimatedVisibility(visible = specialPriceEnabled) {
                 Column {
                   SellerRowDivider()
-                  SellerInlineNumberRow(
-                    label = "Special Price(BDT)",
-                    required = false,
-                    helperWarning = when {
-                      hasValidOffer -> {
-                        val pct = ((regularParsed - offerParsed) * 100) / regularParsed
-                        "-$pct% ছাড় (গ্রাহক দেখবে ৳$offerParsed)"
+                  Row(
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                  ) {
+                    listOf(
+                      "amount" to "অফার মূল্য (৳)",
+                      "percent" to "ডিসকাউন্ট (%)"
+                    ).forEach { (modeKey, modeLabel) ->
+                      val selected = discountInputMode == modeKey
+                      Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (selected) SellerOrange else Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, if (selected) SellerOrange else Color(0xFFE2E8F0)),
+                        modifier = Modifier
+                          .weight(1f)
+                          .heightIn(min = 38.dp)
+                          .clip(RoundedCornerShape(10.dp))
+                          .clickable {
+                            discountInputMode = modeKey
+                            if (modeKey == "percent") {
+                              val pct = discountPercentStr.toIntOrNull()?.coerceIn(1, 99) ?: 0
+                              if (pct in 1..99 && regularParsed > 0) {
+                                val calc = ((regularParsed * (100 - pct)) / 100).coerceIn(1, (regularParsed - 1).coerceAtLeast(1))
+                                offerPriceStr = calc.toString()
+                              }
+                            }
+                          }
+                          .testTag("product_form_discount_mode_$modeKey")
+                      ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                          Text(
+                            text = modeLabel,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (selected) Color.White else SellerLabelInk
+                          )
+                        }
                       }
-                      regularParsed > 0 -> "বর্তমান দাম ৳$regularParsed — শুধু অফার প্রাইস লিখুন"
-                      else -> null
-                    },
-                    helperColor = if (hasValidOffer) Color(0xFF059669) else SellerOrangeDeep,
-                    value = offerPriceStr,
-                    placeholder = if (regularParsed > 0) "$regularParsed (Offer)" else "Input",
-                    onValueChange = {
-                      offerPriceStr = it.filter { ch -> ch.isDigit() }
-                      if (offerPriceStr.isNotBlank()) specialPriceEnabled = true
-                    },
-                    testTag = "product_form_offer_price_input"
-                  )
+                    }
+                  }
+
+                  SellerRowDivider()
+                  if (discountInputMode == "percent") {
+                    val pctVal = (discountPercentStr.toIntOrNull() ?: 0).coerceIn(0, 99)
+                    val previewOffer = if (regularParsed > 0 && pctVal in 1..99) {
+                      ((regularParsed * (100 - pctVal)) / 100).coerceIn(1, (regularParsed - 1).coerceAtLeast(1))
+                    } else 0
+                    SellerInlineNumberRow(
+                      label = "Discount (%)",
+                      required = false,
+                      helperWarning = when {
+                        previewOffer > 0 -> "কার্ডে দেখাবে: ৳$previewOffer -$pctVal%"
+                        regularParsed > 0 -> "১ থেকে ৯৯ এর মধ্যে % দিন (যেমন: 45)"
+                        else -> "প্রথমে Regular Price(BDT) লিখুন"
+                      },
+                      helperColor = if (previewOffer > 0) Color(0xFF059669) else SellerOrangeDeep,
+                      value = discountPercentStr,
+                      placeholder = "45",
+                      onValueChange = { raw ->
+                        val digits = raw.filter { ch -> ch.isDigit() }.take(2)
+                        discountPercentStr = digits
+                        val p = digits.toIntOrNull() ?: 0
+                        if (p in 1..99 && regularParsed > 0) {
+                          val calc = ((regularParsed * (100 - p)) / 100).coerceIn(1, (regularParsed - 1).coerceAtLeast(1))
+                          offerPriceStr = calc.toString()
+                          specialPriceEnabled = true
+                        }
+                      },
+                      testTag = "product_form_discount_percent_input"
+                    )
+                  } else {
+                    SellerInlineNumberRow(
+                      label = "Special Price(BDT)",
+                      required = false,
+                      helperWarning = when {
+                        hasValidOffer -> {
+                          val pct = ((regularParsed - offerParsed) * 100) / regularParsed
+                          "কার্ডে দেখাবে: ৳$regularParsed  ৳$offerParsed (-$pct% সাশ্রয়)"
+                        }
+                        regularParsed > 0 -> "বর্তমান দাম ৳$regularParsed — শুধু অফার প্রাইস লিখুন"
+                        else -> null
+                      },
+                      helperColor = if (hasValidOffer) Color(0xFF059669) else SellerOrangeDeep,
+                      value = offerPriceStr,
+                      placeholder = if (regularParsed > 0) "$regularParsed (Offer)" else "Input",
+                      onValueChange = {
+                        offerPriceStr = it.filter { ch -> ch.isDigit() }
+                        if (offerPriceStr.isNotBlank()) specialPriceEnabled = true
+                      },
+                      testTag = "product_form_offer_price_input"
+                    )
+                  }
 
                   SellerRowDivider()
 
@@ -1332,7 +1433,18 @@ fun SellerCenterProductFormDialog(
         var customKey by remember { mutableStateOf("") }
         var customVal by remember { mutableStateOf("") }
         var extraMap by remember {
-          mutableStateOf(attributes.filterKeys { it !in listOf("Material", "Pattern", "Origin", "Gender") })
+          mutableStateOf(
+            attributes.filterKeys {
+              it !in listOf(
+                "Material",
+                "Pattern",
+                "Origin",
+                "Gender",
+                com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_MODE,
+                com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_PERCENT
+              )
+            }
+          )
         }
 
         OutlinedTextField(
@@ -1420,6 +1532,12 @@ fun SellerCenterProductFormDialog(
               if (pattern.isNotBlank()) put("Pattern", pattern.trim())
               if (origin.isNotBlank()) put("Origin", origin.trim())
               if (gender.isNotBlank()) put("Gender", gender.trim())
+              attributes[com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_MODE]?.let {
+                put(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_MODE, it)
+              }
+              attributes[com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_PERCENT]?.let {
+                put(com.example.data.model.ProductDiscountHelper.ATTR_DISCOUNT_PERCENT, it)
+              }
               putAll(extraMap)
             }
             attributes = combined

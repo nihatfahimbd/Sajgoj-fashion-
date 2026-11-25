@@ -183,8 +183,9 @@ class ProductSortingTest {
     composeTestRule.onNodeWithTag("compact_card_media_p_mid_old").performClick()
     composeTestRule.waitForIdle()
 
-    // Tapping "পন্যটি দেখুন" button opens the exact same product details
-    composeTestRule.onNodeWithTag("compact_add_to_cart_p_mid_old").performClick()
+    // Verify bottom Details button is removed and tapping price/title opens product details
+    composeTestRule.onNodeWithTag("compact_add_to_cart_p_mid_old").assertDoesNotExist()
+    composeTestRule.onNodeWithTag("compact_add_to_cart_p_mid_old_price_box", useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
 
     assertEquals(listOf("p_mid_old", "p_mid_old"), clickedProducts)

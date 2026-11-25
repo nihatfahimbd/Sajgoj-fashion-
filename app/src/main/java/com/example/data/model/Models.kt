@@ -66,6 +66,24 @@ data class Product(
   val variantImageType: String = "Color Family"
 )
 
+object ProductDiscountHelper {
+  const val ATTR_DISCOUNT_MODE = "__discountMode"
+  const val ATTR_DISCOUNT_PERCENT = "__discountPercent"
+
+  fun effectiveDiscountPercent(product: Product): Int {
+    val explicit = product.attributes[ATTR_DISCOUNT_PERCENT]?.toIntOrNull() ?: 0
+    if (explicit in 1..99) return explicit
+    if (product.regularPrice > product.price && product.regularPrice > 0) {
+      return (((product.regularPrice - product.price) * 100) / product.regularPrice).coerceIn(1, 99)
+    }
+    return 0
+  }
+
+  fun isPercentDiscountMode(product: Product): Boolean {
+    return product.attributes[ATTR_DISCOUNT_MODE] == "percent" && effectiveDiscountPercent(product) > 0
+  }
+}
+
 data class HomeSectionConfig(
   val id: String,
   val type: String, // top_banner, voucher_strip, category_slider, new_products, hot_sale, combo_packs, b2g1_offers, best_deals, reels_showcase, all_products, category_products, promo_banner, custom_products
@@ -410,16 +428,17 @@ data class StoreDesignConfig(
   val reelsCaptionBg: String = "#DC2626",
   val reelsCaptionText: String = "#FFFFFF",
   val reelsCaptionLabel: String = "পন্যের ভিডিও দেখে অর্ডার করুন",
-  val cardBodyBg: String = "#0F294A",
-  val cardBodyBgEnd: String = "#1E3A8A",
-  val cardBorderColor: String = "#FFFFFF",
-  val cardTitleBg: String = "#EF4444",
-  val cardTitleBgEnd: String = "#DC2626",
-  val cardTitleText: String = "#FFFFFF",
-  val cardPriceBg: String = "#FFF8F0",
-  val cardPriceBorder: String = "#F3D5B5",
-  val cardRegularPriceColor: String = "#0F294A",
-  val cardOfferPriceColor: String = "#DC2626",
+  val cardBodyBg: String = "#FFFFFF",
+  val cardBodyBgEnd: String = "#FFFFFF",
+  val cardBorderColor: String = "#E5E7EB",
+  val cardTitleBg: String = "#FFFFFF",
+  val cardTitleBgEnd: String = "#FFFFFF",
+  val cardTitleText: String = "#1F2937",
+  val cardPriceBg: String = "#FFFFFF",
+  val cardPriceBorder: String = "#FFFFFF",
+  val cardRegularPriceColor: String = "#64748B",
+  val cardOfferPriceColor: String = "#F85606",
+  val cardPriceDiscountStyle: String = "auto", // "auto", "percent", "crossed"
   val cardBtnStyle: String = "pill", // "pill", "rounded", "square", "outline"
   val cardBtnBg: String = "#FB7185",
   val cardBtnBgEnd: String = "#E11D48",

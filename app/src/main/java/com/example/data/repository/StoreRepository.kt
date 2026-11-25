@@ -2200,6 +2200,7 @@ class StoreRepository(private val context: Context) {
           cardPriceBorder = dObj.optString("cardPriceBorder", defDesign.cardPriceBorder),
           cardRegularPriceColor = dObj.optString("cardRegularPriceColor", defDesign.cardRegularPriceColor),
           cardOfferPriceColor = dObj.optString("cardOfferPriceColor", defDesign.cardOfferPriceColor),
+          cardPriceDiscountStyle = dObj.optString("cardPriceDiscountStyle", defDesign.cardPriceDiscountStyle),
           cardBtnStyle = dObj.optString("cardBtnStyle", defDesign.cardBtnStyle),
           cardBtnBg = dObj.optString("cardBtnBg", defDesign.cardBtnBg),
           cardBtnBgEnd = dObj.optString("cardBtnBgEnd", defDesign.cardBtnBgEnd),
@@ -2373,6 +2374,7 @@ class StoreRepository(private val context: Context) {
       put("cardPriceBorder", d.cardPriceBorder)
       put("cardRegularPriceColor", d.cardRegularPriceColor)
       put("cardOfferPriceColor", d.cardOfferPriceColor)
+      put("cardPriceDiscountStyle", d.cardPriceDiscountStyle)
       put("cardBtnStyle", d.cardBtnStyle)
       put("cardBtnBg", d.cardBtnBg)
       put("cardBtnBgEnd", d.cardBtnBgEnd)

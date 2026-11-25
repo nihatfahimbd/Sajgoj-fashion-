@@ -641,7 +641,9 @@ private fun CompactReelVideoCard(
         inStock = linkedProduct.stock > 0,
         buttonTestTag = "reel_add_to_cart_${reel.id}",
         onActionClick = onVideoClick,
-        design = design
+        design = design,
+        isPercentDiscount = com.example.data.model.ProductDiscountHelper.isPercentDiscountMode(linkedProduct),
+        discountPercent = com.example.data.model.ProductDiscountHelper.effectiveDiscountPercent(linkedProduct)
       )
     }
   }

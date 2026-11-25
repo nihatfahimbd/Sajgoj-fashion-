@@ -16,6 +16,7 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,12 +29,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
-import com.example.util.ProductMediaHelper
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,35 +42,138 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.data.model.Product
+import com.example.data.model.ProductDiscountHelper
 import com.example.data.model.StoreDesignConfig
 import com.example.ui.theme.AccentRed
-import com.example.ui.theme.AntiqueGoldDark
 import com.example.ui.theme.BorderGold
-import com.example.ui.theme.CollectionRedBorder
-import com.example.ui.theme.CollectionRedEnd
-import com.example.ui.theme.CollectionRedStart
-import com.example.ui.theme.CreamPriceBorder
-import com.example.ui.theme.CreamSurface
-import com.example.ui.theme.DarkEspresso
-import com.example.ui.theme.NavyBlue
-import com.example.ui.theme.NavyBlueCardEnd
 import com.example.ui.theme.ReelsRedBadge
 import com.example.ui.theme.RoyalMaroon
-import com.example.ui.theme.SideRosePillEnd
-import com.example.ui.theme.SideRosePillStart
 import com.example.ui.theme.parseColorHex
+import com.example.util.ProductMediaHelper
+
+private val BrandOfferOrange = Color(0xFFF85606)
+private val CleanCardBorder = Color(0xFFE5E7EB)
+private val CleanTitleInk = Color(0xFF1F2937)
+private val MutedRegularSlate = Color(0xFF64748B)
+
+@Composable
+fun CleanCardPriceRow(
+  sellingPrice: Int,
+  regularPrice: Int,
+  isPercentDiscount: Boolean = false,
+  discountPercent: Int = 0,
+  design: StoreDesignConfig = StoreDesignConfig(),
+  testTag: String? = null,
+  modifier: Modifier = Modifier
+) {
+  val hasRegularDiscount = regularPrice > sellingPrice && sellingPrice > 0
+  val computedPct = when {
+    discountPercent in 1..99 -> discountPercent
+    hasRegularDiscount && regularPrice > 0 ->
+      (((regularPrice - sellingPrice) * 100) / regularPrice).coerceIn(1, 99)
+    else -> 0
+  }
+  val showPercentStyle = when (design.cardPriceDiscountStyle) {
+    "percent" -> computedPct > 0
+    "crossed" -> false
+    else -> isPercentDiscount && computedPct > 0
+  }
+
+  val offerColor = parseColorHex(design.cardOfferPriceColor, BrandOfferOrange)
+  val regularColor = if (design.cardRegularPriceColor.equals("#0F294A", ignoreCase = true)) {
+    MutedRegularSlate
+  } else {
+    parseColorHex(design.cardRegularPriceColor, MutedRegularSlate)
+  }
+
+  BoxWithConstraints(
+    modifier = modifier
+      .fillMaxWidth()
+      .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
+  ) {
+    val isUltraNarrow = maxWidth < 96.dp
+    val isCompact = maxWidth < 135.dp
+    val offerFontSize = when {
+      isUltraNarrow -> 13.5.sp
+      isCompact -> 15.sp
+      else -> 16.5.sp
+    }
+    val secondaryFontSize = when {
+      isUltraNarrow -> 10.sp
+      isCompact -> 11.5.sp
+      else -> 12.sp
+    }
+
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.Start,
+      modifier = Modifier.fillMaxWidth()
+    ) {
+      if (showPercentStyle) {
+        // % Discount Style: Bold large selling price followed by gap and -XX%
+        Text(
+          text = "৳$sellingPrice",
+          color = offerColor,
+          fontSize = offerFontSize,
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          softWrap = false,
+          overflow = TextOverflow.Clip
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+          text = "-$computedPct%",
+          color = offerColor,
+          fontSize = secondaryFontSize,
+          fontWeight = FontWeight.Bold,
+          maxLines = 1,
+          softWrap = false
+        )
+      } else if (hasRegularDiscount) {
+        // Regular + Offer Style: Crossed regular price FIRST, horizontal gap, then bold larger offer price
+        Text(
+          text = "৳$regularPrice",
+          color = regularColor,
+          fontSize = secondaryFontSize,
+          fontWeight = FontWeight.Medium,
+          textDecoration = TextDecoration.LineThrough,
+          maxLines = 1,
+          softWrap = false
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+          text = "৳$sellingPrice",
+          color = offerColor,
+          fontSize = offerFontSize,
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          softWrap = false,
+          overflow = TextOverflow.Clip
+        )
+      } else {
+        Text(
+          text = "৳$sellingPrice",
+          color = offerColor,
+          fontSize = offerFontSize,
+          fontWeight = FontWeight.Black,
+          maxLines = 1,
+          softWrap = false,
+          overflow = TextOverflow.Clip
+        )
+      }
+    }
+  }
+}
 
 @Composable
 fun ProductCard(
@@ -94,7 +194,7 @@ fun ProductCard(
   val cardScale by animateFloatAsState(
     targetValue = when {
       isPressed -> 0.985f
-      isHovered -> 1.03f
+      isHovered -> 1.02f
       else -> 1f
     },
     animationSpec = spring(
@@ -104,7 +204,7 @@ fun ProductCard(
     label = "product_card_hover_scale"
   )
   val cardElevation by animateDpAsState(
-    targetValue = if (isHovered) 10.dp else 2.dp,
+    targetValue = if (isHovered) 8.dp else 2.dp,
     animationSpec = tween(durationMillis = 200),
     label = "product_card_hover_elevation"
   )
@@ -123,17 +223,17 @@ fun ProductCard(
         indication = LocalIndication.current
       ) { onProductClick(product) }
       .testTag("product_card_${product.id}"),
-    shape = RoundedCornerShape(16.dp),
+    shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = BorderStroke(if (isHovered) 1.5.dp else 1.dp, BorderGold),
+    border = BorderStroke(if (isHovered) 1.2.dp else 0.8.dp, CleanCardBorder),
     elevation = CardDefaults.cardElevation(
       defaultElevation = cardElevation,
-      hoveredElevation = 10.dp,
-      pressedElevation = 4.dp
+      hoveredElevation = 8.dp,
+      pressedElevation = 3.dp
     )
   ) {
     Column {
-      // Product Image with Video-First Thumbnail & Touch-to-Original-Size
+      // Product Image with Video-First Thumbnail & Touch-to-Open Details
       Box(
         modifier = Modifier
           .fillMaxWidth()
@@ -149,14 +249,14 @@ fun ProductCard(
           modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
         )
 
         if (hasActiveVideo) {
           Box(
             modifier = Modifier
               .align(Alignment.Center)
-              .size(40.dp)
+              .size(38.dp)
               .clip(CircleShape)
               .background(Color.Black.copy(alpha = 0.58f))
               .border(1.5.dp, Color.White.copy(alpha = 0.9f), CircleShape),
@@ -166,7 +266,7 @@ fun ProductCard(
               imageVector = Icons.Default.PlayArrow,
               contentDescription = "ভিডিও দেখুন",
               tint = Color.White,
-              modifier = Modifier.size(22.dp)
+              modifier = Modifier.size(20.dp)
             )
           }
 
@@ -188,20 +288,19 @@ fun ProductCard(
           }
         }
 
-        // Low stock / Stock out badge
         if (product.stock == 0) {
           Box(
             modifier = Modifier
               .padding(8.dp)
               .align(Alignment.TopStart)
-              .clip(RoundedCornerShape(8.dp))
+              .clip(RoundedCornerShape(6.dp))
               .background(AccentRed)
               .padding(horizontal = 6.dp, vertical = 2.dp)
           ) {
             Text(
               text = "স্টক আউট",
               color = Color.White,
-              fontSize = 10.sp,
+              fontSize = 9.5.sp,
               fontWeight = FontWeight.Bold
             )
           }
@@ -210,179 +309,100 @@ fun ProductCard(
             modifier = Modifier
               .padding(8.dp)
               .align(Alignment.TopStart)
-              .clip(RoundedCornerShape(8.dp))
+              .clip(RoundedCornerShape(6.dp))
               .background(Color(0xFFD97706))
               .padding(horizontal = 6.dp, vertical = 2.dp)
           ) {
             Text(
-              text = "স্টক বাকি: ${product.stock}",
+              text = "বাকি: ${product.stock}",
               color = Color.White,
-              fontSize = 10.sp,
+              fontSize = 9.5.sp,
               fontWeight = FontWeight.Bold
             )
           }
         }
 
-        // Rating Badge
-        Box(
-          modifier = Modifier
-            .padding(8.dp)
-            .align(Alignment.TopEnd)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.Black.copy(alpha = 0.6f))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
-        ) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        if (onToggleWishlist != null) {
+          Box(
+            modifier = Modifier
+              .padding(8.dp)
+              .align(Alignment.TopEnd)
+              .size(26.dp)
+              .clip(CircleShape)
+              .background(
+                if (isWishlisted) parseColorHex(design.cardWishlistActiveBg, ReelsRedBadge)
+                else parseColorHex(design.cardWishlistCircleBg, Color.White).copy(alpha = 0.92f)
+              )
+              .border(0.8.dp, CleanCardBorder, CircleShape)
+              .clickable { onToggleWishlist() }
+              .testTag("wishlist_btn_${product.id}"),
+            contentAlignment = Alignment.Center
           ) {
-            Icon(
-              imageVector = Icons.Default.Star,
-              contentDescription = "Rating",
-              tint = Color(0xFFFACC15),
-              modifier = Modifier.size(11.dp)
-            )
             Text(
-              text = product.rating.toString(),
-              color = Color(0xFFFACC15),
-              fontSize = 10.sp,
-              fontWeight = FontWeight.Bold
+              text = if (isWishlisted) design.cardWishlistIcon.ifBlank { "❤️" } else "🤍",
+              fontSize = 11.sp
             )
+          }
+        } else {
+          Box(
+            modifier = Modifier
+              .padding(8.dp)
+              .align(Alignment.TopEnd)
+              .clip(RoundedCornerShape(10.dp))
+              .background(Color.Black.copy(alpha = 0.6f))
+              .padding(horizontal = 6.dp, vertical = 2.dp)
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+              Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = "Rating",
+                tint = Color(0xFFFACC15),
+                modifier = Modifier.size(11.dp)
+              )
+              Text(
+                text = product.rating.toString(),
+                color = Color(0xFFFACC15),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+              )
+            }
           }
         }
       }
 
-      // Information Block
+      // Clean 2-Item Daraz-Style Lower Block: Product Title + Single-Line Price Row (No boxes, no bottom button)
       Column(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(10.dp)
+          .background(Color.White)
+          .padding(horizontal = 10.dp, vertical = 9.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
       ) {
-        // Category Label and Variant Badges
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Text(
-            text = product.category.uppercase(),
-            color = AntiqueGoldDark,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.5.sp
-          )
-
-          val hasVariants = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
-          if (hasVariants) {
-            val variantLabel = when {
-              product.ageGroups.isNotEmpty() -> "👶 বয়স"
-              product.colors.isNotEmpty() && product.sizes.isNotEmpty() -> "🎨📏 ভ্যারিয়েন্ট"
-              product.colors.isNotEmpty() -> "🎨 কালার"
-              else -> "📏 সাইজ"
-            }
-            Surface(
-              shape = RoundedCornerShape(6.dp),
-              color = CreamSurface,
-              border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.6f))
-            ) {
-              Text(
-                text = variantLabel,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                color = RoyalMaroon,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-              )
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(2.dp))
-
-        // Product Name
         Text(
           text = product.name,
-          color = DarkEspresso,
+          color = CleanTitleInk,
           fontSize = 13.sp,
           fontWeight = FontWeight.SemiBold,
           maxLines = 2,
           overflow = TextOverflow.Ellipsis,
-          lineHeight = 16.sp,
-          modifier = Modifier.height(34.dp)
+          lineHeight = 17.sp,
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(34.dp)
+            .testTag("product_card_title_${product.id}")
         )
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Price & Quick Order Button
-        val hasOptions = product.colors.isNotEmpty() || product.sizes.isNotEmpty() || product.ageGroups.isNotEmpty()
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Column(
-            modifier = Modifier
-              .clip(RoundedCornerShape(8.dp))
-              .background(parseColorHex(design.cardPriceBg, CreamSurface))
-              .border(1.dp, parseColorHex(design.cardPriceBorder, CreamPriceBorder), RoundedCornerShape(8.dp))
-              .padding(horizontal = 8.dp, vertical = 3.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-          ) {
-            if (product.regularPrice > product.price) {
-              Text(
-                text = "৳${product.regularPrice}",
-                color = parseColorHex(design.cardRegularPriceColor, NavyBlue),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                textDecoration = TextDecoration.LineThrough
-              )
-            }
-            Text(
-              text = "৳${product.price}",
-              color = parseColorHex(design.cardOfferPriceColor, ReelsRedBadge),
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Black
-            )
-            Text(
-              text = product.sku,
-              color = Color.Gray,
-              fontSize = 8.5.sp
-            )
-          }
-
-          Button(
-            onClick = {
-              if (hasOptions) {
-                onProductClick(product)
-              } else {
-                onAddToCart(product)
-              }
-            },
-            enabled = product.stock > 0,
-            colors = ButtonDefaults.buttonColors(
-              containerColor = RoyalMaroon,
-              contentColor = Color.White,
-              disabledContainerColor = Color(0xFFE0E0E0),
-              disabledContentColor = Color.Gray
-            ),
-            shape = RoundedCornerShape(14.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-            modifier = Modifier
-              .height(34.dp)
-              .testTag("add_to_cart_${product.id}")
-          ) {
-            Icon(
-              imageVector = Icons.Default.AddShoppingCart,
-              contentDescription = "Add",
-              modifier = Modifier.size(14.dp)
-            )
-            Spacer(modifier = Modifier.size(4.dp))
-            Text(
-              text = if (product.stock > 0) (if (hasOptions) "অপশন" else "অর্ডার") else "শেষ",
-              fontSize = 11.sp,
-              fontWeight = FontWeight.Bold
-            )
-          }
-        }
+        CleanCardPriceRow(
+          sellingPrice = product.price,
+          regularPrice = product.regularPrice,
+          isPercentDiscount = ProductDiscountHelper.isPercentDiscountMode(product),
+          discountPercent = ProductDiscountHelper.effectiveDiscountPercent(product),
+          design = design,
+          testTag = "product_card_price_${product.id}"
+        )
       }
     }
   }
@@ -397,119 +417,41 @@ fun StorefrontCardLowerNavyBody(
   buttonTestTag: String,
   onActionClick: () -> Unit,
   design: StoreDesignConfig = StoreDesignConfig(),
+  isPercentDiscount: Boolean = false,
+  discountPercent: Int = 0,
   modifier: Modifier = Modifier
 ) {
-  val hasDiscount = regularPrice > sellingPrice && sellingPrice > 0
-  val bodyStart = parseColorHex(design.cardBodyBg, NavyBlue)
-  val bodyEnd = parseColorHex(design.cardBodyBgEnd, NavyBlueCardEnd)
-  val titleBg = parseColorHex(design.cardTitleBg, CollectionRedStart)
-  val titleEnd = parseColorHex(design.cardTitleBgEnd, CollectionRedEnd)
-  val titleText = parseColorHex(design.cardTitleText, Color.White)
-  val priceBg = parseColorHex(design.cardPriceBg, CreamSurface)
-  val priceBorder = parseColorHex(design.cardPriceBorder, CreamPriceBorder)
-  val regularPriceColor = parseColorHex(design.cardRegularPriceColor, NavyBlue)
-  val offerPriceColor = parseColorHex(design.cardOfferPriceColor, ReelsRedBadge)
-  val btnBg = parseColorHex(design.cardBtnBg, SideRosePillStart)
-  val btnEnd = parseColorHex(design.cardBtnBgEnd, SideRosePillEnd)
-  val btnText = parseColorHex(design.cardBtnText, Color.White)
-  val btnShape = when (design.cardBtnStyle) {
-    "rounded" -> RoundedCornerShape(10.dp)
-    "square" -> RoundedCornerShape(4.dp)
-    else -> RoundedCornerShape(50)
-  }
-
   Column(
     modifier = modifier
       .fillMaxWidth()
-      .background(Brush.verticalGradient(listOf(bodyStart, bodyEnd)))
-      .padding(horizontal = 6.dp, vertical = 6.dp),
+      .background(Color.White)
+      .padding(horizontal = 8.dp, vertical = 8.dp),
     verticalArrangement = Arrangement.spacedBy(4.dp)
   ) {
-    // 1. Title Box
-    Box(
+    // 1. Clean Product Title (No pill/bordered container)
+    Text(
+      text = title,
+      color = CleanTitleInk,
+      fontSize = 12.sp,
+      fontWeight = FontWeight.Medium,
+      maxLines = 2,
+      overflow = TextOverflow.Ellipsis,
+      lineHeight = 15.5.sp,
       modifier = Modifier
         .fillMaxWidth()
-        .clip(RoundedCornerShape(8.dp))
-        .background(Brush.horizontalGradient(listOf(titleBg, titleEnd)))
-        .border(1.dp, CollectionRedBorder.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
-        .padding(horizontal = 6.dp, vertical = 4.dp)
-    ) {
-      Text(
-        text = title,
-        color = titleText,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Bold,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        lineHeight = 12.5.sp,
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(25.dp)
-      )
-    }
+        .height(31.dp)
+        .testTag("${buttonTestTag}_title")
+    )
 
-    // 2. Cream Price Box: Top Line Navy Blue Crossed Regular Price + Bottom Line Red Bold Offer Price
-    Column(
-      modifier = Modifier
-        .fillMaxWidth()
-        .clip(RoundedCornerShape(8.dp))
-        .background(priceBg)
-        .border(1.dp, priceBorder, RoundedCornerShape(8.dp))
-        .padding(horizontal = 6.dp, vertical = 3.dp)
-        .testTag("${buttonTestTag}_price_box"),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center
-    ) {
-      if (hasDiscount) {
-        Text(
-          text = "৳$regularPrice",
-          color = regularPriceColor,
-          fontSize = 8.5.sp,
-          fontWeight = FontWeight.Bold,
-          textDecoration = TextDecoration.LineThrough,
-          textAlign = TextAlign.Center,
-          maxLines = 1
-        )
-      }
-      Text(
-        text = "৳$sellingPrice",
-        color = offerPriceColor,
-        fontSize = 11.5.sp,
-        fontWeight = FontWeight.Black,
-        textAlign = TextAlign.Center,
-        maxLines = 1
-      )
-    }
-
-    // 3. Action Button (supports pill / rounded / square / outline)
-    Box(
-      modifier = Modifier
-        .fillMaxWidth()
-        .clip(btnShape)
-        .then(
-          if (design.cardBtnStyle == "outline") {
-            Modifier
-              .background(Color.Transparent)
-              .border(1.5.dp, btnBg, btnShape)
-          } else {
-            Modifier
-              .background(Brush.horizontalGradient(listOf(btnBg, btnEnd)))
-              .border(1.dp, Color.White.copy(alpha = 0.72f), btnShape)
-          }
-        )
-        .clickable { onActionClick() }
-        .padding(vertical = 5.dp)
-        .testTag(buttonTestTag),
-      contentAlignment = Alignment.Center
-    ) {
-      Text(
-        text = if (inStock) design.cardActionLabel.ifBlank { "পন্যটি দেখুন" } else "স্টক আউট",
-        color = if (design.cardBtnStyle == "outline") btnBg else btnText,
-        fontSize = 9.5.sp,
-        fontWeight = FontWeight.Black,
-        maxLines = 1
-      )
-    }
+    // 2. Single-Line Price Row (No separate box, no bottom Details button)
+    CleanCardPriceRow(
+      sellingPrice = sellingPrice,
+      regularPrice = regularPrice,
+      isPercentDiscount = isPercentDiscount,
+      discountPercent = discountPercent,
+      design = design,
+      testTag = "${buttonTestTag}_price_box"
+    )
   }
 }
 
@@ -533,7 +475,7 @@ fun CompactProductCard(
   val cardScale by animateFloatAsState(
     targetValue = when {
       isPressed -> 0.985f
-      isHovered -> 1.03f
+      isHovered -> 1.02f
       else -> 1f
     },
     animationSpec = spring(
@@ -543,7 +485,7 @@ fun CompactProductCard(
     label = "compact_card_hover_scale"
   )
   val cardElevation by animateDpAsState(
-    targetValue = if (isHovered) 10.dp else 2.dp,
+    targetValue = if (isHovered) 8.dp else 1.5.dp,
     animationSpec = tween(durationMillis = 200),
     label = "compact_card_hover_elevation"
   )
@@ -561,16 +503,16 @@ fun CompactProductCard(
         indication = LocalIndication.current
       ) { onProductClick(product) }
       .testTag("compact_product_card_${product.id}"),
-    shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = parseColorHex(design.cardBodyBg, NavyBlue)),
+    shape = RoundedCornerShape(10.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.White),
     border = BorderStroke(
-      width = if (isHovered) 1.5.dp else 1.dp,
-      color = parseColorHex(design.cardBorderColor, Color.White).copy(alpha = if (isHovered) 0.95f else 0.75f)
+      width = if (isHovered) 1.2.dp else 0.8.dp,
+      color = CleanCardBorder
     ),
     elevation = CardDefaults.cardElevation(
       defaultElevation = cardElevation,
-      hoveredElevation = 10.dp,
-      pressedElevation = 4.dp
+      hoveredElevation = 8.dp,
+      pressedElevation = 3.dp
     )
   ) {
     Column {
@@ -590,7 +532,7 @@ fun CompactProductCard(
           modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+            .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
         )
 
         if (hasActiveVideo) {
@@ -690,7 +632,7 @@ fun CompactProductCard(
                 if (isWishlisted) parseColorHex(design.cardWishlistActiveBg, ReelsRedBadge)
                 else parseColorHex(design.cardWishlistCircleBg, Color.White).copy(alpha = 0.92f)
               )
-              .border(1.dp, BorderGold.copy(alpha = 0.5f), CircleShape)
+              .border(1.dp, BorderGold.copy(alpha = 0.4f), CircleShape)
               .clickable { onToggleWishlist() }
               .testTag("wishlist_btn_${product.id}"),
             contentAlignment = Alignment.Center
@@ -710,7 +652,9 @@ fun CompactProductCard(
         inStock = product.stock > 0,
         buttonTestTag = "compact_add_to_cart_${product.id}",
         onActionClick = { onProductClick(product) },
-        design = design
+        design = design,
+        isPercentDiscount = ProductDiscountHelper.isPercentDiscountMode(product),
+        discountPercent = ProductDiscountHelper.effectiveDiscountPercent(product)
       )
     }
   }
