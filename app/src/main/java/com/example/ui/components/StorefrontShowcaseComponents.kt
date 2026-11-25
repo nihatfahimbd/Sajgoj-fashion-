@@ -468,10 +468,10 @@ private fun CompactComboPackCard(
     modifier = modifier
       .clickable { onViewCombo() }
       .testTag("compact_combo_card_${combo.id}"),
-    shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = parseColorHex(design.cardBodyBg, NavyBlue)),
-    border = BorderStroke(1.dp, parseColorHex(design.cardBorderColor, Color.White).copy(alpha = 0.75f)),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    shape = RoundedCornerShape(10.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.White),
+    border = BorderStroke(0.8.dp, Color(0xFFE5E7EB)),
+    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
   ) {
     Column {
       Box(
@@ -548,10 +548,10 @@ private fun CompactReelVideoCard(
     modifier = modifier
       .clickable { onVideoClick() }
       .testTag("compact_reel_card_${reel.id}"),
-    shape = RoundedCornerShape(12.dp),
-    colors = CardDefaults.cardColors(containerColor = parseColorHex(design.cardBodyBg, NavyBlue)),
-    border = BorderStroke(1.dp, parseColorHex(design.cardBorderColor, Color.White).copy(alpha = 0.75f)),
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    shape = RoundedCornerShape(10.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.White),
+    border = BorderStroke(0.8.dp, Color(0xFFE5E7EB)),
+    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
   ) {
     Column {
       // Top 1:1 Media Thumbnail + Play Overlay (Same aspectRatio as CompactProductCard)

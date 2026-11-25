@@ -32,11 +32,11 @@
   <meta name="description" content="প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।">
   <meta name="keywords" content="sajgoj, sharee, choker, jewelry bd, bridal set, eid collection">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://sajgojfashion.netlify.app">
+  <link rel="canonical" href="https://sajgoj.nfbd.workers.dev">
 
   <!-- Open Graph / Facebook / WhatsApp Meta Tags -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://sajgojfashion.netlify.app">
+  <meta property="og:url" content="https://sajgoj.nfbd.workers.dev">
   <meta property="og:site_name" content="SAJGOJ FASHION">
   <meta property="og:title" content="SAJGOJ FASHION - Premium Jewelry & Sharee">
   <meta property="og:description" content="প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।">
@@ -47,7 +47,7 @@
 
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://sajgojfashion.netlify.app">
+  <meta name="twitter:url" content="https://sajgoj.nfbd.workers.dev">
   <meta name="twitter:title" content="SAJGOJ FASHION - Premium Jewelry & Sharee">
   <meta name="twitter:description" content="প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।">
   <meta name="twitter:image" content="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80">
@@ -418,23 +418,26 @@
     /* HOME PRODUCT DISPLAY CARD: NAVY BODY + CREAM PRICE BOX    */
     /* Mobile-First Responsive Padding, Typography & Wrapping    */
     /* ========================================================= */
+    /* CLEAN DARAZ-STYLE PRODUCT CARD SYSTEM (NO EXTRA BOXES)    */
+    /* ========================================================= */
     .storefront-navy-card {
-      background: linear-gradient(175deg, var(--sf-card-body-bg, #0f294a) 0%, var(--sf-card-body-bg-end, #172554) 100%) !important;
-      color: var(--sf-card-title-text, #ffffff);
-      border: 1.5px solid var(--sf-card-border, rgba(255, 255, 255, 0.72)) !important;
-      border-radius: 16px;
-      box-shadow: 0 12px 26px -8px rgba(15, 41, 74, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
-      transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.26s ease !important;
+      background: #ffffff !important;
+      color: #1f2937;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px -3px rgba(15, 23, 42, 0.08) !important;
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease !important;
       will-change: transform, box-shadow;
     }
     .storefront-navy-card:hover,
     .storefront-navy-card:focus-within {
-      transform: translateY(-4px) scale(1.025) !important;
-      box-shadow: 0 22px 38px -10px rgba(15, 41, 74, 0.54), 0 8px 18px -6px rgba(212, 165, 116, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
+      transform: translateY(-3px) !important;
+      box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.14) !important;
+      border-color: #cbd5e1 !important;
       z-index: 2;
     }
     .storefront-navy-card:active {
-      transform: translateY(-1px) scale(0.99) !important;
+      transform: scale(0.99) !important;
     }
     @media (prefers-reduced-motion: reduce) {
       .storefront-navy-card,
@@ -446,9 +449,9 @@
       }
     }
     .storefront-navy-card-body {
-      background: linear-gradient(165deg, var(--sf-card-body-bg, #0f294a) 0%, var(--sf-card-body-bg-end, #1e3a8a) 100%) !important;
-      padding: 10px;
-      gap: 6px;
+      background: #ffffff !important;
+      padding: 8px 9px 10px;
+      gap: 4px;
       min-width: 0;
       width: 100%;
       box-sizing: border-box;
@@ -456,177 +459,149 @@
     .storefront-card-meta-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
       min-width: 0;
       width: 100%;
     }
-    /* Title box with customizable bg/text/border */
+    /* Clean borderless product title */
     .storefront-title-box {
-      background: linear-gradient(135deg, var(--sf-card-title-bg, #ef4444) 0%, var(--sf-card-title-bg-end, #dc2626) 100%) !important;
-      color: var(--sf-card-title-text, #ffffff) !important;
-      border: 1.5px solid var(--sf-card-title-border, #991b1b) !important;
-      border-radius: 10px;
-      padding: 5px 7px;
-      font-size: 12px;
-      line-height: 1.3;
+      background: transparent !important;
+      color: #1f2937 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      margin: 0;
+      font-size: 12.5px;
+      font-weight: 500;
+      line-height: 1.32;
       width: 100%;
       box-sizing: border-box;
       overflow: hidden;
       overflow-wrap: anywhere;
       word-break: break-word;
-      box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+      box-shadow: none !important;
     }
     .storefront-title-text {
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      min-height: 2.6em;
+      min-height: 2.64em;
       line-height: inherit;
-      color: var(--sf-card-title-text, #ffffff) !important;
+      color: #1f2937 !important;
+      font-weight: 500;
     }
-    /* CREAM PRICE BOX: Line 1 Navy Blue crossed-out regular price, Line 2 Red Offer Price */
+    /* Clean borderless single-line price row: crossed regular + gap + bold offer OR bold offer + -XX% */
     .storefront-price-box {
-      background: var(--sf-card-price-bg, #fff8f0) !important;
-      border: 1.5px solid var(--sf-card-price-border, #f3d5b5) !important;
-      border-radius: 10px;
-      padding: 4px 7px;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 1px 0 0 0 !important;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1.5px;
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: flex-start;
+      gap: 6px;
+      flex-wrap: nowrap;
       width: 100%;
       min-width: 0;
+      overflow: hidden;
       box-sizing: border-box;
-      box-shadow: 0 3px 8px -3px rgba(15, 41, 74, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+      box-shadow: none !important;
     }
     .storefront-price-old {
-      color: var(--sf-card-reg-price-color, #0f294a) !important;
+      color: var(--sf-card-reg-price-color, #64748b) !important;
       text-decoration: line-through !important;
-      font-size: 11px;
+      font-size: 11.5px;
+      line-height: 1.15;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .storefront-price-current {
+      color: var(--sf-card-offer-price-color, #f85606) !important;
+      font-size: 16.5px;
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .storefront-discount-pct {
+      color: var(--sf-card-offer-price-color, #f85606) !important;
+      font-size: 11.5px;
       line-height: 1.15;
       font-weight: 700;
       white-space: nowrap;
-      text-align: center;
-      display: block;
+      flex-shrink: 0;
+      display: inline-block;
     }
-    .storefront-price-current {
-      color: var(--sf-card-offer-price-color, #dc2626) !important;
-      font-size: 14px;
-      line-height: 1.15;
-      font-weight: 900;
-      white-space: nowrap;
-      text-align: center;
-      display: block;
-      margin-left: 0;
-    }
-    .storefront-view-btn {
-      background: linear-gradient(135deg, var(--sf-card-btn-bg, #fb7185) 0%, var(--sf-card-btn-bg-end, #e11d48) 100%) !important;
-      color: var(--sf-card-btn-text, #ffffff) !important;
-      border: 1.5px solid rgba(255, 255, 255, 0.72) !important;
-      font-size: 12px;
-      line-height: 1.2;
-      padding: 6px 10px;
-      min-height: 30px;
-      width: 100%;
-      box-sizing: border-box;
-      box-shadow: 0 6px 14px -5px rgba(225, 29, 72, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-      transition: transform 0.16s ease, filter 0.16s ease !important;
-    }
-    .storefront-view-btn:hover {
-      filter: brightness(1.06);
-      transform: translateY(-1px);
-    }
-    .storefront-btn-pill { border-radius: 9999px !important; }
-    .storefront-btn-rounded { border-radius: 10px !important; }
-    .storefront-btn-square { border-radius: 4px !important; }
-    .storefront-btn-outline {
-      border-radius: 9999px !important;
-      background: rgba(255, 255, 255, 0.94) !important;
-      color: var(--sf-card-btn-bg-end, #e11d48) !important;
-      border: 2px solid var(--sf-card-btn-bg-end, #e11d48) !important;
-      box-shadow: none !important;
-    }
+    .storefront-view-btn { display: none !important; }
 
     @media (max-width: 639px) {
       .storefront-navy-card {
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         border-width: 1px !important;
       }
       .storefront-navy-card-body {
-        padding: 5px;
-        gap: 4px;
+        padding: 6px 7px 8px;
+        gap: 3px;
       }
       .storefront-card-meta-group {
-        gap: 3.5px;
+        gap: 3px;
       }
       .storefront-title-box {
-        padding: 4px 5px;
-        border-radius: 8px;
-        border-width: 1px !important;
-        font-size: 10.5px;
+        font-size: 11.5px;
         line-height: 1.28;
       }
       .storefront-title-text {
         min-height: 2.56em;
       }
       .storefront-price-box {
-        padding: 3.5px 5px;
-        border-radius: 8px;
-        border-width: 1px !important;
-        gap: 1px;
+        gap: 5px;
       }
       .storefront-price-old {
-        font-size: 9.5px;
+        font-size: 10.5px;
       }
       .storefront-price-current {
-        font-size: 12px;
+        font-size: 15px;
       }
-      .storefront-view-btn {
-        font-size: 10px;
-        line-height: 1.15;
-        padding: 4px 5px;
-        min-height: 26px;
-        border-width: 1px !important;
+      .storefront-discount-pct {
+        font-size: 10.5px;
       }
     }
 
     @media (max-width: 390px) {
       .storefront-navy-card {
-        border-radius: 10px !important;
+        border-radius: 9px !important;
       }
       .storefront-navy-card-body {
-        padding: 4px;
-        gap: 3px;
+        padding: 5px 6px 7px;
+        gap: 2.5px;
       }
       .storefront-card-meta-group {
-        gap: 3px;
+        gap: 2.5px;
       }
       .storefront-title-box {
-        padding: 3px 4px;
-        border-radius: 7px;
-        font-size: 9.75px;
-        line-height: 1.24;
+        font-size: 10.75px;
+        line-height: 1.25;
       }
       .storefront-title-text {
-        min-height: 2.48em;
+        min-height: 2.5em;
       }
       .storefront-price-box {
-        padding: 3px 4px;
-        border-radius: 7px;
-        gap: 0.5px;
+        gap: 4px;
       }
       .storefront-price-old {
-        font-size: 8.75px;
+        font-size: 9.75px;
       }
       .storefront-price-current {
-        font-size: 11px;
+        font-size: 13.75px;
       }
-      .storefront-view-btn {
-        font-size: 9.5px;
-        padding: 3.5px 4px;
-        min-height: 24px;
+      .storefront-discount-pct {
+        font-size: 9.75px;
       }
     }
 
@@ -1728,17 +1703,18 @@
         reelsCaptionBg: "#dc2626",
         reelsCaptionText: "#ffffff",
         reelsCaptionLabel: "পন্যের ভিডিও দেখে অর্ডার করুন",
-        cardBodyBg: "#0f294a",
-        cardBodyBgEnd: "#1e3a8a",
-        cardBorderColor: "#ffffff",
-        cardTitleBg: "#ef4444",
-        cardTitleBgEnd: "#dc2626",
-        cardTitleText: "#ffffff",
-        cardTitleBorder: "#991b1b",
-        cardPriceBg: "#fff8f0",
-        cardPriceBorder: "#f3d5b5",
-        cardRegularPriceColor: "#0f294a",
-        cardOfferPriceColor: "#dc2626",
+        cardBodyBg: "#ffffff",
+        cardBodyBgEnd: "#ffffff",
+        cardBorderColor: "#e2e8f0",
+        cardTitleBg: "#ffffff",
+        cardTitleBgEnd: "#ffffff",
+        cardTitleText: "#1f2937",
+        cardTitleBorder: "#ffffff",
+        cardPriceBg: "#ffffff",
+        cardPriceBorder: "#ffffff",
+        cardRegularPriceColor: "#64748b",
+        cardOfferPriceColor: "#f85606",
+        cardPriceDiscountStyle: "auto",
         cardBtnBg: "#fb7185",
         cardBtnBgEnd: "#e11d48",
         cardBtnText: "#ffffff",
@@ -2209,7 +2185,7 @@
       siteTitle: "SAJGOJ FASHION - Premium Jewelry & Sharee",
       metaDescription: "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।",
       metaKeywords: "sajgoj, sharee, choker, jewelry bd, bridal set, eid collection",
-      canonicalUrl: "https://sajgojfashion.netlify.app",
+      canonicalUrl: "https://sajgoj.nfbd.workers.dev",
       robots: "index, follow",
       ogImage: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80"
     };
@@ -12537,8 +12513,8 @@
 
             {/* Live Card Preview */}
             <div className="p-4 rounded-2xl bg-black/45 border border-red-900/40 flex flex-col sm:flex-row items-center gap-5">
-              <div className="w-44 shrink-0 rounded-2xl overflow-hidden shadow-lg border-2" style={{ borderColor: d.cardBorderColor }}>
-                <div className="h-24 bg-[#f5eee6] relative flex items-center justify-center text-slate-700 font-bold text-xs">
+              <div className="w-44 shrink-0 rounded-xl overflow-hidden shadow-lg border bg-white" style={{ borderColor: "#e2e8f0" }}>
+                <div className="h-28 bg-[#f5eee6] relative flex items-center justify-center text-slate-700 font-bold text-xs">
                   <span>প্রোডাক্ট প্রিভিউ</span>
                   <span
                     className="absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow"
@@ -12547,42 +12523,49 @@
                     {d.cardWishlistEmptyIcon || "🤍"}
                   </span>
                 </div>
-                <div
-                  className="p-2.5 space-y-2 text-center"
-                  style={{ background: `linear-gradient(160deg, ${d.cardBodyBg}, ${d.cardBodyBgEnd})` }}
-                >
-                  <div
-                    className="px-2 py-1 rounded-full text-[11px] font-extrabold truncate border"
-                    style={{
-                      background: `linear-gradient(135deg, ${d.cardTitleBg}, ${d.cardTitleBgEnd})`,
-                      color: d.cardTitleText,
-                      borderColor: d.cardTitleBorder
-                    }}
-                  >
+                <div className="p-2.5 bg-white space-y-1 text-left">
+                  <div className="text-[12px] font-medium text-[#1f2937] line-clamp-2 leading-snug">
                     কাতান ডিজাইনার শাড়ি
                   </div>
-                  <div
-                    className="rounded-xl py-1 px-2 border flex flex-col items-center justify-center leading-tight"
-                    style={{ backgroundColor: d.cardPriceBg, borderColor: d.cardPriceBorder }}
-                  >
-                    <span className="text-[10px] font-bold line-through" style={{ color: d.cardRegularPriceColor }}>৳4,200</span>
-                    <span className="text-xs font-black" style={{ color: d.cardOfferPriceColor }}>৳3,500</span>
-                  </div>
-                  <div
-                    className={`py-1.5 px-3 text-[11px] font-black text-center ${btnShapePreviewClass}`}
-                    style={
-                      d.cardBtnStyle === "outline"
-                        ? { backgroundColor: "transparent", borderColor: d.cardBtnBg, color: d.cardBtnBg }
-                        : { background: `linear-gradient(135deg, ${d.cardBtnBg}, ${d.cardBtnBgEnd})`, color: d.cardBtnText }
-                    }
-                  >
-                    {d.cardActionLabel || "পন্যটি দেখুন"}
+                  <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                    {d.cardPriceDiscountStyle === "percent" ? (
+                      <>
+                        <span className="text-[15px] font-black" style={{ color: d.cardOfferPriceColor || "#f85606" }}>৳3,500</span>
+                        <span className="text-[11px] font-bold" style={{ color: d.cardOfferPriceColor || "#f85606" }}>-17%</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[11px] font-semibold line-through" style={{ color: d.cardRegularPriceColor || "#64748b" }}>৳4,200</span>
+                        <span className="text-[15px] font-black" style={{ color: d.cardOfferPriceColor || "#f85606" }}>৳3,500</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="space-y-1.5 text-xs text-slate-200">
-                <p className="font-black text-amber-300 text-sm">👁️ লাইভ প্রোডাক্ট কার্ড ও প্রাইস বক্স প্রিভিউ</p>
-                <p>উপরে ক্রিম ব্যাকগ্রাউন্ডের ভেতর প্রথমে <span className="font-bold text-blue-300">নেভি ব্লু ক্রস মূল্য</span> এবং নিচে <span className="font-bold text-red-400">লাল অফার মূল্য</span> দেখা যাচ্ছে। নিচের কালার পিকার পরিবর্তন করলেই এখানে এবং সরাসরি ওয়েবসাইটে লাইভ পরিবর্তন দেখতে পাবেন।</p>
+                <p className="font-black text-amber-300 text-sm">👁️ ক্লিন দারাজ-স্টাইল প্রোডাক্ট কার্ড প্রিভিউ</p>
+                <p>কার্ডে অতিরিক্ত কোনো বর্ডার বক্স বা নিচের বাটন ছাড়াই শুধুমাত্র প্রোডাক্টের নাম এবং একই লাইনে বোল্ড প্রাইস (ক্রস রেগুলার + অফার মূল্য অথবা % ডিসকাউন্ট) দেখাবে।</p>
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-rose-200 mr-1">প্রাইস ডিসকাউন্ট ডিসপ্লে:</span>
+                  {[
+                    { key: "auto", label: "Auto (পণ্য অনুযায়ী)" },
+                    { key: "regular_offer", label: "৳450 ৳400" },
+                    { key: "percent", label: "৳490 -45%" }
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => updateDesignField({ cardPriceDiscountStyle: opt.key })}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold border cursor-pointer ${
+                        (d.cardPriceDiscountStyle || "auto") === opt.key
+                          ? "bg-amber-400 text-slate-950 border-amber-300"
+                          : "bg-black/50 text-white border-white/25"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -14079,6 +14062,8 @@
         isAvailable: true,
         isDraft: false,
         specialPriceEnabled: false,
+        specialPriceMode: "amount",
+        discountPercent: "",
         specialPriceStart: "",
         specialPriceEnd: "",
         shippingWeightKg: "",
@@ -16391,17 +16376,17 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         root.setProperty('--sf-seemore-text', d.seeMoreText || "#ffffff");
         root.setProperty('--sf-reels-cap-bg', d.reelsCaptionBg || "#dc2626");
         root.setProperty('--sf-reels-cap-text', d.reelsCaptionText || "#ffffff");
-        root.setProperty('--sf-card-body-bg', d.cardBodyBg || "#0f294a");
-        root.setProperty('--sf-card-body-bg-end', d.cardBodyBgEnd || "#1e3a8a");
-        root.setProperty('--sf-card-border', d.cardBorderColor || "rgba(255, 255, 255, 0.72)");
-        root.setProperty('--sf-card-title-bg', d.cardTitleBg || "#ef4444");
-        root.setProperty('--sf-card-title-bg-end', d.cardTitleBgEnd || "#dc2626");
-        root.setProperty('--sf-card-title-text', d.cardTitleText || "#ffffff");
-        root.setProperty('--sf-card-title-border', d.cardTitleBorder || "#991b1b");
-        root.setProperty('--sf-card-price-bg', d.cardPriceBg || "#fff8f0");
-        root.setProperty('--sf-card-price-border', d.cardPriceBorder || "#f3d5b5");
-        root.setProperty('--sf-card-reg-price-color', d.cardRegularPriceColor || "#0f294a");
-        root.setProperty('--sf-card-offer-price-color', d.cardOfferPriceColor || "#dc2626");
+        root.setProperty('--sf-card-body-bg', d.cardBodyBg || "#ffffff");
+        root.setProperty('--sf-card-body-bg-end', d.cardBodyBgEnd || "#ffffff");
+        root.setProperty('--sf-card-border', d.cardBorderColor || "#e2e8f0");
+        root.setProperty('--sf-card-title-bg', d.cardTitleBg || "#ffffff");
+        root.setProperty('--sf-card-title-bg-end', d.cardTitleBgEnd || "#ffffff");
+        root.setProperty('--sf-card-title-text', d.cardTitleText || "#1f2937");
+        root.setProperty('--sf-card-title-border', d.cardTitleBorder || "#ffffff");
+        root.setProperty('--sf-card-price-bg', d.cardPriceBg || "#ffffff");
+        root.setProperty('--sf-card-price-border', d.cardPriceBorder || "#ffffff");
+        root.setProperty('--sf-card-reg-price-color', d.cardRegularPriceColor || "#64748b");
+        root.setProperty('--sf-card-offer-price-color', d.cardOfferPriceColor || "#f85606");
         root.setProperty('--sf-card-btn-bg', d.cardBtnBg || "#fb7185");
         root.setProperty('--sf-card-btn-bg-end', d.cardBtnBgEnd || "#e11d48");
         root.setProperty('--sf-card-btn-text', d.cardBtnText || "#ffffff");
@@ -16438,7 +16423,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         const desc = viewProduct 
           ? (viewProduct.description || `${viewProduct.name} এখন আকর্ষণীয় মূল্যে সাজগোজ ফ্যাশনে পাওয়া যাচ্ছে।`) 
           : (seo?.metaDescription || "প্রিমিয়াম জামদানি শাড়ি ও রাজওয়াড়ি জুয়েলারির নির্ভরযোগ্য প্রতিষ্ঠান সাজগোজ ফ্যাশন।");
-        const url = seo?.canonicalUrl || "https://sajgojfashion.netlify.app";
+        const url = seo?.canonicalUrl || "https://sajgoj.nfbd.workers.dev";
         const shareImg = viewProduct?.images?.[0] || seo?.ogImage || banners?.[0]?.image || config?.logo || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80";
 
         // Update document title
@@ -16545,6 +16530,43 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
           : sfDesign.cardBtnStyle === "outline"
           ? "storefront-btn-outline"
           : "storefront-btn-pill";
+
+      const renderCleanCardPriceRow = (sellingPriceRaw, regPriceRaw, productObj = null) => {
+        const selling = Number(sellingPriceRaw || 0);
+        const reg = Number(regPriceRaw || 0);
+        const hasDiscount = reg > selling && selling > 0;
+        const attrMode = String(productObj?.attributes?.__discountMode || "").toLowerCase();
+        const attrPct = Number(productObj?.attributes?.__discountPercent || 0);
+        const computedPct = attrPct > 0
+          ? Math.round(attrPct)
+          : (hasDiscount ? Math.round(((reg - selling) / reg) * 100) : 0);
+        const globalStyle = sfDesign.cardPriceDiscountStyle || "auto";
+        const usePercentDisplay = hasDiscount && computedPct > 0 && (
+          globalStyle === "percent" || (globalStyle !== "regular_offer" && attrMode === "percent")
+        );
+
+        return (
+          <div className="storefront-price-box">
+            {usePercentDisplay ? (
+              <>
+                <span className="storefront-price-current">৳{selling.toLocaleString()}</span>
+                <span className="storefront-discount-pct">-{computedPct}%</span>
+              </>
+            ) : (
+              <>
+                {hasDiscount && (
+                  <span className="storefront-price-old">
+                    ৳{reg.toLocaleString()}
+                  </span>
+                )}
+                <span className="storefront-price-current">
+                  ৳{selling.toLocaleString()}
+                </span>
+              </>
+            )}
+          </div>
+        );
+      };
 
       return (
         <div
@@ -17110,7 +17132,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     return (
                       <div
                         key={p.id}
-                        className={`storefront-navy-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col group ${extraClass}`}
+                        onClick={openProductDetail}
+                        className={`storefront-navy-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col group cursor-pointer ${extraClass}`}
                       >
                         <div
                           className="aspect-square bg-white/90 overflow-hidden relative cursor-pointer"
@@ -17195,30 +17218,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           <div className="storefront-card-meta-group">
                             <h4
                               onClick={openProductDetail}
-                              className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
+                              className="storefront-title-box cursor-pointer"
                             >
                               <span className="storefront-title-text">{p.name}</span>
                             </h4>
 
-                            <div className="storefront-price-box">
-                              {hasDiscount && (
-                                <span className="storefront-price-old">
-                                  ৳{regPrice.toLocaleString()}
-                                </span>
-                              )}
-                              <span className="storefront-price-current">
-                                ৳{sellingPrice.toLocaleString()}
-                              </span>
-                            </div>
+                            {renderCleanCardPriceRow(sellingPrice, regPrice, p)}
                           </div>
-
-                          <button
-                            type="button"
-                            onClick={openProductDetail}
-                            className={`storefront-view-btn ${sfBtnShapeClass} font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95`}
-                          >
-                            {p.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
-                          </button>
                         </div>
                       </div>
                     );
@@ -17736,7 +17742,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       };
                       return (
                         <div key={combo.id} style={wrapperStyle || undefined} className="snap-start">
-                          <div className="storefront-navy-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between h-full group">
+                          <div
+                            onClick={openComboDetail}
+                            className="storefront-navy-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between h-full group cursor-pointer"
+                          >
                             <div
                               onClick={openComboDetail}
                               className="aspect-square bg-black/20 overflow-hidden relative cursor-pointer"
@@ -17765,30 +17774,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <div className="storefront-card-meta-group">
                                 <h4
                                   onClick={openComboDetail}
-                                  className="storefront-title-box font-black cursor-pointer hover:brightness-110 transition"
+                                  className="storefront-title-box cursor-pointer"
                                 >
                                   <span className="storefront-title-text">{combo.title}</span>
                                 </h4>
 
-                                <div className="storefront-price-box">
-                                  {hasComboDiscount && (
-                                    <span className="storefront-price-old">
-                                      ৳{comboOriginalPrice.toLocaleString()}
-                                    </span>
-                                  )}
-                                  <span className="storefront-price-current">
-                                    ৳{comboSellingPrice.toLocaleString()}
-                                  </span>
-                                </div>
+                                {renderCleanCardPriceRow(comboSellingPrice, comboOriginalPrice, combo)}
                               </div>
-
-                              <button
-                                type="button"
-                                onClick={openComboDetail}
-                                className={`storefront-view-btn ${sfBtnShapeClass} font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95`}
-                              >
-                                {combo.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
-                              </button>
                             </div>
                           </div>
                         </div>
@@ -17912,32 +17904,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                             <div className="storefront-navy-card-body flex-1 flex flex-col justify-between overflow-hidden">
                               <div className="storefront-card-meta-group">
-                                <h4 className="storefront-title-box font-black">
+                                <h4 className="storefront-title-box">
                                   <span className="storefront-title-text">{effectiveProduct.name}</span>
                                 </h4>
 
-                                <div className="storefront-price-box">
-                                  {hasDiscount && (
-                                    <span className="storefront-price-old">
-                                      ৳{regPrice.toLocaleString()}
-                                    </span>
-                                  )}
-                                  <span className="storefront-price-current">
-                                    ৳{sellingPrice.toLocaleString()}
-                                  </span>
-                                </div>
+                                {renderCleanCardPriceRow(sellingPrice, regPrice, effectiveProduct)}
                               </div>
-
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openOriginalReelModal();
-                                }}
-                                className={`storefront-view-btn ${sfBtnShapeClass} font-black transition cursor-pointer whitespace-nowrap text-center active:scale-95`}
-                              >
-                                {effectiveProduct.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
-                              </button>
                             </div>
                           </div>
                         </div>
@@ -21441,6 +21413,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     price: (p.regularPrice && Number(p.regularPrice) > Number(p.price)) ? p.regularPrice : p.price,
                                     offerPrice: computedOffer,
                                     specialPriceEnabled: typeof p.specialPriceEnabled === "boolean" ? p.specialPriceEnabled : Boolean(computedOffer),
+                                    specialPriceMode: (p.attributes && p.attributes.__discountMode === "percent") ? "percent" : "amount",
+                                    discountPercent: (p.attributes && p.attributes.__discountPercent) ? p.attributes.__discountPercent : "",
                                     isAvailable: p.isAvailable !== false,
                                     isDraft: Boolean(p.isDraft),
                                     brand: p.brand || "No Brand",
@@ -33737,7 +33711,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 animate-fadeIn"
+                className="w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-fadeIn"
                 style={{
                   backgroundColor: dp.modalBgColor,
                   borderRadius: dRadius,
@@ -33746,6 +33720,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   fontFamily: dFont
                 }}
               >
+                <div className="flex-1 overflow-y-auto p-5 sm:p-8">
                 <div
                   className="flex justify-between items-center mb-5 pb-3"
                   style={{
@@ -34321,31 +34296,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 </button>
                               )}
                             </div>
-
-                            <button 
-                              onClick={() => {
-                                if (viewProduct.isCombo && viewProduct.comboObj) {
-                                  addComboToCart(viewProduct.comboObj);
-                                  setViewProduct(null);
-                                } else {
-                                  const activeColor = selectedProductColor || (viewProduct.colors && viewProduct.colors[0]) || "";
-                                  const activeSize = selectedProductSize || (viewProduct.sizes && viewProduct.sizes[0]) || "";
-                                  addToCart(viewProduct, productQty, activeColor, activeSize);
-                                  setViewProduct(null);
-                                }
-                              }}
-                              disabled={liveStock <= 0}
-                              className="w-full py-3.5 shadow transition flex items-center justify-center gap-2 cursor-pointer"
-                              style={{
-                                background: liveStock > 0 ? `linear-gradient(90deg, ${dp.addToCartBtnBg}, ${dp.addToCartBtnBgEnd})` : "#e5e7eb",
-                                color: liveStock > 0 ? dp.addToCartBtnText : "#9ca3af",
-                                borderRadius: dBtnRadius,
-                                ...dBtnTypoStyle
-                              }}
-                            >
-                              <span>🛒</span>
-                              <span>{liveStock > 0 ? `${dp.addToCartLabel} (${(livePricing.price * productQty).toLocaleString()} ${curSym})` : "স্টক আউট"}</span>
-                            </button>
                           </div>
                         );
                       }
@@ -34709,6 +34659,83 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   })()}
                 </div>
                 )}
+                </div>
+
+                {/* FIXED PRODUCT DETAIL BOTTOM ACTION BAR (WhatsApp Logo | Buy Now | Add To Cart) */}
+                {(() => {
+                  const detailStock = (viewProduct.isCombo && viewProduct.comboObj)
+                    ? Number(viewProduct.stock || 0)
+                    : resolveVariantStock(viewProduct, selectedProductColor, selectedProductSize);
+                  const detailPricing = (viewProduct.isCombo && viewProduct.comboObj)
+                    ? { price: Number(viewProduct.price || 0) }
+                    : resolveVariantPricing(viewProduct, selectedProductColor, selectedProductSize);
+                  const isDetailInStock = detailStock > 0 && Number(viewProduct.stock) > 0;
+                  const activeColor = selectedProductColor || (viewProduct.colors && viewProduct.colors[0]) || "";
+                  const activeSize = selectedProductSize || (viewProduct.sizes && viewProduct.sizes[0]) || "";
+                  const rawDigits = String(config.whatsapp || config.phone || "+8801805119888").replace(/[^0-9]/g, "");
+                  const waDigits = rawDigits.startsWith("01") ? `88${rawDigits}` : (rawDigits || "8801805119888");
+                  const baseSiteUrl = (seo?.canonicalUrl || "https://sajgoj.nfbd.workers.dev").replace(/\/+$/, "");
+                  const productUrl = `${baseSiteUrl}/?product=${encodeURIComponent(viewProduct.id)}`;
+                  const waText = `হ্যালো সাজগোজ, আমি এই পণ্যটি সম্পর্কে জানতে/অর্ডার করতে চাই:\n${viewProduct.name} (${curSym}${Number(detailPricing.price || 0).toLocaleString()})\n${productUrl}`;
+
+                  const handleDetailAddToCart = () => {
+                    if (!isDetailInStock) return;
+                    if (viewProduct.isCombo && viewProduct.comboObj) {
+                      addComboToCart(viewProduct.comboObj);
+                    } else {
+                      addToCart(viewProduct, productQty, activeColor, activeSize);
+                    }
+                    setViewProduct(null);
+                  };
+
+                  const handleDetailBuyNow = () => {
+                    if (!isDetailInStock) return;
+                    if (viewProduct.isCombo && viewProduct.comboObj) {
+                      addComboToCart(viewProduct.comboObj);
+                    } else {
+                      addToCart(viewProduct, productQty, activeColor, activeSize);
+                    }
+                    setViewProduct(null);
+                    setIsCartOpen(false);
+                    setIsCheckoutOpen(true);
+                  };
+
+                  return (
+                    <div
+                      className="shrink-0 bg-white border-t border-slate-200 px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3 shadow-[0_-6px_20px_rgba(15,23,42,0.08)]"
+                      style={{ fontFamily: dFont }}
+                    >
+                      <a
+                        href={`https://wa.me/${waDigits}?text=${encodeURIComponent(waText)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="WhatsApp-এ মেসেজ করুন"
+                        aria-label="WhatsApp"
+                        className="w-12 h-12 shrink-0 rounded-xl bg-[#25D366] border border-[#1EBE5D] flex items-center justify-center shadow-sm active:scale-95 transition"
+                      >
+                        <svg viewBox="0 0 32 32" className="w-7 h-7 fill-white" aria-hidden="true">
+                          <path d="M16.01 3.2c-7.07 0-12.8 5.73-12.8 12.8 0 2.26.59 4.46 1.71 6.4L3.1 28.9l6.67-1.75a12.74 12.74 0 0 0 6.24 1.62h.01c7.06 0 12.79-5.73 12.79-12.8S23.07 3.2 16.01 3.2zm0 23.38h-.01a10.57 10.57 0 0 1-5.39-1.48l-.39-.23-3.96 1.04 1.06-3.86-.25-.4a10.54 10.54 0 0 1-1.62-5.65c0-5.83 4.74-10.58 10.57-10.58 2.82 0 5.48 1.1 7.47 3.1a10.52 10.52 0 0 1 3.1 7.48c0 5.83-4.74 10.58-10.57 10.58zm5.8-7.92c-.32-.16-1.88-.93-2.17-1.03-.29-.11-.5-.16-.71.16-.21.32-.82 1.03-1 1.24-.19.21-.37.24-.69.08-.32-.16-1.34-.5-2.55-1.58-.94-.84-1.58-1.88-1.76-2.2-.19-.32-.02-.49.14-.65.14-.14.32-.37.48-.56.16-.19.21-.32.32-.53.1-.21.05-.4-.03-.56-.08-.16-.71-1.72-.98-2.36-.26-.62-.52-.54-.71-.55h-.61c-.21 0-.56.08-.85.4-.29.32-1.12 1.09-1.12 2.66 0 1.56 1.14 3.08 1.3 3.29.16.21 2.25 3.43 5.45 4.81.76.33 1.35.52 1.81.67.76.24 1.46.21 2.01.13.61-.09 1.88-.77 2.15-1.51.27-.74.27-1.38.19-1.51-.08-.13-.29-.21-.61-.37z" />
+                        </svg>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleDetailBuyNow}
+                        disabled={!isDetailInStock}
+                        className="flex-1 h-12 rounded-lg bg-[#0A0A0A] disabled:bg-slate-400 text-white font-extrabold text-sm whitespace-nowrap px-3 shadow-sm active:scale-95 transition cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        Buy Now
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDetailAddToCart}
+                        disabled={!isDetailInStock}
+                        className="flex-[1.1] h-12 rounded-lg bg-[#EF1C25] disabled:bg-slate-400 text-white font-extrabold text-sm whitespace-nowrap px-3 shadow-sm active:scale-95 transition cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        {isDetailInStock ? "Add To Cart" : "স্টক আউট"}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
             );
@@ -36474,31 +36501,96 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 </button>
                               ) : (
                                 <>
-                                  {/* Special Price(BDT) */}
-                                  <div className="px-3.5 sm:px-4 py-3 space-y-1">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <div className="flex items-center gap-2">
-                                        <span style={apLabelStyle}>Special Price(BDT)</span>
-                                        {Number(productForm.offerPrice) > 0 && Number(productForm.price) > Number(productForm.offerPrice) && (
-                                          <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
-                                            -{Math.round(((Number(productForm.price) - Number(productForm.offerPrice)) / Number(productForm.price)) * 100)}%
-                                          </span>
-                                        )}
-                                      </div>
-                                      <input
-                                        type="number"
-                                        value={productForm.offerPrice !== undefined && productForm.offerPrice !== null ? productForm.offerPrice : ""}
-                                        onChange={(e) => {
-                                          const val = e.target.value.replace(/^0+(?=\d)/, "");
-                                          setProductForm(prev => ({ ...prev, offerPrice: val === "" ? "" : Number(val) }));
+                                  {/* Special Price(BDT) or Discount % */}
+                                  <div className="px-3.5 sm:px-4 py-3 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => setProductForm(prev => ({ ...prev, specialPriceMode: "amount" }))}
+                                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border cursor-pointer ${
+                                          (productForm.specialPriceMode || "amount") !== "percent"
+                                            ? "bg-rose-600 text-white border-rose-600"
+                                            : "bg-slate-50 text-slate-700 border-slate-200"
+                                        }`}
+                                      >
+                                        অফার মূল্য (৳)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const reg = Number(productForm.price) || 0;
+                                          const curOffer = Number(productForm.offerPrice) || 0;
+                                          const derivedPct = (reg > curOffer && curOffer > 0)
+                                            ? String(Math.round(((reg - curOffer) / reg) * 100))
+                                            : (productForm.discountPercent || "");
+                                          setProductForm(prev => ({ ...prev, specialPriceMode: "percent", discountPercent: derivedPct }));
                                         }}
-                                        placeholder="Input"
-                                        style={{ ...apInputStyle, backgroundColor: "transparent", border: "none", color: ap.accentColor }}
-                                        className="w-28 text-right font-bold outline-none"
-                                      />
+                                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border cursor-pointer ${
+                                          productForm.specialPriceMode === "percent"
+                                            ? "bg-rose-600 text-white border-rose-600"
+                                            : "bg-slate-50 text-slate-700 border-slate-200"
+                                        }`}
+                                      >
+                                        ডিসকাউন্ট (%)
+                                      </button>
                                     </div>
+
+                                    {productForm.specialPriceMode === "percent" ? (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2">
+                                          <span style={apLabelStyle}>ডিসকাউন্ট (%)</span>
+                                          {Number(productForm.discountPercent) > 0 && Number(productForm.price) > 0 && (
+                                            <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
+                                              ৳{Math.round(Number(productForm.price) * (1 - Number(productForm.discountPercent) / 100)).toLocaleString()}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          max="99"
+                                          value={productForm.discountPercent || ""}
+                                          onChange={(e) => {
+                                            const raw = e.target.value.replace(/[^0-9]/g, "");
+                                            const pct = Math.min(99, Math.max(0, Number(raw || 0)));
+                                            const reg = Number(productForm.price) || 0;
+                                            const nextOffer = pct > 0 && reg > 0 ? Math.round(reg * (1 - pct / 100)) : "";
+                                            setProductForm(prev => ({
+                                              ...prev,
+                                              discountPercent: raw === "" ? "" : String(pct),
+                                              offerPrice: nextOffer
+                                            }));
+                                          }}
+                                          placeholder="যেমন: 45"
+                                          style={{ ...apInputStyle, backgroundColor: "transparent", border: "none", color: ap.accentColor }}
+                                          className="w-28 text-right font-bold outline-none"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2">
+                                          <span style={apLabelStyle}>Special Price(BDT)</span>
+                                          {Number(productForm.offerPrice) > 0 && Number(productForm.price) > Number(productForm.offerPrice) && (
+                                            <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black">
+                                              -{Math.round(((Number(productForm.price) - Number(productForm.offerPrice)) / Number(productForm.price)) * 100)}%
+                                            </span>
+                                          )}
+                                        </div>
+                                        <input
+                                          type="number"
+                                          value={productForm.offerPrice !== undefined && productForm.offerPrice !== null ? productForm.offerPrice : ""}
+                                          onChange={(e) => {
+                                            const val = e.target.value.replace(/^0+(?=\d)/, "");
+                                            setProductForm(prev => ({ ...prev, offerPrice: val === "" ? "" : Number(val) }));
+                                          }}
+                                          placeholder="Input"
+                                          style={{ ...apInputStyle, backgroundColor: "transparent", border: "none", color: ap.accentColor }}
+                                          className="w-28 text-right font-bold outline-none"
+                                        />
+                                      </div>
+                                    )}
                                     <p className="text-[11px]" style={{ color: ap.subTextColor }}>
-                                      বর্তমান রেগুলার মূল্য: <strong>{Number(productForm.price) || 0} BDT</strong> • ডিসকাউন্টে বিক্রি করতে চাইলে শুধু Special Price লিখুন
+                                      বর্তমান রেগুলার মূল্য: <strong>{Number(productForm.price) || 0} BDT</strong> • {productForm.specialPriceMode === "percent" ? "শতাংশ (%) দিলে কার্ডে অফার দাম ও -XX% দেখাবে" : "অফার মূল্য দিলে কার্ডে ক্রস রেগুলার ও অফার মূল্য পাশাপাশি দেখাবে"}
                                     </p>
                                   </div>
 
@@ -36709,9 +36801,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     const finalImages = allImages.length > 0 ? allImages : [imgSharee];
 
                     const cleanRegular = resolvedInputRegular;
+                    const modeIsPercent = productForm.specialPriceMode === "percent";
+                    const pctVal = Math.min(99, Math.max(0, Number(productForm.discountPercent || 0)));
+                    const resolvedDirectOffer = (modeIsPercent && pctVal > 0 && cleanRegular > 0)
+                      ? Math.round(cleanRegular * (1 - pctVal / 100))
+                      : (Number(productForm.offerPrice) || 0);
                     const cleanOffer = hasFinalVars
                       ? varSummary.minOfferPrice
-                      : (productForm.specialPriceEnabled ? (Number(productForm.offerPrice) || 0) : 0);
+                      : (productForm.specialPriceEnabled ? resolvedDirectOffer : 0);
                     const hasValidOffer = cleanOffer > 0 && cleanOffer < cleanRegular;
                     const cleanPrice = hasValidOffer ? cleanOffer : cleanRegular;
                     const cleanStock = hasFinalVars
@@ -36719,6 +36816,14 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       : (productForm.stock === "" ? 0 : (Number(productForm.stock) || 0));
                     const finalColors = (productForm.colors || []).map(cleanVariation).filter(Boolean);
                     const finalSizes = (productForm.sizes || []).map(cleanVariation).filter(Boolean);
+                    const nextAttributes = { ...(productForm.attributes || {}) };
+                    if (hasValidOffer && modeIsPercent && pctVal > 0) {
+                      nextAttributes.__discountMode = "percent";
+                      nextAttributes.__discountPercent = String(pctVal);
+                    } else {
+                      nextAttributes.__discountMode = "amount";
+                      delete nextAttributes.__discountPercent;
+                    }
 
                     const normalizedVideoUrl = (productForm.videoUrl || "").trim();
                     const normalizedVideoType = productForm.videoType || "upload";
@@ -36730,6 +36835,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
 
                     const payloadFields = {
                       ...productForm,
+                      attributes: nextAttributes,
                       price: cleanPrice,
                       regularPrice: cleanRegular,
                       offerPrice: hasValidOffer ? cleanOffer : 0,
@@ -37636,7 +37742,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                           return (
                             <div
                               key={p.id}
-                              className="storefront-navy-card rounded-2xl overflow-hidden shadow-sm flex flex-col group"
+                              onClick={openModalProduct}
+                              className="storefront-navy-card rounded-xl overflow-hidden shadow-sm flex flex-col group cursor-pointer"
                             >
                               <div
                                 className="aspect-square bg-white/90 overflow-hidden relative cursor-pointer"
@@ -37668,28 +37775,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 <div className="storefront-card-meta-group">
                                   <h4
                                     onClick={openModalProduct}
-                                    className="storefront-title-box font-black cursor-pointer"
+                                    className="storefront-title-box cursor-pointer"
                                   >
                                     <span className="storefront-title-text">{p.name}</span>
                                   </h4>
-                                  <div className="storefront-price-box">
-                                    {hasDiscount && (
-                                      <span className="storefront-price-old">
-                                        ৳{regPrice.toLocaleString()}
-                                      </span>
-                                    )}
-                                    <span className="storefront-price-current">
-                                      ৳{sellingPrice.toLocaleString()}
-                                    </span>
-                                  </div>
+                                  {renderCleanCardPriceRow(sellingPrice, regPrice, p)}
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={openModalProduct}
-                                  className={`storefront-view-btn ${sfBtnShapeClass} font-black whitespace-nowrap cursor-pointer text-center active:scale-95`}
-                                >
-                                  {p.stock > 0 ? (sfDesign.cardActionLabel || "পন্যটি দেখুন") : "স্টক আউট"}
-                                </button>
                               </div>
                             </div>
                           );
