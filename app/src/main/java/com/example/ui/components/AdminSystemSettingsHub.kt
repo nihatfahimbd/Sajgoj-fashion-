@@ -45,6 +45,7 @@ import androidx.compose.material.icons.outlined.Campaign
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Payments
@@ -276,6 +277,7 @@ private fun GeneralStoreSettingsSection(
   var phone by remember(config.phone) { mutableStateOf(config.phone) }
   var whatsapp by remember(config.whatsapp) { mutableStateOf(config.whatsapp) }
   var email by remember(config.email) { mutableStateOf(config.email) }
+  var websiteUrl by remember(config.websiteUrl) { mutableStateOf(config.websiteUrl) }
   var address by remember(config.address) { mutableStateOf(config.address) }
   var showGoogleMap by remember(config.showGoogleMap) { mutableStateOf(config.showGoogleMap) }
   var googleMapQuery by remember(config.googleMapQuery) { mutableStateOf(config.googleMapQuery) }
@@ -451,6 +453,53 @@ private fun GeneralStoreSettingsSection(
         modifier = Modifier.fillMaxWidth()
       )
 
+      val context = LocalContext.current
+      OutlinedTextField(
+        value = websiteUrl,
+        onValueChange = { websiteUrl = it },
+        label = { Text("স্টোর ওয়েবসাইট / ডোমেইন URL") },
+        placeholder = { Text("https://sajgoj.nfbd.workers.dev") },
+        leadingIcon = {
+          Icon(imageVector = Icons.Outlined.Language, contentDescription = null, modifier = Modifier.size(18.dp))
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = adminOutlinedTextFieldColors(),
+        modifier = Modifier
+          .fillMaxWidth()
+          .testTag("settings_website_url_input")
+      )
+
+      OutlinedButton(
+        onClick = {
+          val normalized = websiteUrl.trim().let { raw ->
+            when {
+              raw.isBlank() -> "https://sajgoj.nfbd.workers.dev"
+              raw.startsWith("http://") || raw.startsWith("https://") -> raw
+              else -> "https://$raw"
+            }
+          }
+          try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(normalized)))
+          } catch (_: Exception) {
+            Toast.makeText(context, "ওয়েবসাইট লিংক খুলতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
+          }
+        },
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(min = 48.dp)
+          .testTag("settings_open_website_btn")
+      ) {
+        Icon(
+          imageVector = Icons.Outlined.Language,
+          contentDescription = null,
+          modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text("ডোমেইন ভিজিট করুন ↗", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+      }
+
       OutlinedTextField(
         value = address,
         onValueChange = { address = it },
@@ -467,7 +516,6 @@ private fun GeneralStoreSettingsSection(
       Spacer(modifier = Modifier.height(6.dp))
 
       // Google Map Location Sub-Panel
-      val context = LocalContext.current
       Surface(
         shape = RoundedCornerShape(14.dp),
         color = Color(0xFFF0FDF4),
@@ -581,6 +629,13 @@ private fun GeneralStoreSettingsSection(
             phone = phone.trim(),
             whatsapp = whatsapp.trim(),
             email = email.trim(),
+            websiteUrl = websiteUrl.trim().let { raw ->
+              when {
+                raw.isBlank() -> "https://sajgoj.nfbd.workers.dev"
+                raw.startsWith("http://") || raw.startsWith("https://") -> raw.trimEnd('/')
+                else -> "https://${raw.trimEnd('/')}"
+              }
+            },
             address = address.trim(),
             showGoogleMap = showGoogleMap,
             googleMapQuery = googleMapQuery.trim().ifBlank { address.trim() },

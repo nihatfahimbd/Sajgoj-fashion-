@@ -2323,6 +2323,7 @@ class StoreRepository(private val context: Context) {
         phone = loadedPhone,
         whatsapp = loadedWhatsapp,
         email = o.optString("email", defCfg.email),
+        websiteUrl = o.optString("websiteUrl", defCfg.websiteUrl).trim().ifBlank { defCfg.websiteUrl },
         address = o.optString("address", defCfg.address),
         showGoogleMap = o.optBoolean("showGoogleMap", defCfg.showGoogleMap),
         googleMapQuery = o.optString("googleMapQuery", defCfg.googleMapQuery),
@@ -2440,6 +2441,7 @@ class StoreRepository(private val context: Context) {
       put("phone", config.phone)
       put("whatsapp", config.whatsapp)
       put("email", config.email)
+      put("websiteUrl", config.websiteUrl)
       put("address", config.address)
       put("showGoogleMap", config.showGoogleMap)
       put("googleMapQuery", config.googleMapQuery)

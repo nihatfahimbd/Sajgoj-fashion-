@@ -40,6 +40,8 @@ import com.example.firebase.GoogleAuthHelper.authStateFlow
 import com.example.notifications.OrderNotificationBus
 import com.example.notifications.OrderNotificationHelper
 import com.example.sms.SimSmsGatewayManager
+import com.example.util.AdminQrLookupHelper
+import com.example.util.AdminQrLookupResult
 import com.example.util.VisualImageSearchHelper
 import com.example.util.VisualSearchAnalysis
 import com.google.firebase.Firebase
@@ -411,6 +413,47 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       emitToast("📷 কোড '$clean' দিয়ে প্রোডাক্ট খোঁজা হচ্ছে...")
       false
     }
+  }
+
+  fun handleIncomingDomainLink(rawUrl: String): Boolean {
+    val clean = rawUrl.trim()
+    if (clean.isEmpty()) return false
+
+    when (val lookup = AdminQrLookupHelper.lookup(clean, products.value, orders.value)) {
+      is AdminQrLookupResult.OrderMatch -> {
+        _currentScreen.value = AppScreen.STOREFRONT
+        _selectedProduct.value = null
+        _isCartOpen.value = false
+        openInvoice(lookup.order)
+        emitToast("🧾 অর্ডার #${lookup.order.id} খোলা হয়েছে")
+        return true
+      }
+      is AdminQrLookupResult.ProductMatch -> {
+        _currentScreen.value = AppScreen.STOREFRONT
+        _selectedOrderInvoice.value = null
+        _isCartOpen.value = false
+        _selectedProduct.value = lookup.product
+        emitToast("✨ ${lookup.product.name}")
+        return true
+      }
+      is AdminQrLookupResult.NotFound -> Unit
+    }
+
+    val orderIdHint = Regex(
+      "#order-([a-zA-Z0-9_#-]+)|[?&](?:order|orderId)=([a-zA-Z0-9_#-]+)|/orders?/([a-zA-Z0-9_#-]+)",
+      RegexOption.IGNORE_CASE
+    ).find(clean)?.let { m -> m.groupValues[1].ifBlank { m.groupValues[2] }.ifBlank { m.groupValues[3] } }
+    if (!orderIdHint.isNullOrBlank()) {
+      openOrderById(orderIdHint)
+      return false
+    }
+
+    _currentScreen.value = AppScreen.STOREFRONT
+    _selectedProduct.value = null
+    _selectedOrderInvoice.value = null
+    _isCartOpen.value = false
+    emitToast("🌐 সাজগোজ ফ্যাশন স্টোর খোলা হয়েছে")
+    return true
   }
 
   fun openProductDetail(product: Product) {

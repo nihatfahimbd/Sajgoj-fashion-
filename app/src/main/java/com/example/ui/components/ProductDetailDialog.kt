@@ -236,10 +236,12 @@ fun ProductDetailDialog(
       selectedSize.takeIf { it.isNotBlank() }?.let { "Size: $it" },
       selectedAgeGroup.takeIf { it.isNotBlank() }?.let { "Age: $it" }
     ).joinToString(", ")
+    val productDomain = storeConfig.websiteUrl.trim().trimEnd('/').ifBlank { "https://sajgoj.nfbd.workers.dev" }
     val inquiryMsg = buildString {
       append("আসসালামু আলাইকুম, আমি \"${product.name}\" (SKU: ${product.sku}) অর্ডার/তথ্য জানতে চাই।")
       if (variantSummary.isNotBlank()) append(" [$variantSummary]")
       append(" পরিমাণ: $quantity পিস, মোট: ${liveSellPrice * quantity} $currencySym")
+      append("\nপ্রোডাক্ট লিংক: $productDomain/#product-${product.id}")
     }
     val rawWhatsapp = storeConfig.whatsapp.ifBlank { storeConfig.phone }
     val digitsOnly = rawWhatsapp.filter { it.isDigit() }
@@ -1605,6 +1607,7 @@ fun ProductDetailDialog(
             }
           }
           }
+        }
 
           Spacer(modifier = Modifier.height(16.dp))
         }

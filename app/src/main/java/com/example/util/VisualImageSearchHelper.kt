@@ -300,9 +300,10 @@ object VisualImageSearchHelper {
   fun findProductByScanPayload(rawText: String, products: List<Product>): Product? {
     val text = rawText.trim()
     if (text.isEmpty()) return null
-    val hashMatch = Regex("#product-([a-zA-Z0-9_-]+)").find(text)?.groupValues?.getOrNull(1)
-    val queryMatch = Regex("[?&]product=([a-zA-Z0-9_-]+)").find(text)?.groupValues?.getOrNull(1)
-    val extractedId = hashMatch ?: queryMatch
+    val hashMatch = Regex("#product-([a-zA-Z0-9_-]+)", RegexOption.IGNORE_CASE).find(text)?.groupValues?.getOrNull(1)
+    val queryMatch = Regex("[?&]product=([a-zA-Z0-9_-]+)", RegexOption.IGNORE_CASE).find(text)?.groupValues?.getOrNull(1)
+    val pathMatch = Regex("/products?/([a-zA-Z0-9_-]+)", RegexOption.IGNORE_CASE).find(text)?.groupValues?.getOrNull(1)
+    val extractedId = hashMatch ?: queryMatch ?: pathMatch
 
     if (!extractedId.isNullOrBlank()) {
       products.find { it.id.equals(extractedId, ignoreCase = true) }?.let { return it }

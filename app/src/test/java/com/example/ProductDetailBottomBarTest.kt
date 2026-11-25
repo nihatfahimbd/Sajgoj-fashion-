@@ -34,6 +34,7 @@ class ProductDetailBottomBarTest {
     regularPrice = 500,
     stock = 20,
     category = "বাচ্চাদের পোশাক",
+    imageUrl = "res://ic_app_icon_1792530102214",
     sku = "KID-400",
     colors = listOf("Purple", "Orange"),
     sizes = listOf("3-4yrs", "4-5 yrs"),

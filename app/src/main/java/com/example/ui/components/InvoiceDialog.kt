@@ -71,11 +71,12 @@ fun InvoiceDialog(
       val variantStr = if (variantParts.isNotEmpty()) " [${variantParts.joinToString(" | ")}]" else ""
       "• ${it.name}$variantStr x${it.quantity} = ${it.price * it.quantity} ৳"
     }
+      val cleanDomain = config.websiteUrl.trim().removePrefix("https://").removePrefix("http://").trimEnd('/')
     val invoiceText = """
       ==============================
       ${config.storeName}
       ${config.tagline}
-      হটলাইন: ${config.phone}
+      হটলাইন: ${config.phone} | ওয়েব: $cleanDomain
       ==============================
       ইনভয়েস নং: #${order.id}
       তারিখ: ${order.date}
@@ -143,11 +144,19 @@ fun InvoiceDialog(
               fontSize = 11.sp,
               color = AntiqueGold
             )
+            val headerDomain = config.websiteUrl.trim().removePrefix("https://").removePrefix("http://").trimEnd('/')
             Text(
               text = "হটলাইন: ${config.phone}  |  ${config.email}",
               fontSize = 10.sp,
               color = CreamSurface
             )
+            if (headerDomain.isNotBlank()) {
+              Text(
+                text = "🌐 $headerDomain",
+                fontSize = 10.sp,
+                color = CreamSurface
+              )
+            }
           }
 
           IconButton(

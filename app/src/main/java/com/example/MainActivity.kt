@@ -90,20 +90,32 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
   private val viewModel: StoreViewModel by viewModels()
   private val deepLinkOrderIdState = mutableStateOf<String?>(null)
+  private val deepLinkUrlState = mutableStateOf<String?>(null)
+
+  private fun extractDeepLinkFromIntent(incomingIntent: Intent?) {
+    if (incomingIntent == null) return
+    val orderId = incomingIntent.getStringExtra(OrderNotificationHelper.EXTRA_ORDER_ID)
+    if (!orderId.isNullOrBlank()) {
+      deepLinkOrderIdState.value = orderId
+    }
+    if (incomingIntent.action == Intent.ACTION_VIEW && incomingIntent.data != null) {
+      val url = incomingIntent.dataString
+      if (!url.isNullOrBlank()) {
+        deepLinkUrlState.value = url
+      }
+    }
+  }
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     setIntent(intent)
-    val orderId = intent.getStringExtra(OrderNotificationHelper.EXTRA_ORDER_ID)
-    if (!orderId.isNullOrBlank()) {
-      deepLinkOrderIdState.value = orderId
-    }
+    extractDeepLinkFromIntent(intent)
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     configureAppCheck(this, intent)
-    deepLinkOrderIdState.value = intent?.getStringExtra(OrderNotificationHelper.EXTRA_ORDER_ID)
+    extractDeepLinkFromIntent(intent)
     enableEdgeToEdge()
 
     setContent {
@@ -165,6 +177,7 @@ class MainActivity : ComponentActivity() {
         val unreadOrderNotificationCount by viewModel.unreadOrderNotificationCount.collectAsStateWithLifecycle()
         val activeOrderBannerAlert by viewModel.activeOrderBannerAlert.collectAsStateWithLifecycle()
         val pendingDeepLinkOrderId by deepLinkOrderIdState
+        val pendingDeepLinkUrl by deepLinkUrlState
 
         var showVoiceFallbackDialog by remember { mutableStateOf(false) }
         var voiceFallbackInput by remember { mutableStateOf("") }
@@ -267,6 +280,14 @@ class MainActivity : ComponentActivity() {
           if (!orderId.isNullOrBlank()) {
             viewModel.openOrderById(orderId)
             deepLinkOrderIdState.value = null
+          }
+        }
+
+        LaunchedEffect(pendingDeepLinkUrl) {
+          val url = pendingDeepLinkUrl
+          if (!url.isNullOrBlank()) {
+            viewModel.handleIncomingDomainLink(url)
+            deepLinkUrlState.value = null
           }
         }
 

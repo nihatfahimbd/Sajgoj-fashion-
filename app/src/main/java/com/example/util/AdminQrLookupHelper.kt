@@ -66,10 +66,13 @@ object AdminQrLookupHelper {
       }
     }
 
-    // 2. Check Order / Tracking deep links (#order-xxx, ?order=xxx, ?tracking=xxx)
-    val orderDeepLink = Regex("#order-([a-zA-Z0-9_#-]+)|[?&](?:order|orderId)=([a-zA-Z0-9_#-]+)", RegexOption.IGNORE_CASE)
+    // 2. Check Order / Tracking deep links (#order-xxx, ?order=xxx, /order/xxx, ?tracking=xxx)
+    val orderDeepLink = Regex(
+      "#order-([a-zA-Z0-9_#-]+)|[?&](?:order|orderId)=([a-zA-Z0-9_#-]+)|/orders?/([a-zA-Z0-9_#-]+)",
+      RegexOption.IGNORE_CASE
+    )
       .find(clean)
-      ?.let { m -> m.groupValues[1].ifBlank { m.groupValues[2] } }
+      ?.let { m -> m.groupValues[1].ifBlank { m.groupValues[2] }.ifBlank { m.groupValues[3] } }
     if (!orderDeepLink.isNullOrBlank()) {
       findOrderById(orderDeepLink, orders)?.let {
         return AdminQrLookupResult.OrderMatch(it, "অর্ডার লিংক")
@@ -96,10 +99,13 @@ object AdminQrLookupHelper {
       return AdminQrLookupResult.OrderMatch(it, "কুরিয়ার ট্র্যাকিং আইডি")
     }
 
-    // 5. Direct Product ID / SKU / Storefront QR deep-link (#product-p1)
-    val productDeepLink = Regex("#product-([a-zA-Z0-9_-]+)|[?&]product=([a-zA-Z0-9_-]+)", RegexOption.IGNORE_CASE)
+    // 5. Direct Product ID / SKU / Storefront QR deep-link (#product-p1, ?product=p1, /product/p1)
+    val productDeepLink = Regex(
+      "#product-([a-zA-Z0-9_-]+)|[?&]product=([a-zA-Z0-9_-]+)|/products?/([a-zA-Z0-9_-]+)",
+      RegexOption.IGNORE_CASE
+    )
       .find(clean)
-      ?.let { m -> m.groupValues[1].ifBlank { m.groupValues[2] } }
+      ?.let { m -> m.groupValues[1].ifBlank { m.groupValues[2] }.ifBlank { m.groupValues[3] } }
     if (!productDeepLink.isNullOrBlank()) {
       products.find { it.id.equals(productDeepLink, ignoreCase = true) }?.let {
         return AdminQrLookupResult.ProductMatch(it, "প্রোডাক্ট QR লিংক")
