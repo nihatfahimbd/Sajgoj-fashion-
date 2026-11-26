@@ -17,6 +17,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -94,7 +95,9 @@ import androidx.compose.ui.unit.sp
 import com.example.data.BangladeshLocations
 import com.example.data.model.CartItem
 import com.example.data.model.Coupon
+import com.example.data.model.SavedAddress
 import com.example.data.model.StoreConfig
+import com.example.firebase.AuthUserSummary
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
 import com.example.ui.theme.AntiqueGold
@@ -103,6 +106,7 @@ import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.DarkEspresso
+import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
 import kotlinx.coroutines.delay
 
@@ -112,6 +116,8 @@ fun CartAndCheckoutDialog(
   cartItems: List<CartItem>,
   coupons: List<Coupon>,
   storeConfig: StoreConfig = StoreConfig(),
+  savedAddresses: List<SavedAddress> = emptyList(),
+  authUser: AuthUserSummary? = null,
   onDismiss: () -> Unit,
   onUpdateQty: (String, Int) -> Unit,
   onRemoveItem: (String) -> Unit,
@@ -145,6 +151,25 @@ fun CartAndCheckoutDialog(
   var deliveryType by remember { mutableStateOf("Standard") } // "Standard" | "Express"
   var orderType by remember { mutableStateOf("Normal") } // "Normal" | "Custom"
   var paymentMethod by remember { mutableStateOf("Cash on Delivery") }
+
+  // Auto-fill from Saved Default Address / Auth User when checkout is active
+  LaunchedEffect(isCheckoutMode, savedAddresses, authUser?.uid) {
+    if (isCheckoutMode) {
+      val def = savedAddresses.firstOrNull { it.isDefault } ?: savedAddresses.firstOrNull()
+      if (def != null && address.isBlank() && phone.isBlank()) {
+        name = def.recipientName.ifBlank { authUser?.displayName.orEmpty() }
+        phone = def.phone
+        selectedDistrict = def.district.ifBlank { "ঢাকা (Dhaka)" }
+        thana = def.thana.ifBlank { "সদর" }
+        address = def.streetAddress
+        landmark = def.landmark
+        addressCategory = if (def.category.equals("Office", true)) "Office" else "Home"
+        defaultShippingAddress = def.isDefault
+      } else if (name.isBlank() && authUser != null) {
+        name = authUser.displayName
+      }
+    }
+  }
 
   val isChandpur = remember(selectedDistrict) { BangladeshLocations.isChandpurDistrict(selectedDistrict) }
 
@@ -776,6 +801,62 @@ fun CartAndCheckoutDialog(
                         fontWeight = FontWeight.Black,
                         color = RoyalMaroon
                       )
+
+                      if (savedAddresses.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                          Text(
+                            text = "📍 সেভড ঠিকানা থেকে ১-ট্যাপে বাছাই করুন:",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NavyBlue
+                          )
+                          Row(
+                            modifier = Modifier
+                              .fillMaxWidth()
+                              .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                          ) {
+                            savedAddresses.forEach { saved ->
+                              val isMatched = address == saved.streetAddress && phone == saved.phone
+                              Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isMatched) RoyalMaroon else CreamSurface,
+                                border = BorderStroke(1.dp, if (isMatched) RoyalMaroon else BorderGold),
+                                modifier = Modifier
+                                  .heightIn(min = 48.dp)
+                                  .clickable {
+                                    name = saved.recipientName
+                                    phone = saved.phone
+                                    selectedDistrict = saved.district
+                                    thana = saved.thana
+                                    address = saved.streetAddress
+                                    landmark = saved.landmark
+                                    addressCategory = saved.category
+                                    defaultShippingAddress = saved.isDefault
+                                    onShowToast("📍 \"${saved.label}\" ঠিকানা অটো-পূরণ হয়েছে")
+                                  }
+                              ) {
+                                Column(
+                                  modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                  verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                  Text(
+                                    text = (if (saved.category == "Office") "🏢 " else "🏠 ") + saved.label + if (saved.isDefault) " (ডিফল্ট)" else "",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isMatched) Color.White else RoyalMaroon
+                                  )
+                                  Text(
+                                    text = "${saved.thana}, ${saved.district}",
+                                    fontSize = 10.sp,
+                                    color = if (isMatched) Color.White.copy(alpha = 0.85f) else DarkEspresso
+                                  )
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
 
                       // Recipient's Name *
                       OutlinedTextField(

@@ -74,6 +74,7 @@ import com.example.ui.components.StoreHeader
 import com.example.ui.components.StorefrontBottomNavBar
 import com.example.ui.components.StorefrontBottomTab
 import com.example.ui.screens.AdminDashboardScreen
+import com.example.ui.screens.CustomerProfileScreen
 import com.example.ui.screens.StorefrontScreen
 import com.example.ui.theme.BorderGold
 import com.example.ui.theme.CreamBackground
@@ -175,8 +176,11 @@ class MainActivity : ComponentActivity() {
         val adminUnreadSupportCount by viewModel.adminUnreadSupportCount.collectAsStateWithLifecycle()
         val isSendingSupportChat by viewModel.isSendingSupportChat.collectAsStateWithLifecycle()
         val orderNotifications by viewModel.orderNotifications.collectAsStateWithLifecycle()
+        val savedAddresses by viewModel.savedAddresses.collectAsStateWithLifecycle()
+        val customerLoyaltyStatus by viewModel.customerLoyaltyStatus.collectAsStateWithLifecycle()
         val unreadOrderNotificationCount by viewModel.unreadOrderNotificationCount.collectAsStateWithLifecycle()
         val activeOrderBannerAlert by viewModel.activeOrderBannerAlert.collectAsStateWithLifecycle()
+        val activePolicyTopic by viewModel.activePolicyTopic.collectAsStateWithLifecycle()
         val pendingDeepLinkOrderId by deepLinkOrderIdState
         val pendingDeepLinkUrl by deepLinkUrlState
 
@@ -309,6 +313,7 @@ class MainActivity : ComponentActivity() {
         // BackHandler
         BackHandler(
           enabled = currentScreen == AppScreen.ADMIN_PANEL ||
+            currentScreen == AppScreen.CUSTOMER_PROFILE ||
             isCartOpen ||
             selectedProduct != null ||
             selectedOrderInvoice != null ||
@@ -331,6 +336,7 @@ class MainActivity : ComponentActivity() {
             selectedOrderInvoice != null -> viewModel.closeInvoice()
             selectedProduct != null -> viewModel.closeProductDetail()
             isCartOpen -> viewModel.setCartOpen(false)
+            currentScreen == AppScreen.CUSTOMER_PROFILE -> viewModel.setScreen(AppScreen.STOREFRONT)
             currentScreen == AppScreen.ADMIN_PANEL -> viewModel.setScreen(AppScreen.STOREFRONT)
           }
         }
@@ -343,7 +349,7 @@ class MainActivity : ComponentActivity() {
         }
         val activeBottomBarTab = when {
           isCartOpen -> StorefrontBottomTab.CART
-          showAccountDialog -> StorefrontBottomTab.ACCOUNT
+          currentScreen == AppScreen.CUSTOMER_PROFILE || showAccountDialog -> StorefrontBottomTab.ACCOUNT
           isOffersDialogOpen -> StorefrontBottomTab.OFFERS
           storeBottomTab == StorefrontBottomTab.SHOPPING -> StorefrontBottomTab.SHOPPING
           else -> StorefrontBottomTab.HOME
@@ -351,26 +357,30 @@ class MainActivity : ComponentActivity() {
         Scaffold(
           containerColor = scaffoldBg,
           bottomBar = {
-            if (currentScreen == AppScreen.STOREFRONT) {
+            if (currentScreen == AppScreen.STOREFRONT || currentScreen == AppScreen.CUSTOMER_PROFILE) {
               StorefrontBottomNavBar(
                 activeTab = activeBottomBarTab,
                 cartItemCount = cartItems.sumOf { it.quantity },
                 onSelectHome = {
                   showAccountDialog = false
+                  viewModel.setScreen(AppScreen.STOREFRONT)
                   storeBottomTab = StorefrontBottomTab.HOME
                   viewModel.resetHomeFilters()
                 },
                 onSelectShopping = {
                   showAccountDialog = false
+                  viewModel.setScreen(AppScreen.STOREFRONT)
                   viewModel.resetHomeFilters()
                   storeBottomTab = StorefrontBottomTab.SHOPPING
                 },
                 onSelectOffers = {
                   showAccountDialog = false
+                  viewModel.setScreen(AppScreen.STOREFRONT)
                   openOffersTrigger += 1
                 },
                 onSelectAccount = {
-                  showAccountDialog = true
+                  showAccountDialog = false
+                  viewModel.setScreen(AppScreen.CUSTOMER_PROFILE)
                 },
                 onSelectCart = {
                   showAccountDialog = false
@@ -431,10 +441,12 @@ class MainActivity : ComponentActivity() {
               categories = categories,
               selectedCategory = selectedCategory,
               onCategorySelected = {
+                viewModel.setScreen(AppScreen.STOREFRONT)
                 storeBottomTab = StorefrontBottomTab.HOME
                 viewModel.setSelectedCategory(it)
               },
               onHomeReset = {
+                viewModel.setScreen(AppScreen.STOREFRONT)
                 storeBottomTab = StorefrontBottomTab.HOME
                 viewModel.resetHomeFilters()
               },
@@ -535,7 +547,9 @@ class MainActivity : ComponentActivity() {
                     isSendingSupportChat = isSendingSupportChat,
                     onGoogleSignIn = { viewModel.signInWithGoogle(context, unlockAdminIfVerified = false) },
                     onSendSupportMessage = { text, ordId -> viewModel.sendCustomerSupportMessage(text, ordId) },
-                    onMarkSupportRead = { viewModel.markCustomerSupportRead() }
+                    onMarkSupportRead = { viewModel.markCustomerSupportRead() },
+                    incomingPolicyTopic = activePolicyTopic,
+                    onClearIncomingPolicyTopic = { viewModel.clearPolicyTopic() }
                   )
                 }
 
@@ -621,6 +635,36 @@ class MainActivity : ComponentActivity() {
                     onSelectSupportThread = { viewModel.selectAdminSupportThread(it) },
                     onSendSupportReply = { chatId, text -> viewModel.sendAdminSupportReply(chatId, text) },
                     onToggleSupportThreadStatus = { chatId, status -> viewModel.toggleAdminSupportThreadStatus(chatId, status) }
+                  )
+                }
+
+                AppScreen.CUSTOMER_PROFILE -> {
+                  CustomerProfileScreen(
+                    authUser = authUser,
+                    isAuthBusy = isAuthBusy,
+                    orders = orders,
+                    savedAddresses = savedAddresses,
+                    loyaltyStatus = customerLoyaltyStatus,
+                    storeConfig = storeConfig,
+                    unreadNotificationCount = unreadOrderNotificationCount,
+                    unreadSupportCount = customerUnreadSupportCount,
+                    onGoogleSignIn = { viewModel.signInWithGoogle(context, unlockAdminIfVerified = false) },
+                    onGoogleSignOut = { viewModel.signOutGoogle(context) },
+                    onBackToStore = { viewModel.setScreen(AppScreen.STOREFRONT) },
+                    onStartShopping = {
+                      viewModel.setScreen(AppScreen.STOREFRONT)
+                      viewModel.resetHomeFilters()
+                      storeBottomTab = StorefrontBottomTab.SHOPPING
+                    },
+                    onOpenOrderInvoice = { order -> viewModel.openInvoice(order) },
+                    onSaveAddress = { addr -> viewModel.saveCustomerAddress(addr) },
+                    onSetDefaultAddress = { id -> viewModel.setDefaultCustomerAddress(id) },
+                    onDeleteAddress = { id -> viewModel.deleteCustomerAddress(id) },
+                    onOpenNotifications = {
+                      hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
+                      showNotificationsDialog = true
+                    },
+                    onOpenLiveSupport = { showLiveSupportDialog = true }
                   )
                 }
               }
@@ -855,6 +899,8 @@ class MainActivity : ComponentActivity() {
             cartItems = cartItems,
             coupons = coupons,
             storeConfig = storeConfig,
+            savedAddresses = savedAddresses,
+            authUser = authUser,
             onDismiss = { viewModel.setCartOpen(false) },
             onUpdateQty = { id, delta -> viewModel.updateCartQty(id, delta) },
             onRemoveItem = { id -> viewModel.removeFromCart(id) },

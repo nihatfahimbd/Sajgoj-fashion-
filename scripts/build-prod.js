@@ -88,7 +88,11 @@ if (fs.existsSync('sw.js')) {
   }
 }
 
-// 6. Ensure no invalid _redirects file
+// 6. Generate standalone crawlable legal/compliance pages, /pages directory, sitemap.xml & robots.txt
+const { generateStaticPages } = require('./generate-static-pages');
+generateStaticPages('public');
+
+// 7. Ensure no invalid _redirects file
 if (fs.existsSync('public/_redirects')) fs.unlinkSync('public/_redirects');
 if (fs.existsSync('_redirects')) fs.unlinkSync('_redirects');
 

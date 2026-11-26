@@ -181,6 +181,8 @@ fun StorefrontScreen(
   onGoogleSignIn: () -> Unit = {},
   onSendSupportMessage: (String, String) -> Unit = { _, _ -> },
   onMarkSupportRead: () -> Unit = {},
+  incomingPolicyTopic: String? = null,
+  onClearIncomingPolicyTopic: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -203,6 +205,13 @@ fun StorefrontScreen(
     if (openOffersTrigger > 0) {
       voucherCenterTab = "all"
       showVoucherCenter = true
+    }
+  }
+
+  LaunchedEffect(incomingPolicyTopic) {
+    if (!incomingPolicyTopic.isNullOrBlank()) {
+      activeFooterTopic = incomingPolicyTopic
+      onClearIncomingPolicyTopic()
     }
   }
 
@@ -1976,7 +1985,8 @@ private fun StorefrontFooterCard(
               "about" to "About us",
               "contact" to "Contact us",
               "terms" to "Terms & Conditions",
-              "privacy" to "Privacy Policy"
+              "privacy" to "Privacy Policy",
+              "data_deletion" to "Data Deletion"
             ),
             onItemClick = onOpenTopic,
             modifier = Modifier.weight(1f)
@@ -2012,6 +2022,7 @@ private fun StorefrontFooterCard(
               "refund" to "Refund Policy",
               "exchange" to "Exchange",
               "cancellation" to "Cancellation",
+              "cookie" to "Cookie Policy",
               "discount" to "Extra Discount"
             ),
             onItemClick = onOpenTopic,
@@ -2341,6 +2352,7 @@ private fun FooterPolicyInfoDialog(
     "contact" to "Contact us",
     "terms" to "Terms & Conditions",
     "privacy" to "Privacy Policy",
+    "data_deletion" to "Data Deletion",
     "tracking" to "Order Tracking",
     "payment" to "Payment",
     "shipping" to "Shipping",
@@ -2348,9 +2360,27 @@ private fun FooterPolicyInfoDialog(
     "refund" to "Refund Policy",
     "exchange" to "Exchange",
     "cancellation" to "Cancellation",
+    "cookie" to "Cookie Policy",
     "discount" to "Extra Discount"
   )
+  val topicUrlMap = mapOf(
+    "about" to "https://sajgoj.nfbd.workers.dev/about-us",
+    "contact" to "https://sajgoj.nfbd.workers.dev/contact-us",
+    "terms" to "https://sajgoj.nfbd.workers.dev/terms-and-conditions",
+    "privacy" to "https://sajgoj.nfbd.workers.dev/privacy-policy",
+    "data_deletion" to "https://sajgoj.nfbd.workers.dev/data-deletion",
+    "tracking" to "https://sajgoj.nfbd.workers.dev/order-tracking",
+    "payment" to "https://sajgoj.nfbd.workers.dev/payment-policy",
+    "shipping" to "https://sajgoj.nfbd.workers.dev/shipping-policy",
+    "faq" to "https://sajgoj.nfbd.workers.dev/faq",
+    "refund" to "https://sajgoj.nfbd.workers.dev/refund-policy",
+    "exchange" to "https://sajgoj.nfbd.workers.dev/exchange-policy",
+    "cancellation" to "https://sajgoj.nfbd.workers.dev/cancellation-policy",
+    "cookie" to "https://sajgoj.nfbd.workers.dev/cookie-policy",
+    "discount" to "https://sajgoj.nfbd.workers.dev/offers"
+  )
   val currentTitle = topics.find { it.first == selectedTopic }?.second ?: "Store Info"
+  val currentPublicUrl = topicUrlMap[selectedTopic] ?: "https://sajgoj.nfbd.workers.dev/pages"
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
@@ -2387,6 +2417,68 @@ private fun FooterPolicyInfoDialog(
           }
           IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
             Icon(imageVector = Icons.Default.Close, contentDescription = "বন্ধ করুন", tint = DarkEspresso)
+          }
+        }
+
+        // Direct Public URL Copy & Open Bar (Facebook App / Play Store / Payment Gateways)
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color(0xFFF8FAFC),
+          border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            Text(
+              text = currentPublicUrl,
+              fontSize = 10.5.sp,
+              fontWeight = FontWeight.SemiBold,
+              color = NavyBlue,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier = Modifier.weight(1f)
+            )
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = RoyalMaroon,
+              modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                  val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                  cb?.setPrimaryClip(android.content.ClipData.newPlainText("Sajgoj URL", currentPublicUrl))
+                  Toast.makeText(context, "লিংক কপি হয়েছে: $currentPublicUrl", Toast.LENGTH_SHORT).show()
+                }
+            ) {
+              Text(
+                text = "Copy",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+              )
+            }
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = NavyBlue,
+              modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                  try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(currentPublicUrl)))
+                  } catch (_: Exception) {}
+                }
+            ) {
+              Text(
+                text = "Open ↗",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+              )
+            }
           }
         }
 
@@ -2492,7 +2584,15 @@ private fun FooterPolicyInfoDialog(
             }
             "privacy" -> {
               Text(
-                text = "• ক্রেতার নাম, ফোন নম্বর ও ডেলিভারি ঠিকানা শুধুমাত্র অর্ডার প্রক্রিয়াকরণ ও কাস্টমার কেয়ারের জন্য ব্যবহার করা হয়।\n• ব্যক্তিগত তথ্য কোনো তৃতীয় পক্ষের কাছে বিক্রি বা শেয়ার করা হয় না।",
+                text = "• ক্রেতার নাম, ফোন নম্বর, ইমেইল ও ডেলিভারি ঠিকানা শুধুমাত্র অর্ডার প্রক্রিয়াকরণ, অ্যাকাউন্ট লগইন ও কাস্টমার কেয়ারের জন্য ব্যবহার করা হয়।\n• ব্যক্তিগত তথ্য কোনো তৃতীয় পক্ষের কাছে বিক্রি বা শেয়ার করা হয় না।\n• অফিসিয়াল URL: https://sajgoj.nfbd.workers.dev/privacy-policy",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "data_deletion" -> {
+              Text(
+                text = "• Facebook Developer App বা স্টোর অ্যাকাউন্ট থেকে আপনার সমস্ত ডেটা মুছে ফেলতে https://sajgoj.nfbd.workers.dev/data-deletion লিংক ব্যবহার করুন অথবা ${config.email}-এ মেইল করুন।\n• Facebook Settings → Apps and Websites → SAJGOJ FASHION থেকে Remove করেও ডেটা ডিলিশন রিকোয়েস্ট পাঠাতে পারবেন (৪৮ ঘণ্টার মধ্যে সম্পন্ন হয়)।",
                 fontSize = 12.5.sp,
                 color = DarkEspresso,
                 lineHeight = 19.sp
@@ -2622,6 +2722,14 @@ private fun FooterPolicyInfoDialog(
             "cancellation" -> {
               Text(
                 text = "• কুরিয়ারে পার্সেল পাঠানোর আগে যেকোনো সময় অর্ডার বাতিল করা যাবে।\n• অর্ডার বাতিলের জন্য দ্রুত হটলাইন বা WhatsApp-এ অর্ডার ID জানান।",
+                fontSize = 12.5.sp,
+                color = DarkEspresso,
+                lineHeight = 19.sp
+              )
+            }
+            "cookie" -> {
+              Text(
+                text = "• আপনার কার্ট, উইশলিস্ট ও নিরাপদ লগইন সেশন ধরে রাখতে শুধুমাত্র প্রয়োজনীয় ব্রাউজার স্টোরেজ ও কুকি ব্যবহৃত হয়। ব্রাউজার সেটিংস থেকে যেকোনো সময় এটি মুছে ফেলা যায়।",
                 fontSize = 12.5.sp,
                 color = DarkEspresso,
                 lineHeight = 19.sp

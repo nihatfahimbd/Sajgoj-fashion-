@@ -14,6 +14,8 @@ import com.example.data.model.Category
 import com.example.data.model.ComboPack
 import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
+import com.example.data.model.CustomerLoyaltyCalculator
+import com.example.data.model.CustomerLoyaltyStatus
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
@@ -25,6 +27,7 @@ import com.example.data.model.Product
 import com.example.data.model.ProductReview
 import com.example.data.model.ReelItem
 import com.example.data.model.ReturnRecord
+import com.example.data.model.SavedAddress
 import com.example.data.model.SmsQueueItem
 import com.example.data.model.StoreConfig
 import com.example.data.model.SupportChatFeedState
@@ -76,7 +79,8 @@ data class ImageSearchState(
 
 enum class AppScreen {
   STOREFRONT,
-  ADMIN_PANEL
+  ADMIN_PANEL,
+  CUSTOMER_PROFILE
 }
 
 enum class ProductSortOption(val label: String, val subtitleBn: String) {
@@ -147,6 +151,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val syncErrorLogs: StateFlow<List<SyncErrorLog>> = repository.syncErrorLogs
   val smsQueue: StateFlow<List<SmsQueueItem>> = repository.smsQueue
   val orderNotifications: StateFlow<List<OrderStatusNotification>> = repository.orderNotifications
+  val savedAddresses: StateFlow<List<SavedAddress>> = repository.savedAddresses
   val unreadOrderNotificationCount: StateFlow<Int> = repository.orderNotifications
     .map { list -> list.count { !it.read } }
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -200,11 +205,23 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   private val _isCheckoutOpen = MutableStateFlow(false)
   val isCheckoutOpen: StateFlow<Boolean> = _isCheckoutOpen.asStateFlow()
 
+  private val _activePolicyTopic = MutableStateFlow<String?>(null)
+  val activePolicyTopic: StateFlow<String?> = _activePolicyTopic.asStateFlow()
+
   private val _toastEvent = MutableSharedFlow<String>(extraBufferCapacity = 32)
   val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
 
   private val _authUser = MutableStateFlow<AuthUserSummary?>(null)
   val authUser: StateFlow<AuthUserSummary?> = _authUser.asStateFlow()
+
+  val customerLoyaltyStatus: StateFlow<CustomerLoyaltyStatus> =
+    combine(orders, _authUser) { orderList, user ->
+      CustomerLoyaltyCalculator.calculate(orders = orderList, authUser = user)
+    }.stateIn(
+      viewModelScope,
+      SharingStarted.WhileSubscribed(5000),
+      CustomerLoyaltyCalculator.calculate(emptyList(), null)
+    )
 
   private val _isAuthBusy = MutableStateFlow(false)
   val isAuthBusy: StateFlow<Boolean> = _isAuthBusy.asStateFlow()
@@ -448,12 +465,112 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       return false
     }
 
+    val parsedPath = try {
+      android.net.Uri.parse(clean).path?.lowercase()?.trimEnd('/')?.ifBlank { "/" } ?: "/"
+    } catch (_: Exception) {
+      "/"
+    }
+
+    val policyPathMap = mapOf(
+      "/privacy-policy" to "privacy",
+      "/privacy" to "privacy",
+      "/data-deletion" to "data_deletion",
+      "/user-data-deletion" to "data_deletion",
+      "/terms-and-conditions" to "terms",
+      "/terms" to "terms",
+      "/terms-of-service" to "terms",
+      "/about-us" to "about",
+      "/about" to "about",
+      "/contact-us" to "contact",
+      "/contact" to "contact",
+      "/refund-policy" to "refund",
+      "/return-policy" to "refund",
+      "/shipping-policy" to "shipping",
+      "/delivery-policy" to "shipping",
+      "/exchange-policy" to "exchange",
+      "/cancellation-policy" to "cancellation",
+      "/cookie-policy" to "cookie",
+      "/payment-policy" to "payment",
+      "/faq" to "faq",
+      "/order-tracking" to "tracking",
+      "/track-order" to "tracking",
+      "/offers" to "discount"
+    )
+
+    if (parsedPath == "/profile" || parsedPath == "/account" || parsedPath == "/customer-profile") {
+      _selectedProduct.value = null
+      _selectedOrderInvoice.value = null
+      _isCartOpen.value = false
+      _isCheckoutOpen.value = false
+      _currentScreen.value = AppScreen.CUSTOMER_PROFILE
+      emitToast("👤 কাস্টমার প্রোফাইল ড্যাশবোর্ড খোলা হয়েছে")
+      return true
+    }
+
+    val matchedTopic = policyPathMap[parsedPath]
+    if (matchedTopic != null) {
+      _currentScreen.value = AppScreen.STOREFRONT
+      _selectedProduct.value = null
+      _selectedOrderInvoice.value = null
+      _isCartOpen.value = false
+      _isCheckoutOpen.value = false
+      _activePolicyTopic.value = matchedTopic
+      emitToast("📄 পেজ খোলা হয়েছে")
+      return true
+    }
+
+    when {
+      parsedPath == "/checkout" -> {
+        _currentScreen.value = AppScreen.STOREFRONT
+        _selectedProduct.value = null
+        _isCartOpen.value = false
+        _isCheckoutOpen.value = true
+        emitToast("💳 চেকআউট খোলা হয়েছে")
+        return true
+      }
+      parsedPath == "/cart" -> {
+        _currentScreen.value = AppScreen.STOREFRONT
+        _selectedProduct.value = null
+        _isCheckoutOpen.value = false
+        _isCartOpen.value = true
+        emitToast("🛒 শপিং কার্ট খোলা হয়েছে")
+        return true
+      }
+      parsedPath == "/categories" || parsedPath == "/products" -> {
+        _currentScreen.value = AppScreen.STOREFRONT
+        _selectedCategory.value = "All"
+        _selectedProduct.value = null
+        emitToast("🛍️ সকল কালেকশন খোলা হয়েছে")
+        return true
+      }
+      parsedPath.startsWith("/category/") -> {
+        val rawCat = android.net.Uri.decode(parsedPath.removePrefix("/category/")).trim()
+        val matchedCat = categories.value.firstOrNull {
+          it.name.equals(rawCat, ignoreCase = true) ||
+            it.name.lowercase().replace(" ", "-") == rawCat
+        }?.name ?: rawCat
+        _currentScreen.value = AppScreen.STOREFRONT
+        _selectedCategory.value = matchedCat
+        _selectedProduct.value = null
+        emitToast("🏷️ ক্যাটাগরি: $matchedCat")
+        return true
+      }
+    }
+
     _currentScreen.value = AppScreen.STOREFRONT
     _selectedProduct.value = null
     _selectedOrderInvoice.value = null
     _isCartOpen.value = false
     emitToast("🌐 সাজগোজ ফ্যাশন স্টোর খোলা হয়েছে")
     return true
+  }
+
+  fun openPolicyTopic(topic: String?) {
+    _activePolicyTopic.value = topic
+  }
+
+  fun clearPolicyTopic() {
+    _activePolicyTopic.value = null
   }
 
   fun openProductDetail(product: Product) {
@@ -557,6 +674,21 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       _isAuthBusy.value = false
       emitToast("Google অ্যাকাউন্ট থেকে সাইন-আউট সম্পন্ন হয়েছে।")
     }
+  }
+
+  fun saveCustomerAddress(address: SavedAddress) {
+    repository.saveCustomerAddress(address)
+    emitToast("📍 ডেলিভারি ঠিকানা সফলভাবে সংরক্ষিত হয়েছে!")
+  }
+
+  fun setDefaultCustomerAddress(addressId: String) {
+    repository.setDefaultCustomerAddress(addressId)
+    emitToast("✓ ডিফল্ট ডেলিভারি ঠিকানা আপডেট হয়েছে!")
+  }
+
+  fun deleteCustomerAddress(addressId: String) {
+    repository.deleteCustomerAddress(addressId)
+    emitToast("🗑️ সংরক্ষিত ঠিকানা মুছে ফেলা হয়েছে।")
   }
 
   fun askAiStylist(prompt: String, occasion: String = "", bitmap: Bitmap? = null) {

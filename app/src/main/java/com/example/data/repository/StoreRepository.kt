@@ -24,6 +24,7 @@ import com.example.data.model.ProductVariantHelper
 import com.example.data.model.ReelItem
 import com.example.data.model.ReturnItem
 import com.example.data.model.ReturnRecord
+import com.example.data.model.SavedAddress
 import com.example.data.model.ShippingInfoConfig
 import com.example.data.model.ShippingOptionItem
 import com.example.data.model.SmsQueueItem
@@ -726,6 +727,9 @@ class StoreRepository(private val context: Context) {
   private val _orderNotifications = MutableStateFlow<List<OrderStatusNotification>>(loadOrderNotificationsFromPrefs())
   val orderNotifications: StateFlow<List<OrderStatusNotification>> = _orderNotifications.asStateFlow()
 
+  private val _savedAddresses = MutableStateFlow<List<SavedAddress>>(emptyList())
+  val savedAddresses: StateFlow<List<SavedAddress>> = _savedAddresses.asStateFlow()
+
   private val _latestStatusAlert = MutableSharedFlow<OrderStatusNotification>(extraBufferCapacity = 32)
   val latestStatusAlert: SharedFlow<OrderStatusNotification> = _latestStatusAlert.asSharedFlow()
 
@@ -801,6 +805,7 @@ class StoreRepository(private val context: Context) {
       }
     )
     seedMissingOrderStatusSnapshots(_orders.value)
+    reloadSavedAddressesForCurrentUser()
     initFirestoreSync()
   }
 
@@ -998,13 +1003,15 @@ class StoreRepository(private val context: Context) {
     orderNotificationsListener?.remove()
     orderNotificationsListener = null
 
-    val db = firestore ?: return
-    if (user == null) {
+    val db = firestore
+    reloadSavedAddressesForCurrentUser(user?.uid)
+    if (db == null || user == null) {
       inventorySyncService.stopListening()
       return
     }
 
     syncCustomerFcmToken(user)
+    hydrateCustomerAddressFromFirestore(user)
 
     val isAdmin = GoogleAuthHelper.toSummary(user)?.isAdmin == true
     val ordersQuery = if (isAdmin) {
@@ -1580,6 +1587,32 @@ class StoreRepository(private val context: Context) {
     lastKnownOrderStatuses[newOrder.id] = newOrder.status
     saveOrderStatusSnapshot()
     currentAuthUid()?.let { uid -> orderOwnerUids[newOrder.id] = uid }
+
+    // Remember shipping address in Saved Addresses when default is toggled or when user has none saved
+    val currentAddresses = _savedAddresses.value
+    if (defaultShippingAddress || currentAddresses.isEmpty()) {
+      val cleanStreet = address.trim()
+      val existingMatch = currentAddresses.firstOrNull {
+        it.streetAddress.equals(cleanStreet, ignoreCase = true) &&
+          it.district.equals(district, ignoreCase = true) &&
+          it.thana.equals(thana.ifBlank { "সদর" }, ignoreCase = true)
+      }
+      saveCustomerAddress(
+        SavedAddress(
+          id = existingMatch?.id ?: "addr-$nowMs",
+          label = if (safeCategory == "Office") "অফিস" else "বাসা",
+          category = safeCategory,
+          recipientName = customerName.trim(),
+          phone = phone.trim(),
+          district = district.trim(),
+          thana = thana.ifBlank { "সদর" }.trim(),
+          streetAddress = cleanStreet,
+          landmark = landmark.trim(),
+          isDefault = defaultShippingAddress || currentAddresses.none { it.isDefault },
+          updatedAt = nowMs
+        )
+      )
+    }
 
     // Clear cart
     clearCart()
@@ -3407,5 +3440,255 @@ class StoreRepository(private val context: Context) {
       )
     }
     prefs.edit().putString("sajgoj_order_notifications", arr.toString()).apply()
+  }
+
+  private fun savedAddressesPrefsKey(uid: String? = currentAuthUid()): String {
+    val cleanUid = uid?.trim().orEmpty().ifBlank { "guest" }
+    return "sajgoj_saved_addresses_$cleanUid"
+  }
+
+  private fun reloadSavedAddressesForCurrentUser(uid: String? = currentAuthUid()) {
+    val loaded = loadSavedAddressesFromPrefs(uid).toMutableList()
+    if (loaded.isEmpty() && !uid.isNullOrBlank()) {
+      val derived = deriveAddressesFromOrders(_orders.value)
+      if (derived.isNotEmpty()) {
+        loaded.addAll(derived)
+        saveSavedAddressesToPrefs(loaded, uid)
+      }
+    }
+    _savedAddresses.value = ensureSingleDefaultAddress(loaded)
+  }
+
+  private fun deriveAddressesFromOrders(orderList: List<Order>): List<SavedAddress> {
+    val seen = mutableSetOf<String>()
+    val derived = mutableListOf<SavedAddress>()
+    orderList.forEachIndexed { idx, ord ->
+      val street = ord.address.trim()
+      if (street.isBlank() || ord.phone.isBlank()) return@forEachIndexed
+      val dedupeKey = "${ord.district.trim().lowercase()}|${ord.thana.trim().lowercase()}|${street.lowercase()}"
+      if (seen.add(dedupeKey)) {
+        val cat = if (ord.addressCategory.equals("Office", ignoreCase = true)) "Office" else "Home"
+        derived.add(
+          SavedAddress(
+            id = "addr-ord-${ord.id}",
+            label = if (cat == "Office") "অফিস" else "বাসা",
+            category = cat,
+            recipientName = ord.customerName.trim(),
+            phone = ord.phone.trim(),
+            district = ord.district.ifBlank { "ঢাকা (Dhaka)" },
+            thana = ord.thana.ifBlank { "সদর" },
+            streetAddress = street,
+            landmark = ord.landmark.trim(),
+            isDefault = ord.defaultShippingAddress || idx == 0,
+            updatedAt = if (ord.createdAt > 0L) ord.createdAt else System.currentTimeMillis()
+          )
+        )
+      }
+    }
+    return ensureSingleDefaultAddress(derived.take(6))
+  }
+
+  private fun ensureSingleDefaultAddress(list: List<SavedAddress>): List<SavedAddress> {
+    if (list.isEmpty()) return emptyList()
+    val defaultIndex = list.indexOfFirst { it.isDefault }.let { if (it >= 0) it else 0 }
+    return list.mapIndexed { idx, addr ->
+      addr.copy(isDefault = idx == defaultIndex)
+    }.sortedWith(compareByDescending<SavedAddress> { it.isDefault }.thenByDescending { it.updatedAt })
+  }
+
+  fun saveCustomerAddress(address: SavedAddress): SavedAddress {
+    val cleanId = address.id.ifBlank { "addr-${System.currentTimeMillis()}" }
+    val normalized = address.copy(
+      id = cleanId,
+      label = address.label.trim().ifBlank { if (address.category == "Office") "অফিস" else "বাসা" },
+      category = if (address.category.equals("Office", ignoreCase = true)) "Office" else "Home",
+      recipientName = address.recipientName.trim(),
+      phone = address.phone.trim(),
+      district = address.district.trim().ifBlank { "ঢাকা (Dhaka)" },
+      thana = address.thana.trim().ifBlank { "সদর" },
+      streetAddress = address.streetAddress.trim(),
+      landmark = address.landmark.trim(),
+      updatedAt = System.currentTimeMillis()
+    )
+    val current = _savedAddresses.value.toMutableList()
+    val existingIdx = current.indexOfFirst { it.id == cleanId }
+    val shouldBeDefault = normalized.isDefault || current.isEmpty()
+    val updatedRaw = if (existingIdx >= 0) {
+      current[existingIdx] = normalized.copy(isDefault = shouldBeDefault)
+      current
+    } else {
+      listOf(normalized.copy(isDefault = shouldBeDefault)) + current
+    }
+    val finalList = if (shouldBeDefault) {
+      updatedRaw.map { it.copy(isDefault = it.id == cleanId) }
+        .sortedWith(compareByDescending<SavedAddress> { it.isDefault }.thenByDescending { it.updatedAt })
+    } else {
+      ensureSingleDefaultAddress(updatedRaw)
+    }
+    _savedAddresses.value = finalList
+    saveSavedAddressesToPrefs(finalList, currentAuthUid())
+    finalList.firstOrNull { it.isDefault }?.let { syncDefaultAddressToFirestore(it) }
+    return finalList.first { it.id == cleanId }
+  }
+
+  fun setDefaultCustomerAddress(addressId: String) {
+    val current = _savedAddresses.value
+    if (current.none { it.id == addressId }) return
+    val updated = current.map {
+      it.copy(
+        isDefault = it.id == addressId,
+        updatedAt = if (it.id == addressId) System.currentTimeMillis() else it.updatedAt
+      )
+    }.sortedWith(compareByDescending<SavedAddress> { it.isDefault }.thenByDescending { it.updatedAt })
+    _savedAddresses.value = updated
+    saveSavedAddressesToPrefs(updated, currentAuthUid())
+    updated.firstOrNull { it.isDefault }?.let { syncDefaultAddressToFirestore(it) }
+  }
+
+  fun deleteCustomerAddress(addressId: String) {
+    val remaining = _savedAddresses.value.filterNot { it.id == addressId }
+    val normalized = ensureSingleDefaultAddress(remaining)
+    _savedAddresses.value = normalized
+    saveSavedAddressesToPrefs(normalized, currentAuthUid())
+    normalized.firstOrNull { it.isDefault }?.let { syncDefaultAddressToFirestore(it) }
+  }
+
+  private fun hydrateCustomerAddressFromFirestore(user: FirebaseUser) {
+    val db = firestore ?: return
+    val docRef = db.collection("customers").document(user.uid)
+    try {
+      docRef.get()
+        .addOnSuccessListener { snap ->
+          if (!snap.exists()) return@addOnSuccessListener
+          val remoteAddress = snap.getString("address")?.trim().orEmpty()
+          val remotePhone = snap.getString("phone")?.trim().orEmpty()
+          val remoteName = snap.getString("name")?.trim().orEmpty()
+          if (remoteAddress.isNotBlank() && _savedAddresses.value.isEmpty()) {
+            val seeded = SavedAddress(
+              id = "addr-cloud-${user.uid.takeLast(6)}",
+              label = "ডিফল্ট ঠিকানা",
+              category = "Home",
+              recipientName = remoteName.ifBlank { user.displayName.orEmpty().ifBlank { "সাজগোজ গ্রাহক" } },
+              phone = remotePhone,
+              district = "ঢাকা (Dhaka)",
+              thana = "সদর",
+              streetAddress = remoteAddress,
+              landmark = "",
+              isDefault = true,
+              updatedAt = System.currentTimeMillis()
+            )
+            _savedAddresses.value = listOf(seeded)
+            saveSavedAddressesToPrefs(listOf(seeded), user.uid)
+          }
+        }
+        .addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.GET, "customers/${user.uid}")
+        }
+    } catch (_: Exception) {
+    }
+  }
+
+  private fun syncDefaultAddressToFirestore(defaultAddr: SavedAddress) {
+    val user = try {
+      Firebase.auth.currentUser
+    } catch (_: Exception) {
+      null
+    } ?: return
+    val db = firestore ?: return
+    val docRef = db.collection("customers").document(user.uid)
+    val formattedAddress = buildString {
+      append(defaultAddr.streetAddress)
+      if (defaultAddr.landmark.isNotBlank()) append(" (${defaultAddr.landmark})")
+      if (defaultAddr.thana.isNotBlank()) append(", ${defaultAddr.thana}")
+      if (defaultAddr.district.isNotBlank()) append(", ${defaultAddr.district}")
+    }.trim()
+
+    try {
+      docRef.get()
+        .addOnSuccessListener { snap ->
+          if (snap.exists()) {
+            val updateMap = mutableMapOf<String, Any>(
+              "address" to formattedAddress,
+              "updatedAt" to FieldValue.serverTimestamp()
+            )
+            if (defaultAddr.recipientName.isNotBlank()) updateMap["name"] = defaultAddr.recipientName
+            if (defaultAddr.phone.isNotBlank()) updateMap["phone"] = defaultAddr.phone
+            docRef.update(updateMap).addOnFailureListener { e ->
+              handleFirestoreError(e, OperationType.UPDATE, "customers/${user.uid}")
+            }
+          } else {
+            docRef.set(
+              mapOf(
+                "userId" to user.uid,
+                "name" to defaultAddr.recipientName.ifBlank { user.displayName.orEmpty().ifBlank { "সাজগোজ গ্রাহক" } },
+                "phone" to defaultAddr.phone,
+                "email" to user.email.orEmpty(),
+                "address" to formattedAddress,
+                "notificationsEnabled" to true,
+                "createdAt" to FieldValue.serverTimestamp(),
+                "updatedAt" to FieldValue.serverTimestamp()
+              )
+            ).addOnFailureListener { e ->
+              handleFirestoreError(e, OperationType.CREATE, "customers/${user.uid}")
+            }
+          }
+        }
+        .addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.GET, "customers/${user.uid}")
+        }
+    } catch (e: Exception) {
+      handleFirestoreError(e, OperationType.UPDATE, "customers/${user.uid}")
+    }
+  }
+
+  private fun loadSavedAddressesFromPrefs(uid: String?): List<SavedAddress> {
+    val raw = prefs.getString(savedAddressesPrefsKey(uid), null) ?: return emptyList()
+    return try {
+      val arr = JSONArray(raw)
+      val list = mutableListOf<SavedAddress>()
+      for (i in 0 until arr.length()) {
+        val o = arr.getJSONObject(i)
+        list.add(
+          SavedAddress(
+            id = o.optString("id"),
+            label = o.optString("label", "বাসা"),
+            category = o.optString("category", "Home"),
+            recipientName = o.optString("recipientName"),
+            phone = o.optString("phone"),
+            district = o.optString("district", "ঢাকা (Dhaka)"),
+            thana = o.optString("thana", "সদর"),
+            streetAddress = o.optString("streetAddress"),
+            landmark = o.optString("landmark"),
+            isDefault = o.optBoolean("isDefault", false),
+            updatedAt = o.optLong("updatedAt", System.currentTimeMillis())
+          )
+        )
+      }
+      list
+    } catch (_: Exception) {
+      emptyList()
+    }
+  }
+
+  private fun saveSavedAddressesToPrefs(list: List<SavedAddress>, uid: String?) {
+    val arr = JSONArray()
+    list.take(20).forEach { a ->
+      arr.put(
+        JSONObject().apply {
+          put("id", a.id)
+          put("label", a.label)
+          put("category", a.category)
+          put("recipientName", a.recipientName)
+          put("phone", a.phone)
+          put("district", a.district)
+          put("thana", a.thana)
+          put("streetAddress", a.streetAddress)
+          put("landmark", a.landmark)
+          put("isDefault", a.isDefault)
+          put("updatedAt", a.updatedAt)
+        }
+      )
+    }
+    prefs.edit().putString(savedAddressesPrefsKey(uid), arr.toString()).apply()
   }
 }
