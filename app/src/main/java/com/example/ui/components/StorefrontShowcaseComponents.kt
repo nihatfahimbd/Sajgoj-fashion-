@@ -75,6 +75,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.ComboPack
+import com.example.data.model.HomePageConfig
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
 import com.example.data.model.ReelItem
@@ -147,11 +148,11 @@ fun StorefrontReelsBlockCard(
   onReelClick: (ReelItem) -> Unit,
   onAddToCart: (Product) -> Unit,
   design: StoreDesignConfig = StoreDesignConfig(),
+  homePage: HomePageConfig = HomePageConfig(),
   modifier: Modifier = Modifier
 ) {
   val activeReels = remember(reels) { reels.filter { it.active } }
   val cfg = remember(section) { resolveBlockGridConfig(section) }
-  // Strictly show configured columns (default 3 reels on Home), expanding to all on "আরো দেখুন"
   val defaultVisibleCount = if (cfg.isSlider) cfg.cols else (cfg.cols * cfg.rows)
   val displayReels = remember(activeReels, isExpanded, defaultVisibleCount) {
     if (isExpanded) activeReels else activeReels.take(defaultVisibleCount)
@@ -164,11 +165,14 @@ fun StorefrontReelsBlockCard(
   val seeMoreText = parseColorHex(design.seeMoreText, Color.White)
   val captionBg = parseColorHex(design.reelsCaptionBg, ReelsRedBadge)
   val captionText = parseColorHex(design.reelsCaptionText, Color.White)
+  val blockRadius = homePage.blockRadiusPx.coerceIn(0, 32).dp
+  val blockBorderW = homePage.blockBorderWidthPx.coerceIn(0, 4).dp
+  val headerPillShape = RoundedCornerShape(homePage.blockHeaderRadiusPx.coerceIn(0, 32).dp)
 
   Surface(
-    shape = RoundedCornerShape(16.dp),
+    shape = RoundedCornerShape(blockRadius),
     color = blockBg,
-    border = BorderStroke(1.dp, blockBorder),
+    border = if (blockBorderW > 0.dp) BorderStroke(blockBorderW, blockBorder) else null,
     shadowElevation = 1.dp,
     modifier = modifier
       .fillMaxWidth()
@@ -180,18 +184,13 @@ fun StorefrontReelsBlockCard(
         .padding(horizontal = 8.dp, vertical = 8.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      // Reels Header: Left Pill ("🎬 Product Reels"), Center caption, Right Pill ("আরো দেখুন ›")
       val reelsHeaderTitle = section.title
         .takeIf { it.isNotBlank() && it != "রিলস ভিডিও শপ" && !it.contains("সাজগোজ রিলস") }
         ?: "Product Reels"
 
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
+      val titleChip: @Composable () -> Unit = {
         Surface(
-          shape = RoundedCornerShape(50),
+          shape = headerPillShape,
           color = titleBg,
           shadowElevation = 2.dp
         ) {
@@ -210,9 +209,39 @@ fun StorefrontReelsBlockCard(
             )
           }
         }
+      }
+
+      val seeMoreChip: @Composable () -> Unit = {
+        if (activeReels.isNotEmpty()) {
+          Surface(
+            shape = headerPillShape,
+            color = seeMoreBg,
+            shadowElevation = 2.dp,
+            modifier = Modifier
+              .clip(headerPillShape)
+              .clickable { onSeeMoreClick() }
+              .testTag("see_more_${section.id}")
+          ) {
+            Text(
+              text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Black,
+              color = seeMoreText,
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+            )
+          }
+        }
+      }
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        if (homePage.blockHeaderReversed) seeMoreChip() else titleChip()
 
         Surface(
-          shape = RoundedCornerShape(50),
+          shape = headerPillShape,
           color = captionBg,
           border = BorderStroke(1.dp, CollectionRedBorder),
           shadowElevation = 2.dp,
@@ -231,25 +260,7 @@ fun StorefrontReelsBlockCard(
           )
         }
 
-        if (activeReels.isNotEmpty()) {
-          Surface(
-            shape = RoundedCornerShape(50),
-            color = seeMoreBg,
-            shadowElevation = 2.dp,
-            modifier = Modifier
-              .clip(RoundedCornerShape(50))
-              .clickable { onSeeMoreClick() }
-              .testTag("see_more_${section.id}")
-          ) {
-            Text(
-              text = if (isExpanded) "কম দেখুন ▴" else "আরো দেখুন ›",
-              fontSize = 11.sp,
-              fontWeight = FontWeight.Black,
-              color = seeMoreText,
-              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-            )
-          }
-        }
+        if (homePage.blockHeaderReversed) titleChip() else seeMoreChip()
       }
 
       if (displayReels.isEmpty()) {
@@ -322,6 +333,7 @@ fun StorefrontComboBlockCard(
   onAddComboToCart: (ComboPack) -> Unit,
   onComboClick: (ComboPack) -> Unit = onAddComboToCart,
   design: StoreDesignConfig = StoreDesignConfig(),
+  homePage: HomePageConfig = HomePageConfig(),
   modifier: Modifier = Modifier
 ) {
   val activeCombos = remember(combos) { combos.filter { it.isActive } }
@@ -337,11 +349,14 @@ fun StorefrontComboBlockCard(
   val titleText = parseColorHex(design.blockTitleText, Color.White)
   val seeMoreBg = parseColorHex(design.seeMoreBg, NavyBlue)
   val seeMoreText = parseColorHex(design.seeMoreText, Color.White)
+  val blockRadius = homePage.blockRadiusPx.coerceIn(0, 32).dp
+  val blockBorderW = homePage.blockBorderWidthPx.coerceIn(0, 4).dp
+  val headerPillShape = RoundedCornerShape(homePage.blockHeaderRadiusPx.coerceIn(0, 32).dp)
 
   Surface(
-    shape = RoundedCornerShape(16.dp),
+    shape = RoundedCornerShape(blockRadius),
     color = blockBg,
-    border = BorderStroke(1.dp, blockBorder),
+    border = if (blockBorderW > 0.dp) BorderStroke(blockBorderW, blockBorder) else null,
     shadowElevation = 1.dp,
     modifier = modifier
       .fillMaxWidth()
@@ -353,16 +368,11 @@ fun StorefrontComboBlockCard(
         .padding(horizontal = 8.dp, vertical = 8.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
+      val titleChip: @Composable () -> Unit = {
         Surface(
-          shape = RoundedCornerShape(50),
+          shape = headerPillShape,
           color = titleBg,
-          shadowElevation = 2.dp,
-          modifier = Modifier.weight(1f, fill = false)
+          shadowElevation = 2.dp
         ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -380,16 +390,15 @@ fun StorefrontComboBlockCard(
             )
           }
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
+      }
+      val seeMoreChip: @Composable () -> Unit = {
         if (activeCombos.isNotEmpty()) {
           Surface(
-            shape = RoundedCornerShape(50),
+            shape = headerPillShape,
             color = seeMoreBg,
             shadowElevation = 2.dp,
             modifier = Modifier
-              .clip(RoundedCornerShape(50))
+              .clip(headerPillShape)
               .clickable { onSeeMoreClick() }
               .testTag("see_more_${section.id}")
           ) {
@@ -401,6 +410,21 @@ fun StorefrontComboBlockCard(
               modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
             )
           }
+        }
+      }
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        if (homePage.blockHeaderReversed) {
+          seeMoreChip()
+          Spacer(modifier = Modifier.width(8.dp))
+          Box(modifier = Modifier.weight(1f, fill = false), contentAlignment = Alignment.CenterEnd) { titleChip() }
+        } else {
+          Box(modifier = Modifier.weight(1f, fill = false)) { titleChip() }
+          Spacer(modifier = Modifier.width(8.dp))
+          seeMoreChip()
         }
       }
 

@@ -14065,9 +14065,23 @@
                             }}
                           >
                             {hp.showFooterMain !== false && (
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] font-black" style={{ color: hp.footerHeadingColor || "#000000" }}>{config?.storeName || "SAJGOJ FASHION"} — Information • Support • Policy</p>
-                                <p className="text-[8px] font-semibold" style={{ color: hp.footerLinkColor || "#7a1c2b" }}>Order Tracking • Payment • Refund Policy</p>
+                              <div className="grid grid-cols-2 gap-1.5 text-[7.5px] leading-tight">
+                                <div className="bg-white/40 rounded-lg p-1.5 min-w-0">
+                                  <p className="font-black uppercase" style={{ color: hp.footerHeadingColor || "#000000" }}>Information</p>
+                                  <p className="truncate opacity-85">▪ About • Contact • Terms</p>
+                                </div>
+                                <div className="bg-white/40 rounded-lg p-1.5 min-w-0">
+                                  <p className="font-black uppercase" style={{ color: hp.footerHeadingColor || "#000000" }}>Support</p>
+                                  <p className="truncate opacity-85">▪ Tracking • Pay • FAQ</p>
+                                </div>
+                                <div className="bg-white/40 rounded-lg p-1.5 min-w-0">
+                                  <p className="font-black uppercase" style={{ color: hp.footerHeadingColor || "#000000" }}>Consumer Policy</p>
+                                  <p className="truncate opacity-85">▪ Refund • Exchange</p>
+                                </div>
+                                <div className="bg-white/40 rounded-lg p-1.5 min-w-0">
+                                  <p className="font-black truncate" style={{ color: hp.footerHeadingColor || "#000000" }}>{config?.storeName || "SAJGOJ FASHION"}</p>
+                                  <p className="truncate opacity-85" style={{ color: hp.footerLinkColor || "#7a1c2b" }}>📞 Contact & Map</p>
+                                </div>
                               </div>
                             )}
                             {hp.showTrustBadges !== false && (
@@ -18661,42 +18675,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       }}
                     >
                       {hp.showFooterMain !== false && (
-                        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-7">
-                          {/* Brand & Direct Contact */}
-                          <div className="space-y-3 lg:col-span-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-9 h-9 rounded-full cta-dark-pill font-black text-xl flex items-center justify-center shrink-0">S</div>
-                              <h4 className="font-black text-lg truncate" style={{ color: hp.footerHeadingColor }}>{config.storeName}</h4>
-                            </div>
-                            <p className="text-xs font-semibold leading-relaxed" style={{ color: hp.footerTextColor }}>{config.footer.about}</p>
-                            <div className="pt-1 space-y-1 text-xs font-semibold" style={{ color: hp.footerTextColor }}>
-                              <p>📞 {config.phone}</p>
-                              <p>💬 WhatsApp: {config.whatsapp}</p>
-                              <p>✉️ {config.email}</p>
-                              <p>📍 {config.address}</p>
-                              <div className="pt-1">
-                                <a
-                                  href={getStoreMapUrls(config).openUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 text-[11px] font-black hover:underline"
-                                  style={{ color: hp.footerLinkColor }}
-                                >
-                                  <span>🗺️ Google Map লোকেশন দেখুন ↗</span>
-                                </a>
-                              </div>
-                            </div>
-                            <div className="pt-1 flex flex-wrap gap-3 text-xs font-black" style={{ color: hp.footerTextColor }}>
-                              {config.footer.fb && <a href={config.footer.fb} target="_blank" rel="noreferrer" className="hover:underline">🌐 Facebook</a>}
-                              {config.footer.insta && <a href={config.footer.insta} target="_blank" rel="noreferrer" className="hover:underline">📸 Instagram</a>}
-                              {config.footer.youtube && <a href={config.footer.youtube} target="_blank" rel="noreferrer" className="hover:underline">▶️ YouTube</a>}
-                            </div>
-                          </div>
-
-                          {/* (1) Information */}
-                          <div>
-                            <h5 className="font-black text-sm uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>Information</h5>
-                            <ul className="text-xs space-y-2 font-bold" style={{ color: hp.footerTextColor }}>
+                        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-5 gap-x-3.5 gap-y-5 sm:gap-6 items-start">
+                          {/* Row 1 Left: (1) Information */}
+                          <div className="min-w-0">
+                            <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-2.5 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>Information</h5>
+                            <ul className="text-[11px] sm:text-xs space-y-2 font-bold" style={{ color: hp.footerTextColor }}>
                               {[
                                 { key: "about", label: "About us" },
                                 { key: "contact", label: "Contact us" },
@@ -18710,18 +18693,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     className="inline-flex items-center gap-1.5 hover:translate-x-0.5 transition text-left cursor-pointer"
                                     style={{ color: hp.footerTextColor }}
                                   >
-                                    <span className="text-[10px]">▪</span>
-                                    <span>{item.label}</span>
+                                    <span className="text-[10px] shrink-0">▪</span>
+                                    <span className="break-words">{item.label}</span>
                                   </button>
                                 </li>
                               ))}
                             </ul>
                           </div>
 
-                          {/* (2) Support */}
-                          <div>
-                            <h5 className="font-black text-sm uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>Support</h5>
-                            <ul className="text-xs space-y-2 font-bold" style={{ color: hp.footerTextColor }}>
+                          {/* Row 1 Right: (2) Support */}
+                          <div className="min-w-0">
+                            <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-2.5 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>Support</h5>
+                            <ul className="text-[11px] sm:text-xs space-y-2 font-bold" style={{ color: hp.footerTextColor }}>
                               {[
                                 { key: "tracking", label: "Order Tracking" },
                                 { key: "payment", label: "Payment" },
@@ -18742,18 +18725,18 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     className="inline-flex items-center gap-1.5 hover:translate-x-0.5 transition text-left cursor-pointer"
                                     style={{ color: hp.footerTextColor }}
                                   >
-                                    <span className="text-[10px]">▪</span>
-                                    <span>{item.label}</span>
+                                    <span className="text-[10px] shrink-0">▪</span>
+                                    <span className="break-words">{item.label}</span>
                                   </button>
                                 </li>
                               ))}
                             </ul>
                           </div>
 
-                          {/* (3) Consumer Policy */}
-                          <div>
-                            <h5 className="font-black text-sm uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>Consumer Policy</h5>
-                            <ul className="text-xs space-y-2 font-bold" style={{ color: hp.footerTextColor }}>
+                          {/* Row 2 Left: (3) Consumer Policy */}
+                          <div className="min-w-0">
+                            <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-2.5 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>Consumer Policy</h5>
+                            <ul className="text-[11px] sm:text-xs space-y-2 font-bold" style={{ color: hp.footerTextColor }}>
                               {[
                                 { key: "refund", label: "Refund Policy" },
                                 { key: "exchange", label: "Exchange" },
@@ -18767,17 +18750,48 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                     className="inline-flex items-center gap-1.5 hover:translate-x-0.5 transition text-left cursor-pointer"
                                     style={{ color: hp.footerTextColor }}
                                   >
-                                    <span className="text-[10px]">▪</span>
-                                    <span>{item.label}</span>
+                                    <span className="text-[10px] shrink-0">▪</span>
+                                    <span className="break-words">{item.label}</span>
                                   </button>
                                 </li>
                               ))}
                             </ul>
                           </div>
 
-                          {/* Payment Methods */}
-                          <div>
-                            <h5 className="font-black text-sm uppercase tracking-wider mb-3 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>পেমেন্ট মেথড</h5>
+                          {/* Row 2 Right: (4) SAJGOJ FASHION Brand & Direct Contact Info */}
+                          <div className="space-y-2 min-w-0 break-words">
+                            <div className="flex items-center gap-1.5 min-w-0 pb-1.5 border-b border-black/15">
+                              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full cta-dark-pill font-black text-xs sm:text-base flex items-center justify-center shrink-0">S</div>
+                              <h4 className="font-black text-xs sm:text-base truncate" style={{ color: hp.footerHeadingColor }}>{config.storeName}</h4>
+                            </div>
+                            <p className="text-[10.5px] sm:text-xs font-semibold leading-snug line-clamp-3" style={{ color: hp.footerTextColor }}>{config.footer.about}</p>
+                            <div className="pt-0.5 space-y-1 text-[10.5px] sm:text-xs font-semibold" style={{ color: hp.footerTextColor }}>
+                              <p className="break-all">📞 {config.phone}</p>
+                              <p className="break-all">💬 {config.whatsapp}</p>
+                              <p className="break-all">✉️ {config.email}</p>
+                              <p className="leading-snug">📍 {config.address}</p>
+                              <div className="pt-0.5">
+                                <a
+                                  href={getStoreMapUrls(config).openUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10.5px] sm:text-[11px] font-black hover:underline"
+                                  style={{ color: hp.footerLinkColor }}
+                                >
+                                  <span>🗺️ Google Map দেখুন ↗</span>
+                                </a>
+                              </div>
+                            </div>
+                            <div className="pt-0.5 flex flex-wrap gap-2 text-[10.5px] sm:text-xs font-black" style={{ color: hp.footerTextColor }}>
+                              {config.footer.fb && <a href={config.footer.fb} target="_blank" rel="noreferrer" className="hover:underline">🌐 FB</a>}
+                              {config.footer.insta && <a href={config.footer.insta} target="_blank" rel="noreferrer" className="hover:underline">📸 Insta</a>}
+                              {config.footer.youtube && <a href={config.footer.youtube} target="_blank" rel="noreferrer" className="hover:underline">▶️ YT</a>}
+                            </div>
+                          </div>
+
+                          {/* Row 3: Payment Methods */}
+                          <div className="col-span-2 lg:col-span-1 pt-2 border-t border-black/15 lg:pt-0 lg:border-t-0 min-w-0">
+                            <h5 className="font-black text-xs sm:text-sm uppercase tracking-wider mb-2.5 pb-1.5 border-b border-black/15" style={{ color: hp.footerHeadingColor }}>পেমেন্ট মেথড</h5>
                             <div className="flex flex-wrap gap-2 text-xs font-bold">
                               {config.footer.bkash && <span className="bg-[#e2136e] keep-white-text px-2.5 py-1 rounded">bKash</span>}
                               {config.footer.nagad && <span className="bg-[#f7941d] keep-white-text px-2.5 py-1 rounded">Nagad</span>}
@@ -18788,7 +18802,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                 <span className="text-[11px] font-semibold opacity-75">অর্ডার কনফার্মের সময় পেমেন্ট মেথড নির্ধারিত হবে।</span>
                               )}
                             </div>
-                            <p className="text-[11px] font-semibold opacity-80 mt-3 leading-relaxed">
+                            <p className="text-[11px] font-semibold opacity-80 mt-2.5 leading-relaxed">
                               সারা দেশে নিরাপদ ক্যাশ অন ডেলিভারি ও ডিজিটাল পেমেন্ট সুবিধা।
                             </p>
                           </div>

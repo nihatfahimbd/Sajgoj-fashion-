@@ -52,6 +52,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.model.Category
+import com.example.data.model.HomePageConfig
+import com.example.data.model.HomeSectionConfig
 import com.example.data.model.PageConfigJson
 import com.example.data.model.PageConfiguration
 import com.example.data.model.Product
@@ -59,6 +62,7 @@ import com.example.data.model.StoreConfig
 import org.json.JSONObject
 
 private enum class PageConfigMainTab(val title: String) {
+  HOME_PAGE("Home Page Studio"),
   DETAIL_PAGE("Product Details Page"),
   ADD_PRODUCT("Add Product Page"),
   MASTER("Master System"),
@@ -70,10 +74,14 @@ fun PageConfigurationHub(
   storeConfig: StoreConfig,
   products: List<Product>,
   onSaveStoreConfig: (StoreConfig) -> Unit,
-  onShowToast: (String) -> Unit
+  onShowToast: (String) -> Unit,
+  homeSections: List<HomeSectionConfig> = emptyList(),
+  categories: List<Category> = emptyList(),
+  onToggleSection: (String) -> Unit = {},
+  onMoveSection: (String, Int) -> Unit = { _, _ -> }
 ) {
   var draft by remember(storeConfig.pageConfig) { mutableStateOf(storeConfig.pageConfig) }
-  var activeTab by remember { mutableStateOf(PageConfigMainTab.DETAIL_PAGE) }
+  var activeTab by remember { mutableStateOf(PageConfigMainTab.HOME_PAGE) }
   var rawJsonText by remember { mutableStateOf(PageConfigJson.toJsonObject(draft).toString(2)) }
   var jsonError by remember { mutableStateOf<String?>(null) }
 
@@ -123,7 +131,7 @@ fun PageConfigurationHub(
             Icon(Icons.Default.Tune, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
             Column {
               Text("Page Configuration (Developer Studio)", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
-              Text("ডিটেলস পেজ, অ্যাড প্রোডাক্ট ও মাস্টার কনফিগারেশন — লাইভ ভিউ সহ", fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f))
+              Text("হোম পেজ, ডিটেলস পেজ, অ্যাড প্রোডাক্ট ও মাস্টার — লাইভ ভিউ সহ", fontSize = 11.sp, color = Color.White.copy(alpha = 0.9f))
             }
           }
         }
@@ -207,6 +215,12 @@ fun PageConfigurationHub(
       @Composable
       fun LivePreviewSection() {
         when (activeTab) {
+          PageConfigMainTab.HOME_PAGE -> HomePageLivePreview(
+            hp = draft.homePage,
+            storeConfig = storeConfig.copy(pageConfig = draft),
+            homeSections = homeSections,
+            categories = categories
+          )
           PageConfigMainTab.DETAIL_PAGE -> DetailPageLivePreview(
             dp = draft.detailPage,
             master = draft.master,
@@ -235,6 +249,18 @@ fun PageConfigurationHub(
         ) {
           Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             when (activeTab) {
+              PageConfigMainTab.HOME_PAGE -> HomePageDeveloperStudio(
+                hp = draft.homePage,
+                homeSections = homeSections,
+                categories = categories,
+                onUpdateHomePage = { nextHp -> draft = draft.copy(homePage = nextHp) },
+                onToggleSection = onToggleSection,
+                onMoveSection = onMoveSection,
+                onResetHomePage = {
+                  draft = draft.copy(homePage = HomePageConfig())
+                  onShowToast("Home Page Studio ডিফল্ট রিসেট করা হয়েছে (সেভ বাটনে ক্লিক করুন)")
+                }
+              )
               PageConfigMainTab.DETAIL_PAGE -> DetailPageConfigControls(
                 dp = draft.detailPage,
                 onUpdate = { nextDp -> draft = draft.copy(detailPage = nextDp) }

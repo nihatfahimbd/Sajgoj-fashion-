@@ -80,6 +80,7 @@ import com.example.data.model.CartItem
 import com.example.data.model.Category
 import com.example.data.model.ComboPack
 import com.example.data.model.Coupon
+import com.example.data.model.HomePageConfig
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Order
 import com.example.data.model.Product
@@ -101,8 +102,10 @@ import com.example.ui.components.ProductCard
 import com.example.ui.components.ProductSortDropdown
 import com.example.ui.components.ReelVideoPlayerDialog
 import com.example.ui.components.StorefrontComboBlockCard
+import com.example.ui.components.StorefrontCompactSearchStrip
 import com.example.ui.components.StorefrontReelsBlockCard
 import com.example.ui.components.VoucherCenterDialog
+import com.example.ui.components.orderCategoriesByHomePage
 import com.example.ui.components.resolveBlockGridConfig
 import com.example.ui.sortStorefrontProducts
 import com.example.ui.theme.AccentGreen
@@ -117,6 +120,7 @@ import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.parseColorHex
 
 private val fallbackDefaultSections = listOf(
+  HomeSectionConfig(id = "search_bar", type = "search_bar", title = "সার্চ ও ক্যাটাগরি বার", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
   HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", layout = "banner", displayStyle = "banner", columnsPerRow = 1, rowCount = 1, enabled = true),
   HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
   HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
@@ -126,7 +130,9 @@ private val fallbackDefaultSections = listOf(
   HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 12),
   HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", columnsPerRow = 3, rowCount = 2, displayStyle = "grid", enabled = true, maxItems = 6),
   HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "Product Reels", subtitle = "পন্যের ভিডিও দেখে অর্ডার করুন", icon = "🎬", badge = "", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
-  HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9)
+  HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9),
+  HomeSectionConfig(id = "google_map", type = "google_map", title = "স্টোর লোকেশন ম্যাপ", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
+  HomeSectionConfig(id = "footer_block", type = "footer_block", title = "ফুটার, ট্রাস্ট ব্যাজ ও কপিরাইট", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true)
 )
 
 @Composable
@@ -150,6 +156,10 @@ fun StorefrontScreen(
   onResetFilters: () -> Unit = {},
   imageSearchState: ImageSearchState? = null,
   onClearImageSearch: () -> Unit = {},
+  onSearchChange: (String) -> Unit = {},
+  onVoiceSearchClick: () -> Unit = {},
+  onImageSearchClick: () -> Unit = {},
+  onScanClick: () -> Unit = {},
   scrollToTopTrigger: Int = 0,
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
@@ -187,6 +197,7 @@ fun StorefrontScreen(
   var activeFooterTopic by remember { mutableStateOf<String?>(null) }
   var showFaqChatbot by remember { mutableStateOf(false) }
   val design = config.design
+  val hp = config.pageConfig.homePage
 
   LaunchedEffect(openOffersTrigger) {
     if (openOffersTrigger > 0) {
@@ -222,6 +233,16 @@ fun StorefrontScreen(
   val activeSections = remember(homeSections) {
     (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).filter { it.enabled }
   }
+  val hasSearchBarSection = remember(homeSections) {
+    (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).any { it.type == "search_bar" }
+  }
+  val hasMapSection = remember(homeSections) {
+    (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).any { it.type == "google_map" }
+  }
+  val hasFooterSection = remember(homeSections) {
+    (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).any { it.type == "footer_block" }
+  }
+  val searchBarIsPinnedTop = activeSections.firstOrNull()?.type == "search_bar"
 
   // Group top hero blocks so Banner -> Voucher -> Category keep their tight 4.dp vertical spacing
   val groupedBlocks = remember(activeSections) {
@@ -381,11 +402,12 @@ fun StorefrontScreen(
           }
         }
 
-        if (categories.isNotEmpty()) {
+        if (categories.isNotEmpty() && hp.showCategorySlider) {
           item {
             CategorySliderCard(
               categories = categories,
               selectedCategory = selectedCategory,
+              homePage = hp,
               onCategorySelected = onCategorySelected
             )
           }
@@ -621,8 +643,10 @@ fun StorefrontScreen(
         groupedBlocks.forEach { blockGroup ->
           val isHeroStack = blockGroup.size > 1 ||
             blockGroup.first().type in setOf("top_banner", "voucher_strip", "category_slider")
+          val firstType = blockGroup.first().type
+          val isStructuralStrip = firstType in setOf("search_bar", "google_map", "footer_block")
 
-          if (!isHeroStack && !sortBarInserted) {
+          if (!isHeroStack && !isStructuralStrip && !sortBarInserted) {
             sortBarInserted = true
             item(key = "storefront_sort_bar") {
               StorefrontCatalogSortBar(
@@ -648,18 +672,22 @@ fun StorefrontScreen(
                       )
                     }
                     "voucher_strip" -> {
-                      VoucherStripCard(
-                        onOpenVoucher = { tab ->
-                          voucherCenterTab = tab
-                          showVoucherCenter = true
-                        }
-                      )
+                      if (hp.showVoucherStrip) {
+                        VoucherStripCard(
+                          homePage = hp,
+                          onOpenVoucher = { tab ->
+                            voucherCenterTab = tab
+                            showVoucherCenter = true
+                          }
+                        )
+                      }
                     }
                     "category_slider" -> {
-                      if (categories.isNotEmpty()) {
+                      if (categories.isNotEmpty() && hp.showCategorySlider) {
                         CategorySliderCard(
                           categories = categories,
                           selectedCategory = selectedCategory,
+                          homePage = hp,
                           onCategorySelected = onCategorySelected
                         )
                       }
@@ -680,7 +708,43 @@ fun StorefrontScreen(
             }
           } else {
             val section = blockGroup.first()
-            if (section.type == "promo_banner") {
+            if (section.type == "search_bar") {
+              if (!searchBarIsPinnedTop && hp.showSearchBar) {
+                item(key = "sec_${section.id}") {
+                  StorefrontCompactSearchStrip(
+                    config = config,
+                    categories = categories,
+                    selectedCategory = selectedCategory,
+                    searchQuery = searchQuery,
+                    isImageSearchActive = imageSearchState != null,
+                    onSearchChange = onSearchChange,
+                    onCategorySelected = onCategorySelected,
+                    onHomeReset = onResetFilters,
+                    onVoiceSearchClick = onVoiceSearchClick,
+                    onImageSearchClick = onImageSearchClick,
+                    onScanClick = onScanClick,
+                    onClearAllSearch = {
+                      onSearchChange("")
+                      onClearImageSearch()
+                    }
+                  )
+                }
+              }
+            } else if (section.type == "google_map") {
+              if (config.showGoogleMap) {
+                item(key = "sec_${section.id}") {
+                  StorefrontGoogleMapCard(config = config)
+                }
+              }
+            } else if (section.type == "footer_block") {
+              item(key = "sec_${section.id}") {
+                StorefrontFooterCard(
+                  config = config,
+                  onOpenTopic = { topic -> activeFooterTopic = topic },
+                  onOpenWhatsApp = { openWhatsApp() }
+                )
+              }
+            } else if (section.type == "promo_banner") {
               item(key = "sec_${section.id}") {
                 PromoBannerSectionCard(
                   section = section,
@@ -710,7 +774,8 @@ fun StorefrontScreen(
                   },
                   onReelClick = { reel -> activeReelForPlayback = reel },
                   onAddToCart = onAddToCart,
-                  design = design
+                  design = design,
+                  homePage = hp
                 )
               }
             } else if (section.type == "combo_packs") {
@@ -746,7 +811,8 @@ fun StorefrontScreen(
                       )
                     )
                   },
-                  design = design
+                  design = design,
+                  homePage = hp
                 )
               }
             } else if (section.type == "b2g1_offers" && (!config.b2g1.enabled || config.b2g1.eligibleProductIds.isEmpty())) {
@@ -790,6 +856,7 @@ fun StorefrontScreen(
                   onProductClick = onProductClick,
                   onAddToCart = onAddToCart,
                   design = design,
+                  homePage = hp,
                   wishlistIds = wishlistIds,
                   onToggleWishlist = toggleWishlist,
                   onMediaClick = onProductClick
@@ -800,19 +867,23 @@ fun StorefrontScreen(
         }
       }
 
-      // Interactive Storefront Google Map Location Section
-      if (config.showGoogleMap) {
-        item(key = "storefront_google_map") {
-          StorefrontGoogleMapCard(config = config)
+      // Fallback Map & Footer when in filtered/shopping mode or if structural entries are absent
+      if (isFilteredMode || isShoppingAllMode || !hasMapSection) {
+        if (config.showGoogleMap) {
+          item(key = "storefront_google_map_fallback") {
+            StorefrontGoogleMapCard(config = config)
+          }
         }
       }
 
-      // Storefront Footer
-      item(key = "storefront_footer") {
-        StorefrontFooterCard(
-          config = config,
-          onOpenTopic = { topic -> activeFooterTopic = topic }
-        )
+      if (isFilteredMode || isShoppingAllMode || !hasFooterSection) {
+        item(key = "storefront_footer_fallback") {
+          StorefrontFooterCard(
+            config = config,
+            onOpenTopic = { topic -> activeFooterTopic = topic },
+            onOpenWhatsApp = { openWhatsApp() }
+          )
+        }
       }
     }
 
@@ -995,6 +1066,7 @@ private fun StorefrontProductBlockCard(
   onProductClick: (Product) -> Unit,
   onAddToCart: (Product) -> Unit,
   design: StoreDesignConfig = StoreDesignConfig(),
+  homePage: HomePageConfig = HomePageConfig(),
   wishlistIds: Set<String> = emptySet(),
   onToggleWishlist: ((String) -> Unit)? = null,
   onMediaClick: ((Product) -> Unit)? = null
@@ -1020,11 +1092,14 @@ private fun StorefrontProductBlockCard(
   val titleText = parseColorHex(design.blockTitleText, Color.White)
   val seeMoreBg = parseColorHex(design.seeMoreBg, NavyBlue)
   val seeMoreText = parseColorHex(design.seeMoreText, Color.White)
+  val blockRadius = homePage.blockRadiusPx.coerceIn(0, 32).dp
+  val blockBorderW = homePage.blockBorderWidthPx.coerceIn(0, 4).dp
+  val headerPillShape = RoundedCornerShape(homePage.blockHeaderRadiusPx.coerceIn(0, 32).dp)
 
   Surface(
-    shape = RoundedCornerShape(16.dp),
+    shape = RoundedCornerShape(blockRadius),
     color = blockBg,
-    border = BorderStroke(1.dp, blockBorder),
+    border = if (blockBorderW > 0.dp) BorderStroke(blockBorderW, blockBorder) else null,
     shadowElevation = 1.dp,
     modifier = Modifier
       .fillMaxWidth()
@@ -1036,17 +1111,11 @@ private fun StorefrontProductBlockCard(
         .padding(horizontal = 8.dp, vertical = 8.dp),
       verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      // Unified Pill Title Header + Matching "আরো দেখুন ›" Action
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
+      val titlePill: @Composable () -> Unit = {
         Surface(
-          shape = RoundedCornerShape(50),
+          shape = headerPillShape,
           color = titleBg,
-          shadowElevation = 2.dp,
-          modifier = Modifier.weight(1f, fill = false)
+          shadowElevation = 2.dp
         ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1064,9 +1133,8 @@ private fun StorefrontProductBlockCard(
             )
           }
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
+      }
+      val actionsRow: @Composable () -> Unit = {
         if (products.isNotEmpty() || selectedInlineCategory != "All") {
           Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1074,11 +1142,11 @@ private fun StorefrontProductBlockCard(
           ) {
             if (isExpanded) {
               Surface(
-                shape = RoundedCornerShape(50),
+                shape = headerPillShape,
                 color = CreamSurface,
                 border = BorderStroke(1.dp, NavyBlue.copy(alpha = 0.35f)),
                 modifier = Modifier
-                  .clip(RoundedCornerShape(50))
+                  .clip(headerPillShape)
                   .clickable { onOpenFullCollection() }
                   .testTag("collection_modal_btn_${section.id}")
               ) {
@@ -1092,11 +1160,11 @@ private fun StorefrontProductBlockCard(
               }
             }
             Surface(
-              shape = RoundedCornerShape(50),
+              shape = headerPillShape,
               color = seeMoreBg,
               shadowElevation = 2.dp,
               modifier = Modifier
-                .clip(RoundedCornerShape(50))
+                .clip(headerPillShape)
                 .clickable { onToggleExpand(defaultLimit) }
                 .testTag("see_more_${section.id}")
             ) {
@@ -1109,6 +1177,22 @@ private fun StorefrontProductBlockCard(
               )
             }
           }
+        }
+      }
+      // Unified Pill Title Header + Matching "আরো দেখুন ›" Action (supports blockHeaderReversed)
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        if (homePage.blockHeaderReversed) {
+          actionsRow()
+          Spacer(modifier = Modifier.width(8.dp))
+          Box(modifier = Modifier.weight(1f, fill = false), contentAlignment = Alignment.CenterEnd) { titlePill() }
+        } else {
+          Box(modifier = Modifier.weight(1f, fill = false)) { titlePill() }
+          Spacer(modifier = Modifier.width(8.dp))
+          actionsRow()
         }
       }
 
@@ -1343,18 +1427,38 @@ private fun CardShapePromo(
 
 @Composable
 private fun VoucherStripCard(
+  homePage: HomePageConfig = HomePageConfig(),
   onOpenVoucher: (String) -> Unit
 ) {
+  if (!homePage.showVoucherStrip) return
+
+  val blockStart = parseColorHex(homePage.voucherBlockBg, Color(0xFFFCA5A5))
+  val blockEnd = parseColorHex(homePage.voucherBlockBgEnd, blockStart)
+  val blockBorder = parseColorHex(homePage.voucherBlockBorder, Color.White)
+  val borderW = homePage.voucherBorderWidthPx.coerceIn(0, 4).dp
+  val blockRadius = homePage.voucherRadiusPx.coerceIn(0, 32).dp
+  val titleCol = parseColorHex(homePage.voucherTitleColor, DarkEspresso)
+  val moreCol = parseColorHex(homePage.voucherMoreColor, RoyalMaroon)
+  val tagBg = parseColorHex(homePage.voucherTagBg, Color(0xFF0B0F19))
+  val tagText = parseColorHex(homePage.voucherTagText, Color.White)
+  val tagBorder = parseColorHex(homePage.voucherTagBorder, Color.White)
+  val innerBg = parseColorHex(homePage.voucherInnerBg, Color(0xFFFCA5A5))
+  val innerBorder = parseColorHex(homePage.voucherInnerBorder, Color(0xFF991B1B))
+  val amtCol = parseColorHex(homePage.voucherAmountColor, Color.Black)
+  val subCol = parseColorHex(homePage.voucherSubColor, Color.Black)
+  val ctaStart = parseColorHex(homePage.voucherCtaBg, Color(0xFF0B0F19))
+  val ctaEnd = parseColorHex(homePage.voucherCtaBgEnd, ctaStart)
+  val ctaText = parseColorHex(homePage.voucherCtaText, Color.White)
+  val ctaBorder = parseColorHex(homePage.voucherCtaBorder, Color.White)
+  val ctaRadius = homePage.voucherCtaRadiusPx.coerceIn(0, 32).dp
+  val slotsOrder = homePage.voucherSlotsOrder.ifEmpty { listOf("v1", "v2", "cta") }
+
   Column(
     modifier = Modifier
       .fillMaxWidth()
-      .clip(RoundedCornerShape(14.dp))
-      .background(
-        Brush.horizontalGradient(
-          listOf(Color(0xFFFFF3F3), Color(0xFFFFF8F5), Color(0xFFF0FBF9))
-        )
-      )
-      .border(1.dp, Color(0xFFFFCDD2), RoundedCornerShape(14.dp))
+      .clip(RoundedCornerShape(blockRadius))
+      .background(Brush.horizontalGradient(listOf(blockStart, blockEnd)))
+      .then(if (borderW > 0.dp) Modifier.border(borderW, blockBorder, RoundedCornerShape(blockRadius)) else Modifier)
       .padding(horizontal = 8.dp, vertical = 6.dp)
   ) {
     Row(
@@ -1366,45 +1470,53 @@ private fun VoucherStripCard(
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.weight(1f)
       ) {
         Text(
-          text = "Claim Vouchers to Save More!",
+          text = homePage.voucherTitle.ifBlank { "Claim Vouchers to Save More!" },
           fontSize = 11.5.sp,
           fontWeight = FontWeight.Black,
-          color = DarkEspresso
+          color = titleCol,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
         )
-        Box(
-          modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(RoyalMaroon)
-            .padding(horizontal = 5.dp, vertical = 1.dp)
-        ) {
-          Text(
-            text = "11.11 / SAJGOJ",
-            fontSize = 7.5.sp,
-            fontWeight = FontWeight.Black,
-            color = Color.White
-          )
+        if (homePage.showVoucherBadge) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(8.dp))
+              .background(tagBg)
+              .border(1.dp, tagBorder, RoundedCornerShape(8.dp))
+              .padding(horizontal = 5.dp, vertical = 1.dp)
+          ) {
+            Text(
+              text = homePage.voucherBadgeText.ifBlank { "11.11 / SAJGOJ" },
+              fontSize = 7.5.sp,
+              fontWeight = FontWeight.Black,
+              color = tagText
+            )
+          }
         }
       }
 
-      Row(
-        modifier = Modifier.clickable { onOpenVoucher("all") },
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Text(
-          text = "More Voucher",
-          fontSize = 10.sp,
-          fontWeight = FontWeight.Bold,
-          color = RoyalMaroon
-        )
-        Text(
-          text = " ›",
-          fontSize = 13.sp,
-          fontWeight = FontWeight.Black,
-          color = RoyalMaroon
-        )
+      if (homePage.showMoreVoucherBtn) {
+        Row(
+          modifier = Modifier.clickable { onOpenVoucher("all") },
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = homePage.voucherMoreLabel.ifBlank { "More Voucher" },
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = moreCol
+          )
+          Text(
+            text = " ›",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Black,
+            color = moreCol
+          )
+        }
       }
     }
 
@@ -1414,72 +1526,78 @@ private fun VoucherStripCard(
       modifier = Modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(10.dp))
-        .background(Color.White)
-        .border(1.dp, Color(0xFFFFEBEE), RoundedCornerShape(10.dp))
+        .background(innerBg)
+        .border(1.dp, innerBorder, RoundedCornerShape(10.dp))
         .padding(horizontal = 8.dp, vertical = 5.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Column(
-        modifier = Modifier
-          .weight(1f)
-          .clickable { onOpenVoucher("max") }
-      ) {
-        Text(
-          text = "৳২,২৫০",
-          fontSize = 13.5.sp,
-          fontWeight = FontWeight.Black,
-          color = Color(0xFFE53935)
-        )
-        Text(
-          text = "Voucher Max",
-          fontSize = 9.sp,
-          fontWeight = FontWeight.Medium,
-          color = Color.Gray
-        )
-      }
-
-      Box(
-        modifier = Modifier
-          .width(1.dp)
-          .height(22.dp)
-          .background(Color(0xFFEEEEEE))
-      )
-
-      Column(
-        modifier = Modifier
-          .weight(1f)
-          .padding(start = 8.dp)
-          .clickable { onOpenVoucher("shipping") }
-      ) {
-        Text(
-          text = "৳৪৫",
-          fontSize = 13.5.sp,
-          fontWeight = FontWeight.Black,
-          color = Color(0xFF00897B)
-        )
-        Text(
-          text = "Free shipping",
-          fontSize = 9.sp,
-          fontWeight = FontWeight.Medium,
-          color = Color.Gray
-        )
-      }
-
-      Box(
-        modifier = Modifier
-          .clip(RoundedCornerShape(8.dp))
-          .background(Color(0xFFFF8F00))
-          .border(1.dp, Color(0xFFFFB300), RoundedCornerShape(8.dp))
-          .clickable { onOpenVoucher("all") }
-          .padding(horizontal = 10.dp, vertical = 5.dp)
-      ) {
-        Text(
-          text = "Collect All ›",
-          fontSize = 10.sp,
-          fontWeight = FontWeight.Black,
-          color = Color.White
-        )
+      slotsOrder.forEachIndexed { idx, slot ->
+        when (slot) {
+          "v1" -> {
+            Column(
+              modifier = Modifier
+                .weight(1f)
+                .clickable { onOpenVoucher("max") }
+            ) {
+              Text(
+                text = homePage.voucher1Amount.ifBlank { "৳২,২৫০" },
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Black,
+                color = amtCol
+              )
+              Text(
+                text = homePage.voucher1Sub.ifBlank { "Voucher Max" },
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Medium,
+                color = subCol
+              )
+            }
+            if (idx < slotsOrder.lastIndex && slotsOrder[idx + 1] != "cta") {
+              Box(modifier = Modifier.width(1.dp).height(22.dp).background(innerBorder.copy(alpha = 0.45f)))
+            }
+          }
+          "v2" -> {
+            Column(
+              modifier = Modifier
+                .weight(1f)
+                .clickable { onOpenVoucher("shipping") }
+            ) {
+              Text(
+                text = homePage.voucher2Amount.ifBlank { "৳৪৫" },
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Black,
+                color = amtCol
+              )
+              Text(
+                text = homePage.voucher2Sub.ifBlank { "Free shipping" },
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Medium,
+                color = subCol
+              )
+            }
+            if (idx < slotsOrder.lastIndex && slotsOrder[idx + 1] != "cta") {
+              Box(modifier = Modifier.width(1.dp).height(22.dp).background(innerBorder.copy(alpha = 0.45f)))
+            }
+          }
+          "cta" -> if (homePage.showCollectAllBtn) {
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(ctaRadius))
+                .background(Brush.horizontalGradient(listOf(ctaStart, ctaEnd)))
+                .border(1.dp, ctaBorder, RoundedCornerShape(ctaRadius))
+                .clickable { onOpenVoucher("all") }
+                .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+              Text(
+                text = "${homePage.voucherCollectLabel.ifBlank { "Collect All" }} ›",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                color = ctaText
+              )
+            }
+          }
+        }
       }
     }
   }
@@ -1489,73 +1607,117 @@ private fun VoucherStripCard(
 private fun CategorySliderCard(
   categories: List<Category>,
   selectedCategory: String,
+  homePage: HomePageConfig = HomePageConfig(),
   onCategorySelected: (String) -> Unit
 ) {
+  if (!homePage.showCategorySlider) return
+
+  val blockStart = parseColorHex(homePage.catSliderBlockBg, Color.White)
+  val blockEnd = parseColorHex(homePage.catSliderBlockBgEnd, blockStart)
+  val blockBorder = parseColorHex(homePage.catSliderBlockBorder, Color.White)
+  val blockRadius = homePage.catSliderBlockRadiusPx.coerceIn(0, 32).dp
+  val blockBorderW = homePage.catSliderBorderWidthPx.coerceIn(0, 4).dp
+  val cardStart = parseColorHex(homePage.catCardBg, Color(0xFFFF7B7B))
+  val cardEnd = parseColorHex(homePage.catCardBgEnd, cardStart)
+  val cardBorder = parseColorHex(homePage.catCardBorder, Color.White)
+  val cardRadius = homePage.catCardRadiusPx.coerceIn(0, 32).dp
+  val iconBoxBg = parseColorHex(homePage.catIconBoxBg, Color.White)
+  val iconBoxBorder = parseColorHex(homePage.catIconBoxBorder, Color.White)
+  val labelBg = parseColorHex(homePage.catLabelBg, Color.White)
+  val textColor = parseColorHex(homePage.catTextColor, Color.Black)
+  val badgeBg = parseColorHex(homePage.catBadgeBg, Color(0xFF0B0F19))
+  val badgeText = parseColorHex(homePage.catBadgeText, Color.White)
+  val activeBorder = parseColorHex(homePage.catActiveBorderColor, Color.Black)
+
+  val displayCats = remember(categories, homePage.categoryOrder) {
+    val base = categories.filter { it.type != "sub" && it.type != "parent" }.ifEmpty { categories }
+    orderCategoriesByHomePage(base, homePage.categoryOrder)
+  }
+
   Column(
     modifier = Modifier
       .fillMaxWidth()
-      .clip(RoundedCornerShape(14.dp))
-      .background(Color.White)
+      .clip(RoundedCornerShape(blockRadius))
+      .background(Brush.horizontalGradient(listOf(blockStart, blockEnd)))
+      .then(if (blockBorderW > 0.dp) Modifier.border(blockBorderW, blockBorder, RoundedCornerShape(blockRadius)) else Modifier)
       .padding(vertical = 6.dp, horizontal = 4.dp)
   ) {
     LazyRow(
       contentPadding = PaddingValues(horizontal = 6.dp),
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      item {
-        val isSelected = selectedCategory == "All"
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          modifier = Modifier
-            .width(60.dp)
-            .clickable { onCategorySelected("All") }
-        ) {
-          Box(
+      if (homePage.showAllCatTile) {
+        item {
+          val isSelected = selectedCategory == "All"
+          Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-              .size(44.dp)
-              .clip(RoundedCornerShape(12.dp))
-              .background(if (isSelected) RoyalMaroon else CreamSurface)
+              .width(66.dp)
+              .clip(RoundedCornerShape(cardRadius))
+              .background(Brush.verticalGradient(listOf(cardStart, cardEnd)))
               .border(
                 width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) AntiqueGold else BorderGold,
-                shape = RoundedCornerShape(12.dp)
-              ),
-            contentAlignment = Alignment.Center
+                color = if (isSelected) activeBorder else cardBorder,
+                shape = RoundedCornerShape(cardRadius)
+              )
+              .clickable { onCategorySelected("All") }
+              .padding(vertical = 5.dp, horizontal = 4.dp)
           ) {
-            Text(text = "🌟", fontSize = 20.sp)
+            Box(
+              modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(iconBoxBg)
+                .border(1.dp, iconBoxBorder, RoundedCornerShape(10.dp)),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(text = homePage.allCatTileIcon.ifBlank { "🌟" }, fontSize = 18.sp)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .background(labelBg)
+                .padding(horizontal = 2.dp, vertical = 2.dp),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(
+                text = homePage.allCatTileLabel.ifBlank { "সকল পণ্য" },
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
           }
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = "সকল পণ্য",
-            fontSize = 10.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) RoyalMaroon else DarkEspresso,
-            textAlign = TextAlign.Center,
-            maxLines = 1
-          )
         }
       }
 
-      val displayCats = categories.filter { it.type != "sub" && it.type != "parent" }
-        .ifEmpty { categories }
-      items(displayCats) { cat ->
+      items(displayCats, key = { it.id.ifBlank { it.name } }) { cat ->
         val isSelected = selectedCategory == cat.name
         Column(
           horizontalAlignment = Alignment.CenterHorizontally,
           modifier = Modifier
-            .width(60.dp)
+            .width(66.dp)
+            .clip(RoundedCornerShape(cardRadius))
+            .background(Brush.verticalGradient(listOf(cardStart, cardEnd)))
+            .border(
+              width = if (isSelected) 2.dp else 1.dp,
+              color = if (isSelected) activeBorder else cardBorder,
+              shape = RoundedCornerShape(cardRadius)
+            )
             .clickable { onCategorySelected(cat.name) }
+            .padding(vertical = 5.dp, horizontal = 4.dp)
         ) {
           Box(
             modifier = Modifier
-              .size(44.dp)
-              .clip(RoundedCornerShape(12.dp))
-              .background(if (isSelected) CreamSurface else Color.White)
-              .border(
-                width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) RoyalMaroon else BorderGold,
-                shape = RoundedCornerShape(12.dp)
-              ),
+              .size(40.dp)
+              .clip(RoundedCornerShape(10.dp))
+              .background(iconBoxBg)
+              .border(1.dp, iconBoxBorder, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
           ) {
             if (cat.imageUrl.isNotBlank()) {
@@ -1564,24 +1726,24 @@ private fun CategorySliderCard(
                 contentDescription = cat.name,
                 modifier = Modifier
                   .fillMaxSize()
-                  .clip(RoundedCornerShape(11.dp))
+                  .clip(RoundedCornerShape(9.dp))
               )
             } else {
               Text(
                 text = cat.icon.ifBlank { "✨" },
-                fontSize = 20.sp
+                fontSize = 18.sp
               )
             }
 
             if (cat.badge.isNotBlank()) {
               Surface(
-                color = RoyalMaroon,
+                color = badgeBg,
                 shape = RoundedCornerShape(bottomStart = 6.dp),
                 modifier = Modifier.align(Alignment.TopEnd)
               ) {
                 Text(
                   text = cat.badge,
-                  color = Color.White,
+                  color = badgeText,
                   fontSize = 7.sp,
                   fontWeight = FontWeight.Bold,
                   modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
@@ -1589,15 +1751,25 @@ private fun CategorySliderCard(
               }
             }
           }
-          Spacer(modifier = Modifier.height(3.dp))
-          Text(
-            text = cat.name,
-            fontSize = 9.5.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) RoyalMaroon else DarkEspresso,
-            textAlign = TextAlign.Center,
-            maxLines = 1
-          )
+          Spacer(modifier = Modifier.height(4.dp))
+          Box(
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(6.dp))
+              .background(labelBg)
+              .padding(horizontal = 2.dp, vertical = 2.dp),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = cat.name,
+              fontSize = 9.sp,
+              fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+              color = textColor,
+              textAlign = TextAlign.Center,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
         }
       }
     }
@@ -1744,193 +1916,371 @@ private fun EmptySearchResultBox() {
 @Composable
 private fun StorefrontFooterCard(
   config: StoreConfig,
-  onOpenTopic: (String) -> Unit = {}
+  onOpenTopic: (String) -> Unit = {},
+  onOpenWhatsApp: () -> Unit = {}
 ) {
+  val context = LocalContext.current
+  var showMapPreviewDialog by remember { mutableStateOf(false) }
+  val hp = config.pageConfig.homePage
+
+  val fBgStart = parseColorHex(hp.footerBg, Color.White)
+  val fBgEnd = parseColorHex(hp.footerBgEnd, Color(0xFFBAE6FD))
+  val fBorder = parseColorHex(hp.footerBorderColor, Color.White)
+  val fBorderW = hp.footerBorderWidthPx.coerceIn(0, 4).dp
+  val fRadius = hp.footerRadiusPx.coerceIn(0, 32).dp
+  val fText = parseColorHex(hp.footerTextColor, Color.Black)
+  val fHeading = parseColorHex(hp.footerHeadingColor, Color.Black)
+  val fLink = parseColorHex(hp.footerLinkColor, RoyalMaroon)
+
+  val tBgStart = parseColorHex(hp.trustCardBg, Color(0xFFF87171))
+  val tBgEnd = parseColorHex(hp.trustCardBgEnd, Color(0xFFEF4444))
+  val tBorder = parseColorHex(hp.trustCardBorder, Color.White)
+  val tBorderW = hp.trustCardBorderWidthPx.coerceIn(0, 4).dp
+  val tText = parseColorHex(hp.trustCardTextColor, Color.Black)
+  val tRadius = hp.trustCardRadiusPx.coerceIn(0, 32).dp
+
+  val cBgStart = parseColorHex(hp.copyrightBg, Color(0xFFF87171))
+  val cBgEnd = parseColorHex(hp.copyrightBgEnd, Color(0xFFEF4444))
+  val cBorder = parseColorHex(hp.copyrightBorder, Color.White)
+  val cText = parseColorHex(hp.copyrightTextColor, Color.Black)
+  val cRadius = hp.copyrightRadiusPx.coerceIn(0, 32).dp
+
   Column(
     modifier = Modifier
       .fillMaxWidth()
-      .padding(top = 12.dp)
-      .clip(RoundedCornerShape(20.dp))
-      .background(DarkEspresso)
-      .padding(16.dp)
+      .padding(top = 10.dp),
+    verticalArrangement = Arrangement.spacedBy(10.dp)
   ) {
-    Text(
-      text = config.storeName,
-      fontSize = 18.sp,
-      fontWeight = FontWeight.Bold,
-      color = AntiqueGold
-    )
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(
-      text = "আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
-      fontSize = 11.sp,
-      color = CreamSurface,
-      lineHeight = 15.sp
-    )
+    if (hp.showFooterMain) {
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(fRadius))
+          .background(Brush.verticalGradient(listOf(fBgStart, fBgEnd)))
+          .then(if (fBorderW > 0.dp) Modifier.border(fBorderW, fBorder, RoundedCornerShape(fRadius)) else Modifier)
+          .padding(14.dp)
+          .testTag("storefront_footer_card"),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+      ) {
+        // ROW 1 (Side-by-side 2 columns): Left = INFORMATION, Right = SUPPORT
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(12.dp),
+          verticalAlignment = Alignment.Top
+        ) {
+          FooterLinkColumn(
+            title = "INFORMATION",
+            headingColor = fHeading,
+            linkColor = fLink,
+            items = listOf(
+              "about" to "About us",
+              "contact" to "Contact us",
+              "terms" to "Terms & Conditions",
+              "privacy" to "Privacy Policy"
+            ),
+            onItemClick = onOpenTopic,
+            modifier = Modifier.weight(1f)
+          )
+          FooterLinkColumn(
+            title = "SUPPORT",
+            headingColor = fHeading,
+            linkColor = fLink,
+            items = listOf(
+              "tracking" to "Order Tracking",
+              "payment" to "Payment",
+              "shipping" to "Shipping",
+              "faq" to "FAQ"
+            ),
+            onItemClick = onOpenTopic,
+            modifier = Modifier.weight(1f)
+          )
+        }
 
-    Spacer(modifier = Modifier.height(12.dp))
+        HorizontalDivider(color = fHeading.copy(alpha = 0.14f))
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
-      Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = AntiqueGold, modifier = Modifier.size(14.dp))
-      Spacer(modifier = Modifier.width(6.dp))
-      Text(text = "হটলাইন: ${config.phone}", fontSize = 11.sp, color = Color.White)
+        // ROW 2 (Side-by-side 2 columns): Left = CONSUMER POLICY, Right = SAJGOJ FASHION Contact Info
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(12.dp),
+          verticalAlignment = Alignment.Top
+        ) {
+          FooterLinkColumn(
+            title = "CONSUMER POLICY",
+            headingColor = fHeading,
+            linkColor = fLink,
+            items = listOf(
+              "refund" to "Refund Policy",
+              "exchange" to "Exchange",
+              "cancellation" to "Cancellation",
+              "discount" to "Extra Discount"
+            ),
+            onItemClick = onOpenTopic,
+            modifier = Modifier.weight(1f)
+          )
+
+          // Right Column: Brand & Contact Info
+          Column(
+            modifier = Modifier
+              .weight(1f)
+              .testTag("footer_contact_info_block"),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(22.dp)
+                  .clip(CircleShape)
+                  .background(Color(0xFF0B0F19)),
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  text = config.storeName.take(1).uppercase(),
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Black,
+                  color = Color.White
+                )
+              }
+              Text(
+                text = config.storeName,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Black,
+                color = fHeading,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+
+            Text(
+              text = config.tagline.ifBlank { "আধুনিক ও রুচিশীল নারীদের প্রিমিয়াম কালেকশন।" },
+              fontSize = 9.5.sp,
+              color = fText.copy(alpha = 0.85f),
+              lineHeight = 13.sp,
+              maxLines = 3,
+              overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+              text = "📞 ${config.phone}",
+              fontSize = 9.5.sp,
+              fontWeight = FontWeight.SemiBold,
+              color = fText,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier = Modifier.clickable {
+                runCatching { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${config.phone}"))) }
+              }
+            )
+            Text(
+              text = "💬 WA: ${config.whatsapp}",
+              fontSize = 9.5.sp,
+              fontWeight = FontWeight.SemiBold,
+              color = fText,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier = Modifier.clickable { onOpenWhatsApp() }
+            )
+            Text(
+              text = "✉️ ${config.email}",
+              fontSize = 9.5.sp,
+              color = fText,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier = Modifier.clickable {
+                runCatching { context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${config.email}"))) }
+              }
+            )
+            Text(
+              text = "📍 ${config.address}",
+              fontSize = 9.5.sp,
+              color = fText,
+              lineHeight = 12.sp,
+              maxLines = 2,
+              overflow = TextOverflow.Ellipsis
+            )
+            Text(
+              text = "🗺️ Google Map দেখুন ↗",
+              fontSize = 9.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = fLink,
+              modifier = Modifier
+                .clickable { showMapPreviewDialog = true }
+                .padding(vertical = 2.dp)
+                .testTag("footer_google_map_link")
+            )
+            Text(
+              text = "🌐 FB  📸 IG  ▶️ YT",
+              fontSize = 9.sp,
+              fontWeight = FontWeight.Bold,
+              color = fLink,
+              modifier = Modifier.clickable { onOpenTopic("contact") }
+            )
+          }
+        }
+
+        HorizontalDivider(color = fHeading.copy(alpha = 0.14f))
+
+        // ROW 3: Payment Methods
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          Text(
+            text = "পেমেন্ট মেথড",
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Black,
+            color = fHeading
+          )
+
+          @OptIn(ExperimentalLayoutApi::class)
+          FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            if (config.bkashEnabled) {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(Color(0xFFE2136E))
+                  .padding(horizontal = 8.dp, vertical = 3.dp)
+                  .testTag("footer_badge_bkash")
+              ) {
+                Text(text = "bKash", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+            if (config.nagadEnabled) {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(Color(0xFFF6921E))
+                  .padding(horizontal = 8.dp, vertical = 3.dp)
+                  .testTag("footer_badge_nagad")
+              ) {
+                Text(text = "Nagad", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+            if (config.rocketEnabled) {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(Color(0xFF8C3494))
+                  .padding(horizontal = 8.dp, vertical = 3.dp)
+                  .testTag("footer_badge_rocket")
+              ) {
+                Text(text = "Rocket", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+            if (config.codEnabled) {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(Color(0xFF047857))
+                  .padding(horizontal = 8.dp, vertical = 3.dp)
+                  .testTag("footer_badge_cod")
+              ) {
+                Text(text = "Cash on Delivery", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+            if (config.visaEnabled) {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(Color(0xFF1E3A8A))
+                  .padding(horizontal = 8.dp, vertical = 3.dp)
+                  .testTag("footer_badge_visa")
+              ) {
+                Text(text = "Visa / Mastercard", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+              }
+            }
+          }
+
+          Text(
+            text = "সারা দেশে নিরাপদ ক্যাশ অন ডেলিভারি ও ডিজিটাল পেমেন্ট সুবিধা।",
+            fontSize = 10.sp,
+            color = fText.copy(alpha = 0.8f)
+          )
+        }
+      }
     }
 
-    Spacer(modifier = Modifier.height(4.dp))
-
-    val context = LocalContext.current
-    var showMapPreviewDialog by remember { mutableStateOf(false) }
-
-    Row(
-      verticalAlignment = Alignment.CenterVertically,
-      modifier = Modifier
-        .clip(RoundedCornerShape(8.dp))
-        .clickable { showMapPreviewDialog = true }
-        .padding(vertical = 4.dp)
-        .testTag("footer_google_map_link")
-    ) {
-      Icon(imageVector = Icons.Default.LocationOn, contentDescription = "গুগল ম্যাপ লোকেশন", tint = AntiqueGold, modifier = Modifier.size(14.dp))
-      Spacer(modifier = Modifier.width(6.dp))
-      Text(text = "${config.address} (ম্যাপ দেখুন ›)", fontSize = 11.sp, color = CreamSurface, maxLines = 2)
-    }
-
-    if (showMapPreviewDialog) {
-      StoreGoogleMapDialog(
-        config = config,
-        onDismiss = { showMapPreviewDialog = false },
-        onOpenExternalMap = { openStoreGoogleMap(context, config, directions = false) },
-        onOpenDirections = { openStoreGoogleMap(context, config, directions = true) }
+    // 4 Trust Badges Grid (ordered via hp.trustBadgeOrder)
+    if (hp.showTrustBadges) {
+      val badgeMap = mapOf(
+        "payment" to (hp.trust1Icon.ifBlank { "💳" } to hp.trust1Text.ifBlank { "নিরাপদ পেমেন্ট (bKash/COD)" }),
+        "delivery" to (hp.trust2Icon.ifBlank { "⚡" } to hp.trust2Text.ifBlank { "দ্রুততম হোম ডেলিভারি" }),
+        "return" to (hp.trust3Icon.ifBlank { "🔄" } to hp.trust3Text.ifBlank { "৭ দিনের সহজ রিটার্ন" }),
+        "authentic" to (hp.trust4Icon.ifBlank { "👑" } to hp.trust4Text.ifBlank { "১০০% খাঁটি ও আসল পণ্য" })
       )
-    }
+      val orderedBadges = hp.trustBadgeOrder.ifEmpty { listOf("payment", "delivery", "return", "authentic") }
+        .mapNotNull { badgeMap[it] }
 
-    Spacer(modifier = Modifier.height(14.dp))
-    HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
-    Spacer(modifier = Modifier.height(12.dp))
-
-    // (1) Information, (2) Support, (3) Consumer Policy Columns
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.Top
-    ) {
-      FooterLinkColumn(
-        title = "Information",
-        items = listOf(
-          "about" to "About us",
-          "contact" to "Contact us",
-          "terms" to "Terms & Conditions",
-          "privacy" to "Privacy Policy"
-        ),
-        onItemClick = onOpenTopic,
-        modifier = Modifier.weight(1f)
-      )
-      FooterLinkColumn(
-        title = "Support",
-        items = listOf(
-          "tracking" to "Order Tracking",
-          "payment" to "Payment",
-          "shipping" to "Shipping",
-          "faq" to "FAQ"
-        ),
-        onItemClick = onOpenTopic,
-        modifier = Modifier.weight(1f)
-      )
-      FooterLinkColumn(
-        title = "Consumer Policy",
-        items = listOf(
-          "refund" to "Refund Policy",
-          "exchange" to "Exchange",
-          "cancellation" to "Cancellation",
-          "discount" to "Extra Discount"
-        ),
-        onItemClick = onOpenTopic,
-        modifier = Modifier.weight(1f)
-      )
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
-    HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
-    Spacer(modifier = Modifier.height(10.dp))
-
-    Text(
-      text = "নিরাপদ পেমেন্ট মেথড:",
-      fontSize = 11.sp,
-      fontWeight = FontWeight.Bold,
-      color = AntiqueGold
-    )
-
-    Spacer(modifier = Modifier.height(6.dp))
-
-    @OptIn(ExperimentalLayoutApi::class)
-    FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(6.dp),
-      verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-      if (config.bkashEnabled) {
-        Box(
-          modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFE2136E))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-            .testTag("footer_badge_bkash")
-        ) {
-          Text(text = "bKash", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-      if (config.nagadEnabled) {
-        Box(
-          modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFF6921E))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-            .testTag("footer_badge_nagad")
-        ) {
-          Text(text = "Nagad", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-      if (config.rocketEnabled) {
-        Box(
-          modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF8C3494))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-            .testTag("footer_badge_rocket")
-        ) {
-          Text(text = "Rocket", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-      if (config.codEnabled) {
-        Box(
-          modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.White)
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-            .testTag("footer_badge_cod")
-        ) {
-          Text(text = "Cash on Delivery", color = DarkEspresso, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-      if (config.visaEnabled) {
-        Box(
-          modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF1E3A8A))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-            .testTag("footer_badge_visa")
-        ) {
-          Text(text = "Visa / Mastercard", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        orderedBadges.chunked(2).forEach { rowBadges ->
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            rowBadges.forEach { (icon, text) ->
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .clip(RoundedCornerShape(tRadius))
+                  .background(Brush.horizontalGradient(listOf(tBgStart, tBgEnd)))
+                  .then(if (tBorderW > 0.dp) Modifier.border(tBorderW, tBorder, RoundedCornerShape(tRadius)) else Modifier)
+                  .padding(horizontal = 10.dp, vertical = 10.dp)
+              ) {
+                Text(text = icon, fontSize = 15.sp)
+                Text(
+                  text = text,
+                  fontSize = 10.5.sp,
+                  fontWeight = FontWeight.ExtraBold,
+                  color = tText,
+                  maxLines = 2,
+                  lineHeight = 13.sp,
+                  overflow = TextOverflow.Ellipsis,
+                  modifier = Modifier.weight(1f)
+                )
+              }
+            }
+            if (rowBadges.size == 1) Spacer(modifier = Modifier.weight(1f))
+          }
         }
       }
     }
 
-    Spacer(modifier = Modifier.height(12.dp))
+    // Copyright Bar
+    if (hp.showCopyrightBar) {
+      val copyTxt = hp.footerCopyrightOverride.ifBlank { "© 2026 ${config.storeName}. All Rights Reserved." }
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(cRadius))
+          .background(Brush.horizontalGradient(listOf(cBgStart, cBgEnd)))
+          .border(1.dp, cBorder, RoundedCornerShape(cRadius))
+          .padding(horizontal = 12.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
+      ) {
+        Text(
+          text = copyTxt,
+          fontSize = 10.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = cText,
+          textAlign = TextAlign.Center
+        )
+      }
+    }
+  }
 
-    Text(
-      text = "© 2026 SAJGOJ FASHION. All Rights Reserved.",
-      fontSize = 10.sp,
-      color = Color.Gray,
-      textAlign = TextAlign.Center,
-      modifier = Modifier.fillMaxWidth()
+  if (showMapPreviewDialog) {
+    StoreGoogleMapDialog(
+      config = config,
+      onDismiss = { showMapPreviewDialog = false },
+      onOpenExternalMap = { openStoreGoogleMap(context, config, directions = false) },
+      onOpenDirections = { openStoreGoogleMap(context, config, directions = true) }
     )
   }
 }
@@ -1938,6 +2288,8 @@ private fun StorefrontFooterCard(
 @Composable
 private fun FooterLinkColumn(
   title: String,
+  headingColor: Color,
+  linkColor: Color,
   items: List<Pair<String, String>>,
   onItemClick: (String) -> Unit,
   modifier: Modifier = Modifier
@@ -1946,24 +2298,25 @@ private fun FooterLinkColumn(
     Text(
       text = title,
       fontSize = 11.5.sp,
-      fontWeight = FontWeight.Bold,
-      color = AntiqueGold,
+      fontWeight = FontWeight.Black,
+      color = headingColor,
       maxLines = 1,
       overflow = TextOverflow.Ellipsis
     )
-    Spacer(modifier = Modifier.height(4.dp))
+    HorizontalDivider(color = headingColor.copy(alpha = 0.16f), modifier = Modifier.padding(vertical = 3.dp))
     items.forEach { (key, label) ->
       Text(
         text = "▪ $label",
         fontSize = 10.5.sp,
-        color = CreamSurface,
+        fontWeight = FontWeight.SemiBold,
+        color = linkColor,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier
           .fillMaxWidth()
           .clip(RoundedCornerShape(6.dp))
           .clickable { onItemClick(key) }
-          .padding(vertical = 5.dp)
+          .padding(vertical = 4.dp)
           .testTag("footer_link_$key")
       )
     }

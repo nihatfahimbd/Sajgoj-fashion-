@@ -532,7 +532,11 @@ fun AdminDashboardScreen(
             storeConfig = storeConfig,
             products = products,
             onSaveStoreConfig = onUpdateStoreConfig,
-            onShowToast = onShowToast
+            onShowToast = onShowToast,
+            homeSections = homeSections,
+            categories = categories,
+            onToggleSection = onToggleHomeSection,
+            onMoveSection = onMoveHomeSection
           )
         }
 

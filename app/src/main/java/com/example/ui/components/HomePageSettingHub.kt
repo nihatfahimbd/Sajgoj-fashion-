@@ -101,6 +101,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.BannerItem
 import com.example.data.model.Category
+import com.example.data.model.HomePageConfig
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.Product
 import com.example.data.model.StoreConfig
@@ -684,6 +685,12 @@ fun HomePageSettingHub(
 
                           Text(
                             text = when (section.type) {
+                              "search_bar" -> "স্ট্রাকচারাল ব্লক • সার্চ ও ক্যাটাগরি বার (↑↓)"
+                              "top_banner" -> "স্ট্রাকচারাল ব্লক • হিরো ব্যানার ক্যারোসেল (↑↓)"
+                              "voucher_strip" -> "স্ট্রাকচারাল ব্লক • ভাউচার কার্ড স্ট্রিপ (↑↓)"
+                              "category_slider" -> "স্ট্রাকচারাল ব্লক • ক্যাটাগরি আইকন রো (↑↓)"
+                              "google_map" -> "স্ট্রাকচারাল ব্লক • Google Map লোকেশন কার্ড (↑↓)"
+                              "footer_block" -> "স্ট্রাকচারাল ব্লক • ফুটার, ট্রাস্ট ব্যাজ ও কপিরাইট (↑↓)"
                               "new_products" -> "$layoutSummary • নতুন + ${section.productIds.size} পিন্ড"
                               "hot_sale" -> "$layoutSummary • ${products.count { it.isHotSale || section.productIds.contains(it.id) }} টি পণ্য"
                               "combo_packs" -> "$layoutSummary • বান্ডেল অফার"
@@ -841,23 +848,28 @@ fun HomePageSettingHub(
                         }
                       }
 
-                      Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFFFFF1F2),
-                        border = BorderStroke(1.dp, Color(0xFFFECDD3))
-                      ) {
-                        IconButton(
-                          onClick = { onDeleteSection(section.id) },
-                          modifier = Modifier
-                            .size(36.dp)
-                            .testTag("delete_section_${section.id}")
+                      val isStructuralSection = section.type in setOf(
+                        "search_bar", "top_banner", "voucher_strip", "category_slider", "google_map", "footer_block"
+                      )
+                      if (!isStructuralSection) {
+                        Surface(
+                          shape = RoundedCornerShape(10.dp),
+                          color = Color(0xFFFFF1F2),
+                          border = BorderStroke(1.dp, Color(0xFFFECDD3))
                         ) {
-                          Icon(
-                            imageVector = Icons.Outlined.DeleteOutline,
-                            contentDescription = "ব্লক মুছুন",
-                            tint = AccentRed,
-                            modifier = Modifier.size(17.dp)
-                          )
+                          IconButton(
+                            onClick = { onDeleteSection(section.id) },
+                            modifier = Modifier
+                              .size(36.dp)
+                              .testTag("delete_section_${section.id}")
+                          ) {
+                            Icon(
+                              imageVector = Icons.Outlined.DeleteOutline,
+                              contentDescription = "ব্লক মুছুন",
+                              tint = AccentRed,
+                              modifier = Modifier.size(17.dp)
+                            )
+                          }
                         }
                       }
                     }
@@ -1592,6 +1604,44 @@ fun HomePageSettingHub(
               .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
           ) {
+            HomePageLivePreview(
+              hp = storeConfig.pageConfig.homePage,
+              storeConfig = storeConfig,
+              homeSections = homeSections,
+              categories = categories
+            )
+
+            Surface(
+              shape = RoundedCornerShape(16.dp),
+              color = Color.White,
+              border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Column(modifier = Modifier.padding(12.dp)) {
+                HomePageDeveloperStudio(
+                  hp = storeConfig.pageConfig.homePage,
+                  homeSections = homeSections,
+                  categories = categories,
+                  onUpdateHomePage = { nextHp ->
+                    onSaveStoreConfig(
+                      storeConfig.copy(
+                        pageConfig = storeConfig.pageConfig.copy(homePage = nextHp)
+                      )
+                    )
+                  },
+                  onToggleSection = onToggleSection,
+                  onMoveSection = onMoveSection,
+                  onResetHomePage = {
+                    onSaveStoreConfig(
+                      storeConfig.copy(
+                        pageConfig = storeConfig.pageConfig.copy(homePage = HomePageConfig())
+                      )
+                    )
+                  }
+                )
+              }
+            }
+
             StorefrontDesignStudioPanel(
               config = storeConfig,
               onSaveConfig = onSaveStoreConfig
@@ -1835,13 +1885,16 @@ private fun MiniLayoutPreviewDiagram(
 }
 
 private fun sectionVectorIcon(type: String): ImageVector = when (type) {
-  "hero_banner", "promo_banner" -> Icons.Outlined.ViewCarousel
+  "search_bar" -> Icons.Default.Search
+  "top_banner", "hero_banner", "promo_banner" -> Icons.Outlined.ViewCarousel
+  "voucher_strip", "b2g1_offers" -> Icons.Outlined.LocalOffer
+  "category_slider", "category_products" -> Icons.Outlined.Category
+  "google_map" -> Icons.Outlined.Storefront
+  "footer_block" -> Icons.Outlined.WebAsset
   "new_products" -> Icons.Outlined.NewReleases
   "hot_sale" -> Icons.Outlined.LocalFireDepartment
   "combo_packs" -> Icons.Outlined.ShoppingBag
-  "b2g1_offers" -> Icons.Outlined.LocalOffer
   "reels_showcase" -> Icons.Outlined.Movie
-  "category_products" -> Icons.Outlined.Category
   "custom_products" -> Icons.Outlined.AutoAwesome
   else -> Icons.Outlined.GridView
 }

@@ -175,7 +175,8 @@ data class MasterPageConfig(
 data class PageConfiguration(
   val detailPage: DetailPageConfig = DetailPageConfig(),
   val addProductPage: AddProductPageConfig = AddProductPageConfig(),
-  val master: MasterPageConfig = MasterPageConfig()
+  val master: MasterPageConfig = MasterPageConfig(),
+  val homePage: HomePageConfig = HomePageConfig()
 )
 
 object PageConfigJson {
@@ -352,6 +353,7 @@ object PageConfigJson {
       put("detailPage", dObj)
       put("addProductPage", aObj)
       put("master", mObj)
+      put("homePage", HomePageConfigJson.toJsonObject(pc.homePage))
     }
   }
 
@@ -551,7 +553,8 @@ object PageConfigJson {
     return PageConfiguration(
       detailPage = detail,
       addProductPage = addProd,
-      master = master
+      master = master,
+      homePage = HomePageConfigJson.fromJsonObject(obj.optJSONObject("homePage"))
     )
   }
 }

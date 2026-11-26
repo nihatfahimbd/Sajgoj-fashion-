@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.data.model.HomePageConfig
 import com.example.data.model.Order
 import com.example.data.model.StoreConfig
 import com.example.firebase.AuthUserSummary
@@ -60,6 +61,7 @@ import com.example.ui.theme.CreamBackground
 import com.example.ui.theme.CreamSurface
 import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.parseColorHex
 
 enum class StorefrontBottomTab {
   HOME,
@@ -78,159 +80,199 @@ fun StorefrontBottomNavBar(
   onSelectOffers: () -> Unit,
   onSelectAccount: () -> Unit,
   onSelectCart: () -> Unit,
+  homePage: HomePageConfig = HomePageConfig(),
   modifier: Modifier = Modifier
 ) {
+  if (!homePage.showBottomNav) return
+
+  val navBg = parseColorHex(homePage.bottomNavBg, Color.White)
+  val navBorder = parseColorHex(homePage.bottomNavBorderColor, Color(0xFFE5E7EB))
+  val navBorderW = homePage.bottomNavBorderWidthPx.coerceIn(0, 4).dp
+  val navRadius = homePage.bottomNavRadiusPx.coerceIn(0, 32).dp
+  val activeCol = parseColorHex(homePage.bottomNavActiveColor, RoyalMaroon)
+  val inactiveCol = parseColorHex(homePage.bottomNavInactiveColor, Color(0xFF4B5563))
+  val pillBg = if (homePage.bottomNavActivePillBg.equals("transparent", ignoreCase = true)) {
+    activeCol.copy(alpha = 0.12f)
+  } else {
+    parseColorHex(homePage.bottomNavActivePillBg, activeCol.copy(alpha = 0.12f))
+  }
+  val badgeBg = parseColorHex(homePage.bottomNavBadgeBg, RoyalMaroon)
+  val badgeText = parseColorHex(homePage.bottomNavBadgeText, Color.White)
+
   val itemColors = NavigationBarItemDefaults.colors(
-    selectedIconColor = RoyalMaroon,
-    selectedTextColor = RoyalMaroon,
-    indicatorColor = RoyalMaroon.copy(alpha = 0.12f),
-    unselectedIconColor = Color(0xFF4B5563),
-    unselectedTextColor = Color(0xFF4B5563)
+    selectedIconColor = activeCol,
+    selectedTextColor = activeCol,
+    indicatorColor = pillBg,
+    unselectedIconColor = inactiveCol,
+    unselectedTextColor = inactiveCol
   )
 
+  val tabOrder = homePage.bottomNavOrder.ifEmpty { listOf("home", "shopping", "offers", "account", "cart") }
+
   Surface(
-    color = Color.White,
+    color = navBg,
+    shape = RoundedCornerShape(topStart = navRadius, topEnd = navRadius),
+    border = if (navBorderW > 0.dp) BorderStroke(navBorderW, navBorder) else null,
     shadowElevation = 10.dp,
     modifier = modifier.fillMaxWidth()
   ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-      HorizontalDivider(color = Color(0xFFE5E7EB), thickness = 1.dp)
       NavigationBar(
-        containerColor = Color.White,
+        containerColor = navBg,
         tonalElevation = 0.dp,
         windowInsets = WindowInsets.navigationBars
       ) {
-        NavigationBarItem(
-          selected = activeTab == StorefrontBottomTab.HOME,
-          onClick = onSelectHome,
-          colors = itemColors,
-          modifier = Modifier.testTag("bottom_nav_home"),
-          icon = {
-            Icon(
-              imageVector = if (activeTab == StorefrontBottomTab.HOME) Icons.Filled.Home else Icons.Outlined.Home,
-              contentDescription = "হোম"
-            )
-          },
-          label = {
-            Text(
-              text = "হোম",
-              fontSize = 11.sp,
-              fontWeight = if (activeTab == StorefrontBottomTab.HOME) FontWeight.Bold else FontWeight.Medium,
-              maxLines = 1,
-              softWrap = false,
-              overflow = TextOverflow.Ellipsis
-            )
-          }
-        )
-
-        NavigationBarItem(
-          selected = activeTab == StorefrontBottomTab.SHOPPING,
-          onClick = onSelectShopping,
-          colors = itemColors,
-          modifier = Modifier.testTag("bottom_nav_shopping"),
-          icon = {
-            Icon(
-              imageVector = if (activeTab == StorefrontBottomTab.SHOPPING) Icons.Filled.GridView else Icons.Outlined.GridView,
-              contentDescription = "শপিং — সকল প্রোডাক্ট"
-            )
-          },
-          label = {
-            Text(
-              text = "শপিং",
-              fontSize = 11.sp,
-              fontWeight = if (activeTab == StorefrontBottomTab.SHOPPING) FontWeight.Bold else FontWeight.Medium,
-              maxLines = 1,
-              softWrap = false,
-              overflow = TextOverflow.Ellipsis
-            )
-          }
-        )
-
-        NavigationBarItem(
-          selected = activeTab == StorefrontBottomTab.OFFERS,
-          onClick = onSelectOffers,
-          colors = itemColors,
-          modifier = Modifier.testTag("bottom_nav_offers"),
-          icon = {
-            Icon(
-              imageVector = if (activeTab == StorefrontBottomTab.OFFERS) Icons.Filled.CardGiftcard else Icons.Outlined.CardGiftcard,
-              contentDescription = "অফার ও ভাউচার"
-            )
-          },
-          label = {
-            Text(
-              text = "অফার",
-              fontSize = 11.sp,
-              fontWeight = if (activeTab == StorefrontBottomTab.OFFERS) FontWeight.Bold else FontWeight.Medium,
-              maxLines = 1,
-              softWrap = false,
-              overflow = TextOverflow.Ellipsis
-            )
-          }
-        )
-
-        NavigationBarItem(
-          selected = activeTab == StorefrontBottomTab.ACCOUNT,
-          onClick = onSelectAccount,
-          colors = itemColors,
-          modifier = Modifier.testTag("bottom_nav_account"),
-          icon = {
-            Icon(
-              imageVector = if (activeTab == StorefrontBottomTab.ACCOUNT) Icons.Filled.Person else Icons.Outlined.Person,
-              contentDescription = "একাউন্ট"
-            )
-          },
-          label = {
-            Text(
-              text = "একাউন্ট",
-              fontSize = 11.sp,
-              fontWeight = if (activeTab == StorefrontBottomTab.ACCOUNT) FontWeight.Bold else FontWeight.Medium,
-              maxLines = 1,
-              softWrap = false,
-              overflow = TextOverflow.Ellipsis
-            )
-          }
-        )
-
-        NavigationBarItem(
-          selected = activeTab == StorefrontBottomTab.CART,
-          onClick = onSelectCart,
-          colors = itemColors,
-          modifier = Modifier.testTag("bottom_nav_cart"),
-          icon = {
-            BadgedBox(
-              badge = {
-                if (cartItemCount > 0) {
-                  Badge(
-                    containerColor = RoyalMaroon,
-                    contentColor = Color.White
-                  ) {
-                    Text(
-                      text = cartItemCount.toString(),
-                      fontSize = 9.sp,
-                      fontWeight = FontWeight.Bold
-                    )
-                  }
+        tabOrder.forEach { key ->
+          when (key) {
+            "home" -> NavigationBarItem(
+              selected = activeTab == StorefrontBottomTab.HOME,
+              onClick = onSelectHome,
+              colors = itemColors,
+              alwaysShowLabel = homePage.bottomNavShowLabels,
+              modifier = Modifier.testTag("bottom_nav_home"),
+              icon = {
+                Icon(
+                  imageVector = if (activeTab == StorefrontBottomTab.HOME) Icons.Filled.Home else Icons.Outlined.Home,
+                  contentDescription = homePage.navHomeLabel.ifBlank { "হোম" }
+                )
+              },
+              label = if (homePage.bottomNavShowLabels) {
+                {
+                  Text(
+                    text = homePage.navHomeLabel.ifBlank { "হোম" },
+                    fontSize = 11.sp,
+                    fontWeight = if (activeTab == StorefrontBottomTab.HOME) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                  )
                 }
-              }
-            ) {
-              Icon(
-                imageVector = if (activeTab == StorefrontBottomTab.CART) Icons.Filled.ShoppingBag else Icons.Outlined.ShoppingBag,
-                contentDescription = "কার্ট"
-              )
-            }
-          },
-          label = {
-            Text(
-              text = if (cartItemCount > 0) "কার্ট ($cartItemCount)" else "কার্ট",
-              fontSize = 11.sp,
-              fontWeight = if (activeTab == StorefrontBottomTab.CART) FontWeight.Bold else FontWeight.Medium,
-              maxLines = 1,
-              softWrap = false,
-              overflow = TextOverflow.Ellipsis
+              } else null
+            )
+
+            "shopping" -> NavigationBarItem(
+              selected = activeTab == StorefrontBottomTab.SHOPPING,
+              onClick = onSelectShopping,
+              colors = itemColors,
+              alwaysShowLabel = homePage.bottomNavShowLabels,
+              modifier = Modifier.testTag("bottom_nav_shopping"),
+              icon = {
+                Icon(
+                  imageVector = if (activeTab == StorefrontBottomTab.SHOPPING) Icons.Filled.GridView else Icons.Outlined.GridView,
+                  contentDescription = homePage.navShoppingLabel.ifBlank { "শপিং" }
+                )
+              },
+              label = if (homePage.bottomNavShowLabels) {
+                {
+                  Text(
+                    text = homePage.navShoppingLabel.ifBlank { "শপিং" },
+                    fontSize = 11.sp,
+                    fontWeight = if (activeTab == StorefrontBottomTab.SHOPPING) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
+              } else null
+            )
+
+            "offers" -> NavigationBarItem(
+              selected = activeTab == StorefrontBottomTab.OFFERS,
+              onClick = onSelectOffers,
+              colors = itemColors,
+              alwaysShowLabel = homePage.bottomNavShowLabels,
+              modifier = Modifier.testTag("bottom_nav_offers"),
+              icon = {
+                Icon(
+                  imageVector = if (activeTab == StorefrontBottomTab.OFFERS) Icons.Filled.CardGiftcard else Icons.Outlined.CardGiftcard,
+                  contentDescription = homePage.navOffersLabel.ifBlank { "অফার" }
+                )
+              },
+              label = if (homePage.bottomNavShowLabels) {
+                {
+                  Text(
+                    text = homePage.navOffersLabel.ifBlank { "অফার" },
+                    fontSize = 11.sp,
+                    fontWeight = if (activeTab == StorefrontBottomTab.OFFERS) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
+              } else null
+            )
+
+            "account" -> NavigationBarItem(
+              selected = activeTab == StorefrontBottomTab.ACCOUNT,
+              onClick = onSelectAccount,
+              colors = itemColors,
+              alwaysShowLabel = homePage.bottomNavShowLabels,
+              modifier = Modifier.testTag("bottom_nav_account"),
+              icon = {
+                Icon(
+                  imageVector = if (activeTab == StorefrontBottomTab.ACCOUNT) Icons.Filled.Person else Icons.Outlined.Person,
+                  contentDescription = homePage.navAccountLabel.ifBlank { "একাউন্ট" }
+                )
+              },
+              label = if (homePage.bottomNavShowLabels) {
+                {
+                  Text(
+                    text = homePage.navAccountLabel.ifBlank { "একাউন্ট" },
+                    fontSize = 11.sp,
+                    fontWeight = if (activeTab == StorefrontBottomTab.ACCOUNT) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
+              } else null
+            )
+
+            "cart" -> NavigationBarItem(
+              selected = activeTab == StorefrontBottomTab.CART,
+              onClick = onSelectCart,
+              colors = itemColors,
+              alwaysShowLabel = homePage.bottomNavShowLabels,
+              modifier = Modifier.testTag("bottom_nav_cart"),
+              icon = {
+                BadgedBox(
+                  badge = {
+                    if (homePage.bottomNavShowCartBadge && cartItemCount > 0) {
+                      Badge(
+                        containerColor = badgeBg,
+                        contentColor = badgeText
+                      ) {
+                        Text(
+                          text = cartItemCount.toString(),
+                          fontSize = 9.sp,
+                          fontWeight = FontWeight.Bold
+                        )
+                      }
+                    }
+                  }
+                ) {
+                  Icon(
+                    imageVector = if (activeTab == StorefrontBottomTab.CART) Icons.Filled.ShoppingBag else Icons.Outlined.ShoppingBag,
+                    contentDescription = homePage.navCartLabel.ifBlank { "কার্ট" }
+                  )
+                }
+              },
+              label = if (homePage.bottomNavShowLabels) {
+                {
+                  val cartBase = homePage.navCartLabel.ifBlank { "কার্ট" }
+                  Text(
+                    text = if (homePage.bottomNavShowCartBadge && cartItemCount > 0) "$cartBase ($cartItemCount)" else cartBase,
+                    fontSize = 11.sp,
+                    fontWeight = if (activeTab == StorefrontBottomTab.CART) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
+              } else null
             )
           }
-        )
+        }
       }
     }
   }

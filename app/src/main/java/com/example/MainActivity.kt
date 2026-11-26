@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.firebase.configureAppCheck
 import com.example.notifications.OrderNotificationHelper
 import com.example.ui.AppScreen
+import com.example.ui.ProductSortOption
 import com.example.ui.StoreViewModel
 import com.example.ui.components.AiStylistDialog
 import com.example.ui.components.CartAndCheckoutDialog
@@ -374,7 +375,8 @@ class MainActivity : ComponentActivity() {
                 onSelectCart = {
                   showAccountDialog = false
                   viewModel.setCartOpen(true)
-                }
+                },
+                homePage = storeConfig.pageConfig.homePage
               )
             }
           },
@@ -403,6 +405,14 @@ class MainActivity : ComponentActivity() {
               .statusBarsPadding()
           ) {
             Column(modifier = Modifier.fillMaxSize()) {
+            val activeHomeSections = remember(homeSections) { homeSections.filter { it.enabled } }
+            val isFilteredOrShopping = selectedCategory != "All" ||
+              searchQuery.isNotBlank() ||
+              imageSearchState != null ||
+              sortOption != ProductSortOption.DEFAULT ||
+              storeBottomTab == StorefrontBottomTab.SHOPPING
+            val showSearchStripInHeader = isFilteredOrShopping || activeHomeSections.firstOrNull()?.type == "search_bar"
+
             // App Header
             StoreHeader(
               config = storeConfig,
@@ -456,7 +466,8 @@ class MainActivity : ComponentActivity() {
               onOpenNotifications = {
                 hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
                 showNotificationsDialog = true
-              }
+              },
+              showSearchStripInHeader = showSearchStripInHeader
             )
 
             // Screen Switcher
@@ -483,6 +494,17 @@ class MainActivity : ComponentActivity() {
                     onResetFilters = { viewModel.resetHomeFilters() },
                     imageSearchState = imageSearchState,
                     onClearImageSearch = { viewModel.clearImageSearch() },
+                    onSearchChange = { viewModel.setSearchQuery(it) },
+                    onVoiceSearchClick = { launchVoiceSearch() },
+                    onImageSearchClick = {
+                      photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                      )
+                    },
+                    onScanClick = {
+                      manualScanInput = ""
+                      showScannerDialog = true
+                    },
                     scrollToTopTrigger = homeScrollTrigger,
                     onProductClick = { viewModel.openProductDetail(it) },
                     onAddToCart = { viewModel.addToCart(it, 1) },

@@ -401,6 +401,7 @@ class StoreRepository(private val context: Context) {
   )
 
   private val initialHomeSections = listOf(
+    HomeSectionConfig(id = "search_bar", type = "search_bar", title = "সার্চ ও ক্যাটাগরি বার", subtitle = "সকল ক্যাটাগরি, হোম, সার্চ, ভয়েস, ইমেজ ও স্ক্যান", icon = "🔍", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
     HomeSectionConfig(id = "top_banner", type = "top_banner", title = "হিরো ব্যানার ও স্লাইডার", subtitle = "হোম পেজের প্রধান ব্যানার স্লাইডার", icon = "🖼️", layout = "banner", displayStyle = "banner", columnsPerRow = 1, rowCount = 1, enabled = true),
     HomeSectionConfig(id = "voucher_strip", type = "voucher_strip", title = "ভাউচার ডিসকাউন্ট কার্ড", subtitle = "Claim Vouchers to Save More!", icon = "🎟️", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
     HomeSectionConfig(id = "category_slider", type = "category_slider", title = "স্লাইডিং ক্যাটাগরি কার্ড", subtitle = "ব্যানারের নিচের স্লাইডিং ক্যাটাগরি", icon = "🏷️", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
@@ -410,7 +411,9 @@ class StoreRepository(private val context: Context) {
     HomeSectionConfig(id = "b2g1_offers", type = "b2g1_offers", title = "Buy 2 Get 1", subtitle = "নির্বাচিত ২টি পণ্য নিলেই ১টি ফ্রি", icon = "🎉", badge = "BUY 2 GET 1", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, productIds = listOf("p1", "p2", "p4", "p6", "p9", "p11", "p15"), maxItems = 12),
     HomeSectionConfig(id = "best_deals", type = "best_deals", title = "সেরা ডিল", subtitle = "২ লাইনে ৬টি প্রোডাক্ট ডিসপ্লে", icon = "⭐", badge = "সেরা ডিল", layout = "grid3x2", columnsPerRow = 3, rowCount = 2, displayStyle = "grid", enabled = true, productIds = listOf("p1", "p2", "p3", "p4", "p5", "p6", "p9", "p10", "p11", "p12"), maxItems = 6),
     HomeSectionConfig(id = "reels_showcase", type = "reels_showcase", title = "Product Reels", subtitle = "পন্যের ভিডিও দেখে অর্ডার করুন", icon = "🎬", badge = "", layout = "slider3", columnsPerRow = 3, rowCount = 1, displayStyle = "slider", enabled = true, maxItems = 3),
-    HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "সব ক্যাটাগরির প্রোডাক্ট ডিসপ্লে", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9)
+    HomeSectionConfig(id = "all_products", type = "all_products", title = "সব প্রোডাক্ট", subtitle = "সব ক্যাটাগরির প্রোডাক্ট ডিসপ্লে", icon = "🛍️", badge = "সকল পণ্য", layout = "grid3x3", columnsPerRow = 3, rowCount = 3, displayStyle = "grid", enabled = true, maxItems = 9),
+    HomeSectionConfig(id = "google_map", type = "google_map", title = "স্টোর লোকেশন ম্যাপ", subtitle = "Google Map ও ডিরেকশন কার্ড", icon = "📍", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true),
+    HomeSectionConfig(id = "footer_block", type = "footer_block", title = "ফুটার, ট্রাস্ট ব্যাজ ও কপিরাইট", subtitle = "ফুটার লিংক, ৪টি ট্রাস্ট কার্ড ও কপিরাইট", icon = "🦶", layout = "strip", displayStyle = "strip", columnsPerRow = 1, rowCount = 1, enabled = true)
   )
 
   private val initialReels = listOf(
@@ -2854,7 +2857,7 @@ class StoreRepository(private val context: Context) {
     }
     val inferredStyle = when {
       s.type in setOf("top_banner", "promo_banner") -> "banner"
-      s.type in setOf("voucher_strip", "category_slider") -> "strip"
+      s.type in setOf("search_bar", "voucher_strip", "category_slider", "google_map", "footer_block") -> "strip"
       s.displayStyle == "grid" || s.displayStyle == "slider" -> s.displayStyle
       s.layout == "grid3x2" || s.layout == "grid3x3" -> "grid"
       else -> "slider"
@@ -2942,8 +2945,8 @@ class StoreRepository(private val context: Context) {
           )
         }
       }
-      if (isCustomized) {
-        list
+      val resolved = if (isCustomized) {
+        list.toMutableList()
       } else if (list.isNotEmpty()) {
         val copy = list.toMutableList()
         if (copy.none { it.type == "combo_packs" }) {
@@ -2966,8 +2969,18 @@ class StoreRepository(private val context: Context) {
         }
         copy
       } else {
-        initialHomeSections
+        initialHomeSections.toMutableList()
       }
+      if (resolved.none { it.type == "search_bar" }) {
+        initialHomeSections.find { it.type == "search_bar" }?.let { resolved.add(0, it) }
+      }
+      if (resolved.none { it.type == "google_map" }) {
+        initialHomeSections.find { it.type == "google_map" }?.let { resolved.add(it) }
+      }
+      if (resolved.none { it.type == "footer_block" }) {
+        initialHomeSections.find { it.type == "footer_block" }?.let { resolved.add(it) }
+      }
+      resolved
     } catch (_: Exception) {
       initialHomeSections
     }

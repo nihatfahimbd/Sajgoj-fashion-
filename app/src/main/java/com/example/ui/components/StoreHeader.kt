@@ -2,6 +2,7 @@ package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AdminPanelSettings
@@ -76,6 +78,20 @@ import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.parseColorHex
 
+private fun parseOptColor(hex: String, fallback: Color): Color {
+  val trimmed = hex.trim()
+  if (trimmed.equals("transparent", ignoreCase = true)) return Color.Transparent
+  return parseColorHex(trimmed, fallback)
+}
+
+fun orderCategoriesByHomePage(categories: List<Category>, categoryOrder: List<String>): List<Category> {
+  if (categoryOrder.isEmpty()) return categories
+  val orderMap = categoryOrder.withIndex().associate { it.value to it.index }
+  return categories.sortedWith(compareBy { cat ->
+    orderMap[cat.id] ?: orderMap[cat.name] ?: Int.MAX_VALUE
+  })
+}
+
 @Composable
 fun StoreHeader(
   config: StoreConfig,
@@ -98,9 +114,13 @@ fun StoreHeader(
   isAuthBusy: Boolean = false,
   onGoogleAuthClick: () -> Unit = {},
   unreadNotificationCount: Int = 0,
-  onOpenNotifications: () -> Unit = {}
+  onOpenNotifications: () -> Unit = {},
+  showSearchStripInHeader: Boolean = true
 ) {
-  var isCategoryMenuExpanded by remember { mutableStateOf(false) }
+  val hp = config.pageConfig.homePage
+  val orderedCategories = remember(categories, hp.categoryOrder) {
+    orderCategoriesByHomePage(categories, hp.categoryOrder)
+  }
   val d = config.design
   val customHdr = d.useCustomHeaderColors
   val headerSurfaceColor = if (customHdr) parseColorHex(d.headerBg, Color.White) else Color.White
@@ -188,14 +208,29 @@ fun StoreHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
       ) {
-        // Google Sign-In / Signed-in Logout Pill
+        // Google Sign-In / Signed-in Logout Pill (styled via HomePageConfig)
+        val loginStart = parseOptColor(hp.loginBtnBg, Color(0xFF0B0F19))
+        val loginEnd = parseOptColor(hp.loginBtnBgEnd, loginStart)
+        val loginTxt = parseOptColor(hp.loginBtnText, Color.White)
+        val loginBrd = parseOptColor(hp.loginBtnBorder, Color.White)
+        val loginShape = RoundedCornerShape(hp.loginBtnRadiusPx.coerceIn(0, 32).dp)
         Surface(
-          shape = RoundedCornerShape(18.dp),
-          color = if (authUser != null) Color(0xFFFFF1F2) else CreamSurface,
-          border = BorderStroke(1.dp, if (authUser != null) Color(0xFFF43F5E) else BorderGold),
+          shape = loginShape,
+          color = Color.Transparent,
+          border = BorderStroke(
+            1.dp,
+            if (authUser != null) Color(0xFFF43F5E) else loginBrd
+          ),
           modifier = Modifier
             .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(loginShape)
+            .background(
+              if (authUser != null) {
+                Brush.horizontalGradient(listOf(Color(0xFFFFF1F2), Color(0xFFFFE4E6)))
+              } else {
+                Brush.horizontalGradient(listOf(loginStart, loginEnd))
+              }
+            )
             .clickable(enabled = !isAuthBusy) { onGoogleAuthClick() }
             .testTag("header_google_auth_button")
         ) {
@@ -207,16 +242,16 @@ fun StoreHeader(
             Icon(
               imageVector = if (authUser != null) Icons.Default.PowerSettingsNew else Icons.Default.AccountCircle,
               contentDescription = if (authUser != null) "লগআউট করুন (${authUser.displayName})" else "Google সাইন-ইন",
-              tint = if (authUser != null) Color(0xFFBE123C) else RoyalMaroon,
+              tint = if (authUser != null) Color(0xFFBE123C) else loginTxt,
               modifier = Modifier.size(16.dp)
             )
             Text(
               text = when {
                 isAuthBusy -> "..."
                 authUser != null -> "লগআউট"
-                else -> "লগইন"
+                else -> hp.loginBtnMobileLabel.ifBlank { "লগইন" }
               },
-              color = if (authUser != null) Color(0xFFBE123C) else DarkEspresso,
+              color = if (authUser != null) Color(0xFFBE123C) else loginTxt,
               fontSize = 11.sp,
               fontWeight = FontWeight.Bold,
               maxLines = 1,
@@ -334,277 +369,23 @@ fun StoreHeader(
       }
     }
 
-    // 3. Compact Search Strip (Storefront only):
-    // [সকল ক্যাটাগরী ▾] [🏠] [🔍 Short Search Box + 🎙️ + 🖼️ + 📷 স্ক্যান]
+    // 3. Compact Search Strip (when pinned in Header) + Horizontal Category Scroll Bar
     if (currentScreen == AppScreen.STOREFRONT) {
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
-      ) {
-        // 3A. "সকল ক্যাটাগরী" Menu Trigger + DropdownMenu
-        Box {
-          Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = Color(0xFFEF4444),
-            border = BorderStroke(1.dp, Color.White),
-            shadowElevation = 2.dp,
-            modifier = Modifier
-              .heightIn(min = 40.dp)
-              .clip(RoundedCornerShape(20.dp))
-              .clickable { isCategoryMenuExpanded = true }
-              .testTag("all_categories_menu_button")
-          ) {
-            Row(
-              modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-              Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = "সকল ক্যাটাগরী মেনু",
-                tint = Color.Black,
-                modifier = Modifier.size(15.dp)
-              )
-              Text(
-                text = if (selectedCategory == "All") "সকল ক্যাটাগরী" else selectedCategory,
-                color = Color.Black,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.ExtraBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-              )
-              Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = null,
-                tint = Color.Black,
-                modifier = Modifier.size(15.dp)
-              )
-            }
-          }
-
-          DropdownMenu(
-            expanded = isCategoryMenuExpanded,
-            onDismissRequest = { isCategoryMenuExpanded = false },
-            modifier = Modifier
-              .background(Color.White)
-              .width(220.dp)
-          ) {
-            DropdownMenuItem(
-              text = {
-                Row(
-                  verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                  Text(text = "🌟", fontSize = 14.sp)
-                  Text(
-                    text = "সকল পণ্য (All)",
-                    fontWeight = if (selectedCategory == "All") FontWeight.Black else FontWeight.SemiBold,
-                    color = if (selectedCategory == "All") RoyalMaroon else DarkEspresso,
-                    fontSize = 13.sp
-                  )
-                }
-              },
-              onClick = {
-                onCategorySelected("All")
-                isCategoryMenuExpanded = false
-              }
-            )
-            HorizontalDivider(color = BorderGold.copy(alpha = 0.4f))
-            categories.filter { it.type != "sub" }.forEach { cat ->
-              DropdownMenuItem(
-                text = {
-                  Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                  ) {
-                    Text(text = cat.icon.ifBlank { "✨" }, fontSize = 14.sp)
-                    Text(
-                      text = cat.name,
-                      fontWeight = if (selectedCategory == cat.name) FontWeight.Black else FontWeight.Medium,
-                      color = if (selectedCategory == cat.name) RoyalMaroon else DarkEspresso,
-                      fontSize = 13.sp
-                    )
-                  }
-                },
-                onClick = {
-                  onCategorySelected(cat.name)
-                  isCategoryMenuExpanded = false
-                }
-              )
-            }
-          }
-        }
-
-        // 3B. Home Icon Button
-        Surface(
-          shape = CircleShape,
-          color = Color(0xFFEF4444),
-          border = BorderStroke(1.dp, Color.White),
-          shadowElevation = 2.dp,
-          modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .clickable { onHomeReset() }
-            .testTag("home_reset_button")
-        ) {
-          Box(contentAlignment = Alignment.Center) {
-            Icon(
-              imageVector = Icons.Default.Home,
-              contentDescription = "হোম পেজ ও সব ফিল্টার রিসেট",
-              tint = Color.Black,
-              modifier = Modifier.size(19.dp)
-            )
-          }
-        }
-
-        // 3C. Shorter Compact Search Box + Voice + Image + Scan
-        Surface(
-          shape = RoundedCornerShape(24.dp),
-          color = CreamBackground,
-          border = BorderStroke(1.dp, BorderGold),
-          shadowElevation = 1.dp,
-          modifier = Modifier
-            .weight(1f)
-            .heightIn(min = 42.dp)
-        ) {
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(start = 8.dp, end = 4.dp, top = 3.dp, bottom = 3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
-          ) {
-            Icon(
-              imageVector = Icons.Default.Search,
-              contentDescription = "Search",
-              tint = AntiqueGoldDark,
-              modifier = Modifier.size(16.dp)
-            )
-
-            Box(
-              modifier = Modifier.weight(1f),
-              contentAlignment = Alignment.CenterStart
-            ) {
-              if (searchQuery.isEmpty()) {
-                Text(
-                  text = "খুঁজুন...",
-                  fontSize = 11.5.sp,
-                  color = Color.Gray,
-                  maxLines = 1,
-                  overflow = TextOverflow.Ellipsis
-                )
-              }
-              BasicTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                singleLine = true,
-                textStyle = TextStyle(
-                  color = DarkEspresso,
-                  fontSize = 12.sp,
-                  fontWeight = FontWeight.SemiBold
-                ),
-                cursorBrush = SolidColor(RoyalMaroon),
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .testTag("search_input")
-              )
-            }
-
-            if (searchQuery.isNotEmpty() || isImageSearchActive) {
-              Box(
-                modifier = Modifier
-                  .size(26.dp)
-                  .clip(CircleShape)
-                  .clickable { onClearAllSearch() }
-                  .testTag("search_clear_button"),
-                contentAlignment = Alignment.Center
-              ) {
-                Icon(
-                  imageVector = Icons.Default.Clear,
-                  contentDescription = "Clear search",
-                  tint = Color.Gray,
-                  modifier = Modifier.size(14.dp)
-                )
-              }
-            }
-
-            // Voice Search Icon Button
-            Surface(
-              shape = CircleShape,
-              color = Color(0xFFFFEBEE),
-              border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
-              modifier = Modifier
-                .size(30.dp)
-                .clip(CircleShape)
-                .clickable { onVoiceSearchClick() }
-                .testTag("voice_search_button")
-            ) {
-              Box(contentAlignment = Alignment.Center) {
-                Icon(
-                  imageVector = Icons.Default.Mic,
-                  contentDescription = "ভয়েস সার্চ",
-                  tint = Color.Black,
-                  modifier = Modifier.size(16.dp)
-                )
-              }
-            }
-
-            // Image Search Icon Button (Photo Picker from Device)
-            Surface(
-              shape = CircleShape,
-              color = if (isImageSearchActive) Color(0xFFEF4444) else Color(0xFFFFEBEE),
-              border = BorderStroke(1.dp, if (isImageSearchActive) Color.Black else Color(0xFFFFCDD2)),
-              modifier = Modifier
-                .size(30.dp)
-                .clip(CircleShape)
-                .clickable { onImageSearchClick() }
-                .testTag("image_search_button")
-            ) {
-              Box(contentAlignment = Alignment.Center) {
-                Icon(
-                  imageVector = Icons.Default.ImageSearch,
-                  contentDescription = "ছবি দিয়ে প্রোডাক্ট সার্চ",
-                  tint = Color.Black,
-                  modifier = Modifier.size(16.dp)
-                )
-              }
-            }
-
-            // Scan Button
-            Surface(
-              shape = RoundedCornerShape(16.dp),
-              color = Color(0xFFEF4444),
-              border = BorderStroke(1.dp, Color.White),
-              modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .clickable { onScanClick() }
-                .testTag("scan_search_button")
-            ) {
-              Row(
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-              ) {
-                Icon(
-                  imageVector = Icons.Default.QrCodeScanner,
-                  contentDescription = "স্ক্যান করুন",
-                  tint = Color.Black,
-                  modifier = Modifier.size(13.dp)
-                )
-                Text(
-                  text = "স্ক্যান",
-                  color = Color.Black,
-                  fontSize = 9.5.sp,
-                  fontWeight = FontWeight.Black,
-                  maxLines = 1
-                )
-              }
-            }
-          }
-        }
+      if (showSearchStripInHeader && hp.showSearchBar) {
+        StorefrontCompactSearchStrip(
+          config = config,
+          categories = orderedCategories,
+          selectedCategory = selectedCategory,
+          searchQuery = searchQuery,
+          isImageSearchActive = isImageSearchActive,
+          onSearchChange = onSearchChange,
+          onCategorySelected = onCategorySelected,
+          onHomeReset = onHomeReset,
+          onVoiceSearchClick = onVoiceSearchClick,
+          onImageSearchClick = onImageSearchClick,
+          onScanClick = onScanClick,
+          onClearAllSearch = onClearAllSearch
+        )
       }
 
       // 4. Horizontal Category Scroll Bar
@@ -624,7 +405,7 @@ fun StoreHeader(
           onClick = { onCategorySelected("All") }
         )
 
-        categories.forEach { cat ->
+        orderedCategories.forEach { cat ->
           CategoryPill(
             label = cat.name,
             icon = cat.icon,
@@ -642,6 +423,353 @@ fun StoreHeader(
         .height(1.dp)
         .background(BorderGold)
     )
+  }
+}
+
+@Composable
+fun StorefrontCompactSearchStrip(
+  config: StoreConfig,
+  categories: List<Category>,
+  selectedCategory: String,
+  searchQuery: String,
+  isImageSearchActive: Boolean,
+  onSearchChange: (String) -> Unit,
+  onCategorySelected: (String) -> Unit,
+  onHomeReset: () -> Unit,
+  onVoiceSearchClick: () -> Unit,
+  onImageSearchClick: () -> Unit,
+  onScanClick: () -> Unit,
+  onClearAllSearch: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  var isCategoryMenuExpanded by remember { mutableStateOf(false) }
+  val hp = config.pageConfig.homePage
+  if (!hp.showSearchBar) return
+
+  val orderedCats = remember(categories, hp.categoryOrder) {
+    orderCategoriesByHomePage(categories, hp.categoryOrder)
+  }
+  val containerBg = parseOptColor(hp.searchBarContainerBg, Color.Transparent)
+  val containerBorder = parseOptColor(hp.searchBarContainerBorder, Color.Transparent)
+  val radiusDp = hp.searchRadiusPx.coerceIn(0, 32).dp
+  val borderW = hp.searchBorderWidthPx.coerceIn(0, 4).dp
+  val barOrder = hp.searchBarOrder.ifEmpty { listOf("cat_menu", "home_btn", "search_input") }
+  val toolsOrder = hp.searchToolsOrder.ifEmpty { listOf("voice", "image", "scan") }
+
+  Row(
+    modifier = modifier
+      .fillMaxWidth()
+      .padding(horizontal = 10.dp, vertical = 4.dp)
+      .clip(RoundedCornerShape(radiusDp))
+      .background(containerBg)
+      .then(
+        if (containerBorder != Color.Transparent && borderW > 0.dp) {
+          Modifier.border(borderW, containerBorder, RoundedCornerShape(radiusDp))
+        } else {
+          Modifier
+        }
+      )
+      .padding(horizontal = if (containerBg != Color.Transparent) 6.dp else 0.dp, vertical = if (containerBg != Color.Transparent) 4.dp else 0.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(5.dp)
+  ) {
+    barOrder.forEach { slot ->
+      when (slot) {
+        "cat_menu" -> if (hp.showCatMenuBtn) {
+          val catStart = parseOptColor(hp.searchCatBtnBg, Color(0xFFFCA5A5))
+          val catEnd = parseOptColor(hp.searchCatBtnBgEnd, catStart)
+          val catTxt = parseOptColor(hp.searchCatBtnText, Color.Black)
+          val catBrd = parseOptColor(hp.searchCatBtnBorder, Color(0xFFDC2626))
+          Box {
+            Surface(
+              shape = RoundedCornerShape(radiusDp),
+              color = Color.Transparent,
+              border = if (borderW > 0.dp) BorderStroke(borderW, catBrd) else null,
+              shadowElevation = 2.dp,
+              modifier = Modifier
+                .heightIn(min = 40.dp)
+                .clip(RoundedCornerShape(radiusDp))
+                .background(Brush.horizontalGradient(listOf(catStart, catEnd)))
+                .clickable { isCategoryMenuExpanded = true }
+                .testTag("all_categories_menu_button")
+            ) {
+              Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+              ) {
+                Icon(
+                  imageVector = Icons.Default.Menu,
+                  contentDescription = "সকল ক্যাটাগরী মেনু",
+                  tint = catTxt,
+                  modifier = Modifier.size(15.dp)
+                )
+                Text(
+                  text = if (selectedCategory == "All") hp.catMenuLabel.ifBlank { "সকল ক্যাটাগরী" } else selectedCategory,
+                  color = catTxt,
+                  fontSize = 10.5.sp,
+                  fontWeight = FontWeight.ExtraBold,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis
+                )
+                Icon(
+                  imageVector = Icons.Default.ArrowDropDown,
+                  contentDescription = null,
+                  tint = catTxt,
+                  modifier = Modifier.size(15.dp)
+                )
+              }
+            }
+
+            DropdownMenu(
+              expanded = isCategoryMenuExpanded,
+              onDismissRequest = { isCategoryMenuExpanded = false },
+              modifier = Modifier
+                .background(Color.White)
+                .width(220.dp)
+            ) {
+              DropdownMenuItem(
+                text = {
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                  ) {
+                    Text(text = "🌟", fontSize = 14.sp)
+                    Text(
+                      text = "সকল পণ্য (All)",
+                      fontWeight = if (selectedCategory == "All") FontWeight.Black else FontWeight.SemiBold,
+                      color = if (selectedCategory == "All") RoyalMaroon else DarkEspresso,
+                      fontSize = 13.sp
+                    )
+                  }
+                },
+                onClick = {
+                  onCategorySelected("All")
+                  isCategoryMenuExpanded = false
+                }
+              )
+              HorizontalDivider(color = BorderGold.copy(alpha = 0.4f))
+              orderedCats.filter { it.type != "sub" }.forEach { cat ->
+                DropdownMenuItem(
+                  text = {
+                    Row(
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                      Text(text = cat.icon.ifBlank { "✨" }, fontSize = 14.sp)
+                      Text(
+                        text = cat.name,
+                        fontWeight = if (selectedCategory == cat.name) FontWeight.Black else FontWeight.Medium,
+                        color = if (selectedCategory == cat.name) RoyalMaroon else DarkEspresso,
+                        fontSize = 13.sp
+                      )
+                    }
+                  },
+                  onClick = {
+                    onCategorySelected(cat.name)
+                    isCategoryMenuExpanded = false
+                  }
+                )
+              }
+            }
+          }
+        }
+
+        "home_btn" -> if (hp.showHomeBtn) {
+          val homeStart = parseOptColor(hp.searchHomeBtnBg, Color(0xFFFCA5A5))
+          val homeEnd = parseOptColor(hp.searchHomeBtnBgEnd, homeStart)
+          val homeTxt = parseOptColor(hp.searchHomeBtnText, Color.Black)
+          val homeBrd = parseOptColor(hp.searchHomeBtnBorder, Color(0xFFDC2626))
+          Surface(
+            shape = CircleShape,
+            color = Color.Transparent,
+            border = if (borderW > 0.dp) BorderStroke(borderW, homeBrd) else null,
+            shadowElevation = 2.dp,
+            modifier = Modifier
+              .size(40.dp)
+              .clip(CircleShape)
+              .background(Brush.horizontalGradient(listOf(homeStart, homeEnd)))
+              .clickable { onHomeReset() }
+              .testTag("home_reset_button")
+          ) {
+            Box(contentAlignment = Alignment.Center) {
+              Icon(
+                imageVector = Icons.Default.Home,
+                contentDescription = "হোম পেজ ও সব ফিল্টার রিসেট",
+                tint = homeTxt,
+                modifier = Modifier.size(19.dp)
+              )
+            }
+          }
+        }
+
+        "search_input" -> {
+          val inputBg = parseOptColor(hp.searchInputBg, CreamBackground)
+          val inputTxt = parseOptColor(hp.searchInputText, DarkEspresso)
+          val inputBrd = parseOptColor(hp.searchInputBorder, BorderGold)
+          val toolBg = parseOptColor(hp.searchToolBtnBg, Color(0xFFFEF2F2))
+          val toolTxt = parseOptColor(hp.searchToolBtnText, Color.Black)
+          val toolBrd = parseOptColor(hp.searchToolBtnBorder, Color(0xFFFECACA))
+          val scanStart = parseOptColor(hp.searchScanBtnBg, Color(0xFFFCA5A5))
+          val scanEnd = parseOptColor(hp.searchScanBtnBgEnd, scanStart)
+          val scanTxt = parseOptColor(hp.searchScanBtnText, Color.Black)
+          val scanBrd = parseOptColor(hp.searchScanBtnBorder, Color(0xFFDC2626))
+
+          Surface(
+            shape = RoundedCornerShape(radiusDp),
+            color = inputBg,
+            border = if (borderW > 0.dp) BorderStroke(borderW, inputBrd) else null,
+            shadowElevation = 1.dp,
+            modifier = Modifier
+              .weight(1f)
+              .heightIn(min = 42.dp)
+          ) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 8.dp, end = 4.dp, top = 3.dp, bottom = 3.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+              Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+                tint = inputTxt.copy(alpha = 0.7f),
+                modifier = Modifier.size(16.dp)
+              )
+
+              Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+              ) {
+                if (searchQuery.isEmpty()) {
+                  Text(
+                    text = hp.searchPlaceholder.ifBlank { "খুঁজুন..." },
+                    fontSize = 11.5.sp,
+                    color = inputTxt.copy(alpha = 0.55f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
+                BasicTextField(
+                  value = searchQuery,
+                  onValueChange = onSearchChange,
+                  singleLine = true,
+                  textStyle = TextStyle(
+                    color = inputTxt,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                  ),
+                  cursorBrush = SolidColor(RoyalMaroon),
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("search_input")
+                )
+              }
+
+              if (searchQuery.isNotEmpty() || isImageSearchActive) {
+                Box(
+                  modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .clickable { onClearAllSearch() }
+                    .testTag("search_clear_button"),
+                  contentAlignment = Alignment.Center
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.Clear,
+                    contentDescription = "Clear search",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(14.dp)
+                  )
+                }
+              }
+
+              toolsOrder.forEach { tool ->
+                when (tool) {
+                  "voice" -> if (hp.showVoiceBtn) {
+                    Surface(
+                      shape = CircleShape,
+                      color = toolBg,
+                      border = if (borderW > 0.dp) BorderStroke(borderW, toolBrd) else null,
+                      modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .clickable { onVoiceSearchClick() }
+                        .testTag("voice_search_button")
+                    ) {
+                      Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                          imageVector = Icons.Default.Mic,
+                          contentDescription = "ভয়েস সার্চ",
+                          tint = toolTxt,
+                          modifier = Modifier.size(16.dp)
+                        )
+                      }
+                    }
+                  }
+
+                  "image" -> if (hp.showImageSearchBtn) {
+                    Surface(
+                      shape = CircleShape,
+                      color = if (isImageSearchActive) Color(0xFFEF4444) else toolBg,
+                      border = if (borderW > 0.dp) BorderStroke(borderW, if (isImageSearchActive) Color.Black else toolBrd) else null,
+                      modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .clickable { onImageSearchClick() }
+                        .testTag("image_search_button")
+                    ) {
+                      Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                          imageVector = Icons.Default.ImageSearch,
+                          contentDescription = "ছবি দিয়ে প্রোডাক্ট সার্চ",
+                          tint = toolTxt,
+                          modifier = Modifier.size(16.dp)
+                        )
+                      }
+                    }
+                  }
+
+                  "scan" -> if (hp.showScanBtn) {
+                    Surface(
+                      shape = RoundedCornerShape(radiusDp),
+                      color = Color.Transparent,
+                      border = if (borderW > 0.dp) BorderStroke(borderW, scanBrd) else null,
+                      modifier = Modifier
+                        .clip(RoundedCornerShape(radiusDp))
+                        .background(Brush.horizontalGradient(listOf(scanStart, scanEnd)))
+                        .clickable { onScanClick() }
+                        .testTag("scan_search_button")
+                    ) {
+                      Row(
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                      ) {
+                        Icon(
+                          imageVector = Icons.Default.QrCodeScanner,
+                          contentDescription = "স্ক্যান করুন",
+                          tint = scanTxt,
+                          modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                          text = hp.scanBtnLabel.ifBlank { "স্ক্যান" },
+                          color = scanTxt,
+                          fontSize = 9.5.sp,
+                          fontWeight = FontWeight.Black,
+                          maxLines = 1
+                        )
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 
