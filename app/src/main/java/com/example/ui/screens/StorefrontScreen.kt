@@ -1441,18 +1441,10 @@ private fun VoucherStripCard(
 ) {
   if (!homePage.showVoucherStrip) return
 
-  val blockStart = parseColorHex(homePage.voucherBlockBg, Color(0xFFFCA5A5))
-  val blockEnd = parseColorHex(homePage.voucherBlockBgEnd, blockStart)
-  val blockBorder = parseColorHex(homePage.voucherBlockBorder, Color.White)
   val borderW = homePage.voucherBorderWidthPx.coerceIn(0, 4).dp
   val blockRadius = homePage.voucherRadiusPx.coerceIn(0, 32).dp
-  val titleCol = parseColorHex(homePage.voucherTitleColor, DarkEspresso)
-  val moreCol = parseColorHex(homePage.voucherMoreColor, RoyalMaroon)
-  val tagBg = parseColorHex(homePage.voucherTagBg, Color(0xFF0B0F19))
-  val tagText = parseColorHex(homePage.voucherTagText, Color.White)
-  val tagBorder = parseColorHex(homePage.voucherTagBorder, Color.White)
-  val innerBg = parseColorHex(homePage.voucherInnerBg, Color(0xFFFCA5A5))
-  val innerBorder = parseColorHex(homePage.voucherInnerBorder, Color(0xFF991B1B))
+  val innerBg = parseColorHex(homePage.voucherInnerBg, Color(0xFFF97316))
+  val innerBorder = parseColorHex(homePage.voucherInnerBorder, Color.White)
   val amtCol = parseColorHex(homePage.voucherAmountColor, Color.Black)
   val subCol = parseColorHex(homePage.voucherSubColor, Color.Black)
   val ctaStart = parseColorHex(homePage.voucherCtaBg, Color(0xFF0B0F19))
@@ -1462,149 +1454,79 @@ private fun VoucherStripCard(
   val ctaRadius = homePage.voucherCtaRadiusPx.coerceIn(0, 32).dp
   val slotsOrder = homePage.voucherSlotsOrder.ifEmpty { listOf("v1", "v2", "cta") }
 
-  Column(
+  Row(
     modifier = Modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(blockRadius))
-      .background(Brush.horizontalGradient(listOf(blockStart, blockEnd)))
-      .then(if (borderW > 0.dp) Modifier.border(borderW, blockBorder, RoundedCornerShape(blockRadius)) else Modifier)
-      .padding(horizontal = 8.dp, vertical = 6.dp)
+      .background(innerBg)
+      .then(if (borderW > 0.dp) Modifier.border(borderW, innerBorder, RoundedCornerShape(blockRadius)) else Modifier)
+      .padding(horizontal = 12.dp, vertical = 8.dp),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    verticalAlignment = Alignment.CenterVertically
   ) {
-    Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 2.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.weight(1f)
-      ) {
-        Text(
-          text = homePage.voucherTitle.ifBlank { "Claim Vouchers to Save More!" },
-          fontSize = 11.5.sp,
-          fontWeight = FontWeight.Black,
-          color = titleCol,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis
-        )
-        if (homePage.showVoucherBadge) {
-          Box(
+    slotsOrder.forEachIndexed { idx, slot ->
+      when (slot) {
+        "v1" -> {
+          Column(
             modifier = Modifier
-              .clip(RoundedCornerShape(8.dp))
-              .background(tagBg)
-              .border(1.dp, tagBorder, RoundedCornerShape(8.dp))
-              .padding(horizontal = 5.dp, vertical = 1.dp)
+              .weight(1f)
+              .clickable { onOpenVoucher("max") }
           ) {
             Text(
-              text = homePage.voucherBadgeText.ifBlank { "11.11 / SAJGOJ" },
-              fontSize = 7.5.sp,
+              text = homePage.voucher1Amount.ifBlank { "৳২,২৫০" },
+              fontSize = 13.5.sp,
               fontWeight = FontWeight.Black,
-              color = tagText
+              color = amtCol
+            )
+            Text(
+              text = homePage.voucher1Sub.ifBlank { "Voucher Max" },
+              fontSize = 9.5.sp,
+              fontWeight = FontWeight.Medium,
+              color = subCol
             )
           }
-        }
-      }
-
-      if (homePage.showMoreVoucherBtn) {
-        Row(
-          modifier = Modifier.clickable { onOpenVoucher("all") },
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Text(
-            text = homePage.voucherMoreLabel.ifBlank { "More Voucher" },
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = moreCol
-          )
-          Text(
-            text = " ›",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Black,
-            color = moreCol
-          )
-        }
-      }
-    }
-
-    Spacer(modifier = Modifier.height(4.dp))
-
-    Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .clip(RoundedCornerShape(10.dp))
-        .background(innerBg)
-        .border(1.dp, innerBorder, RoundedCornerShape(10.dp))
-        .padding(horizontal = 8.dp, vertical = 5.dp),
-      horizontalArrangement = Arrangement.spacedBy(6.dp),
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      slotsOrder.forEachIndexed { idx, slot ->
-        when (slot) {
-          "v1" -> {
-            Column(
-              modifier = Modifier
-                .weight(1f)
-                .clickable { onOpenVoucher("max") }
-            ) {
-              Text(
-                text = homePage.voucher1Amount.ifBlank { "৳২,২৫০" },
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.Black,
-                color = amtCol
-              )
-              Text(
-                text = homePage.voucher1Sub.ifBlank { "Voucher Max" },
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Medium,
-                color = subCol
-              )
-            }
-            if (idx < slotsOrder.lastIndex && slotsOrder[idx + 1] != "cta") {
-              Box(modifier = Modifier.width(1.dp).height(22.dp).background(innerBorder.copy(alpha = 0.45f)))
-            }
+          if (idx < slotsOrder.lastIndex && slotsOrder[idx + 1] != "cta") {
+            Box(modifier = Modifier.width(1.dp).height(24.dp).background(innerBorder.copy(alpha = 0.45f)))
           }
-          "v2" -> {
-            Column(
-              modifier = Modifier
-                .weight(1f)
-                .clickable { onOpenVoucher("shipping") }
-            ) {
-              Text(
-                text = homePage.voucher2Amount.ifBlank { "৳৪৫" },
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.Black,
-                color = amtCol
-              )
-              Text(
-                text = homePage.voucher2Sub.ifBlank { "Free shipping" },
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Medium,
-                color = subCol
-              )
-            }
-            if (idx < slotsOrder.lastIndex && slotsOrder[idx + 1] != "cta") {
-              Box(modifier = Modifier.width(1.dp).height(22.dp).background(innerBorder.copy(alpha = 0.45f)))
-            }
+        }
+        "v2" -> {
+          Column(
+            modifier = Modifier
+              .weight(1f)
+              .clickable { onOpenVoucher("shipping") }
+          ) {
+            Text(
+              text = homePage.voucher2Amount.ifBlank { "৳৪৫" },
+              fontSize = 13.5.sp,
+              fontWeight = FontWeight.Black,
+              color = amtCol
+            )
+            Text(
+              text = homePage.voucher2Sub.ifBlank { "Free shipping" },
+              fontSize = 9.5.sp,
+              fontWeight = FontWeight.Medium,
+              color = subCol
+            )
           }
-          "cta" -> if (homePage.showCollectAllBtn) {
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(ctaRadius))
-                .background(Brush.horizontalGradient(listOf(ctaStart, ctaEnd)))
-                .border(1.dp, ctaBorder, RoundedCornerShape(ctaRadius))
-                .clickable { onOpenVoucher("all") }
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-            ) {
-              Text(
-                text = "${homePage.voucherCollectLabel.ifBlank { "Collect All" }} ›",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
-                color = ctaText
-              )
-            }
+          if (idx < slotsOrder.lastIndex && slotsOrder[idx + 1] != "cta") {
+            Box(modifier = Modifier.width(1.dp).height(24.dp).background(innerBorder.copy(alpha = 0.45f)))
+          }
+        }
+        "cta" -> if (homePage.showCollectAllBtn) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(ctaRadius))
+              .background(Brush.horizontalGradient(listOf(ctaStart, ctaEnd)))
+              .border(1.dp, ctaBorder, RoundedCornerShape(ctaRadius))
+              .clickable { onOpenVoucher("all") }
+              .padding(horizontal = 12.dp, vertical = 6.dp)
+          ) {
+            Text(
+              text = "${homePage.voucherCollectLabel.ifBlank { "Collect All" }} ›",
+              fontSize = 10.5.sp,
+              fontWeight = FontWeight.Black,
+              color = ctaText
+            )
           }
         }
       }

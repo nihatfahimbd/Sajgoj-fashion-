@@ -16,6 +16,7 @@ import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.OrderStatusNotification
+import com.example.data.model.OrderTrackingSyncState
 import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
@@ -42,10 +43,13 @@ import com.example.firebase.handleFirestoreError
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -730,6 +734,9 @@ class StoreRepository(private val context: Context) {
   private val _savedAddresses = MutableStateFlow<List<SavedAddress>>(emptyList())
   val savedAddresses: StateFlow<List<SavedAddress>> = _savedAddresses.asStateFlow()
 
+  private val _orderTrackingSyncState = MutableStateFlow(OrderTrackingSyncState())
+  val orderTrackingSyncState: StateFlow<OrderTrackingSyncState> = _orderTrackingSyncState.asStateFlow()
+
   private val _latestStatusAlert = MutableSharedFlow<OrderStatusNotification>(extraBufferCapacity = 32)
   val latestStatusAlert: SharedFlow<OrderStatusNotification> = _latestStatusAlert.asSharedFlow()
 
@@ -1006,6 +1013,7 @@ class StoreRepository(private val context: Context) {
     val db = firestore
     reloadSavedAddressesForCurrentUser(user?.uid)
     if (db == null || user == null) {
+      _orderTrackingSyncState.value = OrderTrackingSyncState()
       inventorySyncService.stopListening()
       return
     }
@@ -1020,68 +1028,41 @@ class StoreRepository(private val context: Context) {
       db.collection("orders").whereEqualTo("userId", user.uid)
     }
 
-    ordersListener = ordersQuery.addSnapshotListener { snapshot, error ->
+    _orderTrackingSyncState.value = OrderTrackingSyncState(
+      isListening = true,
+      isLiveServerSynced = false,
+      isFromCache = true
+    )
+
+    ordersListener = ordersQuery.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
       if (error != null) {
+        _orderTrackingSyncState.value = _orderTrackingSyncState.value.copy(
+          isListening = false,
+          isLiveServerSynced = false,
+          errorMessage = error.message ?: "Firestore sync error"
+        )
         handleFirestoreError(error, OperationType.LIST, "orders")
         return@addSnapshotListener
       }
-      if (snapshot != null && !snapshot.isEmpty) {
-        val list = snapshot.documents.mapNotNull { doc ->
-          try {
-            val resolvedOrderId = doc.getString("id") ?: doc.id
-            doc.getString("userId")?.takeIf { it.isNotBlank() }?.let { ownerUid ->
-              orderOwnerUids[resolvedOrderId] = ownerUid
-            }
-            val itemsList = (doc.get("items") as? List<*>)?.mapNotNull { itemMap ->
-              val m = itemMap as? Map<*, *> ?: return@mapNotNull null
-              OrderItem(
-                productId = m["productId"]?.toString() ?: "",
-                name = m["name"]?.toString() ?: "",
-                quantity = (m["quantity"] as? Number)?.toInt() ?: 1,
-                price = (m["price"] as? Number)?.toInt() ?: 0,
-                color = m["color"]?.toString() ?: "",
-                size = m["size"]?.toString() ?: "",
-                ageGroup = m["ageGroup"]?.toString() ?: "",
-                isFreeGift = (m["isFreeGift"] as? Boolean) ?: false,
-                freeGiftOriginId = m["freeGiftOriginId"]?.toString() ?: ""
-              )
-            } ?: emptyList()
+      if (snapshot != null) {
+        val list = snapshot.documents
+          .mapNotNull { doc -> parseOrderSnapshot(doc) }
+          .sortedWith(compareByDescending<Order> { it.createdAt }.thenByDescending { it.date }.thenByDescending { it.id })
 
-            Order(
-              id = resolvedOrderId,
-              customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
-              phone = doc.getString("phone") ?: "",
-              district = doc.getString("district") ?: "ঢাকা (Dhaka)",
-              thana = doc.getString("thana") ?: "সদর",
-              address = doc.getString("address") ?: "",
-              items = itemsList,
-              subtotal = (doc.getLong("subtotal") ?: 0L).toInt(),
-              deliveryCharge = (doc.getLong("deliveryCharge") ?: 0L).toInt(),
-              discount = (doc.getLong("discount") ?: 0L).toInt(),
-              couponCode = doc.getString("couponCode") ?: "",
-              total = (doc.getLong("total") ?: 0L).toInt(),
-              paymentMethod = doc.getString("paymentMethod") ?: "Cash on Delivery",
-              status = doc.getString("status") ?: "Pending",
-              date = doc.getString("date") ?: "",
-              trackingId = doc.getString("trackingId") ?: "",
-              stockRestockedOnCancel = doc.getBoolean("stockRestockedOnCancel") ?: false,
-              orderType = doc.getString("orderType") ?: "Normal",
-              deliveryType = doc.getString("deliveryType") ?: "Standard",
-              deliveredBy = doc.getString("deliveredBy") ?: "",
-              landmark = doc.getString("landmark") ?: "",
-              addressCategory = doc.getString("addressCategory") ?: "Home",
-              defaultShippingAddress = doc.getBoolean("defaultShippingAddress") ?: false,
-              createdAt = doc.getTimestamp("createdAt")?.toDate()?.time
-                ?: doc.getLong("createdAtMs")
-                ?: 0L
-            )
-          } catch (_: Exception) {
-            null
-          }
-        }
+        _orderTrackingSyncState.value = OrderTrackingSyncState(
+          isListening = true,
+          isLiveServerSynced = !snapshot.metadata.isFromCache,
+          isFromCache = snapshot.metadata.isFromCache,
+          hasPendingWrites = snapshot.metadata.hasPendingWrites(),
+          lastSyncedAtMs = System.currentTimeMillis(),
+          errorMessage = ""
+        )
+
         if (list.isNotEmpty()) {
           detectAndNotifyOrderStatusChanges(list, sourceChannel = "firestore")
           _orders.value = list
+        } else if (!isAdmin && !snapshot.metadata.isFromCache) {
+          _orders.value = emptyList()
         }
       }
     }
@@ -3691,4 +3672,96 @@ class StoreRepository(private val context: Context) {
     }
     prefs.edit().putString(savedAddressesPrefsKey(uid), arr.toString()).apply()
   }
+
+  private fun parseOrderSnapshot(doc: DocumentSnapshot): Order? {
+    return try {
+      val resolvedOrderId = doc.getString("id") ?: doc.id
+      doc.getString("userId")?.takeIf { it.isNotBlank() }?.let { ownerUid ->
+        orderOwnerUids[resolvedOrderId] = ownerUid
+      }
+      val itemsList = (doc.get("items") as? List<*>)?.mapNotNull { itemMap ->
+        val m = itemMap as? Map<*, *> ?: return@mapNotNull null
+        OrderItem(
+          productId = m["productId"]?.toString() ?: "",
+          name = m["name"]?.toString() ?: "",
+          quantity = (m["quantity"] as? Number)?.toInt() ?: 1,
+          price = (m["price"] as? Number)?.toInt() ?: 0,
+          color = m["color"]?.toString() ?: "",
+          size = m["size"]?.toString() ?: "",
+          ageGroup = m["ageGroup"]?.toString() ?: "",
+          isFreeGift = (m["isFreeGift"] as? Boolean) ?: false,
+          freeGiftOriginId = m["freeGiftOriginId"]?.toString() ?: ""
+        )
+      } ?: emptyList()
+
+      Order(
+        id = resolvedOrderId,
+        customerName = doc.getString("customer") ?: doc.getString("customerName") ?: "",
+        phone = doc.getString("phone") ?: "",
+        district = doc.getString("district") ?: "ঢাকা (Dhaka)",
+        thana = doc.getString("thana") ?: "সদর",
+        address = doc.getString("address") ?: "",
+        items = itemsList,
+        subtotal = (doc.getLong("subtotal") ?: 0L).toInt(),
+        deliveryCharge = (doc.getLong("deliveryCharge") ?: 0L).toInt(),
+        discount = (doc.getLong("discount") ?: 0L).toInt(),
+        couponCode = doc.getString("couponCode") ?: "",
+        total = (doc.getLong("total") ?: 0L).toInt(),
+        paymentMethod = doc.getString("paymentMethod") ?: "Cash on Delivery",
+        status = doc.getString("status") ?: "Pending",
+        date = doc.getString("date") ?: "",
+        trackingId = doc.getString("trackingId") ?: "",
+        stockRestockedOnCancel = doc.getBoolean("stockRestockedOnCancel") ?: false,
+        orderType = doc.getString("orderType") ?: "Normal",
+        deliveryType = doc.getString("deliveryType") ?: "Standard",
+        deliveredBy = doc.getString("deliveredBy") ?: "",
+        landmark = doc.getString("landmark") ?: "",
+        addressCategory = doc.getString("addressCategory") ?: "Home",
+        defaultShippingAddress = doc.getBoolean("defaultShippingAddress") ?: false,
+        createdAt = doc.getTimestamp("createdAt")?.toDate()?.time
+          ?: doc.getLong("createdAtMs")
+          ?: 0L
+      )
+    } catch (_: Exception) {
+      null
+    }
+  }
+
+  fun refreshOrdersFromFirestore() {
+    val db = firestore ?: return
+    val uid = currentAuthUid() ?: return
+    val isAdmin = isVerifiedAdmin()
+    val query = if (isAdmin) {
+      db.collection("orders")
+    } else {
+      db.collection("orders").whereEqualTo("userId", uid)
+    }
+    query.get(Source.SERVER)
+      .addOnSuccessListener { snapshot ->
+        val list = snapshot.documents
+          .mapNotNull { doc -> parseOrderSnapshot(doc) }
+          .sortedWith(compareByDescending<Order> { it.createdAt }.thenByDescending { it.date }.thenByDescending { it.id })
+        _orderTrackingSyncState.value = OrderTrackingSyncState(
+          isListening = true,
+          isLiveServerSynced = true,
+          isFromCache = false,
+          hasPendingWrites = snapshot.metadata.hasPendingWrites(),
+          lastSyncedAtMs = System.currentTimeMillis(),
+          errorMessage = ""
+        )
+        if (list.isNotEmpty()) {
+          detectAndNotifyOrderStatusChanges(list, sourceChannel = "firestore")
+          _orders.value = list
+        } else if (!isAdmin) {
+          _orders.value = emptyList()
+        }
+      }
+      .addOnFailureListener { e ->
+        _orderTrackingSyncState.value = _orderTrackingSyncState.value.copy(
+          isLiveServerSynced = false,
+          errorMessage = e.message ?: "সার্ভার রিফ্রেশ ব্যর্থ"
+        )
+      }
+  }
 }
+

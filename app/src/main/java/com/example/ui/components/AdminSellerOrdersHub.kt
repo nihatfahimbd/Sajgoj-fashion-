@@ -1517,7 +1517,7 @@ private fun SellerCenterOrderCard(
               )
             }
             HorizontalDivider(color = AdminCardBorderSoft)
-            listOf("Pending", "Confirmed", "To Ship", "Shipped", "Delivered", "Failed Delivered", "Cancelled").forEach { st ->
+            listOf("Pending", "Confirmed", "Processing", "To Ship", "Shipped", "Delivered", "Failed Delivered", "Cancelled").forEach { st ->
               DropdownMenuItem(
                 text = { Text("স্ট্যাটাস: $st") },
                 onClick = {

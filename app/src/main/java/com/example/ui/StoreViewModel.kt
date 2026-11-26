@@ -21,6 +21,7 @@ import com.example.data.model.InventorySyncEvent
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.OrderStatusNotification
+import com.example.data.model.OrderTrackingSyncState
 import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
@@ -152,6 +153,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val smsQueue: StateFlow<List<SmsQueueItem>> = repository.smsQueue
   val orderNotifications: StateFlow<List<OrderStatusNotification>> = repository.orderNotifications
   val savedAddresses: StateFlow<List<SavedAddress>> = repository.savedAddresses
+  val orderTrackingSyncState: StateFlow<OrderTrackingSyncState> = repository.orderTrackingSyncState
   val unreadOrderNotificationCount: StateFlow<Int> = repository.orderNotifications
     .map { list -> list.count { !it.read } }
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -1291,6 +1293,11 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     } else {
       emitToast("ℹ️ পুশ অনুমতি দেওয়া হয়নি — ইন-অ্যাপ অ্যালার্ট ও টোস্ট চালু থাকবে।")
     }
+  }
+
+  fun refreshOrdersFromFirestore() {
+    repository.refreshOrdersFromFirestore()
+    emitToast("🔄 Firestore থেকে সর্বশেষ অর্ডার স্ট্যাটাস আপডেট করা হচ্ছে...")
   }
 
   fun emitToast(msg: String) {

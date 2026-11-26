@@ -178,6 +178,7 @@ class MainActivity : ComponentActivity() {
         val orderNotifications by viewModel.orderNotifications.collectAsStateWithLifecycle()
         val savedAddresses by viewModel.savedAddresses.collectAsStateWithLifecycle()
         val customerLoyaltyStatus by viewModel.customerLoyaltyStatus.collectAsStateWithLifecycle()
+        val orderTrackingSyncState by viewModel.orderTrackingSyncState.collectAsStateWithLifecycle()
         val unreadOrderNotificationCount by viewModel.unreadOrderNotificationCount.collectAsStateWithLifecycle()
         val activeOrderBannerAlert by viewModel.activeOrderBannerAlert.collectAsStateWithLifecycle()
         val activePolicyTopic by viewModel.activePolicyTopic.collectAsStateWithLifecycle()
@@ -645,6 +646,7 @@ class MainActivity : ComponentActivity() {
                     orders = orders,
                     savedAddresses = savedAddresses,
                     loyaltyStatus = customerLoyaltyStatus,
+                    orderTrackingSyncState = orderTrackingSyncState,
                     storeConfig = storeConfig,
                     unreadNotificationCount = unreadOrderNotificationCount,
                     unreadSupportCount = customerUnreadSupportCount,
@@ -657,6 +659,7 @@ class MainActivity : ComponentActivity() {
                       storeBottomTab = StorefrontBottomTab.SHOPPING
                     },
                     onOpenOrderInvoice = { order -> viewModel.openInvoice(order) },
+                    onRefreshOrderTracking = { viewModel.refreshOrdersFromFirestore() },
                     onSaveAddress = { addr -> viewModel.saveCustomerAddress(addr) },
                     onSetDefaultAddress = { id -> viewModel.setDefaultCustomerAddress(id) },
                     onDeleteAddress = { id -> viewModel.deleteCustomerAddress(id) },

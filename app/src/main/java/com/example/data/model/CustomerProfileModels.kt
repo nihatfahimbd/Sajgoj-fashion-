@@ -171,3 +171,128 @@ object CustomerLoyaltyCalculator {
     )
   }
 }
+
+enum class OrderTrackingStage {
+  ORDERED,
+  PROCESSING,
+  SHIPPED,
+  DELIVERED,
+  CANCELLED,
+  FAILED
+}
+
+data class OrderTrackingStep(
+  val key: String,
+  val titleEn: String,
+  val titleBn: String,
+  val subtitleBn: String,
+  val icon: String
+)
+
+data class OrderTrackingProgress(
+  val rawStatus: String,
+  val stage: OrderTrackingStage,
+  val currentStepIndex: Int, // 0..3 for active pipeline
+  val isTerminalException: Boolean,
+  val statusLabelBn: String,
+  val statusHintBn: String,
+  val steps: List<OrderTrackingStep> = OrderTrackingHelper.pipelineSteps
+)
+
+data class OrderTrackingSyncState(
+  val isListening: Boolean = false,
+  val isLiveServerSynced: Boolean = false,
+  val isFromCache: Boolean = true,
+  val hasPendingWrites: Boolean = false,
+  val lastSyncedAtMs: Long = 0L,
+  val errorMessage: String = ""
+)
+
+object OrderTrackingHelper {
+  val pipelineSteps: List<OrderTrackingStep> = listOf(
+    OrderTrackingStep(
+      key = "Pending",
+      titleEn = "Ordered",
+      titleBn = "অর্ডার গৃহীত",
+      subtitleBn = "অর্ডার সফলভাবে জমা হয়েছে",
+      icon = "📝"
+    ),
+    OrderTrackingStep(
+      key = "Processing",
+      titleEn = "Processing",
+      titleBn = "প্রসেসিং",
+      subtitleBn = "পণ্য যাচাই ও প্যাকেজিং চলছে",
+      icon = "📦"
+    ),
+    OrderTrackingStep(
+      key = "Shipped",
+      titleEn = "Shipped",
+      titleBn = "শিপড / কুরিয়ারে",
+      subtitleBn = "কুরিয়ার পার্টনার ডেলিভারির পথে",
+      icon = "🚚"
+    ),
+    OrderTrackingStep(
+      key = "Delivered",
+      titleEn = "Delivered",
+      titleBn = "ডেলিভারড",
+      subtitleBn = "সফলভাবে গ্রাহকের হাতে পৌঁছেছে",
+      icon = "🎉"
+    )
+  )
+
+  fun resolveProgress(status: String): OrderTrackingProgress {
+    val clean = status.trim()
+    val lower = clean.lowercase()
+    return when {
+      lower == "cancelled" || lower == "cancellation" -> OrderTrackingProgress(
+        rawStatus = clean.ifBlank { "Cancelled" },
+        stage = OrderTrackingStage.CANCELLED,
+        currentStepIndex = 0,
+        isTerminalException = true,
+        statusLabelBn = "অর্ডার বাতিল (Cancelled)",
+        statusHintBn = "এই অর্ডারটি বাতিল করা হয়েছে। সহায়তার জন্য সাপোর্টে যোগাযোগ করুন।"
+      )
+      lower.contains("fail") -> OrderTrackingProgress(
+        rawStatus = clean.ifBlank { "Failed Delivered" },
+        stage = OrderTrackingStage.FAILED,
+        currentStepIndex = 2,
+        isTerminalException = true,
+        statusLabelBn = "ডেলিভারি ব্যর্থ (Failed Delivery)",
+        statusHintBn = "কুরিয়ার ডেলিভারি সম্পন্ন করতে পারেনি। রি-ডেলিভারির জন্য যোগাযোগ করুন।"
+      )
+      lower.contains("deliver") -> OrderTrackingProgress(
+        rawStatus = clean.ifBlank { "Delivered" },
+        stage = OrderTrackingStage.DELIVERED,
+        currentStepIndex = 3,
+        isTerminalException = false,
+        statusLabelBn = "ডেলিভারড (Delivered)",
+        statusHintBn = "আপনার পার্সেলটি সফলভাবে ডেলিভারি সম্পন্ন হয়েছে!"
+      )
+      lower == "shipped" || lower == "shipping" || lower.contains("transit") -> OrderTrackingProgress(
+        rawStatus = clean.ifBlank { "Shipped" },
+        stage = OrderTrackingStage.SHIPPED,
+        currentStepIndex = 2,
+        isTerminalException = false,
+        statusLabelBn = "কুরিয়ারে প্রেরিত (Shipped)",
+        statusHintBn = "পার্সেলটি কুরিয়ারে হস্তান্তর করা হয়েছে এবং আপনার ঠিকানার পথে রয়েছে।"
+      )
+      lower == "processing" || lower == "confirmed" || lower == "to ship" || lower.contains("pack") -> OrderTrackingProgress(
+        rawStatus = clean.ifBlank { "Processing" },
+        stage = OrderTrackingStage.PROCESSING,
+        currentStepIndex = 1,
+        isTerminalException = false,
+        statusLabelBn = if (lower == "confirmed") "অনুমোদিত ও প্রসেসিং (Processing)" else "প্যাকেজিং ও প্রসেসিং (Processing)",
+        statusHintBn = "অর্ডারটি কনফার্ম করে মান যাচাই ও প্যাকেজিং করা হচ্ছে।"
+      )
+      else -> OrderTrackingProgress(
+        rawStatus = clean.ifBlank { "Pending" },
+        stage = OrderTrackingStage.ORDERED,
+        currentStepIndex = 0,
+        isTerminalException = false,
+        statusLabelBn = "অর্ডার গৃহীত (Pending)",
+        statusHintBn = "আপনার অর্ডারটি গ্রহণ করা হয়েছে এবং শীঘ্রই প্রসেসিং শুরু হবে।"
+      )
+    }
+  }
+}
+

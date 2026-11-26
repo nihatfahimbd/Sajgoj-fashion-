@@ -2003,8 +2003,8 @@
           voucherTagBg: "#0b0f19",
           voucherTagText: "#ffffff",
           voucherTagBorder: "#ffffff",
-          voucherInnerBg: "#fca5a5",
-          voucherInnerBorder: "#991b1b",
+          voucherInnerBg: "#f97316",
+          voucherInnerBorder: "#ffffff",
           voucherAmountColor: "#000000",
           voucherSubColor: "#000000",
           voucherCtaBg: "#0b0f19",
@@ -4384,6 +4384,13 @@
       const [profileTab, setProfileTab] = useState("overview"); // "overview", "orders", "addresses", "loyalty", "spin", "settings"
       const [orderHistoryFilter, setOrderHistoryFilter] = useState("All");
       const [orderHistorySearch, setOrderHistorySearch] = useState("");
+      const [ordersFirestoreSync, setOrdersFirestoreSync] = useState({
+        connected: false,
+        isFromCache: true,
+        hasPendingWrites: false,
+        lastSyncedAt: 0,
+        error: ""
+      });
       const [savedAddresses, setSavedAddresses] = useState([]);
       const [isAddressEditorOpen, setIsAddressEditorOpen] = useState(false);
       const [editingAddressItem, setEditingAddressItem] = useState(null);
@@ -4707,12 +4714,19 @@
           }
         }, (err) => console.warn("Categories sync error:", err));
 
-        // 3. Orders Subscription with Real-time Alerts
-        const unsubOrders = firestoreDb.collection("orders").onSnapshot((snapshot) => {
+        // 3. Orders Subscription with Real-time Firestore Metadata & Status Alerts
+        const unsubOrders = firestoreDb.collection("orders").onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
           if (!isMounted) return;
+          setOrdersFirestoreSync({
+            connected: !snapshot.metadata.fromCache,
+            isFromCache: !!snapshot.metadata.fromCache,
+            hasPendingWrites: !!snapshot.metadata.hasPendingWrites,
+            lastSyncedAt: Date.now(),
+            error: ""
+          });
           if (!snapshot.empty) {
             const list = [];
-            snapshot.forEach(doc => list.push(doc.data()));
+            snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
             list.sort((a,b) => (b.date || "").localeCompare(a.date || "") || (b.id || "").localeCompare(a.id || ""));
             setOrders(list);
             setStored("orders", list);
@@ -4735,7 +4749,16 @@
             currentOrders.forEach(o => firestoreDb.collection("orders").doc(o.id).set(o));
             isInitialOrdersLoad.current = false;
           }
-        }, (err) => console.warn("Orders sync error:", err));
+        }, (err) => {
+          console.warn("Orders sync error:", err);
+          if (isMounted) {
+            setOrdersFirestoreSync(prev => ({
+              ...prev,
+              connected: false,
+              error: err?.message || "Firestore সংযোগ ব্যর্থ"
+            }));
+          }
+        });
 
         // 4. Coupons Subscription
         const unsubCoupons = firestoreDb.collection("coupons").onSnapshot((snapshot) => {
@@ -14018,30 +14041,13 @@
                         return (
                           <div
                             key={sec.id}
-                            className="p-2 space-y-1.5"
+                            className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 shadow-sm"
                             style={{
-                              background: `linear-gradient(135deg, ${hp.voucherBlockBg || "#fca5a5"}, ${hp.voucherBlockBgEnd || "#f87171"})`,
-                              border: `${hp.voucherBorderWidthPx ?? 1}px solid ${hp.voucherBlockBorder || "#ffffff"}`,
+                              background: hp.voucherInnerBg || "#f97316",
+                              border: `${hp.voucherBorderWidthPx ?? 1}px solid ${hp.voucherInnerBorder || "#ffffff"}`,
                               borderRadius: `${hp.voucherRadiusPx ?? 16}px`
                             }}
                           >
-                            <div className="flex items-center justify-between gap-1 text-[9px]">
-                              <div className="flex items-center gap-1 min-w-0">
-                                <span className="font-black truncate" style={{ color: hp.voucherTitleColor || "#000000" }}>{hp.voucherTitle || "Claim Vouchers to Save More!"}</span>
-                                {hp.showVoucherBadge !== false && (
-                                  <span className="px-1.5 py-0.5 rounded-full text-[7.5px] font-black shrink-0" style={{ background: hp.voucherTagBg || "#0b0f19", color: hp.voucherTagText || "#ffffff", border: `1px solid ${hp.voucherTagBorder || "#ffffff"}` }}>
-                                    {hp.voucherBadgeText || "11.11 / SAJGOJ"}
-                                  </span>
-                                )}
-                              </div>
-                              {hp.showMoreVoucherBtn !== false && (
-                                <span className="font-black shrink-0" style={{ color: hp.voucherMoreColor || "#000000" }}>{hp.voucherMoreLabel || "More Voucher"} ›</span>
-                              )}
-                            </div>
-                            <div
-                              className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-xl"
-                              style={{ background: hp.voucherInnerBg || "#fca5a5", border: `1px solid ${hp.voucherInnerBorder || "#991b1b"}` }}
-                            >
                               {voucherSlotsOrder.map((vSlot) => {
                                 if (vSlot === "v1") {
                                   return (
@@ -14077,7 +14083,6 @@
                                 }
                                 return null;
                               })}
-                            </div>
                           </div>
                         );
                       }
@@ -18350,12 +18355,196 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         const pointsInTaka = Math.floor((l.availablePoints || 0) / (loyalty?.pointsRate || 100));
         const defaultSavedAddr = savedAddresses.find(a => a.isDefault) || savedAddresses[0] || null;
         const filteredMyOrders = myOrders.filter(o => {
-          const statusOk = orderHistoryFilter === "All" || String(o.status || "").toLowerCase() === orderHistoryFilter.toLowerCase();
+          const stLower = String(o.status || "").trim().toLowerCase();
+          const statusOk = orderHistoryFilter === "All" ? true
+            : orderHistoryFilter === "Processing" ? (stLower === "processing" || stLower === "confirmed" || stLower === "to ship" || stLower.includes("pack"))
+            : orderHistoryFilter === "Shipped" ? (stLower === "shipped" || stLower === "shipping" || stLower.includes("transit"))
+            : stLower === orderHistoryFilter.toLowerCase();
           const q = orderHistorySearch.trim().toLowerCase();
           const searchOk = !q || String(o.id || "").toLowerCase().includes(q) || (o.items || []).some(it => String(it.name || "").toLowerCase().includes(q));
           return statusOk && searchOk;
         });
         const allTiersSorted = [...getLoyaltyTiers(loyalty)].sort((a, b) => (Number(a.minSpend) || 0) - (Number(b.minSpend) || 0));
+
+        const refreshDashboardOrdersFromFirestore = async () => {
+          if (!firestoreDb) return;
+          try {
+            const snap = await firestoreDb.collection("orders").get({ source: "server" });
+            const list = [];
+            snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+            if (list.length > 0) {
+              list.sort((a,b) => (b.date || "").localeCompare(a.date || "") || (b.id || "").localeCompare(a.id || ""));
+              setOrders(list);
+              setStored("orders", list);
+            }
+            setOrdersFirestoreSync({
+              connected: true,
+              isFromCache: false,
+              hasPendingWrites: false,
+              lastSyncedAt: Date.now(),
+              error: ""
+            });
+            notify("🔄 Firestore থেকে সর্বশেষ অর্ডার স্ট্যাটাস আপডেট হয়েছে!");
+          } catch (err) {
+            setOrdersFirestoreSync(prev => ({
+              ...prev,
+              connected: false,
+              error: err?.message || "রিফ্রেশ ব্যর্থ"
+            }));
+          }
+        };
+
+        const resolveDashboardOrderProgress = (status) => {
+          const s = String(status || "Pending").trim().toLowerCase();
+          if (s === "cancelled" || s === "cancellation") {
+            return {
+              stepIdx: 0,
+              isException: true,
+              labelBn: "অর্ডার বাতিল (Cancelled)",
+              hintBn: "এই অর্ডারটি বাতিল করা হয়েছে। সহায়তার জন্য সাপোর্টে যোগাযোগ করুন।"
+            };
+          }
+          if (s.includes("fail")) {
+            return {
+              stepIdx: 2,
+              isException: true,
+              labelBn: "ডেলিভারি ব্যর্থ (Failed Delivery)",
+              hintBn: "কুরিয়ার ডেলিভারি সম্পন্ন করতে পারেনি। রি-ডেলিভারির জন্য যোগাযোগ করুন।"
+            };
+          }
+          if (s.includes("deliver")) {
+            return {
+              stepIdx: 3,
+              isException: false,
+              labelBn: "ডেলিভারড (Delivered)",
+              hintBn: "আপনার পার্সেলটি সফলভাবে ডেলিভারি সম্পন্ন হয়েছে!"
+            };
+          }
+          if (s === "shipped" || s === "shipping" || s.includes("transit")) {
+            return {
+              stepIdx: 2,
+              isException: false,
+              labelBn: "কুরিয়ারে প্রেরিত (Shipped)",
+              hintBn: "পার্সেলটি কুরিয়ারে হস্তান্তর করা হয়েছে এবং আপনার ঠিকানার পথে রয়েছে।"
+            };
+          }
+          if (s === "processing" || s === "confirmed" || s === "to ship" || s.includes("pack")) {
+            return {
+              stepIdx: 1,
+              isException: false,
+              labelBn: s === "confirmed" ? "অনুমোদিত ও প্রসেসিং (Processing)" : "প্যাকেজিং ও প্রসেসিং (Processing)",
+              hintBn: "অর্ডারটি কনফার্ম করে মান যাচাই ও প্যাকেজিং করা হচ্ছে।"
+            };
+          }
+          return {
+            stepIdx: 0,
+            isException: false,
+            labelBn: "অর্ডার গৃহীত (Pending)",
+            hintBn: "আপনার অর্ডারটি গ্রহণ করা হয়েছে এবং শীঘ্রই প্রসেসিং শুরু হবে।"
+          };
+        };
+
+        const renderDashboardFirestoreSyncBar = () => {
+          const timeText = ordersFirestoreSync.lastSyncedAt
+            ? new Date(ordersFirestoreSync.lastSyncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+            : "সিঙ্ক হচ্ছে...";
+          const isLive = ordersFirestoreSync.connected && !ordersFirestoreSync.isFromCache && !ordersFirestoreSync.error;
+          return (
+            <div className={`rounded-2xl border px-3.5 py-2.5 flex items-center justify-between gap-2 flex-wrap ${
+              ordersFirestoreSync.error ? "bg-rose-50 border-rose-200" :
+              isLive ? "bg-emerald-50 border-emerald-200" :
+              "bg-amber-50 border-amber-200"
+            }`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                  ordersFirestoreSync.error ? "bg-rose-500" :
+                  isLive ? "bg-emerald-500 animate-pulse" :
+                  "bg-amber-500 animate-pulse"
+                }`}></span>
+                <div className="min-w-0">
+                  <p className="text-[11px] sm:text-xs font-extrabold text-gray-800 truncate">
+                    {ordersFirestoreSync.error
+                      ? `Firestore সিঙ্ক সতর্কতা: ${ordersFirestoreSync.error}`
+                      : isLive
+                        ? "Firestore রিয়েল-টাইম লাইভ সংযুক্ত"
+                        : "লোকাল ক্যাশ থেকে প্রদর্শিত (লাইভ সিঙ্ক হচ্ছে...)"}
+                  </p>
+                  <p className="text-[10px] text-gray-500">সর্বশেষ আপডেট: {timeText}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={refreshDashboardOrdersFromFirestore}
+                className="px-3 py-1.5 rounded-full bg-white border border-gray-200 hover:border-[#7a1c2b] text-[11px] font-bold text-[#7a1c2b] shadow-2xs transition cursor-pointer shrink-0"
+              >
+                🔄 রিফ্রেশ
+              </button>
+            </div>
+          );
+        };
+
+        const renderDashboardOrderStepper = (order) => {
+          const prog = resolveDashboardOrderProgress(order?.status);
+          const steps = [
+            { key: "Pending", en: "Ordered", bn: "অর্ডার গৃহীত", icon: "📝" },
+            { key: "Processing", en: "Processing", bn: "প্রসেসিং", icon: "📦" },
+            { key: "Shipped", en: "Shipped", bn: "কুরিয়ারে", icon: "🚚" },
+            { key: "Delivered", en: "Delivered", bn: "ডেলিভারড", icon: "🎉" }
+          ];
+          const pct = prog.isException ? 0 : Math.round((prog.stepIdx / 3) * 100);
+          return (
+            <div className="rounded-2xl bg-[#fffaf5] border border-[#ecd9c6] p-3 space-y-2.5">
+              {prog.isException ? (
+                <div className="rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-800 space-y-0.5">
+                  <p className="font-black">⚠️ {prog.labelBn}</p>
+                  <p className="text-[11px]">{prog.hintBn}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="relative px-4 pt-1">
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-[#7a1c2b] via-amber-500 to-emerald-600 transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 text-center">
+                    {steps.map((st, idx) => {
+                      const isDone = idx < prog.stepIdx || (idx === prog.stepIdx && prog.stepIdx === 3);
+                      const isActive = idx === prog.stepIdx && prog.stepIdx < 3;
+                      return (
+                        <div key={st.key} className="flex flex-col items-center gap-1">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition ${
+                            isDone ? "bg-emerald-600 text-white border-emerald-600 shadow-xs" :
+                            isActive ? "bg-[#7a1c2b] text-white border-[#d4a574] ring-2 ring-[#7a1c2b]/20 animate-pulse" :
+                            "bg-white text-gray-400 border-gray-300"
+                          }`}>
+                            {isDone ? "✓" : st.icon}
+                          </div>
+                          <span className={`text-[10px] font-black leading-tight ${
+                            isDone ? "text-emerald-700" : isActive ? "text-[#7a1c2b]" : "text-gray-400"
+                          }`}>
+                            {st.en}
+                          </span>
+                          <span className={`text-[9px] leading-tight hidden sm:block ${
+                            isDone || isActive ? "text-gray-700" : "text-gray-400"
+                          }`}>
+                            {st.bn}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="bg-white rounded-xl border border-[#f3e2d0] px-3 py-2 text-[11px] space-y-0.5">
+                    <p className="font-black text-[#7a1c2b]">বর্তমান ধাপ: {prog.labelBn}</p>
+                    <p className="text-gray-600">{prog.hintBn}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        };
 
         return (
           <div className={isFullPage ? "max-w-5xl mx-auto px-3 sm:px-6 py-5 pb-24 space-y-5" : "space-y-5"}>
@@ -18579,25 +18768,25 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </button>
                       </div>
 
-                      <div className="bg-[#fffaf5] rounded-2xl p-4 border border-[#ecd9c6] space-y-2.5 flex flex-col justify-between">
-                        <div className="space-y-1.5">
+                      <div className="bg-[#fffaf5] rounded-2xl p-4 border border-[#ecd9c6] space-y-3 flex flex-col justify-between">
+                        <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <h5 className="font-extrabold text-sm text-[#7a1c2b]">📦 সর্বশেষ অর্ডার</h5>
+                            <h5 className="font-extrabold text-sm text-[#7a1c2b]">🚚 লাইভ অর্ডার ট্র্যাকিং</h5>
                             <button type="button" onClick={() => setProfileTab("orders")} className="text-xs font-bold text-sky-700 hover:underline cursor-pointer">
                               সব অর্ডার ({myOrders.length}) →
                             </button>
                           </div>
+                          {renderDashboardFirestoreSyncBar()}
                           {myOrders[0] ? (
-                            <div className="text-xs space-y-1">
+                            <div className="text-xs space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="font-mono font-black text-[#7a1c2b]">#{myOrders[0].id}</span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">{myOrders[0].status}</span>
+                                <span className="font-black text-gray-900">{myOrders[0].total || 0} ৳ • {myOrders[0].date || "আজ"}</span>
                               </div>
-                              <p className="text-gray-700 truncate">{(myOrders[0].items || []).map(i => `${i.name} ×${i.qty || 1}`).join(", ")}</p>
-                              <p className="font-black text-gray-900">মোট বিল: {myOrders[0].total || 0} ৳ • {myOrders[0].date || "আজ"}</p>
+                              {renderDashboardOrderStepper(myOrders[0])}
                             </div>
                           ) : (
-                            <p className="text-xs text-gray-500">এখনো কোনো অর্ডার নেই। প্রথম অর্ডার করলেই VIP পয়েন্ট পাবেন!</p>
+                            <p className="text-xs text-gray-500">এখনো কোনো অর্ডার নেই। প্রথম অর্ডার করলেই লাইভ ট্র্যাকিং ও VIP পয়েন্ট পাবেন!</p>
                           )}
                         </div>
                         {myOrders[0] ? (
@@ -18625,10 +18814,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 {/* TAB 1: CUSTOMER ORDER HISTORY & REAL-TIME STATUS */}
                 {profileTab === "orders" && (
                   <div className="space-y-4">
+                    {renderDashboardFirestoreSyncBar()}
                     {/* Filter & Search Bar */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-                        {["All", "Pending", "Confirmed", "Shipped", "Delivered", "Cancelled"].map(st => (
+                        {["All", "Pending", "Processing", "Shipped", "Delivered", "Cancelled"].map(st => (
                           <button
                             key={st}
                             type="button"
@@ -18680,17 +18870,21 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-xs ${
                                 order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
                                 order.status === 'Shipped' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
-                                order.status === 'Confirmed' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                                (order.status === 'Confirmed' || order.status === 'Processing' || order.status === 'To Ship') ? 'bg-amber-100 text-amber-800 border border-amber-300' :
                                 order.status === 'Cancelled' ? 'bg-red-100 text-red-800 border border-red-300' :
                                 'bg-orange-100 text-orange-800 border border-orange-300'
                               }`}>
                                 {order.status === 'Pending' ? '⏳ যাচাইাধীন (Pending)' :
                                  order.status === 'Confirmed' ? '✅ গৃহীত (Confirmed)' :
+                                 order.status === 'Processing' ? '📦 প্রসেসিং (Processing)' :
+                                 order.status === 'To Ship' ? '📦 শিপমেন্ট প্রস্তুত (Processing)' :
                                  order.status === 'Shipped' ? '🚚 কুরিয়ারে (Shipped)' :
                                  order.status === 'Delivered' ? '🎉 ডেলিভারড (Delivered)' :
                                  order.status === 'Cancelled' ? '❌ বাতিল (Cancelled)' : order.status}
                               </span>
                             </div>
+
+                            {renderDashboardOrderStepper(order)}
 
                             {order.trackingId && (
                               <div className="bg-blue-50 border border-blue-200 p-2.5 rounded-xl text-xs text-blue-900 flex items-center justify-between">
@@ -20215,57 +20409,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     const slotOrder = hp.voucherSlotsOrder || ["v1", "v2", "cta"];
                     return (
                       <div
-                        className="px-2 py-1.5 sm:px-3 sm:py-2 space-y-1 w-full min-w-0 transition-all shadow-md"
+                        className="w-full min-w-0 shadow-md flex items-center justify-between px-2.5 py-2 sm:px-3.5 sm:py-2.5 divide-x transition-all"
                         style={{
-                          background: `linear-gradient(155deg, ${hp.voucherBlockBg} 0%, ${hp.voucherBlockBgEnd} 100%)`,
-                          border: `${hp.voucherBorderWidthPx}px solid ${hp.voucherBlockBorder}`,
-                          borderRadius: `${hp.voucherRadiusPx}px`
+                          background: hp.voucherInnerBg || "#f97316",
+                          border: `${hp.voucherBorderWidthPx ?? 1}px solid ${hp.voucherInnerBorder || "#ffffff"}`,
+                          borderRadius: `${hp.voucherRadiusPx ?? 16}px`
                         }}
                       >
-                        <div className="flex items-center justify-between gap-2 px-0.5 min-w-0">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span
-                              className="text-[10.5px] sm:text-xs font-black tracking-tight truncate"
-                              style={{ color: hp.voucherTitleColor }}
-                            >
-                              {hp.voucherTitle || "Claim Vouchers to Save More!"}
-                            </span>
-                            {hp.showVoucherBadge !== false && (
-                              <span
-                                className="text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0"
-                                style={{
-                                  background: hp.voucherTagBg,
-                                  color: hp.voucherTagText,
-                                  border: `1px solid ${hp.voucherTagBorder}`
-                                }}
-                              >
-                                {hp.voucherBadgeText || "11.11 / SAJGOJ"}
-                              </span>
-                            )}
-                          </div>
-                          {hp.showMoreVoucherBtn !== false && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVoucherCenterTab("all");
-                                setIsVoucherCenterOpen(true);
-                              }}
-                              className="text-[10px] sm:text-xs font-black hover:underline flex items-center gap-0.5 transition active:scale-95 group cursor-pointer shrink-0 whitespace-nowrap"
-                              style={{ color: hp.voucherMoreColor }}
-                            >
-                              <span>{hp.voucherMoreLabel || "More Voucher"}</span>
-                              <span className="text-xs font-black group-hover:translate-x-0.5 transition-transform">›</span>
-                            </button>
-                          )}
-                        </div>
-
-                        <div
-                          className="rounded-xl shadow-2xs flex items-center justify-between px-2 py-1 sm:px-2.5 sm:py-1.5 divide-x"
-                          style={{
-                            background: hp.voucherInnerBg,
-                            border: `${hp.voucherBorderWidthPx}px solid ${hp.voucherInnerBorder}`
-                          }}
-                        >
                           {slotOrder.map((sKey, sIdx) => {
                             if (sKey === "v1") {
                               return (
@@ -20347,7 +20497,6 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                             }
                             return null;
                           })}
-                        </div>
                       </div>
                     );
                   };
@@ -24989,6 +25138,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                         >
                                           <option value="Pending">Pending (To Ship)</option>
                                           <option value="Confirmed">Confirmed (To Ship)</option>
+                                          <option value="Processing">Processing</option>
                                           <option value="To Ship">To Ship</option>
                                           <option value="Shipped">Shipped (Shipping)</option>
                                           <option value="Delivered">Delivered</option>

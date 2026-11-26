@@ -354,55 +354,34 @@ private fun PreviewSearchStrip(hp: HomePageConfig) {
 @Composable
 private fun PreviewVoucherCard(hp: HomePageConfig) {
   val r = hp.voucherRadiusPx.coerceIn(0, 32).dp
-  Column(
+  Row(
     modifier = Modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(r))
-      .background(Brush.horizontalGradient(listOf(previewOptColor(hp.voucherBlockBg, Color(0xFFFCA5A5)), previewOptColor(hp.voucherBlockBgEnd, Color(0xFFF87171)))))
-      .border(hp.voucherBorderWidthPx.coerceIn(0, 4).dp, previewOptColor(hp.voucherBlockBorder, Color.White), RoundedCornerShape(r))
-      .padding(6.dp),
-    verticalArrangement = Arrangement.spacedBy(4.dp)
+      .background(previewOptColor(hp.voucherInnerBg, Color(0xFFF97316)))
+      .border(hp.voucherBorderWidthPx.coerceIn(0, 4).dp, previewOptColor(hp.voucherInnerBorder, Color.White), RoundedCornerShape(r))
+      .padding(horizontal = 8.dp, vertical = 6.dp),
+    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically
   ) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(hp.voucherTitle, fontSize = 8.sp, fontWeight = FontWeight.Black, color = previewOptColor(hp.voucherTitleColor, Color.Black), maxLines = 1)
-        if (hp.showVoucherBadge) {
-          Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(previewOptColor(hp.voucherTagBg, Color(0xFF0B0F19))).padding(horizontal = 4.dp, vertical = 1.dp)) {
-            Text(hp.voucherBadgeText, fontSize = 6.5.sp, color = previewOptColor(hp.voucherTagText, Color.White), fontWeight = FontWeight.Bold)
-          }
+    hp.voucherSlotsOrder.forEach { slot ->
+      when (slot) {
+        "v1" -> Column {
+          Text(hp.voucher1Amount, fontSize = 8.5.sp, fontWeight = FontWeight.Black, color = previewOptColor(hp.voucherAmountColor, Color.Black))
+          Text(hp.voucher1Sub, fontSize = 6.5.sp, color = previewOptColor(hp.voucherSubColor, Color.Black))
         }
-      }
-      if (hp.showMoreVoucherBtn) Text("${hp.voucherMoreLabel} ›", fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = previewOptColor(hp.voucherMoreColor, Color.Black))
-    }
-    Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .clip(RoundedCornerShape(8.dp))
-        .background(previewOptColor(hp.voucherInnerBg, Color(0xFFFCA5A5)))
-        .border(1.dp, previewOptColor(hp.voucherInnerBorder, Color(0xFF991B1B)), RoundedCornerShape(8.dp))
-        .padding(horizontal = 6.dp, vertical = 4.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      hp.voucherSlotsOrder.forEach { slot ->
-        when (slot) {
-          "v1" -> Column {
-            Text(hp.voucher1Amount, fontSize = 8.5.sp, fontWeight = FontWeight.Black, color = previewOptColor(hp.voucherAmountColor, Color.Black))
-            Text(hp.voucher1Sub, fontSize = 6.5.sp, color = previewOptColor(hp.voucherSubColor, Color.Black))
-          }
-          "v2" -> Column {
-            Text(hp.voucher2Amount, fontSize = 8.5.sp, fontWeight = FontWeight.Black, color = previewOptColor(hp.voucherAmountColor, Color.Black))
-            Text(hp.voucher2Sub, fontSize = 6.5.sp, color = previewOptColor(hp.voucherSubColor, Color.Black))
-          }
-          "cta" -> if (hp.showCollectAllBtn) {
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(hp.voucherCtaRadiusPx.coerceIn(0, 24).dp))
-                .background(Brush.horizontalGradient(listOf(previewOptColor(hp.voucherCtaBg, Color(0xFF0B0F19)), previewOptColor(hp.voucherCtaBgEnd, Color(0xFF1E293B)))))
-                .padding(horizontal = 6.dp, vertical = 3.dp)
-            ) {
-              Text("${hp.voucherCollectLabel} ›", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = previewOptColor(hp.voucherCtaText, Color.White))
-            }
+        "v2" -> Column {
+          Text(hp.voucher2Amount, fontSize = 8.5.sp, fontWeight = FontWeight.Black, color = previewOptColor(hp.voucherAmountColor, Color.Black))
+          Text(hp.voucher2Sub, fontSize = 6.5.sp, color = previewOptColor(hp.voucherSubColor, Color.Black))
+        }
+        "cta" -> if (hp.showCollectAllBtn) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(hp.voucherCtaRadiusPx.coerceIn(0, 24).dp))
+              .background(Brush.horizontalGradient(listOf(previewOptColor(hp.voucherCtaBg, Color(0xFF0B0F19)), previewOptColor(hp.voucherCtaBgEnd, Color(0xFF1E293B)))))
+              .padding(horizontal = 6.dp, vertical = 3.dp)
+          ) {
+            Text("${hp.voucherCollectLabel} ›", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = previewOptColor(hp.voucherCtaText, Color.White))
           }
         }
       }

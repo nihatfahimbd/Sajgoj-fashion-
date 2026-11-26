@@ -1,6 +1,13 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,17 +39,21 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -68,6 +79,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -75,6 +87,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,6 +95,9 @@ import androidx.compose.ui.window.Dialog
 import com.example.data.BangladeshLocations
 import com.example.data.model.CustomerLoyaltyStatus
 import com.example.data.model.Order
+import com.example.data.model.OrderTrackingHelper
+import com.example.data.model.OrderTrackingStage
+import com.example.data.model.OrderTrackingSyncState
 import com.example.data.model.SavedAddress
 import com.example.data.model.StoreConfig
 import com.example.firebase.AuthUserSummary
@@ -97,6 +113,9 @@ import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.RoyalMaroonDark
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 enum class CustomerProfileTab(val label: String, val icon: String, val testTag: String) {
   OVERVIEW("ড্যাশবোর্ড", "📊", "profile_tab_overview"),
@@ -112,6 +131,7 @@ fun CustomerProfileScreen(
   orders: List<Order>,
   savedAddresses: List<SavedAddress>,
   loyaltyStatus: CustomerLoyaltyStatus,
+  orderTrackingSyncState: OrderTrackingSyncState = OrderTrackingSyncState(),
   storeConfig: StoreConfig,
   unreadNotificationCount: Int,
   unreadSupportCount: Int,
@@ -120,6 +140,7 @@ fun CustomerProfileScreen(
   onBackToStore: () -> Unit,
   onStartShopping: () -> Unit,
   onOpenOrderInvoice: (Order) -> Unit,
+  onRefreshOrderTracking: () -> Unit = {},
   onSaveAddress: (SavedAddress) -> Unit,
   onSetDefaultAddress: (String) -> Unit,
   onDeleteAddress: (String) -> Unit,
@@ -497,6 +518,31 @@ fun CustomerProfileScreen(
         // 3. Tab Body
         when (selectedTab) {
           CustomerProfileTab.OVERVIEW -> {
+            // Live Real-Time Order Tracking Spotlight (Firestore Connected)
+            val spotlightOrder = orders.firstOrNull {
+              !it.status.equals("Cancelled", ignoreCase = true) &&
+                !it.status.equals("Cancellation", ignoreCase = true)
+            } ?: orders.firstOrNull()
+
+            if (spotlightOrder != null) {
+              item {
+                LiveOrderTrackingSpotlightCard(
+                  order = spotlightOrder,
+                  syncState = orderTrackingSyncState,
+                  onRefreshSync = onRefreshOrderTracking,
+                  onOpenInvoice = { onOpenOrderInvoice(spotlightOrder) },
+                  onViewAllOrders = { selectedTab = CustomerProfileTab.ORDERS }
+                )
+              }
+            } else {
+              item {
+                FirestoreSyncStatusBanner(
+                  syncState = orderTrackingSyncState,
+                  onRefreshSync = onRefreshOrderTracking
+                )
+              }
+            }
+
             // VIP Status Summary Card
             item {
               VipStatusCard(
@@ -675,11 +721,25 @@ fun CustomerProfileScreen(
 
           CustomerProfileTab.ORDERS -> {
             item {
+              FirestoreSyncStatusBanner(
+                syncState = orderTrackingSyncState,
+                onRefreshSync = onRefreshOrderTracking
+              )
+            }
+
+            item {
               CustomerOrderStatisticsCard(orders = orders)
             }
 
             item {
-              val filters = listOf("All" to "সব", "Pending" to "Pending", "Confirmed" to "Confirmed", "Shipped" to "Shipped", "Delivered" to "Delivered", "Cancelled" to "Cancelled")
+              val filters = listOf(
+                "All" to "সব",
+                "Pending" to "Pending",
+                "Processing" to "Processing",
+                "Shipped" to "Shipped",
+                "Delivered" to "Delivered",
+                "Cancelled" to "Cancelled"
+              )
               Row(
                 modifier = Modifier
                   .fillMaxWidth()
@@ -695,6 +755,7 @@ fun CustomerProfileScreen(
                     modifier = Modifier
                       .heightIn(min = 48.dp)
                       .clickable { orderStatusFilter = key }
+                      .testTag("order_filter_${key.lowercase()}")
                   ) {
                     Box(
                       contentAlignment = Alignment.Center,
@@ -712,8 +773,19 @@ fun CustomerProfileScreen(
               }
             }
 
-            val filteredOrders = orders.filter {
-              orderStatusFilter == "All" || it.status.equals(orderStatusFilter, ignoreCase = true)
+            val filteredOrders = orders.filter { order ->
+              when (orderStatusFilter) {
+                "All" -> true
+                "Processing" -> {
+                  val st = order.status.trim().lowercase()
+                  st == "processing" || st == "confirmed" || st == "to ship"
+                }
+                "Shipped" -> {
+                  val st = order.status.trim().lowercase()
+                  st == "shipped" || st == "shipping"
+                }
+                else -> order.status.equals(orderStatusFilter, ignoreCase = true)
+              }
             }
 
             if (filteredOrders.isEmpty()) {
@@ -1292,15 +1364,432 @@ private fun SavedAddressFullCard(
 }
 
 @Composable
+private fun FirestoreSyncStatusBanner(
+  syncState: OrderTrackingSyncState,
+  onRefreshSync: () -> Unit
+) {
+  val infiniteTransition = rememberInfiniteTransition(label = "firestore_live_pulse")
+  val pulseAlpha by infiniteTransition.animateFloat(
+    initialValue = 0.35f,
+    targetValue = 1f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(durationMillis = 900),
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "pulse_alpha"
+  )
+
+  val (badgeBg, borderCol, dotColor, statusText) = when {
+    syncState.errorMessage.isNotBlank() -> QuadStyle(
+      Color(0xFFFEF2F2), Color(0xFFFCA5A5), AccentRed,
+      "Firestore সিঙ্ক সতর্কতা: ${syncState.errorMessage}"
+    )
+    syncState.isLiveServerSynced -> QuadStyle(
+      Color(0xFFECFDF5), Color(0xFF6EE7B7), Color(0xFF059669),
+      "Firestore রিয়েল-টাইম লাইভ সংযুক্ত"
+    )
+    syncState.isListening -> QuadStyle(
+      Color(0xFFFFFBEB), Color(0xFFFCD34D), Color(0xFFD97706),
+      "লোকাল ক্যাশ থেকে প্রদর্শিত (সিঙ্ক হচ্ছে...)"
+    )
+    else -> QuadStyle(
+      Color(0xFFF1F5F9), Color(0xFFCBD5E1), Color(0xFF64748B),
+      "অফলাইন মোড"
+    )
+  }
+
+  val timeLabel = remember(syncState.lastSyncedAtMs) {
+    if (syncState.lastSyncedAtMs <= 0L) "প্রস্তুত"
+    else try {
+      SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(Date(syncState.lastSyncedAtMs))
+    } catch (_: Exception) {
+      "আপডেটেড"
+    }
+  }
+
+  Surface(
+    shape = RoundedCornerShape(14.dp),
+    color = badgeBg,
+    border = BorderStroke(1.dp, borderCol),
+    modifier = Modifier
+      .fillMaxWidth()
+      .testTag("firestore_live_sync_banner")
+  ) {
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 12.dp, vertical = 8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.weight(1f)
+      ) {
+        Box(
+          modifier = Modifier
+            .size(10.dp)
+            .alpha(if (syncState.isListening) pulseAlpha else 1f)
+            .clip(CircleShape)
+            .background(dotColor)
+        )
+        Column {
+          Text(
+            text = statusText,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkEspresso,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+          )
+          Text(
+            text = "সর্বশেষ আপডেট: $timeLabel",
+            fontSize = 10.sp,
+            color = Color(0xFF475569)
+          )
+        }
+      }
+
+      Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, borderCol),
+        modifier = Modifier
+          .heightIn(min = 48.dp)
+          .clickable { onRefreshSync() }
+          .testTag("firestore_refresh_tracking_button")
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+          Icon(
+            imageVector = Icons.Default.Refresh,
+            contentDescription = "Firestore রিফ্রেশ",
+            tint = dotColor,
+            modifier = Modifier.size(15.dp)
+          )
+          Text(
+            text = "রিফ্রেশ",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = dotColor
+          )
+        }
+      }
+    }
+  }
+}
+
+private data class QuadStyle(
+  val bg: Color,
+  val border: Color,
+  val accent: Color,
+  val label: String
+)
+
+@Composable
+private fun LiveOrderTrackingSpotlightCard(
+  order: Order,
+  syncState: OrderTrackingSyncState,
+  onRefreshSync: () -> Unit,
+  onOpenInvoice: () -> Unit,
+  onViewAllOrders: () -> Unit
+) {
+  Card(
+    shape = RoundedCornerShape(20.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.White),
+    border = BorderStroke(1.5.dp, AntiqueGold),
+    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    modifier = Modifier
+      .fillMaxWidth()
+      .testTag("live_order_tracking_spotlight")
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.weight(1f)
+        ) {
+          Box(
+            modifier = Modifier
+              .size(38.dp)
+              .clip(RoundedCornerShape(12.dp))
+              .background(RoyalMaroon.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.LocalShipping,
+              contentDescription = null,
+              tint = RoyalMaroon,
+              modifier = Modifier.size(20.dp)
+            )
+          }
+          Column {
+            Text(
+              text = "লাইভ অর্ডার ট্র্যাকিং",
+              fontSize = 14.5.sp,
+              fontWeight = FontWeight.Black,
+              color = RoyalMaroon
+            )
+            Text(
+              text = "অর্ডার #${order.id} • ৳${order.total}",
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.SemiBold,
+              color = Color(0xFF475569)
+            )
+          }
+        }
+
+        TextButton(
+          onClick = onViewAllOrders,
+          modifier = Modifier.heightIn(min = 48.dp)
+        ) {
+          Text("সব অর্ডার →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+        }
+      }
+
+      FirestoreSyncStatusBanner(
+        syncState = syncState,
+        onRefreshSync = onRefreshSync
+      )
+
+      RealTimeOrderTrackingStepper(order = order)
+
+      OutlinedButton(
+        onClick = onOpenInvoice,
+        border = BorderStroke(1.dp, BorderGold),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(min = 48.dp)
+      ) {
+        Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = RoyalMaroon, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text("অর্ডার ইনভয়েস ও বিস্তারিত দেখুন", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = RoyalMaroon)
+      }
+    }
+  }
+}
+
+@Composable
+private fun RealTimeOrderTrackingStepper(
+  order: Order,
+  modifier: Modifier = Modifier
+) {
+  val progress = remember(order.status) { OrderTrackingHelper.resolveProgress(order.status) }
+  val animatedFraction by animateFloatAsState(
+    targetValue = if (progress.isTerminalException) 0f else (progress.currentStepIndex / 3f).coerceIn(0f, 1f),
+    animationSpec = spring(dampingRatio = 0.75f, stiffness = 240f),
+    label = "order_step_progress"
+  )
+
+  val infiniteTransition = rememberInfiniteTransition(label = "active_step_glow")
+  val activeGlow by infiniteTransition.animateFloat(
+    initialValue = 0.45f,
+    targetValue = 1f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(durationMillis = 850),
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "step_glow"
+  )
+
+  Column(
+    modifier = modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(14.dp))
+      .background(CreamBackground)
+      .border(1.dp, BorderGold.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
+      .padding(12.dp)
+      .testTag("order_tracking_stepper_${order.id}"),
+    verticalArrangement = Arrangement.spacedBy(10.dp)
+  ) {
+    if (progress.isTerminalException) {
+      Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = Color(0xFFFEF2F2),
+        border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Icon(
+            imageVector = Icons.Default.WarningAmber,
+            contentDescription = null,
+            tint = AccentRed,
+            modifier = Modifier.size(18.dp)
+          )
+          Column {
+            Text(
+              text = progress.statusLabelBn,
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Black,
+              color = AccentRed
+            )
+            Text(
+              text = progress.statusHintBn,
+              fontSize = 11.sp,
+              color = Color(0xFF7F1D1D)
+            )
+          }
+        }
+      }
+    } else {
+      // Animated Horizontal Progress Track
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 18.dp, vertical = 4.dp),
+        contentAlignment = Alignment.CenterStart
+      ) {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(5.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color(0xFFE2E8F0))
+        )
+        Box(
+          modifier = Modifier
+            .fillMaxWidth(animatedFraction)
+            .height(5.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(
+              Brush.horizontalGradient(
+                listOf(RoyalMaroon, AntiqueGoldDark, AccentGreen)
+              )
+            )
+        )
+      }
+
+      // 4 Stage Step Nodes: Ordered -> Processing -> Shipped -> Delivered
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+      ) {
+        progress.steps.forEachIndexed { idx, step ->
+          val isCompleted = idx < progress.currentStepIndex ||
+            (idx == progress.currentStepIndex && progress.stage == OrderTrackingStage.DELIVERED)
+          val isActive = idx == progress.currentStepIndex && progress.stage != OrderTrackingStage.DELIVERED
+          val nodeBg = when {
+            isCompleted -> AccentGreen
+            isActive -> RoyalMaroon
+            else -> Color.White
+          }
+          val nodeBorder = when {
+            isCompleted -> AccentGreen
+            isActive -> AntiqueGold
+            else -> Color(0xFFCBD5E1)
+          }
+
+          Column(
+            modifier = Modifier
+              .weight(1f)
+              .testTag("tracking_step_${step.key.lowercase()}"),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Box(
+              modifier = Modifier
+                .size(32.dp)
+                .alpha(if (isActive) activeGlow else 1f)
+                .clip(CircleShape)
+                .background(nodeBg)
+                .border(if (isActive) 2.dp else 1.2.dp, nodeBorder, CircleShape),
+              contentAlignment = Alignment.Center
+            ) {
+              if (isCompleted) {
+                Icon(
+                  imageVector = Icons.Default.Check,
+                  contentDescription = step.titleEn,
+                  tint = Color.White,
+                  modifier = Modifier.size(16.dp)
+                )
+              } else {
+                Text(
+                  text = step.icon,
+                  fontSize = 13.sp
+                )
+              }
+            }
+
+            Text(
+              text = step.titleEn,
+              fontSize = 10.5.sp,
+              fontWeight = if (isCompleted || isActive) FontWeight.Black else FontWeight.Medium,
+              color = when {
+                isCompleted -> AccentGreen
+                isActive -> RoyalMaroon
+                else -> Color(0xFF64748B)
+              },
+              textAlign = TextAlign.Center,
+              maxLines = 1
+            )
+            Text(
+              text = step.titleBn,
+              fontSize = 9.sp,
+              color = if (isActive || isCompleted) DarkEspresso else Color(0xFF94A3B8),
+              textAlign = TextAlign.Center,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+        }
+      }
+
+      // Live Status Callout Message
+      Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.6f)),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(
+          modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+          verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+          Text(
+            text = "বর্তমান ধাপ: ${progress.statusLabelBn}",
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Black,
+            color = RoyalMaroon
+          )
+          Text(
+            text = progress.statusHintBn,
+            fontSize = 11.sp,
+            color = Color(0xFF475569)
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
 private fun OrderHistoryItemCard(
   order: Order,
   onOpenInvoice: () -> Unit
 ) {
-  val statusColors = when (order.status) {
-    "Delivered" -> Color(0xFF047857) to Color(0xFFECFDF5)
-    "Shipped" -> Color(0xFF0369A1) to Color(0xFFF0F9FF)
-    "Confirmed" -> Color(0xFFB45309) to Color(0xFFFFFBEB)
-    "Cancelled" -> AccentRed to Color(0xFFFEF2F2)
+  val statusColors = when (order.status.trim().lowercase()) {
+    "delivered" -> Color(0xFF047857) to Color(0xFFECFDF5)
+    "shipped", "shipping" -> Color(0xFF0369A1) to Color(0xFFF0F9FF)
+    "processing", "confirmed", "to ship" -> Color(0xFFB45309) to Color(0xFFFFFBEB)
+    "cancelled", "cancellation", "failed delivered" -> AccentRed to Color(0xFFFEF2F2)
     else -> RoyalMaroon to CreamSurface
   }
   val totalQty = order.items.sumOf { it.quantity.coerceAtLeast(1) }
@@ -1309,11 +1798,13 @@ private fun OrderHistoryItemCard(
     shape = RoundedCornerShape(18.dp),
     colors = CardDefaults.cardColors(containerColor = Color.White),
     border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.75f)),
-    modifier = Modifier.fillMaxWidth()
+    modifier = Modifier
+      .fillMaxWidth()
+      .testTag("order_history_card_${order.id}")
   ) {
     Column(
       modifier = Modifier.padding(14.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp)
+      verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1348,6 +1839,9 @@ private fun OrderHistoryItemCard(
           )
         }
       }
+
+      // Real-Time Step Progress Indicator (Ordered -> Processing -> Shipped -> Delivered)
+      RealTimeOrderTrackingStepper(order = order)
 
       Text(
         text = order.items.take(2).joinToString(", ") { "${it.name} (×${it.quantity})" } +
