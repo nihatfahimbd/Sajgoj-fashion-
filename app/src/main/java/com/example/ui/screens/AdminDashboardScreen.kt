@@ -109,6 +109,8 @@ import com.example.data.model.Coupon
 import com.example.data.model.CourierConfig
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
+import com.example.data.model.ManagedUserProfile
+import com.example.data.model.ManagedUserWithStats
 import com.example.data.model.Order
 import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
@@ -142,6 +144,7 @@ import com.example.ui.components.AdminNavyGradStart
 import com.example.ui.components.AdminProductsTab
 import com.example.ui.components.AdminRoyalGradEnd
 import com.example.ui.components.AdminRoyalGradStart
+import com.example.ui.components.AdminUserManagementHub
 import com.example.ui.components.CategoryFormDialog
 import com.example.ui.components.ProductFormDialog
 import com.example.ui.components.AdminV2Amber
@@ -276,6 +279,14 @@ fun AdminDashboardScreen(
   onSelectSupportThread: (String?) -> Unit = {},
   onSendSupportReply: (String, String) -> Unit = { _, _ -> },
   onToggleSupportThreadStatus: (String, String) -> Unit = { _, _ -> },
+  managedUsers: List<ManagedUserWithStats> = emptyList(),
+  onToggleUserVerified: (String, ManagedUserProfile) -> Unit = { _, _ -> },
+  onUpdateManagedUserInfo: (String, String, String, String, String, String, String, ManagedUserProfile) -> Unit = { _, _, _, _, _, _, _, _ -> },
+  onBlockManagedUser: (String, String, ManagedUserProfile) -> Unit = { _, _, _ -> },
+  onUnblockManagedUser: (String, ManagedUserProfile) -> Unit = { _, _ -> },
+  onUnlockUserLogin: (String, ManagedUserProfile) -> Unit = { _, _ -> },
+  onAdminResetUserPassword: (String, String, ManagedUserProfile) -> String = { _, p, _ -> p },
+  onAdjustUserWallet: (String, String, Int, String, ManagedUserProfile) -> Unit = { _, _, _, _, _ -> },
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -627,6 +638,22 @@ fun AdminDashboardScreen(
           )
         }
 
+        AdminTab.USER_MANAGEMENT -> {
+          AdminUserManagementHub(
+            users = managedUsers,
+            storeName = storeConfig.storeName,
+            onToggleVerified = onToggleUserVerified,
+            onUpdateUserInfo = onUpdateManagedUserInfo,
+            onBlockUser = onBlockManagedUser,
+            onUnblockUser = onUnblockManagedUser,
+            onUnlockLogin = onUnlockUserLogin,
+            onResetPassword = onAdminResetUserPassword,
+            onAdjustWallet = onAdjustUserWallet,
+            onViewOrderInvoice = onViewInvoice,
+            onShowToast = onShowToast
+          )
+        }
+
         AdminTab.SUPPORT_CHAT -> {
           AdminSupportChatHub(
             authUser = authUser,
@@ -718,6 +745,7 @@ fun AdminDashboardScreen(
           pendingOrdersCount = pendingCountForNav,
           productsCount = products.size,
           unreadSupportCount = unreadSupportCount,
+          managedUsersCount = managedUsers.size,
           onSelectTab = onSelectTab,
           onLogout = onLogout,
           modifier = Modifier
@@ -741,6 +769,7 @@ fun AdminDashboardScreen(
               pendingOrdersCount = pendingCountForNav,
               productsCount = products.size,
               unreadSupportCount = unreadSupportCount,
+              managedUsersCount = managedUsers.size,
               onSelectTab = { tab ->
                 onSelectTab(tab)
                 scope.launch { drawerState.close() }

@@ -859,7 +859,7 @@ fun ReturnExchangeDialog(
 
                     Text(text = "বাকি টাকা ফেরত দেওয়ার মাধ্যম:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
                     Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                      listOf("Cash", "bKash", "Nagad", "Credit").forEach { m ->
+                      listOf("Wallet", "Cash", "bKash", "Nagad", "Credit").forEach { m ->
                         Surface(
                           shape = RoundedCornerShape(8.dp),
                           color = if (settlementRefundMethod == m) AccentGreen else Color.White,
@@ -868,6 +868,7 @@ fun ReturnExchangeDialog(
                         ) {
                           Text(
                             text = when (m) {
+                              "Wallet" -> "👛 User Wallet"
                               "Cash" -> "💵 ক্যাশ ফেরত"
                               "bKash" -> "📱 বিকাশ"
                               "Nagad" -> "📱 নগদ"
@@ -922,6 +923,56 @@ fun ReturnExchangeDialog(
                       )
                     }
                   }
+                }
+              }
+            }
+          } else {
+            Card(
+              modifier = Modifier.fillMaxWidth(),
+              shape = RoundedCornerShape(14.dp),
+              colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+              border = BorderStroke(1.dp, AccentGreen)
+            ) {
+              Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                  text = "৪. সম্পূর্ণ রিফান্ড মাধ্যম নির্বাচন করুন (৳$totalReturnValue):",
+                  fontSize = 11.5.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = AccentGreen
+                )
+                Row(
+                  modifier = Modifier.horizontalScroll(rememberScrollState()),
+                  horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                  listOf("Wallet", "Cash", "bKash", "Nagad").forEach { m ->
+                    Surface(
+                      shape = RoundedCornerShape(8.dp),
+                      color = if (refundMethod == m) AccentGreen else Color.White,
+                      border = BorderStroke(1.dp, BorderGold),
+                      modifier = Modifier.clickable { refundMethod = m }
+                    ) {
+                      Text(
+                        text = when (m) {
+                          "Wallet" -> "👛 User Wallet"
+                          "Cash" -> "💵 ক্যাশ"
+                          "bKash" -> "📱 বিকাশ"
+                          else -> "📱 নগদ"
+                        },
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (refundMethod == m) Color.White else DarkEspresso,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                      )
+                    }
+                  }
+                }
+                if (refundMethod == "Wallet") {
+                  Text(
+                    text = "✓ রিটার্ন নিশ্চিত হলেই ৳$totalReturnValue অটোমেটিক কাস্টমারের Wallet-এ যুক্ত হবে।",
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF065F46)
+                  )
                 }
               }
             }

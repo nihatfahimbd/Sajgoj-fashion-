@@ -4530,6 +4530,19 @@
       const [adminV2NotifOpen, setAdminV2NotifOpen] = useState(false);
       const [adminV2FinancePeriod, setAdminV2FinancePeriod] = useState("30d"); // "7d" | "30d" | "all"
       const [adminV2CustomerSearch, setAdminV2CustomerSearch] = useState("");
+      const [managedUsers, setManagedUsers] = useState(() => getStored("users_registry", []));
+      const [userMgmtFilter, setUserMgmtFilter] = useState("all"); // "all" | "verified" | "unverified" | "blocked" | "locked" | "wallet"
+      const [userMgmtDistrictFilter, setUserMgmtDistrictFilter] = useState("All");
+      const [selectedManagedUserKey, setSelectedManagedUserKey] = useState(null);
+      const [userMgmtDetailTab, setUserMgmtDetailTab] = useState("overview"); // "overview" | "edit" | "security" | "orders" | "wallet"
+      const [userEditDraft, setUserEditDraft] = useState({ name: "", phone: "", email: "", address: "", district: "Dhaka", thana: "" });
+      const [userBlockReasonDraft, setUserBlockReasonDraft] = useState("");
+      const [userTempPassDraft, setUserTempPassDraft] = useState("");
+      const [userWalletType, setUserWalletType] = useState("credit");
+      const [userWalletAmount, setUserWalletAmount] = useState("");
+      const [userWalletNote, setUserWalletNote] = useState("");
+      const [useWalletInCheckout, setUseWalletInCheckout] = useState(false);
+      const [profilePassForm, setProfilePassForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
       const [pageConfigSubTab, setPageConfigSubTab] = useState("home_page"); // "home_page" | "detail_page" | "add_product" | "master" | "json"
       const [pageConfigGroup, setPageConfigGroup] = useState("colors"); // "colors" | "blocks_tables" | "typography" | "titles" | "layout_order"
       const [homeStudioGroup, setHomeStudioGroup] = useState("ordering"); // "ordering" | "search_login" | "voucher" | "categories" | "page_blocks" | "footer_trust" | "footer_pages" | "bottom_nav"
@@ -4836,7 +4849,7 @@
       useEffect(() => {
         let isMounted = true;
         async function hydrateFromIndexedDB() {
-          const keys = ["config", "banners", "home_sections", "products", "combos", "categories", "orders", "returns", "coupons", "vouchers", "collected_vouchers", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "reels", "spin_leads", "spin_prizes", "wishlist"];
+          const keys = ["config", "banners", "home_sections", "products", "combos", "categories", "orders", "returns", "coupons", "vouchers", "collected_vouchers", "reviews", "courier", "pixel", "seo", "loyalty", "loyalty_customers", "customer_user", "users_registry", "reels", "spin_leads", "spin_prizes", "wishlist"];
           for (const k of keys) {
             try {
               const val = await idbStore.get(k);
@@ -4864,6 +4877,7 @@
                 else if (k === "spin_leads") setSpinLeads(val);
                 else if (k === "spin_prizes") setSpinPrizes(val);
                 else if (k === "wishlist") setWishlist(val);
+                else if (k === "users_registry" && Array.isArray(val)) setManagedUsers(val);
                 else if (k === "customer_user" && val) {
                   const sanitized = { ...val, photoUrl: sanitizePhotoUrl(val.photoUrl) };
                   setCurrentUser(sanitized);
@@ -4899,6 +4913,7 @@
       useEffect(() => { if (hasHydratedRef.current) setStored("seo", seo); }, [seo]);
       useEffect(() => { if (hasHydratedRef.current) setStored("loyalty", loyalty); }, [loyalty]);
       useEffect(() => { if (hasHydratedRef.current) setStored("loyalty_customers", loyaltyCustomerMap); }, [loyaltyCustomerMap]);
+      useEffect(() => { if (hasHydratedRef.current) setStored("users_registry", managedUsers); }, [managedUsers]);
       useEffect(() => {
         if (currentUser) {
           const cleanUser = { ...currentUser, photoUrl: sanitizePhotoUrl(currentUser.photoUrl) };
@@ -5472,6 +5487,35 @@
           }
         }, (err) => console.warn("Home sections sync error:", err));
 
+        // 14. Customers / User Management Registry Subscription
+        const unsubCustomers = firestoreDb.collection("customers").onSnapshot((snapshot) => {
+          if (!isMounted) return;
+          if (!snapshot.empty) {
+            const remoteList = [];
+            snapshot.forEach(doc => {
+              const d = doc.data() || {};
+              remoteList.push({ ...d, id: d.id || doc.id });
+            });
+            setManagedUsers(prev => {
+              const map = new Map();
+              (Array.isArray(prev) ? prev : []).forEach(u => {
+                if (u && (u.id || u.phone || u.email)) {
+                  const k = String(u.id || u.phone || u.email);
+                  map.set(k, u);
+                }
+              });
+              remoteList.forEach(ru => {
+                const k = String(ru.id || ru.phone || ru.email);
+                const prevItem = map.get(k) || {};
+                map.set(k, { ...prevItem, ...ru });
+              });
+              const merged = Array.from(map.values());
+              setStored("users_registry", merged);
+              return merged;
+            });
+          }
+        }, (err) => console.warn("Customers sync note:", err?.code || err));
+
         return () => {
           isMounted = false;
           unsubLoyalty();
@@ -5491,6 +5535,7 @@
           unsubPixel();
           unsubSeo();
           unsubHomeSections();
+          unsubCustomers();
         };
       }, []);
 
@@ -7662,14 +7707,14 @@
           },
           {
             id: "Customers",
-            title: "৬. কাস্টমার ও লয়্যালটি হাব",
-            desc: "ওয়েবসাইট ও POS কাস্টমার ডাটাবেস (CRM), VIP রিওয়ার্ড ক্লাব এবং কাস্টমার রিভিউ মডারেশন।",
-            badge: `${reviews.length} রিভিউ`,
+            title: "৬. কাস্টমার ও User Management",
+            desc: "User Verify ✓, Wallet, Block Reason, Password Reset, Login Unlock, Order History ও Excel/PDF এক্সপোর্ট।",
+            badge: `${derivedManagedUsers.length} ইউজার`,
             badgeClass: "bg-indigo-100 text-indigo-800",
-            icon: "👥",
+            icon: "🛡️",
             accent: "from-indigo-500 to-blue-600",
-            pills: ["কাস্টমার CRM", "VIP ক্লাব", "রিভিউ"],
-            action: () => setActiveTab("Customers")
+            pills: ["Verify & Wallet", "Block & Reset", "CSV/XLS/PDF"],
+            action: () => setActiveTab("UserManagement")
           },
           {
             id: "HomePageSetting",
@@ -8483,15 +8528,24 @@
                 </div>
               </div>
 
-              <div className="relative w-full sm:w-72">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#000000] text-sm">🔍</span>
-                <input
-                  type="text"
-                  value={adminV2CustomerSearch}
-                  onChange={(e) => setAdminV2CustomerSearch(e.target.value)}
-                  placeholder="নাম, মোবাইল নম্বর বা ঠিকানা..."
-                  className="w-full bg-white/95 border border-white rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-[#000000] outline-none focus:border-black"
-                />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("UserManagement")}
+                  className="cta-dark-pill px-4 py-2 rounded-xl text-xs font-black cursor-pointer"
+                >
+                  🛡️ User Management হাব →
+                </button>
+                <div className="relative w-full sm:w-64">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#000000] text-sm">🔍</span>
+                  <input
+                    type="text"
+                    value={adminV2CustomerSearch}
+                    onChange={(e) => setAdminV2CustomerSearch(e.target.value)}
+                    placeholder="নাম, মোবাইল নম্বর বা ঠিকানা..."
+                    className="w-full bg-white/95 border border-white rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-[#000000] outline-none focus:border-black"
+                  />
+                </div>
               </div>
             </div>
 
@@ -8568,6 +8622,816 @@
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      // =========================================================================
+      // MASTER HUB: USER MANAGEMENT (VERIFY, WALLET, BLOCK, PASSWORD RESET, EXPORT)
+      // =========================================================================
+      const renderUserManagementHub = () => {
+        const allUsers = derivedManagedUsers || [];
+        const districtChoices = Array.from(new Set(allUsers.map(u => u.district).filter(Boolean))).sort();
+        const filteredUsers = allUsers.filter(u => {
+          if (userMgmtFilter === "verified" && !u.isVerified) return false;
+          if (userMgmtFilter === "unverified" && u.isVerified) return false;
+          if (userMgmtFilter === "blocked" && u.accountStatus !== "blocked") return false;
+          if (userMgmtFilter === "locked" && !u.loginLocked && (u.failedLoginAttempts || 0) === 0) return false;
+          if (userMgmtFilter === "wallet" && (Number(u.walletBalance) || 0) <= 0) return false;
+          if (userMgmtDistrictFilter !== "All" && (u.district || "") !== userMgmtDistrictFilter) return false;
+
+          const q = adminV2CustomerSearch.trim().toLowerCase();
+          if (!q) return true;
+          return (
+            (u.name || "").toLowerCase().includes(q) ||
+            (u.phone || "").toLowerCase().includes(q) ||
+            (u.email || "").toLowerCase().includes(q) ||
+            (u.district || "").toLowerCase().includes(q) ||
+            (u.thana || "").toLowerCase().includes(q) ||
+            (u.deviceInfo || "").toLowerCase().includes(q) ||
+            (u.blockReason || "").toLowerCase().includes(q)
+          );
+        });
+
+        const totalVerified = allUsers.filter(u => u.isVerified).length;
+        const totalBlocked = allUsers.filter(u => u.accountStatus === "blocked").length;
+        const totalLocked = allUsers.filter(u => u.loginLocked).length;
+        const totalWalletSum = allUsers.reduce((s, u) => s + (Number(u.walletBalance) || 0), 0);
+
+        const openUserDetailModal = (userObj, initialTab = "overview") => {
+          setSelectedManagedUserKey(userObj.key);
+          setUserMgmtDetailTab(initialTab);
+          setUserEditDraft({
+            name: userObj.name || "",
+            phone: userObj.phone || "",
+            email: userObj.email || "",
+            address: userObj.address || "",
+            district: userObj.district || "Dhaka",
+            thana: userObj.thana || ""
+          });
+          setUserBlockReasonDraft(userObj.blockReason || "");
+          setUserTempPassDraft(userObj.tempPassword || "");
+          setUserWalletAmount("");
+          setUserWalletNote("");
+        };
+
+        const activeSelectedUser = selectedManagedUserKey
+          ? allUsers.find(u => u.key === selectedManagedUserKey) || null
+          : null;
+
+        return (
+          <div className="space-y-5 v2-animate-in">
+            {/* Header & Export Bar */}
+            <div className="liquid-glass-surface rounded-[24px] p-5 sm:p-6 space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("Dashboard")}
+                    className="red-black-tab px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer"
+                  >
+                    ← ওভারভিউ
+                  </button>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-[#000000] flex items-center gap-2">
+                      <span>🛡️ User Management ও কাস্টমার কন্ট্রোল</span>
+                      <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-sky-600 text-white">{allUsers.length} জন</span>
+                    </h2>
+                    <p className="text-xs text-slate-900 font-bold">
+                      ভেরিফাই নীল টিকমার্ক ✓, লগইন আনলক, পাসওয়ার্ড রিসেট (SMS/WhatsApp), ব্লক কারণ, অর্ডার হিস্ট্রি, ওয়ালেট ও এক্সপোর্ট
+                    </p>
+                  </div>
+                </div>
+
+                {/* Export Buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => exportManagedUsersCsv(filteredUsers)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-black shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>📄</span>
+                    <span>CSV ({filteredUsers.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exportManagedUsersExcel(filteredUsers)}
+                    className="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl text-xs font-black shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>📊</span>
+                    <span>Excel (.xls)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exportManagedUsersPdf(filteredUsers)}
+                    className="bg-rose-700 hover:bg-rose-800 text-white px-3.5 py-2 rounded-xl text-xs font-black shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>📑</span>
+                    <span>PDF ডাউনলোড</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Metrics Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                {[
+                  { label: "মোট ইউজার", val: allUsers.length, tone: "bg-white/90 text-[#000000] border-slate-200" },
+                  { label: "Verified ✓", val: totalVerified, tone: "bg-sky-50 text-sky-900 border-sky-200" },
+                  { label: "সক্রিয় (Active)", val: allUsers.length - totalBlocked, tone: "bg-emerald-50 text-emerald-900 border-emerald-200" },
+                  { label: "ব্লক লিস্ট", val: totalBlocked, tone: "bg-rose-50 text-rose-900 border-rose-200" },
+                  { label: "লগইন লক", val: totalLocked, tone: "bg-amber-50 text-amber-900 border-amber-200" },
+                  { label: "মোট Wallet", val: `৳${totalWalletSum.toLocaleString()}`, tone: "bg-purple-50 text-purple-900 border-purple-200" }
+                ].map((kpi, idx) => (
+                  <div key={idx} className={`rounded-2xl border px-3.5 py-2.5 ${kpi.tone}`}>
+                    <span className="text-[10px] font-black uppercase tracking-wide block opacity-80">{kpi.label}</span>
+                    <span className="text-lg font-black font-mono">{kpi.val}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Search, Filter Chips & District Filter */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                  {[
+                    { id: "all", label: `সব (${allUsers.length})` },
+                    { id: "verified", label: `✓ Verified (${totalVerified})` },
+                    { id: "unverified", label: "Unverified" },
+                    { id: "blocked", label: `🚫 Block List (${totalBlocked})` },
+                    { id: "locked", label: `🔐 Login Issue (${totalLocked})` },
+                    { id: "wallet", label: "💳 Wallet > ৳0" }
+                  ].map(chip => (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => setUserMgmtFilter(chip.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-black whitespace-nowrap border transition cursor-pointer ${
+                        userMgmtFilter === chip.id
+                          ? "bg-[#000000] text-white border-[#000000]"
+                          : "bg-white/90 text-[#000000] border-slate-300 hover:bg-white"
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select
+                    value={userMgmtDistrictFilter}
+                    onChange={(e) => setUserMgmtDistrictFilter(e.target.value)}
+                    className="bg-white/95 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-[#000000] outline-none focus:border-black"
+                  >
+                    <option value="All">📍 সব জেলা ({districtChoices.length})</option>
+                    {districtChoices.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                  <div className="relative w-full sm:w-64">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs">🔍</span>
+                    <input
+                      type="text"
+                      value={adminV2CustomerSearch}
+                      onChange={(e) => setAdminV2CustomerSearch(e.target.value)}
+                      placeholder="নাম, ফোন, জেলা, ডিভাইস বা ব্লক কারণ..."
+                      className="w-full bg-white/95 border border-slate-300 rounded-xl pl-8 pr-3 py-2 text-xs font-semibold text-[#000000] outline-none focus:border-black"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* User Directory Cards */}
+            {filteredUsers.length === 0 ? (
+              <div className="red-black-bottom-card rounded-[24px] p-12 text-center text-[#000000] font-black text-sm">
+                ফিল্টার অনুযায়ী কোনো ইউজার পাওয়া যায়নি।
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredUsers.map(u => {
+                  const isBlocked = u.accountStatus === "blocked";
+                  return (
+                    <div
+                      key={u.key}
+                      onClick={() => openUserDetailModal(u, "overview")}
+                      className={`rounded-[22px] p-4 sm:p-5 border-2 transition cursor-pointer flex flex-col justify-between gap-3 shadow-sm hover:shadow-lg ${
+                        isBlocked
+                          ? "bg-rose-50/95 border-rose-300"
+                          : u.loginLocked
+                          ? "bg-amber-50/95 border-amber-300"
+                          : "bg-white/95 border-white hover:border-sky-400"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#7a1c2b] to-[#2c1810] text-white font-black text-sm flex items-center justify-center shrink-0 shadow">
+                            {String(u.name || "U").slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-black text-sm text-slate-900 truncate max-w-[155px]">{u.name}</h4>
+                              {u.isVerified && (
+                                <span
+                                  className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-500 text-white text-[11px] font-black shadow-xs shrink-0"
+                                  title="Verified User ✓"
+                                >
+                                  ✓
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs font-mono font-bold text-slate-700 mt-0.5">📞 {u.phone || "N/A"}</p>
+                            {u.email && <p className="text-[11px] text-slate-500 truncate">{u.email}</p>}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                            isBlocked
+                              ? "bg-rose-600 text-white border-rose-700"
+                              : "bg-emerald-100 text-emerald-800 border-emerald-300"
+                          }`}>
+                            {isBlocked ? "🚫 Blocked" : "● Active"}
+                          </span>
+                          {u.loginLocked && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white">
+                              🔐 Locked
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Tracking Info */}
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 rounded-xl p-2.5 border border-slate-200/80">
+                        <div>
+                          <span className="text-slate-500 block text-[10px]">📍 জেলা / থানা</span>
+                          <span className="font-bold text-slate-800 truncate block">{u.district || "Dhaka"}{u.thana ? `, ${u.thana}` : ""}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[10px]">📱 ডিভাইস</span>
+                          <span className="font-bold text-slate-800 truncate block">{u.deviceInfo || "Web Browser"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[10px]">🕒 Last Login</span>
+                          <span className="font-bold text-slate-800 truncate block">
+                            {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "অর্ডার গেস্ট"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[10px]">💳 Wallet Balance</span>
+                          <span className="font-black text-purple-700 font-mono">৳{(Number(u.walletBalance) || 0).toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      {isBlocked && u.blockReason && (
+                        <div className="bg-rose-100 border border-rose-300 rounded-xl px-3 py-1.5 text-[11px] font-bold text-rose-900">
+                          🚫 ব্লক কারণ: {u.blockReason}
+                        </div>
+                      )}
+
+                      {/* Order Stats & Quick Actions */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs">
+                        <div>
+                          <span className="font-black text-slate-900">৳{(u.totalSpend || 0).toLocaleString()}</span>
+                          <span className="text-[11px] text-slate-600 font-bold ml-1">({u.totalOrders} অর্ডার)</span>
+                          {(u.cancelledCount > 0 || u.returnedCount > 0) && (
+                            <span className="block text-[10px] font-bold text-rose-700">
+                              {u.cancelledCount > 0 ? `Cancel: ${u.cancelledCount} ` : ""}
+                              {u.returnedCount > 0 ? `Return: ${u.returnedCount}` : ""}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => toggleUserVerified(u.key)}
+                            className={`px-2.5 py-1.5 rounded-xl text-[11px] font-black border cursor-pointer transition ${
+                              u.isVerified
+                                ? "bg-sky-600 text-white border-sky-600"
+                                : "bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100"
+                            }`}
+                            title={u.isVerified ? "Unverify করুন" : "Verify Blue Tick ✓ দিন"}
+                          >
+                            {u.isVerified ? "✓ Verified" : "✓ Verify"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openUserDetailModal(u, "orders")}
+                            className="cta-dark-pill px-2.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer"
+                          >
+                            ম্যানেজ →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* USER MANAGEMENT DETAIL & CONTROL MODAL */}
+            {activeSelectedUser && (
+              <div className="fixed inset-0 z-[70] bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+                <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border-2 border-slate-200 shadow-2xl animate-fadeIn text-slate-900">
+                  {/* Modal Header */}
+                  <div className="bg-gradient-to-r from-[#7a1c2b] via-[#5d1521] to-[#1e1b4b] text-white p-5 flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-14 h-14 rounded-2xl bg-white/15 border-2 border-[#d4a574] flex items-center justify-center text-xl font-black shrink-0">
+                        {String(activeSelectedUser.name || "U").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-lg sm:text-xl font-black truncate">{activeSelectedUser.name}</h3>
+                          {activeSelectedUser.isVerified && (
+                            <span className="inline-flex items-center gap-1 bg-sky-500 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow">
+                              <span>✓</span>
+                              <span>Verified</span>
+                            </span>
+                          )}
+                          <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${
+                            activeSelectedUser.accountStatus === "blocked" ? "bg-rose-600 text-white" : "bg-emerald-500 text-white"
+                          }`}>
+                            {activeSelectedUser.accountStatus === "blocked" ? "🚫 Blocked" : "● Active"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-200 font-mono mt-0.5">
+                          📞 {activeSelectedUser.phone || "N/A"} {activeSelectedUser.email ? `• 📧 ${activeSelectedUser.email}` : ""}
+                        </p>
+                        <p className="text-[11px] text-white/80 mt-0.5">
+                          📍 {activeSelectedUser.district || "Dhaka"}{activeSelectedUser.thana ? `, ${activeSelectedUser.thana}` : ""} • 📱 {activeSelectedUser.deviceInfo || "Web Browser"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedManagedUserKey(null)}
+                      className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white font-black flex items-center justify-center cursor-pointer shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Quick Summary & Verify Toggle Strip */}
+                  <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-3 text-xs font-bold">
+                      <span>📦 অর্ডার: <strong className="text-[#7a1c2b]">{activeSelectedUser.totalOrders}</strong></span>
+                      <span>💰 মোট খরচ: <strong className="text-emerald-700">৳{(activeSelectedUser.totalSpend || 0).toLocaleString()}</strong></span>
+                      <span>💳 Wallet: <strong className="text-purple-700 font-mono">৳{(Number(activeSelectedUser.walletBalance) || 0).toLocaleString()}</strong></span>
+                      <span>🕒 Last Login: <strong>{activeSelectedUser.lastLoginAt ? new Date(activeSelectedUser.lastLoginAt).toLocaleString() : "N/A"}</strong></span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleUserVerified(activeSelectedUser.key)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer transition ${
+                        activeSelectedUser.isVerified
+                          ? "bg-sky-600 text-white hover:bg-sky-700"
+                          : "bg-sky-100 text-sky-900 border border-sky-400 hover:bg-sky-200"
+                      }`}
+                    >
+                      {activeSelectedUser.isVerified ? "✓ Verified (Unverify করুন)" : "🔵 নীল টিকমার্ক (Verify) দিন"}
+                    </button>
+                  </div>
+
+                  {/* Detail Tabs */}
+                  <div className="px-5 pt-3 border-b border-slate-200 flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs font-black">
+                    {[
+                      { id: "overview", label: "📊 কন্ট্রোল ও ট্র্যাকিং" },
+                      { id: "orders", label: `📦 অর্ডার হিস্ট্রি (${activeSelectedUser.orders.length})` },
+                      { id: "wallet", label: `💳 Wallet (৳${Number(activeSelectedUser.walletBalance) || 0})` },
+                      { id: "security", label: "🔐 লগইন, ব্লক ও পাসওয়ার্ড" },
+                      { id: "edit", label: "✏️ তথ্য আপডেট" }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setUserMgmtDetailTab(tab.id)}
+                        className={`pb-3 px-3 border-b-2 whitespace-nowrap cursor-pointer transition ${
+                          userMgmtDetailTab === tab.id ? "border-[#7a1c2b] text-[#7a1c2b]" : "border-transparent text-slate-500 hover:text-slate-900"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Modal Body */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                    {userMgmtDetailTab === "overview" && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                            <h5 className="font-black text-[#7a1c2b]">👤 গ্রাহক ও ঠিকানা তথ্য</h5>
+                            <p><strong>নাম:</strong> {activeSelectedUser.name}</p>
+                            <p><strong>মোবাইল:</strong> <span className="font-mono">{activeSelectedUser.phone || "N/A"}</span></p>
+                            <p><strong>ইমেইল:</strong> {activeSelectedUser.email || "N/A"}</p>
+                            <p><strong>জেলা / থানা:</strong> {activeSelectedUser.district || "Dhaka"} {activeSelectedUser.thana ? `› ${activeSelectedUser.thana}` : ""}</p>
+                            <p><strong>ঠিকানা:</strong> {activeSelectedUser.address || "দেওয়া নেই"}</p>
+                          </div>
+                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                            <h5 className="font-black text-[#7a1c2b]">📱 অ্যাক্টিভিটি ও ডিভাইস ট্র্যাকিং</h5>
+                            <p><strong>Last Login:</strong> {activeSelectedUser.lastLoginAt ? new Date(activeSelectedUser.lastLoginAt).toLocaleString() : "এখনো লগইন করেনি"}</p>
+                            <p><strong>Device Info:</strong> {activeSelectedUser.deviceInfo || "Web Browser"}</p>
+                            <p><strong>মোট অর্ডার:</strong> {activeSelectedUser.totalOrders} টি (Cancel: {activeSelectedUser.cancelledCount}, Return: {activeSelectedUser.returnedCount})</p>
+                            <p><strong>মোট কেনাকাটা:</strong> ৳{(activeSelectedUser.totalSpend || 0).toLocaleString()}</p>
+                            <p><strong>Login ব্যর্থ চেষ্টা:</strong> {activeSelectedUser.failedLoginAttempts || 0} বার ({activeSelectedUser.loginLocked ? "🔐 Locked" : "✅ স্বাভাবিক"})</p>
+                          </div>
+                        </div>
+
+                        {activeSelectedUser.accountStatus === "blocked" && (
+                          <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 flex items-center justify-between gap-3 flex-wrap">
+                            <div>
+                              <h5 className="font-black text-rose-900 text-xs">🚫 এই একাউন্টটি বর্তমানে ব্লক করা আছে</h5>
+                              <p className="text-xs text-rose-800 mt-0.5">কারণ: {activeSelectedUser.blockReason || "উল্লেখ নেই"}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => unblockManagedUser(activeSelectedUser.key)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black cursor-pointer"
+                            >
+                              ✓ Unblock করুন
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {userMgmtDetailTab === "orders" && (
+                      <div className="space-y-3">
+                        {activeSelectedUser.orders.length === 0 ? (
+                          <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-xs font-bold text-slate-500">
+                            এই ইউজারের এখনো কোনো অর্ডার নেই।
+                          </div>
+                        ) : (
+                          activeSelectedUser.orders.map(ord => {
+                            const ordReturns = (returns || []).filter(r => r.orderId === ord.id);
+                            const isCancelled = String(ord.status || "").toLowerCase().includes("cancel");
+                            const hasRet = Boolean(ord.hasReturn) || ordReturns.length > 0;
+                            return (
+                              <div key={ord.id} className="p-4 rounded-2xl border border-slate-200 bg-[#fffaf5] space-y-2.5">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <div>
+                                    <span className="font-mono font-black text-sm text-[#7a1c2b]">#{ord.id}</span>
+                                    <span className="text-xs text-slate-500 ml-2">📅 {ord.date || "N/A"}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
+                                      isCancelled ? "bg-rose-100 text-rose-800" :
+                                      ord.status === "Delivered" ? "bg-emerald-100 text-emerald-800" :
+                                      "bg-amber-100 text-amber-800"
+                                    }`}>
+                                      {ord.status}
+                                    </span>
+                                    {hasRet && (
+                                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-100 text-purple-800">
+                                        🔄 Return/Exchange ({ordReturns.length || 1})
+                                      </span>
+                                    )}
+                                    {Number(ord.walletPaidAmount) > 0 && (
+                                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-sky-100 text-sky-800">
+                                        💳 Wallet ৳{ord.walletPaidAmount}
+                                      </span>
+                                    )}
+                                    {ord.walletRefunded && (
+                                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-600 text-white">
+                                        ✓ Wallet Refunded
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1 text-xs text-slate-700">
+                                  {(ord.items || []).map((it, i) => (
+                                    <div key={i} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-100">
+                                      <span className="font-bold truncate">{it.name} × {it.qty || 1}</span>
+                                      <span className="font-mono font-black text-slate-900">৳{((Number(it.price) || 0) * (Number(it.qty) || 1)).toLocaleString()}</span>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+                                  <span className="text-slate-600">পেমেন্ট: <strong>{ord.paymentMethod || "COD"}</strong></span>
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-black text-[#7a1c2b] text-sm">মোট: ৳{(Number(ord.total) || 0).toLocaleString()}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewInvoiceOrder(ord)}
+                                      className="px-3 py-1 rounded-lg bg-[#7a1c2b] text-white text-[11px] font-bold cursor-pointer"
+                                    >
+                                      মেমো
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+
+                    {userMgmtDetailTab === "wallet" && (
+                      <div className="space-y-4">
+                        <div className="p-5 rounded-3xl bg-gradient-to-r from-purple-700 to-indigo-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow">
+                          <div>
+                            <span className="text-xs font-bold text-purple-200 block">বর্তমান Wallet ব্যালেন্স</span>
+                            <span className="text-3xl font-black font-mono">৳{(Number(activeSelectedUser.walletBalance) || 0).toLocaleString()}</span>
+                          </div>
+                          <p className="text-xs text-purple-100 max-w-xs">
+                            অর্ডার Cancel বা Return হলে স্বয়ংক্রিয়ভাবে টাকা এই ওয়ালেটে যুক্ত হবে এবং ক্রেতা চেকআউটে এটি দিয়ে পেমেন্ট করতে পারবেন।
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                          <h5 className="font-black text-xs text-slate-900">💳 অ্যাডমিন Wallet ব্যালেন্স যোগ / বাদ</h5>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setUserWalletType("credit")}
+                              className={`flex-1 py-2 rounded-xl text-xs font-black border cursor-pointer ${
+                                userWalletType === "credit" ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-700 border-slate-300"
+                              }`}
+                            >
+                              + টাকা যোগ করুন (Credit)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setUserWalletType("debit")}
+                              className={`flex-1 py-2 rounded-xl text-xs font-black border cursor-pointer ${
+                                userWalletType === "debit" ? "bg-rose-600 text-white border-rose-600" : "bg-white text-slate-700 border-slate-300"
+                              }`}
+                            >
+                              - টাকা বাদ দিন (Debit)
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <input
+                              type="number"
+                              min="1"
+                              placeholder="টাকার পরিমাণ (যেমন: 500)"
+                              value={userWalletAmount}
+                              onChange={(e) => setUserWalletAmount(e.target.value)}
+                              className="bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono font-bold outline-none focus:border-purple-600"
+                            />
+                            <input
+                              type="text"
+                              placeholder="কারণ / নোট (যেমন: বোনাস / রিফান্ড সমন্বয়)"
+                              value={userWalletNote}
+                              onChange={(e) => setUserWalletNote(e.target.value)}
+                              className="bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-purple-600"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const amt = Number(userWalletAmount) || 0;
+                              if (amt <= 0) {
+                                notify("সঠিক টাকার পরিমাণ লিখুন!");
+                                return;
+                              }
+                              adjustUserWallet(
+                                activeSelectedUser.key,
+                                userWalletType,
+                                amt,
+                                userWalletNote.trim() || (userWalletType === "credit" ? "অ্যাডমিন ক্রেডিট" : "অ্যাডমিন ডিডাকশন")
+                              );
+                              setUserWalletAmount("");
+                              setUserWalletNote("");
+                            }}
+                            className="w-full py-2.5 rounded-xl bg-[#7a1c2b] hover:bg-[#681727] text-white text-xs font-black cursor-pointer"
+                          >
+                            {userWalletType === "credit" ? "✓ ওয়ালেটে টাকা যোগ করুন" : "✓ ওয়ালেট থেকে টাকা বাদ দিন"}
+                          </button>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h5 className="font-black text-xs text-slate-900">📜 Wallet লেনদেনের ইতিহাস ({(activeSelectedUser.walletHistory || []).length})</h5>
+                          {(activeSelectedUser.walletHistory || []).length === 0 ? (
+                            <p className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl text-center">এখনো কোনো Wallet লেনদেন হয়নি।</p>
+                          ) : (
+                            (activeSelectedUser.walletHistory || []).map(tx => {
+                              const isPlus = tx.type === "credit" || tx.type === "refund";
+                              return (
+                                <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 text-xs">
+                                  <div>
+                                    <p className="font-bold text-slate-900">{tx.note}</p>
+                                    <p className="text-[10px] text-slate-500">
+                                      {new Date(tx.timestamp).toLocaleString()} {tx.orderId ? `• #${tx.orderId}` : ""}
+                                    </p>
+                                  </div>
+                                  <span className={`font-mono font-black text-sm ${isPlus ? "text-emerald-700" : "text-rose-700"}`}>
+                                    {isPlus ? "+" : "-"}৳{tx.amount}
+                                  </span>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {userMgmtDetailTab === "security" && (
+                      <div className="space-y-4">
+                        {/* Login Issue & Unlock */}
+                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 space-y-2.5">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div>
+                              <h5 className="font-black text-xs text-amber-950">🔐 Login সমস্যা সমাধান ও আনলক</h5>
+                              <p className="text-[11px] text-amber-800">
+                                অবস্থা: <strong>{activeSelectedUser.loginLocked ? "লগইন লক করা আছে" : "লগইন সচল আছে"}</strong> • ব্যর্থ চেষ্টা: {activeSelectedUser.failedLoginAttempts || 0} বার
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => unlockUserLogin(activeSelectedUser.key)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black cursor-pointer"
+                            >
+                              🔓 Unlock Login করুন
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Password Reset & Send SMS / WhatsApp */}
+                        <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-3">
+                          <h5 className="font-black text-xs text-sky-950">🔑 পাসওয়ার্ড রিসেট এবং SMS / WhatsApp-এ পাঠানো</h5>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                              type="text"
+                              value={userTempPassDraft}
+                              onChange={(e) => setUserTempPassDraft(e.target.value)}
+                              placeholder="নতুন Temporary Password লিখুন (কমপক্ষে ৪ অক্ষর)"
+                              className="flex-1 bg-white border border-sky-300 rounded-xl px-3.5 py-2 text-xs font-mono font-bold outline-none focus:border-sky-600"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setUserTempPassDraft("SG-" + Math.floor(100000 + Math.random() * 900000))}
+                              className="px-3.5 py-2 rounded-xl bg-white border border-sky-300 text-sky-900 text-xs font-bold cursor-pointer"
+                            >
+                              🎲 অটো জেনারেট
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => adminResetUserPassword(activeSelectedUser.key, userTempPassDraft)}
+                              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black cursor-pointer"
+                            >
+                              ✓ সেভ রিসেট
+                            </button>
+                          </div>
+                          {(userTempPassDraft || activeSelectedUser.tempPassword) && (
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pwd = (userTempPassDraft || activeSelectedUser.tempPassword || "").trim();
+                                  const msg = `প্রিয় ${activeSelectedUser.name}, ${config.storeName || "SAJGOJ FASHION"}-এ আপনার নতুন অস্থায়ী পাসওয়ার্ড (Temporary Password): ${pwd} । লগইন করে প্রোফাইল থেকে পরিবর্তন করে নিন।`;
+                                  openPlaySafeSmsIntent(activeSelectedUser.phone, msg);
+                                }}
+                                className="bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                              >
+                                📩 SMS-এ পাঠান
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pwd = (userTempPassDraft || activeSelectedUser.tempPassword || "").trim();
+                                  const cleanWa = normalizePhone(activeSelectedUser.phone);
+                                  if (!cleanWa) {
+                                    notify("এই ইউজারের সঠিক মোবাইল নম্বর নেই!");
+                                    return;
+                                  }
+                                  const msg = `প্রিয় ${activeSelectedUser.name}, ${config.storeName || "SAJGOJ FASHION"}-এ আপনার নতুন Temporary Password: ${pwd}`;
+                                  window.open(`https://wa.me/88${cleanWa}?text=${encodeURIComponent(msg)}`, "_blank");
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                              >
+                                💬 WhatsApp-এ পাঠান
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Block / Unblock with Required Reason */}
+                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-3">
+                          <h5 className="font-black text-xs text-rose-950">🚫 একাউন্ট Active / Block ও কারণ (Block Reason)</h5>
+                          <div className="flex flex-wrap gap-1.5">
+                            {["Fake Order", "খারাপ ব্যবহার", "Fraud", "Multiple Return Abuse"].map(preset => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setUserBlockReasonDraft(preset)}
+                                className={`px-3 py-1 rounded-full text-[11px] font-bold border cursor-pointer ${
+                                  userBlockReasonDraft === preset ? "bg-rose-600 text-white border-rose-600" : "bg-white text-rose-900 border-rose-300"
+                                }`}
+                              >
+                                {preset}
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            type="text"
+                            value={userBlockReasonDraft}
+                            onChange={(e) => setUserBlockReasonDraft(e.target.value)}
+                            placeholder="ব্লক করার কারণ লিখুন (আবশ্যক, যেমন: Fake Order / খারাপ ব্যবহার / Fraud)..."
+                            className="w-full bg-white border border-rose-300 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-rose-600"
+                          />
+                          <div className="flex gap-2">
+                            {activeSelectedUser.accountStatus === "blocked" ? (
+                              <button
+                                type="button"
+                                onClick={() => unblockManagedUser(activeSelectedUser.key)}
+                                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black cursor-pointer"
+                              >
+                                ✓ একাউন্ট Unblock ও Active করুন
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => blockManagedUser(activeSelectedUser.key, userBlockReasonDraft)}
+                                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                              >
+                                🚫 ইউজারকে Block করুন
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {userMgmtDetailTab === "edit" && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          updateManagedUserInfo(activeSelectedUser.key, userEditDraft);
+                        }}
+                        className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200"
+                      >
+                        <h5 className="font-black text-xs text-slate-900">✏️ ইউজারের তথ্য আপডেট করুন</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">পূর্ণ নাম *</label>
+                            <input
+                              type="text"
+                              required
+                              value={userEditDraft.name}
+                              onChange={(e) => setUserEditDraft({ ...userEditDraft, name: e.target.value })}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">মোবাইল নম্বর</label>
+                            <input
+                              type="tel"
+                              value={userEditDraft.phone}
+                              onChange={(e) => setUserEditDraft({ ...userEditDraft, phone: e.target.value })}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">ইমেইল</label>
+                            <input
+                              type="email"
+                              value={userEditDraft.email}
+                              onChange={(e) => setUserEditDraft({ ...userEditDraft, email: e.target.value })}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">জেলা (District)</label>
+                            <input
+                              type="text"
+                              value={userEditDraft.district}
+                              onChange={(e) => setUserEditDraft({ ...userEditDraft, district: e.target.value })}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">থানা / উপজেলা</label>
+                            <input
+                              type="text"
+                              value={userEditDraft.thana}
+                              onChange={(e) => setUserEditDraft({ ...userEditDraft, thana: e.target.value })}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">বিস্তারিত ঠিকানা</label>
+                            <input
+                              type="text"
+                              value={userEditDraft.address}
+                              onChange={(e) => setUserEditDraft({ ...userEditDraft, address: e.target.value })}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 rounded-xl bg-[#7a1c2b] hover:bg-[#681727] text-white text-xs font-black cursor-pointer"
+                        >
+                          ✓ পরিবর্তন সংরক্ষণ করুন
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -10955,6 +11819,19 @@
         setStored("orders", updatedOrders);
         await syncDocToCloud("orders", returnOrder.id, { hasReturn: true, lastReturnId: record.id });
 
+        // 5. Auto-Credit Wallet when refundMethod === "wallet" or Exchange negative diff settled to wallet
+        const walletRefundAmt = (!isExchange && returnRefundMethod === "wallet")
+          ? returnTotal
+          : (isExchange && netDiff < 0 && settlementRefundMethod === "wallet")
+          ? Math.abs(netDiff)
+          : 0;
+        if (walletRefundAmt > 0) {
+          const refundUserKey = resolveUserLookupKey({ phone: returnOrder.phone || returnOrder.customerPhone, email: returnOrder.customerEmail });
+          if (refundUserKey) {
+            adjustUserWallet(refundUserKey, "refund", walletRefundAmt, `রিটার্ন #${record.id} রিফান্ড (${returnOrder.id})`, returnOrder.id);
+          }
+        }
+
         setIsReturnModalOpen(false);
         setViewReturnSlip(record);
         const settlementMsg = isExchange
@@ -10963,7 +11840,7 @@
               : netDiff < 0
               ? `কাস্টমারকে ৳${Math.abs(netDiff)} ফেরত দেওয়া হয়েছে (${settlementRefundMethod})`
               : `সমমূল্য পণ্য বিনিময় (০ ৳ ব্যালেন্স)`)
-          : `কাস্টমারকে ৳${returnTotal} রিফান্ড দেওয়া হয়েছে (${returnRefundMethod})`;
+          : `কাস্টমারকে ৳${returnTotal} রিফান্ড দেওয়া হয়েছে (${returnRefundMethod === "wallet" ? "Customer Wallet 💳" : returnRefundMethod})`;
         notify(`🎉 সেলস রিটার্ন ও এক্সচেঞ্জ সফল হয়েছে! মেমো: #${record.id} • ${settlementMsg} 📄`);
       };
 
@@ -17071,18 +17948,37 @@
             const result = await firebase.auth().signInWithPopup(provider);
             const user = result.user;
             if (user) {
-              const custId = `google_${user.uid}`;
+              const normPh = user.phoneNumber ? normalizePhone(user.phoneNumber) : (currentUser?.phone ? normalizePhone(currentUser.phone) : "");
+              const matchedExisting = findExistingManagedUser({ id: `google_${user.uid}`, phone: normPh, email: user.email || "" });
+              if (matchedExisting?.accountStatus === "blocked") {
+                notify(`🚫 একাউন্ট ব্লক করা আছে! কারণ: ${matchedExisting.blockReason || "অ্যাডমিনের সাথে যোগাযোগ করুন।"}`);
+                try { await firebase.auth().signOut(); } catch (e) {}
+                return;
+              }
+              if (matchedExisting?.loginLocked) {
+                notify("🔐 আপনার লগইন সাময়িকভাবে লক করা আছে। Admin User Management থেকে আনলক করুন।");
+                try { await firebase.auth().signOut(); } catch (e) {}
+                return;
+              }
+              const custId = matchedExisting?.id || `google_${user.uid}`;
+              const nowIso = new Date().toISOString();
               const custData = {
+                ...matchedExisting,
                 id: custId,
                 uid: user.uid,
-                name: user.displayName || "গুগল ইউজার",
-                email: user.email || "",
-                photoUrl: sanitizePhotoUrl(user.photoURL),
-                phone: user.phoneNumber ? normalizePhone(user.phoneNumber) : (currentUser?.phone || ""),
+                name: matchedExisting?.name || user.displayName || "গুগল ইউজার",
+                email: user.email || matchedExisting?.email || "",
+                photoUrl: sanitizePhotoUrl(user.photoURL) || matchedExisting?.photoUrl || "",
+                phone: normPh || matchedExisting?.phone || "",
                 authProvider: "google",
-                createdAt: new Date().toISOString()
+                lastLoginAt: nowIso,
+                deviceInfo: getWebDeviceSummary(),
+                failedLoginAttempts: 0,
+                loginLocked: false,
+                createdAt: matchedExisting?.createdAt || nowIso
               };
               await saveCustomerProfile(custData);
+              upsertManagedUserRecord(custData);
               notify(`🎉 স্বাগতম ${custData.name}! গুগল একাউন্ট দিয়ে সফলভাবে লগইন হয়েছে!`);
               setIsAuthModalOpen(false);
               return;
@@ -17107,17 +18003,34 @@
         setIsAuthLoading(true);
         try {
           const emailName = authForm.name.trim() || authForm.email.split("@")[0];
+          const normPh = authForm.phone ? normalizePhone(authForm.phone) : "";
           const custId = `google_${authForm.email.replace(/[^a-zA-Z0-9]/g, "_")}`;
+          const matchedExisting = findExistingManagedUser({ id: custId, phone: normPh, email: authForm.email.trim() });
+          if (matchedExisting?.accountStatus === "blocked") {
+            notify(`🚫 আপনার একাউন্টটি ব্লক করা হয়েছে! কারণ: ${matchedExisting.blockReason || "অ্যাডমিন সহায়তায় আনব্লক করুন।"}`);
+            return;
+          }
+          if (matchedExisting?.loginLocked) {
+            notify("🔐 লগইন লক করা আছে। Admin User Management থেকে আনলক করুন।");
+            return;
+          }
+          const nowIso = new Date().toISOString();
           const custData = {
-            id: custId,
-            name: emailName,
+            ...matchedExisting,
+            id: matchedExisting?.id || custId,
+            name: matchedExisting?.name || emailName,
             email: authForm.email.trim(),
-            phone: authForm.phone ? normalizePhone(authForm.phone) : "",
-            photoUrl: "",
+            phone: normPh || matchedExisting?.phone || "",
+            photoUrl: matchedExisting?.photoUrl || "",
             authProvider: "google",
-            createdAt: new Date().toISOString()
+            lastLoginAt: nowIso,
+            deviceInfo: getWebDeviceSummary(),
+            failedLoginAttempts: 0,
+            loginLocked: false,
+            createdAt: matchedExisting?.createdAt || nowIso
           };
           await saveCustomerProfile(custData);
+          upsertManagedUserRecord(custData);
           notify(`🎉 স্বাগতম ${custData.name}! জিমেইল দিয়ে সরাসরি কানেক্ট হয়েছে!`);
           setIsAuthModalOpen(false);
           setAuthForm({ name: "", phone: "", email: "", password: "" });
@@ -17141,6 +18054,19 @@
         setIsAuthLoading(true);
         try {
           const custId = `phone_${normPhone}`;
+          const existingManaged = findExistingManagedUser({ id: custId, phone: normPhone, email: authForm.email.trim() });
+          if (existingManaged?.accountStatus === "blocked") {
+            notify(`🚫 আপনার একাউন্টটি ব্লক করা হয়েছে! কারণ: ${existingManaged.blockReason || "সাপোর্টে যোগাযোগ করুন।"}`);
+            setIsAuthLoading(false);
+            return;
+          }
+          if (existingManaged?.loginLocked) {
+            notify("🔐 একাধিক ভুল চেষ্টা বা সিকিউরিটির কারণে লগইন লক রয়েছে। Admin থেকে Unlock নিন।");
+            setIsAuthLoading(false);
+            return;
+          }
+          const nowIso = new Date().toISOString();
+
           if (authMode === "signup") {
             if (!authForm.name.trim()) {
               notify("আপনার নাম আবশ্যক!");
@@ -17148,29 +18074,64 @@
               return;
             }
             const newCust = {
-              id: custId,
+              ...existingManaged,
+              id: existingManaged?.id || custId,
               name: authForm.name.trim(),
               phone: normPhone,
-              email: authForm.email.trim() || "",
-              photoUrl: "",
+              email: authForm.email.trim() || existingManaged?.email || "",
+              photoUrl: existingManaged?.photoUrl || "",
               authProvider: "phone",
-              createdAt: new Date().toISOString()
+              password: authForm.password,
+              lastLoginAt: nowIso,
+              deviceInfo: getWebDeviceSummary(),
+              failedLoginAttempts: 0,
+              loginLocked: false,
+              accountStatus: "active",
+              createdAt: existingManaged?.createdAt || nowIso
             };
             await saveCustomerProfile(newCust);
+            upsertManagedUserRecord(newCust);
             notify(`🎉 একাউন্ট তৈরি সফল হয়েছে! স্বাগতম ${newCust.name}!`);
           } else {
-            // Login
+            // Password validation if user has saved password or admin-reset tempPassword
+            const savedPwd = existingManaged?.password || "";
+            const tempPwd = existingManaged?.tempPassword || "";
+            if ((savedPwd || tempPwd) && authForm.password !== savedPwd && authForm.password !== tempPwd) {
+              const nextFail = (Number(existingManaged?.failedLoginAttempts) || 0) + 1;
+              const shouldLock = nextFail >= 5;
+              upsertManagedUserRecord({
+                id: existingManaged?.id || custId,
+                phone: normPhone,
+                name: existingManaged?.name || "সম্মানিত ক্রেতা",
+                failedLoginAttempts: nextFail,
+                loginLocked: shouldLock,
+                loginIssueNote: shouldLock ? "৫ বার ভুল পাসওয়ার্ড দেওয়ায় অটো-লক হয়েছে" : `ভুল পাসওয়ার্ড (${nextFail}/5)`
+              });
+              notify(shouldLock
+                ? "🔐 ৫ বার ভুল পাসওয়ার্ড দেওয়ায় একাউন্ট লক হয়েছে! Admin থেকে আনলক বা Password Reset নিন।"
+                : `❌ ভুল পাসওয়ার্ড! (${nextFail}/5 বার চেষ্টা)`);
+              setIsAuthLoading(false);
+              return;
+            }
+
             const existing = getStored("customer_user", null);
             const custData = {
-              id: custId,
-              name: (existing && existing.phone === normPhone && existing.name) ? existing.name : (authForm.name.trim() || "সম্মানিত ক্রেতা"),
+              ...existingManaged,
+              id: existingManaged?.id || custId,
+              name: existingManaged?.name || ((existing && existing.phone === normPhone && existing.name) ? existing.name : (authForm.name.trim() || "সম্মানিত ক্রেতা")),
               phone: normPhone,
-              email: authForm.email.trim() || (existing?.email || ""),
-              photoUrl: sanitizePhotoUrl(existing?.photoUrl),
+              email: authForm.email.trim() || existingManaged?.email || (existing?.email || ""),
+              photoUrl: sanitizePhotoUrl(existingManaged?.photoUrl || existing?.photoUrl),
               authProvider: "phone",
-              updatedAt: new Date().toISOString()
+              password: existingManaged?.password || authForm.password,
+              lastLoginAt: nowIso,
+              deviceInfo: getWebDeviceSummary(),
+              failedLoginAttempts: 0,
+              loginLocked: false,
+              updatedAt: nowIso
             };
             await saveCustomerProfile(custData);
+            upsertManagedUserRecord(custData);
             notify(`🎉 স্বাগতম ${custData.name}! লগইন সফল হয়েছে!`);
           }
           setIsAuthModalOpen(false);
@@ -17259,7 +18220,41 @@
           updatedAt: new Date().toISOString()
         };
         await saveCustomerProfile(updated);
+        upsertManagedUserRecord(updated);
         notify("প্রোফাইল তথ্য ও ডেলিভারি ঠিকানা সফলভাবে সংরক্ষিত হয়েছে! ✅");
+      };
+
+      const handleCustomerChangePassword = async (e) => {
+        e.preventDefault();
+        if (!currentUser) return;
+        const np = (profilePassForm.newPassword || "").trim();
+        const cp = (profilePassForm.confirmPassword || "").trim();
+        if (np.length < 4) {
+          notify("নতুন পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!");
+          return;
+        }
+        if (np !== cp) {
+          notify("নতুন পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মেলেনি!");
+          return;
+        }
+        const key = resolveUserLookupKey(currentUser);
+        const existingRec = (derivedManagedUsers || []).find(u => u.key === key);
+        const savedPwd = existingRec?.password || currentUser.password || "";
+        const tempPwd = existingRec?.tempPassword || currentUser.tempPassword || "";
+        if ((savedPwd || tempPwd) && profilePassForm.currentPassword && profilePassForm.currentPassword !== savedPwd && profilePassForm.currentPassword !== tempPwd) {
+          notify("বর্তমান পাসওয়ার্ড সঠিক নয়!");
+          return;
+        }
+        const updated = {
+          ...currentUser,
+          password: np,
+          tempPassword: "",
+          updatedAt: new Date().toISOString()
+        };
+        await saveCustomerProfile(updated);
+        upsertManagedUserRecord(updated);
+        setProfilePassForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        notify("🔑 আপনার পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! ✅");
       };
 
       // Saved Addresses Management (per logged-in customer + auto-seeded from order history & profile)
@@ -17585,6 +18580,498 @@
         };
       };
 
+      // =========================================================================
+      // USER MANAGEMENT, VERIFICATION, WALLET & EXPORT HELPERS
+      // =========================================================================
+      const getWebDeviceSummary = () => {
+        try {
+          const ua = navigator.userAgent || "";
+          const os = /Android/i.test(ua) ? "Android"
+            : /iPhone|iPad|iPod/i.test(ua) ? "iOS"
+            : /Windows/i.test(ua) ? "Windows"
+            : /Mac OS/i.test(ua) ? "macOS"
+            : /Linux/i.test(ua) ? "Linux" : "Web";
+          const br = /Edg/i.test(ua) ? "Edge"
+            : /Chrome/i.test(ua) ? "Chrome"
+            : /Firefox/i.test(ua) ? "Firefox"
+            : /Safari/i.test(ua) ? "Safari" : "Browser";
+          return `${os} • ${br}`;
+        } catch (e) {
+          return "Web Browser";
+        }
+      };
+
+      const resolveUserLookupKey = (obj) => {
+        const ph = normalizePhone(obj?.phone || obj?.customerPhone || "");
+        if (ph && ph.length >= 10) return `p_${ph}`;
+        const em = String(obj?.email || obj?.customerEmail || "").trim().toLowerCase();
+        if (em) return `e_${em}`;
+        const id = String(obj?.id || obj?.uid || "").trim();
+        if (id) return `i_${id}`;
+        const nm = String(obj?.name || obj?.customerName || obj?.customer || "").trim().toLowerCase();
+        return nm ? `n_${nm}` : "";
+      };
+
+      const findExistingManagedUser = (probe) => {
+        const list = Array.isArray(managedUsers) ? managedUsers : [];
+        const pNorm = normalizePhone(probe?.phone || "");
+        const eLow = String(probe?.email || "").trim().toLowerCase();
+        const idVal = String(probe?.id || "").trim();
+        return list.find(u =>
+          (idVal && u.id === idVal) ||
+          (pNorm && normalizePhone(u.phone) === pNorm) ||
+          (eLow && String(u.email || "").trim().toLowerCase() === eLow)
+        ) || null;
+      };
+
+      const upsertManagedUserRecord = (patch) => {
+        if (!patch) return null;
+        const nowIso = new Date().toISOString();
+        let savedRecord = null;
+        setManagedUsers(prev => {
+          const list = Array.isArray(prev) ? [...prev] : [];
+          const pNorm = normalizePhone(patch.phone || "");
+          const eLow = String(patch.email || "").trim().toLowerCase();
+          const idx = list.findIndex(u =>
+            (patch.id && u.id === patch.id) ||
+            (patch.key && resolveUserLookupKey(u) === patch.key) ||
+            (pNorm && normalizePhone(u.phone) === pNorm) ||
+            (eLow && String(u.email || "").trim().toLowerCase() === eLow)
+          );
+          if (idx >= 0) {
+            savedRecord = {
+              ...list[idx],
+              ...patch,
+              phone: pNorm || normalizePhone(list[idx].phone) || patch.phone || list[idx].phone || "",
+              updatedAt: nowIso
+            };
+            list[idx] = savedRecord;
+          } else {
+            const docId = patch.id || (pNorm ? `phone_${pNorm}` : eLow ? `email_${eLow.replace(/[^a-z0-9]/g, "_")}` : `usr_${Date.now()}`);
+            savedRecord = {
+              id: docId,
+              name: patch.name || "সম্মানিত ক্রেতা",
+              phone: pNorm || patch.phone || "",
+              email: patch.email || "",
+              address: patch.address || "",
+              district: patch.district || "Dhaka",
+              thana: patch.thana || "",
+              isVerified: false,
+              accountStatus: "active",
+              blockReason: "",
+              loginLocked: false,
+              failedLoginAttempts: 0,
+              walletBalance: 0,
+              walletHistory: [],
+              deviceInfo: patch.deviceInfo || "",
+              lastLoginAt: patch.lastLoginAt || "",
+              ...patch,
+              updatedAt: nowIso
+            };
+            list.unshift(savedRecord);
+          }
+          setStored("users_registry", list);
+          return list;
+        });
+
+        setTimeout(() => {
+          if (savedRecord?.id) {
+            syncDocToCloud("customers", savedRecord.id, savedRecord);
+            if (currentUser && (currentUser.id === savedRecord.id || (normalizePhone(currentUser.phone) && normalizePhone(currentUser.phone) === normalizePhone(savedRecord.phone)))) {
+              const nextCurrent = { ...currentUser, ...savedRecord };
+              setCurrentUser(nextCurrent);
+              setStored("customer_user", nextCurrent);
+            }
+          }
+        }, 0);
+        return savedRecord;
+      };
+
+      const derivedManagedUsers = useMemo(() => {
+        const map = new Map();
+        const ensureEntry = (key, seed = {}) => {
+          if (!key) return null;
+          if (!map.has(key)) {
+            map.set(key, {
+              key,
+              id: seed.id || key,
+              name: seed.name || "সম্মানিত ক্রেতা",
+              phone: seed.phone || "",
+              email: seed.email || "",
+              address: seed.address || "",
+              district: seed.district || "Dhaka",
+              thana: seed.thana || "",
+              isVerified: Boolean(seed.isVerified),
+              accountStatus: seed.accountStatus || "active",
+              blockReason: seed.blockReason || "",
+              blockedAt: seed.blockedAt || "",
+              loginLocked: Boolean(seed.loginLocked),
+              loginIssueNote: seed.loginIssueNote || "",
+              failedLoginAttempts: Number(seed.failedLoginAttempts) || 0,
+              lastLoginAt: seed.lastLoginAt || "",
+              deviceInfo: seed.deviceInfo || "",
+              password: seed.password || "",
+              tempPassword: seed.tempPassword || "",
+              walletBalance: Number(seed.walletBalance) || 0,
+              walletHistory: Array.isArray(seed.walletHistory) ? seed.walletHistory : [],
+              totalOrders: 0,
+              totalSpend: 0,
+              cancelledCount: 0,
+              returnedCount: 0,
+              orders: []
+            });
+          } else {
+            const cur = map.get(key);
+            map.set(key, {
+              ...cur,
+              id: seed.id || cur.id,
+              name: (seed.name && seed.name !== "সম্মানিত ক্রেতা") ? seed.name : cur.name,
+              phone: seed.phone || cur.phone,
+              email: seed.email || cur.email,
+              address: seed.address || cur.address,
+              district: seed.district || cur.district,
+              thana: seed.thana || cur.thana,
+              isVerified: seed.isVerified !== undefined ? Boolean(seed.isVerified) : cur.isVerified,
+              accountStatus: seed.accountStatus || cur.accountStatus,
+              blockReason: seed.blockReason !== undefined ? seed.blockReason : cur.blockReason,
+              blockedAt: seed.blockedAt || cur.blockedAt,
+              loginLocked: seed.loginLocked !== undefined ? Boolean(seed.loginLocked) : cur.loginLocked,
+              loginIssueNote: seed.loginIssueNote !== undefined ? seed.loginIssueNote : cur.loginIssueNote,
+              failedLoginAttempts: seed.failedLoginAttempts !== undefined ? Number(seed.failedLoginAttempts) : cur.failedLoginAttempts,
+              lastLoginAt: seed.lastLoginAt || cur.lastLoginAt,
+              deviceInfo: seed.deviceInfo || cur.deviceInfo,
+              password: seed.password || cur.password,
+              tempPassword: seed.tempPassword !== undefined ? seed.tempPassword : cur.tempPassword,
+              walletBalance: seed.walletBalance !== undefined ? Number(seed.walletBalance) : cur.walletBalance,
+              walletHistory: Array.isArray(seed.walletHistory) ? seed.walletHistory : cur.walletHistory
+            });
+          }
+          return map.get(key);
+        };
+
+        (managedUsers || []).forEach(u => {
+          const key = resolveUserLookupKey(u);
+          ensureEntry(key, u);
+        });
+
+        if (currentUser) {
+          const key = resolveUserLookupKey(currentUser);
+          ensureEntry(key, currentUser);
+        }
+
+        try {
+          const posCustRaw = localStorage.getItem("sajgoj_customers");
+          if (posCustRaw) {
+            const parsed = JSON.parse(posCustRaw);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(c => {
+                const key = resolveUserLookupKey(c);
+                ensureEntry(key, {
+                  name: c.name || "POS ক্রেতা",
+                  phone: normalizePhone(c.phone),
+                  email: c.email || "",
+                  address: c.address || "ইন-স্টোর",
+                  deviceInfo: "POS Counter"
+                });
+              });
+            }
+          }
+        } catch (e) {}
+
+        (orders || []).forEach(o => {
+          const key = resolveUserLookupKey({ phone: o.phone || o.customerPhone, email: o.customerEmail, name: o.customerName || o.customer });
+          if (!key) return;
+          const entry = ensureEntry(key, {
+            name: o.customerName || o.customer || "সম্মানিত ক্রেতা",
+            phone: normalizePhone(o.phone || o.customerPhone),
+            email: o.customerEmail || "",
+            address: o.address || "",
+            district: o.district || "Dhaka",
+            thana: o.thana || ""
+          });
+          if (entry) {
+            entry.orders.push(o);
+            entry.totalOrders += 1;
+            const stLow = String(o.status || "").toLowerCase();
+            if (stLow.includes("cancel")) {
+              entry.cancelledCount += 1;
+            } else {
+              entry.totalSpend += (Number(o.total) || 0);
+            }
+            const hasRet = Boolean(o.hasReturn) || (returns || []).some(r => r.orderId === o.id);
+            if (hasRet) entry.returnedCount += 1;
+          }
+        });
+
+        return Array.from(map.values()).sort((a, b) =>
+          (b.isVerified ? 1 : 0) - (a.isVerified ? 1 : 0) ||
+          b.totalSpend - a.totalSpend ||
+          b.totalOrders - a.totalOrders
+        );
+      }, [managedUsers, orders, returns, currentUser]);
+
+      const activeCustomerProfileRecord = useMemo(() => {
+        if (!currentUser) return null;
+        const key = resolveUserLookupKey(currentUser);
+        return derivedManagedUsers.find(u => u.key === key) || null;
+      }, [currentUser, derivedManagedUsers]);
+
+      const checkoutMatchedUserRecord = useMemo(() => {
+        const probePhone = normalizePhone(checkoutForm.phone || currentUser?.phone || "");
+        if (probePhone && probePhone.length >= 10) {
+          return derivedManagedUsers.find(u => normalizePhone(u.phone) === probePhone) || activeCustomerProfileRecord;
+        }
+        return activeCustomerProfileRecord;
+      }, [checkoutForm.phone, currentUser, derivedManagedUsers, activeCustomerProfileRecord]);
+
+      const toggleUserVerified = (userKey) => {
+        const target = derivedManagedUsers.find(u => u.key === userKey);
+        if (!target) return;
+        const nextVerified = !target.isVerified;
+        upsertManagedUserRecord({ ...target, isVerified: nextVerified });
+        notify(nextVerified ? `🔵 "${target.name}" কে Verified ✓ করা হয়েছে!` : `অবস্থান পরিবর্তন: "${target.name}" Unverified করা হয়েছে।`);
+      };
+
+      const updateManagedUserInfo = (userKey, draft) => {
+        const target = derivedManagedUsers.find(u => u.key === userKey);
+        if (!target) return;
+        if (!draft.name?.trim()) {
+          notify("নাম খালি রাখা যাবে না!");
+          return;
+        }
+        upsertManagedUserRecord({
+          ...target,
+          name: draft.name.trim(),
+          phone: normalizePhone(draft.phone) || draft.phone.trim(),
+          email: (draft.email || "").trim(),
+          address: (draft.address || "").trim(),
+          district: (draft.district || "Dhaka").trim(),
+          thana: (draft.thana || "").trim()
+        });
+        notify(`✅ "${draft.name.trim()}" এর তথ্য আপডেট করা হয়েছে!`);
+      };
+
+      const blockManagedUser = (userKey, reason) => {
+        const target = derivedManagedUsers.find(u => u.key === userKey);
+        if (!target) return;
+        const cleanReason = String(reason || "").trim();
+        if (!cleanReason) {
+          notify("ইউজার Block করার জন্য কারণ (Block Reason) লেখা আবশ্যক!");
+          return;
+        }
+        upsertManagedUserRecord({
+          ...target,
+          accountStatus: "blocked",
+          blockReason: cleanReason,
+          blockedAt: new Date().toISOString()
+        });
+        notify(`🚫 "${target.name}" কে ব্লক করা হয়েছে (কারণ: ${cleanReason})`);
+      };
+
+      const unblockManagedUser = (userKey) => {
+        const target = derivedManagedUsers.find(u => u.key === userKey);
+        if (!target) return;
+        upsertManagedUserRecord({
+          ...target,
+          accountStatus: "active",
+          blockReason: "",
+          blockedAt: "",
+          loginLocked: false,
+          failedLoginAttempts: 0,
+          loginIssueNote: ""
+        });
+        notify(`✓ "${target.name}" কে Unblock ও সক্রিয় করা হয়েছে!`);
+      };
+
+      const unlockUserLogin = (userKey) => {
+        const target = derivedManagedUsers.find(u => u.key === userKey);
+        if (!target) return;
+        upsertManagedUserRecord({
+          ...target,
+          loginLocked: false,
+          failedLoginAttempts: 0,
+          loginIssueNote: ""
+        });
+        notify(`🔓 "${target.name}" এর লগইন সমস্যা সমাধান ও আনলক করা হয়েছে!`);
+      };
+
+      const adminResetUserPassword = (userKey, newTempPass) => {
+        const target = derivedManagedUsers.find(u => u.key === userKey);
+        if (!target) return;
+        const cleanPass = String(newTempPass || "").trim();
+        if (cleanPass.length < 4) {
+          notify("Temporary Password কমপক্ষে ৪ অক্ষরের হতে হবে!");
+          return;
+        }
+        upsertManagedUserRecord({
+          ...target,
+          password: cleanPass,
+          tempPassword: cleanPass,
+          tempPasswordIssuedAt: new Date().toISOString(),
+          loginLocked: false,
+          failedLoginAttempts: 0
+        });
+        notify(`🔑 "${target.name}" এর পাসওয়ার্ড রিসেট হয়েছে! এখন SMS বা WhatsApp-এ পাঠান।`);
+      };
+
+      const adjustUserWallet = (userKey, type, rawAmount, note, orderId = "") => {
+        const target = derivedManagedUsers.find(u => u.key === userKey);
+        if (!target) return 0;
+        const amt = Math.max(0, Math.round(Number(rawAmount) || 0));
+        if (amt <= 0) return Number(target.walletBalance) || 0;
+        const currentBal = Number(target.walletBalance) || 0;
+        const isCredit = type === "credit" || type === "refund";
+        const nextBal = isCredit ? (currentBal + amt) : Math.max(0, currentBal - amt);
+        const tx = {
+          id: `WTX-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          type,
+          amount: amt,
+          note: note || (isCredit ? "ওয়ালেট ক্রেডিট" : "ওয়ালেট ব্যবহার"),
+          orderId,
+          timestamp: Date.now()
+        };
+        const nextHistory = [tx, ...(Array.isArray(target.walletHistory) ? target.walletHistory : [])].slice(0, 60);
+        upsertManagedUserRecord({
+          ...target,
+          walletBalance: nextBal,
+          walletHistory: nextHistory
+        });
+        notify(isCredit
+          ? `💳 "${target.name}" এর Wallet-এ +৳${amt} যোগ হয়েছে (ব্যালেন্স: ৳${nextBal})`
+          : `💳 "${target.name}" এর Wallet থেকে -৳${amt} সমন্বয় হয়েছে (ব্যালেন্স: ৳${nextBal})`
+        );
+        return nextBal;
+      };
+
+      const exportManagedUsersCsv = (list) => {
+        if (!list || list.length === 0) {
+          notify("এক্সপোর্ট করার জন্য কোনো ইউজার নেই!");
+          return;
+        }
+        const headers = ["Name", "Verified", "Phone", "Email", "District", "Thana", "Status", "Block Reason", "Login Locked", "Last Login", "Device", "Total Orders", "Total Spend (BDT)", "Wallet Balance (BDT)"];
+        const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+        const rows = list.map(u => [
+          u.name,
+          u.isVerified ? "Verified ✓" : "Unverified",
+          u.phone || "",
+          u.email || "",
+          u.district || "",
+          u.thana || "",
+          u.accountStatus === "blocked" ? "Blocked" : "Active",
+          u.blockReason || "",
+          u.loginLocked ? "Locked" : "OK",
+          u.lastLoginAt || "",
+          u.deviceInfo || "",
+          u.totalOrders || 0,
+          u.totalSpend || 0,
+          Number(u.walletBalance) || 0
+        ].map(esc).join(","));
+        const csvContent = "\uFEFF" + [headers.map(esc).join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `sajgoj-users-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        notify(`📄 ${list.length} জন ইউজারের CSV ডাউনলোড হয়েছে!`);
+      };
+
+      const exportManagedUsersExcel = (list) => {
+        if (!list || list.length === 0) {
+          notify("এক্সপোর্ট করার জন্য কোনো ইউজার নেই!");
+          return;
+        }
+        const escHtml = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const rowsHtml = list.map(u => `
+          <tr>
+            <td>${escHtml(u.name)}</td>
+            <td>${u.isVerified ? "Verified" : "Unverified"}</td>
+            <td>${escHtml(u.phone || "")}</td>
+            <td>${escHtml(u.email || "")}</td>
+            <td>${escHtml(u.district || "")}</td>
+            <td>${escHtml(u.thana || "")}</td>
+            <td>${u.accountStatus === "blocked" ? "Blocked" : "Active"}</td>
+            <td>${escHtml(u.blockReason || "")}</td>
+            <td>${escHtml(u.lastLoginAt || "")}</td>
+            <td>${escHtml(u.deviceInfo || "")}</td>
+            <td>${u.totalOrders || 0}</td>
+            <td>${u.totalSpend || 0}</td>
+            <td>${Number(u.walletBalance) || 0}</td>
+          </tr>
+        `).join("");
+        const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"/></head><body><table border="1"><thead><tr><th>Name</th><th>Verified</th><th>Phone</th><th>Email</th><th>District</th><th>Thana</th><th>Status</th><th>Block Reason</th><th>Last Login</th><th>Device</th><th>Total Orders</th><th>Total Spend</th><th>Wallet Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`;
+        const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `sajgoj-users-${new Date().toISOString().slice(0, 10)}.xls`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        notify(`📊 ${list.length} জন ইউজারের Excel (.xls) ডাউনলোড হয়েছে!`);
+      };
+
+      const exportManagedUsersPdf = (list) => {
+        if (!list || list.length === 0) {
+          notify("এক্সপোর্ট করার জন্য কোনো ইউজার নেই!");
+          return;
+        }
+        try {
+          const { jsPDF } = window.jspdf || {};
+          if (!jsPDF) throw new Error("jsPDF unavailable");
+          const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+          doc.setFontSize(15);
+          doc.text("SAJGOJ FASHION - User Management Report", 14, 15);
+          doc.setFontSize(9);
+          doc.text(`Generated: ${new Date().toLocaleString()} | Total Users: ${list.length}`, 14, 21);
+
+          let y = 30;
+          doc.setFontSize(8.5);
+          doc.setFillColor(122, 28, 43);
+          doc.setTextColor(255, 255, 255);
+          doc.rect(14, y - 5, 269, 7, "F");
+          doc.text("Name", 16, y);
+          doc.text("Phone", 62, y);
+          doc.text("District/Thana", 95, y);
+          doc.text("Verified", 140, y);
+          doc.text("Status / Reason", 162, y);
+          doc.text("Orders", 215, y);
+          doc.text("Spend", 232, y);
+          doc.text("Wallet", 258, y);
+
+          y += 7;
+          doc.setTextColor(20, 20, 20);
+          list.forEach((u, idx) => {
+            if (y > 195) {
+              doc.addPage("a4", "landscape");
+              y = 18;
+            }
+            if (idx % 2 === 1) {
+              doc.setFillColor(248, 250, 252);
+              doc.rect(14, y - 4.5, 269, 6.5, "F");
+            }
+            const safeAscii = (s) => String(s || "").replace(/[^\x20-\x7E]/g, " ").trim() || "-";
+            doc.text(safeAscii(u.name).slice(0, 22), 16, y);
+            doc.text(String(u.phone || "-").slice(0, 15), 62, y);
+            doc.text(safeAscii(`${u.district || ""} ${u.thana || ""}`).slice(0, 22), 95, y);
+            doc.text(u.isVerified ? "Verified" : "No", 140, y);
+            doc.text(u.accountStatus === "blocked" ? `Blocked: ${safeAscii(u.blockReason).slice(0, 18)}` : "Active", 162, y);
+            doc.text(String(u.totalOrders || 0), 215, y);
+            doc.text(`BDT ${u.totalSpend || 0}`, 232, y);
+            doc.text(`BDT ${Number(u.walletBalance) || 0}`, 258, y);
+            y += 6.5;
+          });
+          doc.save(`sajgoj-users-${new Date().toISOString().slice(0, 10)}.pdf`);
+          notify(`📑 ${list.length} জন ইউজারের PDF ডাউনলোড হয়েছে!`);
+        } catch (err) {
+          notify("PDF তৈরি করতে সমস্যা হয়েছে, অনুগ্রহ করে CSV/Excel ব্যবহার করুন।");
+        }
+      };
+
       // Cart Functions
       const addToCart = (product, qty = 1, selectedColor = null, selectedSize = null) => {
         const vars = Array.isArray(product?.variations) ? product.variations : [];
@@ -17824,7 +19311,12 @@
 
       const totalDiscounts = discountAmount + voucherDiscountAmount + tierDiscountAmount + pointsDiscountAmount;
       const giftWrapFee = isGiftWrap ? 50 : 0;
-      const cartGrandTotal = Math.max(0, cartSubtotal - totalDiscounts) + finalDeliveryCharge + giftWrapFee;
+      const cartGrandTotalBeforeWallet = Math.max(0, cartSubtotal - totalDiscounts) + finalDeliveryCharge + giftWrapFee;
+      const availableCheckoutWallet = Math.max(0, Number(checkoutMatchedUserRecord?.walletBalance) || 0);
+      const walletAppliedInCheckout = (useWalletInCheckout && availableCheckoutWallet > 0)
+        ? Math.min(availableCheckoutWallet, cartGrandTotalBeforeWallet)
+        : 0;
+      const cartGrandTotal = Math.max(0, cartGrandTotalBeforeWallet - walletAppliedInCheckout);
 
       // Voucher Collection Handlers (With Toggle / Unselect support)
       const handleCollectVoucher = (voucherId) => {
@@ -17922,7 +19414,11 @@
           giftMessage: isGiftWrap ? giftMessage.trim() : "",
           giftRecipient: isGiftWrap ? giftRecipient.trim() : "",
           giftSender: isGiftWrap ? giftSender.trim() : "",
-          total: cartGrandTotal,
+          total: cartGrandTotalBeforeWallet,
+          payableAmount: cartGrandTotal,
+          walletPaidAmount: walletAppliedInCheckout,
+          walletUsed: walletAppliedInCheckout > 0,
+          walletRefunded: false,
           subtotal: cartSubtotal,
           discount: totalDiscounts,
           couponDiscount: discountAmount,
@@ -17941,7 +19437,8 @@
           shippingVoucherCode: activeShippingVoucher ? activeShippingVoucher.code : "",
           deliveryCharge: finalDeliveryCharge,
           originalDeliveryCharge: deliveryCharge,
-          paymentMethod: checkoutForm.paymentMethod,
+          paymentMethod: walletAppliedInCheckout > 0 && cartGrandTotal === 0 ? "Wallet" : checkoutForm.paymentMethod,
+          customerEmail: currentUser?.email || "",
           status: "Pending",
           date: new Date(nowTimestamp).toISOString().split("T")[0],
           createdAtMs: nowTimestamp,
@@ -18006,12 +19503,36 @@
           persistSavedAddresses(nextAddrs, currentUser);
         }
 
+        // 3. Debit customer wallet if wallet balance was applied
+        if (walletAppliedInCheckout > 0 && checkoutMatchedUserRecord) {
+          adjustUserWallet(
+            checkoutMatchedUserRecord.key,
+            "debit",
+            walletAppliedInCheckout,
+            `অর্ডার #${newOrderId} পেমেন্ট`,
+            newOrderId
+          );
+        }
+
+        // 4. Ensure customer exists in User Management registry with district/thana/device
+        upsertManagedUserRecord({
+          id: checkoutMatchedUserRecord?.id || currentUser?.id,
+          name: checkoutForm.name,
+          phone: normalizePhone(checkoutForm.phone) || checkoutForm.phone,
+          email: currentUser?.email || checkoutMatchedUserRecord?.email || "",
+          district: checkoutForm.district || "Dhaka",
+          thana: checkoutForm.thana || "সদর",
+          address: checkoutForm.address,
+          deviceInfo: getWebDeviceSummary()
+        });
+
         setCart([]);
         setIsCheckoutOpen(false);
         setIsCartOpen(false);
         setAppliedCoupon(null);
         setCouponInput("");
         setRedeemPointsChecked(false);
+        setUseWalletInCheckout(false);
         setIsGiftWrap(false);
         setGiftMessage("");
         setGiftRecipient("");
@@ -18080,9 +19601,26 @@
           }
         }
 
+        let walletRefundIssued = existingOrder ? Boolean(existingOrder.walletRefunded) : false;
+        let refundAmtOnCancel = 0;
+        if (existingOrder && newStatus === "Cancelled" && existingOrder.status !== "Cancelled" && !existingOrder.walletRefunded) {
+          const pmLow = String(existingOrder.paymentMethod || "").toLowerCase();
+          const isPrepaidOnline = ["bkash", "nagad", "rocket", "visa", "mastercard", "wallet"].some(k => pmLow.includes(k));
+          refundAmtOnCancel = Number(existingOrder.walletPaidAmount) > 0
+            ? Number(existingOrder.walletPaidAmount)
+            : (isPrepaidOnline ? (Number(existingOrder.total) || 0) : 0);
+          if (refundAmtOnCancel > 0) {
+            const refundKey = resolveUserLookupKey({ phone: existingOrder.phone || existingOrder.customerPhone, email: existingOrder.customerEmail });
+            if (refundKey) {
+              adjustUserWallet(refundKey, "refund", refundAmtOnCancel, `অর্ডার #${orderId} বাতিল হওয়ায় অটো-রিফান্ড`, orderId);
+              walletRefundIssued = true;
+            }
+          }
+        }
+
         setOrders(prev => prev.map(o => {
           if (o.id === orderId) {
-            const updated = { ...o, status: newStatus, stockRestockedOnCancel: nextRestockedFlag };
+            const updated = { ...o, status: newStatus, stockRestockedOnCancel: nextRestockedFlag, walletRefunded: walletRefundIssued };
             if (newStatus === "Delivered") {
               deliveredOrder = updated;
             }
@@ -18090,7 +19628,7 @@
           }
           return o;
         }));
-        syncDocToCloud("orders", orderId, { status: newStatus, stockRestockedOnCancel: nextRestockedFlag });
+        syncDocToCloud("orders", orderId, { status: newStatus, stockRestockedOnCancel: nextRestockedFlag, walletRefunded: walletRefundIssued });
 
         if (existingOrder && stockDeltaMultiplier !== 0 && Array.isArray(existingOrder.items) && existingOrder.items.length > 0) {
           const cancelChanges = expandOrderItemsToStockChanges(existingOrder.items, stockDeltaMultiplier);
@@ -19254,6 +20792,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 <div className="text-center sm:text-left flex-1 min-w-0">
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                     <h3 className="text-xl font-extrabold text-white truncate max-w-xs">{currentUser.name}</h3>
+                    {(activeCustomerProfileRecord?.isVerified || currentUser.isVerified) && (
+                      <span
+                        className="inline-flex items-center gap-1 bg-sky-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs"
+                        title="Verified Customer ✓"
+                      >
+                        <span>✓</span>
+                        <span>Verified</span>
+                      </span>
+                    )}
                     <span className="inline-flex items-center gap-1 bg-[#d4a574] text-[#2c1810] text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
                       <span>{l.currentTier?.icon || "👑"}</span>
                       <span>{l.currentTier?.nameBn || "ব্রোঞ্জ মেম্বার"}</span>
@@ -19285,8 +20832,12 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 </div>
               </div>
 
-              {/* 4 KPI Summary Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5">
+              {/* 5 KPI Summary Strip (including Wallet Balance) */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mt-5">
+                <div className="bg-white/10 backdrop-blur-sm border border-[#d4a574]/40 rounded-2xl p-3 text-center">
+                  <span className="text-[10px] text-amber-200 font-bold block">💳 Wallet ব্যালেন্স</span>
+                  <span className="text-lg font-black text-sky-300 font-mono">৳{(Number(activeCustomerProfileRecord?.walletBalance ?? currentUser?.walletBalance) || 0).toLocaleString()}</span>
+                </div>
                 <div className="bg-white/10 backdrop-blur-sm border border-[#d4a574]/40 rounded-2xl p-3 text-center">
                   <span className="text-[10px] text-amber-200 font-bold block">উপলব্ধ VIP পয়েন্ট</span>
                   <span className="text-lg font-black text-[#ffd700] font-mono">{l.availablePoints}</span>
@@ -19299,7 +20850,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   <span className="text-[10px] text-amber-200 font-bold block">মোট অর্ডার</span>
                   <span className="text-lg font-black text-white font-mono">{myOrders.length}</span>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm border border-[#d4a574]/40 rounded-2xl p-3 text-center">
+                <div className="bg-white/10 backdrop-blur-sm border border-[#d4a574]/40 rounded-2xl p-3 text-center col-span-2 sm:col-span-1">
                   <span className="text-[10px] text-amber-200 font-bold block">সেভড ঠিকানা</span>
                   <span className="text-lg font-black text-white font-mono">{savedAddresses.length}</span>
                 </div>
@@ -19313,6 +20864,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 {[
                   { id: "overview", label: "📊 ড্যাশবোর্ড" },
                   { id: "orders", label: `📦 অর্ডার হিস্ট্রি (${myOrders.length})` },
+                  { id: "wallet", label: `💳 Wallet (৳${Number(activeCustomerProfileRecord?.walletBalance ?? currentUser?.walletBalance) || 0})` },
                   { id: "addresses", label: `📍 সেভড ঠিকানা (${savedAddresses.length})` },
                   { id: "loyalty", label: "👑 VIP স্ট্যাটাস ও পয়েন্ট" },
                   {
@@ -19346,6 +20898,22 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 {/* TAB 0: DASHBOARD OVERVIEW */}
                 {profileTab === "overview" && (
                   <div className="space-y-5">
+                    {/* Customer Wallet Quick Card */}
+                    <div className="bg-gradient-to-r from-indigo-900 via-purple-800 to-[#7a1c2b] text-white p-4 sm:p-5 rounded-3xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] font-bold text-purple-200 block">💳 সাজগোজ Wallet ব্যালেন্স</span>
+                        <h4 className="text-2xl font-black font-mono">৳{(Number(activeCustomerProfileRecord?.walletBalance ?? currentUser?.walletBalance) || 0).toLocaleString()}</h4>
+                        <p className="text-[11px] text-purple-100 mt-0.5">Cancel / Return রিফান্ড এই ওয়ালেটে জমা হয় এবং চেকআউটে পেমেন্ট করা যায়।</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProfileTab("wallet")}
+                        className="bg-white text-[#7a1c2b] px-4 py-2 rounded-full text-xs font-black shadow hover:bg-amber-50 transition cursor-pointer shrink-0"
+                      >
+                        ওয়ালেট লেনদেন দেখুন →
+                      </button>
+                    </div>
+
                     {/* VIP Loyalty Snapshot */}
                     <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-[#fffaf5] p-5 rounded-3xl border-2 border-amber-300 shadow-xs space-y-3">
                       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -19844,46 +21412,127 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   </div>
                 )}
 
-                {/* TAB 5: PROFILE SETTINGS & AVATAR */}
-                {profileTab === "settings" && (
-                  <form onSubmit={handleSaveProfileSettings} className="space-y-4">
-                    <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] flex flex-col sm:flex-row items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        {sanitizePhotoUrl(profileForm.photoUrl || currentUser.photoUrl) ? (
-                          <img src={sanitizePhotoUrl(profileForm.photoUrl || currentUser.photoUrl)} alt="Avatar" className="w-14 h-14 rounded-full object-cover border-2 border-[#7a1c2b]" />
-                        ) : (
-                          <div className="w-14 h-14 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xl font-bold border border-[#d4a574]">👤</div>
-                        )}
-                        <div>
-                          <h5 className="font-bold text-xs text-gray-800">প্রোফাইল ছবি (Avatar)</h5>
-                          <p className="text-[10px] text-gray-500">ডিভাইস থেকে যেকোনো ছবি আপলোড করুন</p>
-                        </div>
+                {/* TAB: CUSTOMER WALLET */}
+                {profileTab === "wallet" && (
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-indigo-900 via-purple-800 to-[#7a1c2b] text-white p-5 rounded-3xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-bold text-purple-200 block">উপলব্ধ Wallet ব্যালেন্স</span>
+                        <h4 className="text-3xl font-black font-mono mt-0.5">৳{(Number(activeCustomerProfileRecord?.walletBalance ?? currentUser?.walletBalance) || 0).toLocaleString()}</h4>
+                        <p className="text-[11px] text-purple-100 mt-1">চেকআউটে "Wallet Balance ব্যবহার করুন" চালু করলে এই টাকা বিল থেকে বাদ যাবে।</p>
                       </div>
-                      <button type="button" onClick={() => customerPhotoInputRef.current?.click()} className="bg-[#7a1c2b] hover:bg-[#681727] text-white px-4 py-2 rounded-full text-xs font-bold cursor-pointer">
-                        📷 ছবি আপলোড করুন
+                      <button
+                        type="button"
+                        onClick={() => { setIsProfileModalOpen(false); if (isFullPage) navigateHash("/"); setIsCartOpen(true); }}
+                        className="bg-white text-[#7a1c2b] px-4 py-2.5 rounded-full text-xs font-black shadow cursor-pointer shrink-0"
+                      >
+                        🛒 কার্ট ও চেকআউট
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">পূর্ণ নাম *</label>
-                        <input type="text" required value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">মোবাইল নম্বর *</label>
-                        <input type="tel" required value={profileForm.phone} onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs font-mono outline-none focus:border-[#7a1c2b]" />
-                      </div>
+                    <div className="space-y-2">
+                      <h5 className="font-black text-sm text-[#7a1c2b]">📜 Wallet লেনদেনের ইতিহাস</h5>
+                      {(activeCustomerProfileRecord?.walletHistory || currentUser?.walletHistory || []).length === 0 ? (
+                        <div className="bg-[#fffaf5] border border-dashed border-[#d4a574] rounded-2xl p-8 text-center text-xs text-gray-500 font-semibold">
+                          এখনো কোনো Wallet লেনদেন হয়নি। অর্ডার ক্যান্সেল/রিটার্ন রিফান্ড বা অ্যাডমিন ক্রেডিট হলে এখানে দেখাবে।
+                        </div>
+                      ) : (
+                        (activeCustomerProfileRecord?.walletHistory || currentUser?.walletHistory || []).map(tx => {
+                          const isPlus = tx.type === "credit" || tx.type === "refund";
+                          return (
+                            <div key={tx.id} className="flex items-center justify-between p-3.5 rounded-2xl bg-[#fffaf5] border border-[#ecd9c6] text-xs">
+                              <div>
+                                <p className="font-bold text-gray-900">{tx.note}</p>
+                                <p className="text-[10px] text-gray-500">
+                                  {new Date(tx.timestamp).toLocaleString()} {tx.orderId ? `• #${tx.orderId}` : ""}
+                                </p>
+                              </div>
+                              <span className={`font-mono font-black text-sm ${isPlus ? "text-emerald-700" : "text-rose-700"}`}>
+                                {isPlus ? "+" : "-"}৳{tx.amount}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
+                  </div>
+                )}
 
-                    <div>
-                      <label className="text-[11px] font-bold text-gray-700 block mb-1">ইমেইল ঠিকানা</label>
-                      <input type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" />
-                    </div>
+                {/* TAB 5: PROFILE SETTINGS, AVATAR & PASSWORD CHANGE */}
+                {profileTab === "settings" && (
+                  <div className="space-y-6">
+                    <form onSubmit={handleSaveProfileSettings} className="space-y-4">
+                      <div className="p-4 bg-[#fffaf5] rounded-2xl border border-[#f3e2d0] flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          {sanitizePhotoUrl(profileForm.photoUrl || currentUser.photoUrl) ? (
+                            <img src={sanitizePhotoUrl(profileForm.photoUrl || currentUser.photoUrl)} alt="Avatar" className="w-14 h-14 rounded-full object-cover border-2 border-[#7a1c2b]" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-[#7a1c2b] text-white flex items-center justify-center text-xl font-bold border border-[#d4a574]">👤</div>
+                          )}
+                          <div>
+                            <h5 className="font-bold text-xs text-gray-800">প্রোফাইল ছবি (Avatar)</h5>
+                            <p className="text-[10px] text-gray-500">ডিভাইস থেকে যেকোনো ছবি আপলোড করুন</p>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => customerPhotoInputRef.current?.click()} className="bg-[#7a1c2b] hover:bg-[#681727] text-white px-4 py-2 rounded-full text-xs font-bold cursor-pointer">
+                          📷 ছবি আপলোড করুন
+                        </button>
+                      </div>
 
-                    <button type="submit" className="w-full bg-[#7a1c2b] hover:bg-[#681727] text-white py-3 rounded-full text-xs font-bold shadow-md transition cursor-pointer">
-                      প্রোফাইল তথ্য সংরক্ষণ করুন ✓
-                    </button>
-                  </form>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">পূর্ণ নাম *</label>
+                          <input type="text" required value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">মোবাইল নম্বর *</label>
+                          <input type="tel" required value={profileForm.phone} onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs font-mono outline-none focus:border-[#7a1c2b]" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-700 block mb-1">ইমেইল ঠিকানা</label>
+                        <input type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} className="w-full bg-[#fffaf5] border rounded-full px-4 py-2 text-xs outline-none focus:border-[#7a1c2b]" />
+                      </div>
+
+                      <button type="submit" className="w-full bg-[#7a1c2b] hover:bg-[#681727] text-white py-3 rounded-full text-xs font-bold shadow-md transition cursor-pointer">
+                        প্রোফাইল তথ্য সংরক্ষণ করুন ✓
+                      </button>
+                    </form>
+
+                    {/* Password Change Form */}
+                    <form onSubmit={handleCustomerChangePassword} className="p-4 sm:p-5 bg-[#fffaf5] rounded-2xl border border-[#ecd9c6] space-y-3">
+                      <h5 className="font-black text-xs text-[#7a1c2b]">🔑 পাসওয়ার্ড পরিবর্তন করুন (Password Change)</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <input
+                          type="password"
+                          placeholder="বর্তমান / Temporary পাসওয়ার্ড"
+                          value={profilePassForm.currentPassword}
+                          onChange={(e) => setProfilePassForm({ ...profilePassForm, currentPassword: e.target.value })}
+                          className="bg-white border rounded-full px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                        />
+                        <input
+                          type="password"
+                          required
+                          placeholder="নতুন পাসওয়ার্ড *"
+                          value={profilePassForm.newPassword}
+                          onChange={(e) => setProfilePassForm({ ...profilePassForm, newPassword: e.target.value })}
+                          className="bg-white border rounded-full px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                        />
+                        <input
+                          type="password"
+                          required
+                          placeholder="নতুন পাসওয়ার্ড নিশ্চিত করুন *"
+                          value={profilePassForm.confirmPassword}
+                          onChange={(e) => setProfilePassForm({ ...profilePassForm, confirmPassword: e.target.value })}
+                          className="bg-white border rounded-full px-3.5 py-2 text-xs outline-none focus:border-[#7a1c2b]"
+                        />
+                      </div>
+                      <button type="submit" className="w-full bg-slate-900 hover:bg-black text-white py-2.5 rounded-full text-xs font-bold cursor-pointer">
+                        🔑 পাসওয়ার্ড আপডেট করুন
+                      </button>
+                    </form>
+                  </div>
                 )}
               </div>
             </div>
@@ -22517,6 +24166,15 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   }
                 },
                 {
+                  id: "UserManagement",
+                  label: "User Management",
+                  subLabel: "Verify, Wallet, Block, Reset & Export",
+                  icon: "🛡️",
+                  count: derivedManagedUsers.length,
+                  isActive: activeTab === "UserManagement",
+                  onClick: () => setActiveTab("UserManagement")
+                },
+                {
                   id: "Customers",
                   label: "কাস্টমার ও লয়্যালটি হাব",
                   subLabel: "CRM, VIP Club & Reviews",
@@ -23073,10 +24731,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         )}
 
                         {/* CONTEXTUAL MASTER HUB SUB-NAV: CUSTOMERS & LOYALTY HUB */}
-                        {["Customers", "Loyalty", "Reviews"].includes(activeTab) && (
+                        {["UserManagement", "Customers", "Loyalty", "Reviews"].includes(activeTab) && (
                           <div className="liquid-glass-surface rounded-2xl p-2 flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs font-bold v2-animate-in">
-                            <span className="text-[11px] font-black text-[#000000] px-2.5 whitespace-nowrap">👥 কাস্টমার ও লয়্যালটি হাব:</span>
+                            <span className="text-[11px] font-black text-[#000000] px-2.5 whitespace-nowrap">👥 কাস্টমার ও User Management:</span>
                             {[
+                              { id: "UserManagement", label: "🛡️ User Management", count: derivedManagedUsers.length },
                               { id: "Customers", label: "👥 কাস্টমার ডাটাবেস (CRM)" },
                               { id: "Loyalty", label: "👑 মেম্বারশিপ ও VIP ক্লাব" },
                               { id: "Reviews", label: "⭐ কাস্টমার রিভিউ", count: reviews.length },
@@ -23656,8 +25315,11 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 )}
 
                 {/* ========================================================= */}
-                {/* 2.2 CUSTOMERS & CRM MASTER HUB                             */}
+                {/* 2.2 CUSTOMERS, USER MANAGEMENT & CRM HUB                   */}
                 {/* ========================================================= */}
+                {activeTab === "UserManagement" && (
+                  renderUserManagementHub()
+                )}
                 {activeTab === "Customers" && (
                   renderCustomersMasterHub()
                 )}
@@ -33453,6 +35115,31 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     </div>
                   </div>
 
+                  {/* Wallet Balance Payment Toggle */}
+                  {availableCheckoutWallet > 0 && (
+                    <div className="bg-purple-50 p-3.5 rounded-2xl border-2 border-purple-300 flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-black text-purple-900 block">
+                          💳 Wallet Balance দিয়ে পেমেন্ট করুন (ব্যালেন্স: ৳{availableCheckoutWallet.toLocaleString()})
+                        </span>
+                        <span className="text-[11px] text-purple-700">
+                          {useWalletInCheckout
+                            ? `এই অর্ডারে ৳${walletAppliedInCheckout.toLocaleString()} Wallet থেকে সমন্বয় হবে।`
+                            : "চেকবক্সে টিক দিলে Wallet টাকা বিল থেকে বাদ যাবে।"}
+                        </span>
+                      </div>
+                      <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={useWalletInCheckout}
+                          onChange={(e) => setUseWalletInCheckout(e.target.checked)}
+                          className="w-5 h-5 accent-purple-700 cursor-pointer"
+                        />
+                        <span className="text-xs font-black text-purple-900">{useWalletInCheckout ? "চালু ✓" : "ব্যবহার"}</span>
+                      </label>
+                    </div>
+                  )}
+
                   {/* Payment Method Selector */}
                   <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
                     <label className="text-xs font-bold text-slate-800 block">পেমেন্ট মেথড নির্বাচন করুন</label>
@@ -33795,6 +35482,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                       <div className="flex justify-between text-[#7a1c2b] font-bold bg-rose-50 px-2 py-1 rounded-lg border border-rose-200">
                         <span>🎁 স্পেশাল গিফট র্যাপিং ও শুভেচ্ছাকার্ড:</span>
                         <span>+ 50 ৳</span>
+                      </div>
+                    )}
+
+                    {walletAppliedInCheckout > 0 && (
+                      <div className="flex justify-between text-purple-800 font-bold bg-purple-50 px-2 py-1 rounded-lg border border-purple-200">
+                        <span>💳 Wallet Balance পেমেন্ট:</span>
+                        <span>- {walletAppliedInCheckout} ৳</span>
                       </div>
                     )}
 
@@ -34388,12 +36082,13 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               ৩. টাকা ফেরত দেয়ার মাধ্যম (Refund Method):
                             </h4>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
                               {[
                                 { id: "cash", label: "ক্যাশ (নগদ টাকা)", icon: "$" },
                                 { id: "bkash", label: "বিকাশ (bKash)", icon: "📱" },
                                 { id: "nagad", label: "নগদ (Nagad)", icon: "📱" },
-                                { id: "credit", label: "দোকান জমা (Credit)", icon: "💳" },
+                                { id: "wallet", label: "User Wallet 💳", icon: "💳" },
+                                { id: "credit", label: "দোকান জমা (Credit)", icon: "🪙" },
                                 { id: "exchange", label: "📦 এক্সচেঞ্জ সমন্বয়", icon: "🔄", isSpecial: true }
                               ].map(m => (
                                 <button
@@ -34828,7 +36523,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                             বাকি টাকা ফেরত দেওয়ার মাধ্যম:
                                           </span>
                                           <div className="flex gap-1.5 flex-wrap">
-                                            {["Cash", "bKash", "Nagad", "Credit"].map(m => (
+                                            {["Cash", "bKash", "Nagad", "wallet", "Credit"].map(m => (
                                               <button
                                                 key={m}
                                                 type="button"
@@ -34839,7 +36534,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                                                     : "bg-black/50 text-slate-200 border-emerald-500/35 hover:bg-emerald-950/60"
                                                 }`}
                                               >
-                                                {m === "Cash" ? "💵 নগদ ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : "💳 দোকান জমা (Credit)"}
+                                                {m === "Cash" ? "💵 নগদ ক্যাশ" : m === "bKash" ? "📱 বিকাশ" : m === "Nagad" ? "📱 নগদ" : m === "wallet" ? "👛 User Wallet" : "💳 দোকান জমা (Credit)"}
                                               </button>
                                             ))}
                                           </div>

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -70,6 +71,7 @@ private fun adminTabIcon(tab: AdminTab): ImageVector = when (tab) {
   AdminTab.PAGE_CONFIG -> Icons.Default.Tune
   AdminTab.PRODUCTS -> Icons.Default.Inventory2
   AdminTab.ORDERS -> Icons.Default.LocalShipping
+  AdminTab.USER_MANAGEMENT -> Icons.Default.ManageAccounts
   AdminTab.SUPPORT_CHAT -> Icons.Default.Forum
   AdminTab.SHIPPING_INFO -> Icons.Default.LocalShipping
   AdminTab.MARKETING -> Icons.Default.Campaign
@@ -83,6 +85,7 @@ fun AdminV2SidebarContent(
   pendingOrdersCount: Int,
   productsCount: Int,
   unreadSupportCount: Int = 0,
+  managedUsersCount: Int = 0,
   onSelectTab: (AdminTab) -> Unit,
   onLogout: () -> Unit,
   modifier: Modifier = Modifier
@@ -91,6 +94,7 @@ fun AdminV2SidebarContent(
   val managementTabs = listOf(
     AdminTab.PRODUCTS,
     AdminTab.ORDERS,
+    AdminTab.USER_MANAGEMENT,
     AdminTab.SUPPORT_CHAT,
     AdminTab.SHIPPING_INFO,
     AdminTab.MARKETING,
@@ -191,6 +195,7 @@ fun AdminV2SidebarContent(
       managementTabs.forEach { tab ->
         val badge = when (tab) {
           AdminTab.ORDERS -> if (pendingOrdersCount > 0) pendingOrdersCount else null
+          AdminTab.USER_MANAGEMENT -> if (managedUsersCount > 0) managedUsersCount else null
           AdminTab.SUPPORT_CHAT -> if (unreadSupportCount > 0) unreadSupportCount else null
           AdminTab.PRODUCTS -> productsCount
           else -> null

@@ -123,7 +123,9 @@ fun CartAndCheckoutDialog(
   onRemoveItem: (String) -> Unit,
   onPlaceOrder: (String, String, String, String, String, String, Coupon?, String, String, String, String, Boolean) -> Unit,
   onShowToast: (String) -> Unit,
-  visible: Boolean = true
+  visible: Boolean = true,
+  walletBalance: Int = 0,
+  onPlaceOrderWithWallet: ((String, String, String, String, String, String, Coupon?, String, String, String, String, Boolean, Int) -> Unit)? = null
 ) {
   var isCheckoutMode by remember { mutableStateOf(false) }
 
@@ -210,7 +212,14 @@ fun CartAndCheckoutDialog(
       appliedCoupon!!.value
     }
   }
-  val grandTotal = (subtotal - discount).coerceAtLeast(0) + deliveryCharge
+  var useWalletInCheckout by remember { mutableStateOf(false) }
+  val totalBeforeWallet = (subtotal - discount).coerceAtLeast(0) + deliveryCharge
+  val walletApplied = if (useWalletInCheckout && walletBalance > 0) {
+    minOf(walletBalance, totalBeforeWallet)
+  } else {
+    0
+  }
+  val grandTotal = (totalBeforeWallet - walletApplied).coerceAtLeast(0)
 
   Box(modifier = Modifier.fillMaxSize()) {
     // 1. Animated Backdrop Scrim
@@ -753,6 +762,13 @@ fun CartAndCheckoutDialog(
                       )
                     }
 
+                    if (walletApplied > 0) {
+                      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "👛 Wallet ব্যালেন্স পেমেন্ট", fontSize = 12.sp, color = AccentGreen, fontWeight = FontWeight.Bold)
+                        Text(text = "- $walletApplied ৳", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                      }
+                    }
+
                     HorizontalDivider(color = BorderGold, modifier = Modifier.padding(vertical = 4.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1282,6 +1298,42 @@ fun CartAndCheckoutDialog(
                         }
                       }
 
+                      if (walletBalance > 0) {
+                        Surface(
+                          shape = RoundedCornerShape(12.dp),
+                          color = Color(0xFFECFDF5),
+                          border = BorderStroke(1.dp, AccentGreen.copy(alpha = 0.5f)),
+                          modifier = Modifier.fillMaxWidth()
+                        ) {
+                          Row(
+                            modifier = Modifier
+                              .fillMaxWidth()
+                              .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                          ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                              Text(
+                                text = "👛 Wallet Balance ব্যবহার করুন (৳$walletBalance)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF065F46)
+                              )
+                              Text(
+                                text = if (useWalletInCheckout) "৳$walletApplied Wallet থেকে কাটা হবে" else "সুইচ অন করলে মোট বিল থেকে বাদ যাবে",
+                                fontSize = 10.5.sp,
+                                color = Color(0xFF047857)
+                              )
+                            }
+                            Switch(
+                              checked = useWalletInCheckout,
+                              onCheckedChange = { useWalletInCheckout = it },
+                              modifier = Modifier.testTag("checkout_wallet_switch")
+                            )
+                          }
+                        }
+                      }
+
                       Spacer(modifier = Modifier.height(8.dp))
 
                       // Submit Button
@@ -1295,20 +1347,38 @@ fun CartAndCheckoutDialog(
                             onShowToast("সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!")
                             return@Button
                           }
-                          onPlaceOrder(
-                            name,
-                            phone,
-                            selectedDistrict,
-                            thana,
-                            address,
-                            paymentMethod,
-                            appliedCoupon,
-                            orderType,
-                            deliveryType,
-                            landmark,
-                            addressCategory,
-                            defaultShippingAddress
-                          )
+                          if (onPlaceOrderWithWallet != null) {
+                            onPlaceOrderWithWallet(
+                              name,
+                              phone,
+                              selectedDistrict,
+                              thana,
+                              address,
+                              if (walletApplied > 0 && grandTotal == 0) "Wallet" else paymentMethod,
+                              appliedCoupon,
+                              orderType,
+                              deliveryType,
+                              landmark,
+                              addressCategory,
+                              defaultShippingAddress,
+                              walletApplied
+                            )
+                          } else {
+                            onPlaceOrder(
+                              name,
+                              phone,
+                              selectedDistrict,
+                              thana,
+                              address,
+                              paymentMethod,
+                              appliedCoupon,
+                              orderType,
+                              deliveryType,
+                              landmark,
+                              addressCategory,
+                              defaultShippingAddress
+                            )
+                          }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
                         shape = RoundedCornerShape(20.dp),

@@ -51,8 +51,11 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -87,6 +90,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -94,6 +98,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.BangladeshLocations
 import com.example.data.model.CustomerLoyaltyStatus
+import com.example.data.model.ManagedUserProfile
 import com.example.data.model.Order
 import com.example.data.model.OrderTrackingHelper
 import com.example.data.model.OrderTrackingStage
@@ -120,6 +125,7 @@ import java.util.Locale
 enum class CustomerProfileTab(val label: String, val icon: String, val testTag: String) {
   OVERVIEW("ড্যাশবোর্ড", "📊", "profile_tab_overview"),
   ORDERS("অর্ডার হিস্ট্রি", "📦", "profile_tab_orders"),
+  WALLET("Wallet ও পাসওয়ার্ড", "👛", "profile_tab_wallet"),
   ADDRESSES("সেভড ঠিকানা", "📍", "profile_tab_addresses"),
   LOYALTY("VIP পয়েন্ট", "👑", "profile_tab_loyalty")
 }
@@ -145,7 +151,9 @@ fun CustomerProfileScreen(
   onSetDefaultAddress: (String) -> Unit,
   onDeleteAddress: (String) -> Unit,
   onOpenNotifications: () -> Unit,
-  onOpenLiveSupport: () -> Unit
+  onOpenLiveSupport: () -> Unit,
+  managedProfile: ManagedUserProfile? = null,
+  onChangePassword: (String, String) -> Unit = { _, _ -> }
 ) {
   BackHandler { onBackToStore() }
 
@@ -415,14 +423,44 @@ fun CustomerProfileScreen(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                  Text(
-                    text = authUser.displayName.ifBlank { "সম্মানিত গ্রাহক" },
-                    fontSize = 17.5.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                  )
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                  ) {
+                    Text(
+                      text = authUser.displayName.ifBlank { "সম্মানিত গ্রাহক" },
+                      fontSize = 17.5.sp,
+                      fontWeight = FontWeight.Black,
+                      color = Color.White,
+                      maxLines = 1,
+                      overflow = TextOverflow.Ellipsis
+                    )
+                    if (managedProfile?.isVerified == true) {
+                      Surface(
+                        shape = RoundedCornerShape(999.dp),
+                        color = Color(0xFF2563EB)
+                      ) {
+                        Row(
+                          modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                          verticalAlignment = Alignment.CenterVertically,
+                          horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                          Icon(
+                            imageVector = Icons.Default.Verified,
+                            contentDescription = "Verified Account",
+                            tint = Color.White,
+                            modifier = Modifier.size(13.dp)
+                          )
+                          Text(
+                            text = "Verified",
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                          )
+                        }
+                      }
+                    }
+                  }
                   if (authUser.email.isNotBlank()) {
                     Text(
                       text = authUser.email,
@@ -454,13 +492,13 @@ fun CustomerProfileScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
               ) {
                 DashboardKpiTile(
-                  label = "উপলব্ধ পয়েন্ট",
-                  value = "${loyaltyStatus.availablePoints}",
+                  label = "Wallet ব্যালেন্স",
+                  value = "৳${managedProfile?.walletBalance ?: 0}",
                   modifier = Modifier.weight(1f)
                 )
                 DashboardKpiTile(
-                  label = "পয়েন্ট ভ্যালু",
-                  value = "৳${loyaltyStatus.redeemableTaka}",
+                  label = "উপলব্ধ পয়েন্ট",
+                  value = "${loyaltyStatus.availablePoints}",
                   modifier = Modifier.weight(1f)
                 )
                 DashboardKpiTile(
@@ -540,6 +578,48 @@ fun CustomerProfileScreen(
                   syncState = orderTrackingSyncState,
                   onRefreshSync = onRefreshOrderTracking
                 )
+              }
+            }
+
+            // Wallet Quick Summary Banner
+            item {
+              Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
+                border = BorderStroke(1.2.dp, AccentGreen.copy(alpha = 0.45f)),
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically
+                ) {
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f)
+                  ) {
+                    Icon(
+                      imageVector = Icons.Default.AccountBalanceWallet,
+                      contentDescription = "Wallet",
+                      tint = AccentGreen,
+                      modifier = Modifier.size(28.dp)
+                    )
+                    Column {
+                      Text("আপনার সাজগোজ Wallet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF065F46))
+                      Text("৳${managedProfile?.walletBalance ?: 0}", fontSize = 20.sp, fontWeight = FontWeight.Black, color = AccentGreen)
+                      Text("অর্ডার বাতিল বা রিটার্ন রিফান্ড এখানে জমা হয় ও চেকআউটে ব্যবহারযোগ্য।", fontSize = 10.5.sp, color = Color(0xFF047857))
+                    }
+                  }
+                  TextButton(
+                    onClick = { selectedTab = CustomerProfileTab.WALLET },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                  ) {
+                    Text("বিস্তারিত →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                  }
+                }
               }
             }
 
@@ -796,6 +876,154 @@ fun CustomerProfileScreen(
                   order = order,
                   onOpenInvoice = { onOpenOrderInvoice(order) }
                 )
+              }
+            }
+          }
+
+          CustomerProfileTab.WALLET -> {
+            item {
+              Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
+                border = BorderStroke(1.2.dp, AccentGreen),
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                  ) {
+                    Column {
+                      Text("👛 আপনার Wallet ব্যালেন্স", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF065F46))
+                      Text("৳${managedProfile?.walletBalance ?: 0}", fontSize = 26.sp, fontWeight = FontWeight.Black, color = AccentGreen)
+                    }
+                    Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = AccentGreen, modifier = Modifier.size(34.dp))
+                  }
+                  Text(
+                    text = "রিটার্ন বা অর্ডার বাতিল হলে টাকা অটোমেটিক আপনার Wallet-এ যুক্ত হয় এবং যেকোনো অর্ডারের চেকআউটে ব্যবহার করতে পারবেন।",
+                    fontSize = 11.5.sp,
+                    color = Color(0xFF047857)
+                  )
+                }
+              }
+            }
+
+            item {
+              Text(
+                text = "📜 Wallet লেনদেনের ইতিহাস (${managedProfile?.walletHistory?.size ?: 0})",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Black,
+                color = RoyalMaroon
+              )
+            }
+
+            val wHistory = managedProfile?.walletHistory.orEmpty()
+            if (wHistory.isEmpty()) {
+              item {
+                Card(
+                  shape = RoundedCornerShape(14.dp),
+                  colors = CardDefaults.cardColors(containerColor = Color.White),
+                  border = BorderStroke(1.dp, BorderGold),
+                  modifier = Modifier.fillMaxWidth()
+                ) {
+                  Text(
+                    text = "এখনও কোনো Wallet লেনদেন হয়নি।",
+                    fontSize = 12.5.sp,
+                    color = Color(0xFF64748B),
+                    modifier = Modifier.padding(16.dp)
+                  )
+                }
+              }
+            } else {
+              items(wHistory, key = { it.id.ifBlank { "${it.timestampMs}_${it.amount}" } }) { tx ->
+                val isDebit = tx.type == "debit"
+                Card(
+                  shape = RoundedCornerShape(12.dp),
+                  colors = CardDefaults.cardColors(containerColor = Color.White),
+                  border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.7f)),
+                  modifier = Modifier.fillMaxWidth()
+                ) {
+                  Row(
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                  ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                      Text(tx.note.ifBlank { tx.type }, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
+                      val dtStr = remember(tx.timestampMs) {
+                        if (tx.timestampMs > 0L) {
+                          SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(tx.timestampMs))
+                        } else ""
+                      }
+                      if (dtStr.isNotBlank()) {
+                        Text(dtStr, fontSize = 10.5.sp, color = Color(0xFF64748B))
+                      }
+                    }
+                    Text(
+                      text = if (isDebit) "-৳${tx.amount}" else "+৳${tx.amount}",
+                      fontSize = 14.sp,
+                      fontWeight = FontWeight.Black,
+                      color = if (isDebit) AccentRed else AccentGreen
+                    )
+                  }
+                }
+              }
+            }
+
+            // Customer Password Change Card
+            item {
+              var currentPassInput by remember { mutableStateOf("") }
+              var newPassInput by remember { mutableStateOf("") }
+              Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, BorderGold),
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                  Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(Icons.Default.VpnKey, contentDescription = null, tint = RoyalMaroon, modifier = Modifier.size(18.dp))
+                    Text("🔑 অ্যাকাউন্ট পাসওয়ার্ড পরিবর্তন", fontSize = 14.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
+                  }
+                  if (!managedProfile?.password.isNullOrBlank()) {
+                    OutlinedTextField(
+                      value = currentPassInput,
+                      onValueChange = { currentPassInput = it },
+                      label = { Text("বর্তমান / Temporary পাসওয়ার্ড") },
+                      singleLine = true,
+                      visualTransformation = PasswordVisualTransformation(),
+                      modifier = Modifier.fillMaxWidth()
+                    )
+                  }
+                  OutlinedTextField(
+                    value = newPassInput,
+                    onValueChange = { newPassInput = it },
+                    label = { Text("নতুন পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর)") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .testTag("profile_new_password_input")
+                  )
+                  Button(
+                    onClick = {
+                      onChangePassword(currentPassInput, newPassInput)
+                      currentPassInput = ""
+                      newPassInput = ""
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .heightIn(min = 48.dp)
+                      .testTag("profile_save_password_button")
+                  ) {
+                    Text("পাসওয়ার্ড আপডেট করুন", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                  }
+                }
               }
             }
           }

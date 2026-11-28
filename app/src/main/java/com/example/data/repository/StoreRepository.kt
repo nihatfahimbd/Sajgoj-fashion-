@@ -13,10 +13,13 @@ import com.example.data.model.CourierConfig
 import com.example.data.model.ExchangeItem
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
+import com.example.data.model.ManagedUserHelper
+import com.example.data.model.ManagedUserProfile
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.OrderStatusNotification
 import com.example.data.model.OrderTrackingSyncState
+import com.example.data.model.WalletTransaction
 import com.example.data.model.PixelConfig
 import com.example.data.model.PosInventoryItem
 import com.example.data.model.Product
@@ -734,6 +737,9 @@ class StoreRepository(private val context: Context) {
   private val _savedAddresses = MutableStateFlow<List<SavedAddress>>(emptyList())
   val savedAddresses: StateFlow<List<SavedAddress>> = _savedAddresses.asStateFlow()
 
+  private val _managedUsers = MutableStateFlow<List<ManagedUserProfile>>(loadManagedUsersFromPrefs())
+  val managedUsers: StateFlow<List<ManagedUserProfile>> = _managedUsers.asStateFlow()
+
   private val _orderTrackingSyncState = MutableStateFlow(OrderTrackingSyncState())
   val orderTrackingSyncState: StateFlow<OrderTrackingSyncState> = _orderTrackingSyncState.asStateFlow()
 
@@ -756,6 +762,7 @@ class StoreRepository(private val context: Context) {
   private var returnsListener: ListenerRegistration? = null
   private var smsQueueListener: ListenerRegistration? = null
   private var orderNotificationsListener: ListenerRegistration? = null
+  private var customersListener: ListenerRegistration? = null
 
   private fun currentAuthUid(): String? = try {
     Firebase.auth.currentUser?.uid
@@ -1009,6 +1016,8 @@ class StoreRepository(private val context: Context) {
     smsQueueListener = null
     orderNotificationsListener?.remove()
     orderNotificationsListener = null
+    customersListener?.remove()
+    customersListener = null
 
     val db = firestore
     reloadSavedAddressesForCurrentUser(user?.uid)
@@ -1020,6 +1029,7 @@ class StoreRepository(private val context: Context) {
 
     syncCustomerFcmToken(user)
     hydrateCustomerAddressFromFirestore(user)
+    recordUserLoginSession(user)
 
     val isAdmin = GoogleAuthHelper.toSummary(user)?.isAdmin == true
     val ordersQuery = if (isAdmin) {
@@ -1211,8 +1221,32 @@ class StoreRepository(private val context: Context) {
           saveSmsQueueToPrefs(merged)
         }
       }
+
+      customersListener = db.collection("customers").addSnapshotListener { snapshot, error ->
+        if (error != null) {
+          handleFirestoreError(error, OperationType.LIST, "customers")
+          return@addSnapshotListener
+        }
+        if (snapshot != null && !snapshot.isEmpty) {
+          val remoteUsers = snapshot.documents.mapNotNull { doc -> parseManagedUserDoc(doc) }
+          if (remoteUsers.isNotEmpty()) {
+            mergeRemoteManagedUsers(remoteUsers)
+          }
+        }
+      }
     } else {
       inventorySyncService.stopListening()
+      customersListener = db.collection("customers").document(user.uid).addSnapshotListener { doc, error ->
+        if (error != null) {
+          handleFirestoreError(error, OperationType.GET, "customers/${user.uid}")
+          return@addSnapshotListener
+        }
+        if (doc != null && doc.exists()) {
+          parseManagedUserDoc(doc)?.let { remoteUser ->
+            mergeRemoteManagedUsers(listOf(remoteUser))
+          }
+        }
+      }
     }
   }
 
@@ -1414,7 +1448,8 @@ class StoreRepository(private val context: Context) {
     deliveryType: String = "Standard",
     landmark: String = "",
     addressCategory: String = "Home",
-    defaultShippingAddress: Boolean = false
+    defaultShippingAddress: Boolean = false,
+    walletAmountToUse: Int = 0
   ): Order? {
     val cartItems = _cart.value
     if (cartItems.isEmpty()) return null
@@ -1443,12 +1478,28 @@ class StoreRepository(private val context: Context) {
       }
     }
 
-    val total = (subtotal - discount).coerceAtLeast(0) + deliveryCharge
+    val totalBeforeWallet = (subtotal - discount).coerceAtLeast(0) + deliveryCharge
+    val userEmail = try { Firebase.auth.currentUser?.email.orEmpty() } catch (_: Exception) { "" }
+    val userUid = currentAuthUid().orEmpty()
+    val userKey = resolveOrCreateManagedUserKey(
+      phone = phone,
+      email = userEmail,
+      fallbackId = userUid.ifBlank { customerName }
+    )
+    val availableWallet = _managedUsers.value.find {
+      ManagedUserHelper.resolveLookupKey(it.phone, it.email, it.id) == userKey ||
+        it.id == userKey ||
+        (ManagedUserHelper.normalizePhone(phone).length >= 6 &&
+          ManagedUserHelper.normalizePhone(it.phone) == ManagedUserHelper.normalizePhone(phone))
+    }?.walletBalance ?: 0
+    val resolvedWalletPay = walletAmountToUse.coerceIn(0, minOf(availableWallet, totalBeforeWallet))
+    val total = (totalBeforeWallet - resolvedWalletPay).coerceAtLeast(0)
     val orderId = "ORD-${Random.nextInt(1000, 9999)}"
     val nowMs = System.currentTimeMillis()
     val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(nowMs))
     val safeOrderType = if (orderType.equals("Custom", ignoreCase = true)) "Custom" else "Normal"
     val safeCategory = if (addressCategory.equals("Office", ignoreCase = true)) "Office" else "Home"
+    val resolvedPaymentMethod = if (resolvedWalletPay > 0 && total == 0) "Wallet" else paymentMethod
 
     val newOrder = Order(
       id = orderId,
@@ -1475,7 +1526,7 @@ class StoreRepository(private val context: Context) {
       discount = discount,
       couponCode = appliedCoupon?.code ?: "",
       total = total,
-      paymentMethod = paymentMethod,
+      paymentMethod = resolvedPaymentMethod,
       status = "Pending",
       date = currentDate,
       trackingId = "",
@@ -1485,7 +1536,9 @@ class StoreRepository(private val context: Context) {
       landmark = landmark.trim(),
       addressCategory = safeCategory,
       defaultShippingAddress = defaultShippingAddress,
-      createdAt = nowMs
+      createdAt = nowMs,
+      walletPaidAmount = resolvedWalletPay,
+      walletRefunded = false
     )
 
     // Deduct stock across Storefront + POS Inventory + Firestore in real time (includes all purchased items + free gift item)
@@ -1548,6 +1601,8 @@ class StoreRepository(private val context: Context) {
             "discount" to newOrder.discount,
             "couponCode" to newOrder.couponCode,
             "total" to newOrder.total,
+            "walletPaidAmount" to newOrder.walletPaidAmount,
+            "walletRefunded" to newOrder.walletRefunded,
             "paymentMethod" to newOrder.paymentMethod,
             "status" to newOrder.status,
             "date" to newOrder.date,
@@ -1568,6 +1623,18 @@ class StoreRepository(private val context: Context) {
     lastKnownOrderStatuses[newOrder.id] = newOrder.status
     saveOrderStatusSnapshot()
     currentAuthUid()?.let { uid -> orderOwnerUids[newOrder.id] = uid }
+
+    // Upsert customer tracking info + debit wallet if applied
+    upsertManagedUserFromOrder(newOrder, userEmail = userEmail, userUid = userUid)
+    if (resolvedWalletPay > 0) {
+      adjustUserWallet(
+        userKey = userKey,
+        type = "debit",
+        amount = resolvedWalletPay,
+        note = "অর্ডার #${newOrder.id} চেকআউট পেমেন্ট",
+        orderId = newOrder.id
+      )
+    }
 
     // Remember shipping address in Saved Addresses when default is toggled or when user has none saved
     val currentAddresses = _savedAddresses.value
@@ -1757,6 +1824,7 @@ class StoreRepository(private val context: Context) {
   fun updateOrderStatus(orderId: String, newStatus: String) {
     val targetOrder = _orders.value.find { it.id == orderId }
     var nextRestockedFlag = targetOrder?.stockRestockedOnCancel ?: false
+    var nextWalletRefundedFlag = targetOrder?.walletRefunded ?: false
 
     if (targetOrder != null) {
       if (newStatus == "Cancelled" && targetOrder.status != "Cancelled" && !targetOrder.stockRestockedOnCancel) {
@@ -1768,10 +1836,42 @@ class StoreRepository(private val context: Context) {
         nextRestockedFlag = false
         persistLocalSyncSnapshot()
       }
+
+      if (newStatus == "Cancelled" && targetOrder.status != "Cancelled" && !targetOrder.walletRefunded) {
+        val isPrepaid = !targetOrder.paymentMethod.contains("Cash", ignoreCase = true) &&
+          !targetOrder.paymentMethod.contains("COD", ignoreCase = true)
+        val refundable = when {
+          targetOrder.walletPaidAmount > 0 && isPrepaid -> targetOrder.walletPaidAmount + targetOrder.total
+          targetOrder.walletPaidAmount > 0 -> targetOrder.walletPaidAmount
+          isPrepaid -> targetOrder.total
+          else -> 0
+        }
+        if (refundable > 0) {
+          val uKey = resolveOrCreateManagedUserKey(
+            phone = targetOrder.phone,
+            email = "",
+            fallbackId = targetOrder.customerName
+          )
+          adjustUserWallet(
+            userKey = uKey,
+            type = "refund",
+            amount = refundable,
+            note = "অর্ডার #${targetOrder.id} বাতিল হওয়ায় Wallet-এ রিফান্ড",
+            orderId = targetOrder.id
+          )
+          nextWalletRefundedFlag = true
+        }
+      }
     }
 
     _orders.value = _orders.value.map {
-      if (it.id == orderId) it.copy(status = newStatus, stockRestockedOnCancel = nextRestockedFlag) else it
+      if (it.id == orderId) {
+        it.copy(
+          status = newStatus,
+          stockRestockedOnCancel = nextRestockedFlag,
+          walletRefunded = nextWalletRefundedFlag
+        )
+      } else it
     }
     detectAndNotifyOrderStatusChanges(_orders.value, sourceChannel = "in_app", pushToCloud = true)
     if (isVerifiedAdmin()) {
@@ -1780,6 +1880,7 @@ class StoreRepository(private val context: Context) {
           mapOf(
             "status" to newStatus,
             "stockRestockedOnCancel" to nextRestockedFlag,
+            "walletRefunded" to nextWalletRefundedFlag,
             "updatedAt" to FieldValue.serverTimestamp()
           )
         )?.addOnFailureListener { e ->
@@ -1897,6 +1998,35 @@ class StoreRepository(private val context: Context) {
     // Synchronize return restocks & exchange deductions across Storefront + POS Inventory
     _products.value = inventorySyncService.applyReturnAndExchange(_products.value, record)
     persistLocalSyncSnapshot()
+
+    if (record.settlementMethod.contains("wallet", ignoreCase = true) ||
+      record.settlementMethod.contains("ওয়ালেট")
+    ) {
+      val walletCreditAmount = if (record.isExchange) {
+        if (record.priceDifference < 0) kotlin.math.abs(record.priceDifference) else 0
+      } else {
+        record.totalReturnValue
+      }
+      if (walletCreditAmount > 0) {
+        val matchingOrder = _orders.value.find { it.id == record.orderId }
+        val userKey = resolveOrCreateManagedUserKey(
+          phone = record.phone.ifBlank { matchingOrder?.phone.orEmpty() },
+          email = "",
+          fallbackId = record.customerName.ifBlank { matchingOrder?.customerName.orEmpty() }
+        )
+        adjustUserWallet(
+          userKey = userKey,
+          type = "refund",
+          amount = walletCreditAmount,
+          note = if (record.isExchange) {
+            "এক্সচেঞ্জ পার্থক্য রিফান্ড (অর্ডার #${record.orderId})"
+          } else {
+            "পণ্য রিটার্ন রিফান্ড (অর্ডার #${record.orderId})"
+          },
+          orderId = record.orderId
+        )
+      }
+    }
 
     val uid = currentAuthUid()
     if (uid != null && isVerifiedAdmin()) {
@@ -3789,7 +3919,9 @@ class StoreRepository(private val context: Context) {
         defaultShippingAddress = doc.getBoolean("defaultShippingAddress") ?: false,
         createdAt = doc.getTimestamp("createdAt")?.toDate()?.time
           ?: doc.getLong("createdAtMs")
-          ?: 0L
+          ?: 0L,
+        walletPaidAmount = (doc.getLong("walletPaidAmount") ?: 0L).toInt(),
+        walletRefunded = doc.getBoolean("walletRefunded") ?: false
       )
     } catch (_: Exception) {
       null
@@ -3831,6 +3963,530 @@ class StoreRepository(private val context: Context) {
           errorMessage = e.message ?: "সার্ভার রিফ্রেশ ব্যর্থ"
         )
       }
+  }
+
+  // =========================================================
+  // USER MANAGEMENT, VERIFICATION, LOGIN UNLOCK, BLOCK & WALLET
+  // =========================================================
+
+  private fun findManagedUserIndex(userKey: String, phone: String = "", email: String = "", id: String = ""): Int {
+    val normPhone = ManagedUserHelper.normalizePhone(phone)
+    val cleanEmail = email.trim().lowercase()
+    return _managedUsers.value.indexOfFirst { u ->
+      val uKey = ManagedUserHelper.resolveLookupKey(u.phone, u.email, u.id)
+      uKey == userKey ||
+        u.id == userKey ||
+        (id.isNotBlank() && u.id == id) ||
+        (normPhone.length >= 6 && ManagedUserHelper.normalizePhone(u.phone) == normPhone) ||
+        (cleanEmail.isNotBlank() && u.email.trim().equals(cleanEmail, ignoreCase = true))
+    }
+  }
+
+  private fun resolveOrCreateManagedUserKey(
+    phone: String = "",
+    email: String = "",
+    fallbackId: String = "",
+    name: String = "",
+    address: String = "",
+    district: String = "",
+    thana: String = ""
+  ): String {
+    val lookupKey = ManagedUserHelper.resolveLookupKey(phone = phone, email = email, fallbackId = fallbackId)
+    val idx = findManagedUserIndex(lookupKey, phone = phone, email = email, id = fallbackId)
+    if (idx >= 0) {
+      return ManagedUserHelper.resolveLookupKey(
+        _managedUsers.value[idx].phone,
+        _managedUsers.value[idx].email,
+        _managedUsers.value[idx].id
+      )
+    }
+    val created = ManagedUserProfile(
+      id = fallbackId.ifBlank { lookupKey },
+      name = name.ifBlank { "সম্মানিত গ্রাহক" },
+      phone = phone,
+      email = email,
+      address = address,
+      district = district,
+      thana = thana,
+      updatedAtMs = System.currentTimeMillis()
+    )
+    _managedUsers.value = listOf(created) + _managedUsers.value
+    saveManagedUsersToPrefs(_managedUsers.value)
+    return lookupKey
+  }
+
+  private fun recordUserLoginSession(user: FirebaseUser) {
+    val key = ManagedUserHelper.resolveLookupKey(
+      phone = user.phoneNumber.orEmpty(),
+      email = user.email.orEmpty(),
+      fallbackId = user.uid
+    )
+    val nowMs = System.currentTimeMillis()
+    val device = ManagedUserHelper.currentDeviceInfo()
+    val list = _managedUsers.value.toMutableList()
+    val idx = findManagedUserIndex(key, phone = user.phoneNumber.orEmpty(), email = user.email.orEmpty(), id = user.uid)
+    val updated = if (idx >= 0) {
+      val cur = list[idx]
+      cur.copy(
+        id = cur.id.ifBlank { user.uid },
+        name = cur.name.ifBlank { user.displayName.orEmpty().ifBlank { "সাজগোজ গ্রাহক" } },
+        phone = cur.phone.ifBlank { user.phoneNumber.orEmpty() },
+        email = cur.email.ifBlank { user.email.orEmpty() },
+        lastLoginAtMs = nowMs,
+        deviceInfo = device,
+        updatedAtMs = nowMs
+      ).also { list[idx] = it }
+    } else {
+      ManagedUserProfile(
+        id = user.uid,
+        name = user.displayName.orEmpty().ifBlank { "সাজগোজ গ্রাহক" },
+        phone = user.phoneNumber.orEmpty(),
+        email = user.email.orEmpty(),
+        lastLoginAtMs = nowMs,
+        deviceInfo = device,
+        updatedAtMs = nowMs
+      ).also { list.add(0, it) }
+    }
+    _managedUsers.value = list
+    saveManagedUsersToPrefs(list)
+    syncManagedUserToFirestore(updated, firestoreDocId = user.uid)
+  }
+
+  private fun upsertManagedUserFromOrder(order: Order, userEmail: String = "", userUid: String = "") {
+    val key = ManagedUserHelper.resolveLookupKey(
+      phone = order.phone,
+      email = userEmail,
+      fallbackId = userUid.ifBlank { order.customerName }
+    )
+    val nowMs = System.currentTimeMillis()
+    val device = ManagedUserHelper.currentDeviceInfo()
+    val list = _managedUsers.value.toMutableList()
+    val idx = findManagedUserIndex(key, phone = order.phone, email = userEmail, id = userUid)
+    val updated = if (idx >= 0) {
+      val cur = list[idx]
+      cur.copy(
+        name = cur.name.ifBlank { order.customerName },
+        phone = cur.phone.ifBlank { order.phone },
+        email = cur.email.ifBlank { userEmail },
+        address = order.address.ifBlank { cur.address },
+        district = order.district.ifBlank { cur.district },
+        thana = order.thana.ifBlank { cur.thana },
+        deviceInfo = cur.deviceInfo.ifBlank { device },
+        updatedAtMs = nowMs
+      ).also { list[idx] = it }
+    } else {
+      ManagedUserProfile(
+        id = userUid.ifBlank { key },
+        name = order.customerName.ifBlank { "সম্মানিত গ্রাহক" },
+        phone = order.phone,
+        email = userEmail,
+        address = order.address,
+        district = order.district,
+        thana = order.thana,
+        deviceInfo = device,
+        updatedAtMs = nowMs
+      ).also { list.add(0, it) }
+    }
+    _managedUsers.value = list
+    saveManagedUsersToPrefs(list)
+    syncManagedUserToFirestore(updated, firestoreDocId = userUid.ifBlank { updated.id })
+  }
+
+  private fun updateManagedUserByKey(
+    userKey: String,
+    seedStatsProfile: ManagedUserProfile? = null,
+    transform: (ManagedUserProfile) -> ManagedUserProfile
+  ): ManagedUserProfile? {
+    val list = _managedUsers.value.toMutableList()
+    val idx = findManagedUserIndex(
+      userKey = userKey,
+      phone = seedStatsProfile?.phone.orEmpty(),
+      email = seedStatsProfile?.email.orEmpty(),
+      id = seedStatsProfile?.id.orEmpty()
+    )
+    val base = if (idx >= 0) {
+      list[idx]
+    } else {
+      seedStatsProfile?.copy(id = seedStatsProfile.id.ifBlank { userKey })
+        ?: ManagedUserProfile(id = userKey, name = "সম্মানিত গ্রাহক")
+    }
+    val updated = transform(base).copy(updatedAtMs = System.currentTimeMillis())
+    if (idx >= 0) {
+      list[idx] = updated
+    } else {
+      list.add(0, updated)
+    }
+    _managedUsers.value = list
+    saveManagedUsersToPrefs(list)
+    syncManagedUserToFirestore(updated)
+    return updated
+  }
+
+  fun toggleUserVerified(userKey: String, seedProfile: ManagedUserProfile? = null): Boolean {
+    val res = updateManagedUserByKey(userKey, seedProfile) { it.copy(isVerified = !it.isVerified) }
+    return res?.isVerified ?: false
+  }
+
+  fun updateManagedUserInfo(
+    userKey: String,
+    name: String,
+    phone: String,
+    email: String,
+    address: String,
+    district: String,
+    thana: String,
+    seedProfile: ManagedUserProfile? = null
+  ) {
+    updateManagedUserByKey(userKey, seedProfile) { cur ->
+      cur.copy(
+        name = name.trim().ifBlank { cur.name },
+        phone = phone.trim(),
+        email = email.trim(),
+        address = address.trim(),
+        district = district.trim(),
+        thana = thana.trim()
+      )
+    }
+  }
+
+  fun blockManagedUser(userKey: String, reason: String, seedProfile: ManagedUserProfile? = null) {
+    val cleanReason = reason.trim().ifBlank { "অ্যাডমিন কর্তৃক ব্লক করা হয়েছে" }
+    updateManagedUserByKey(userKey, seedProfile) { cur ->
+      cur.copy(
+        accountStatus = "blocked",
+        blockReason = cleanReason,
+        blockedAtMs = System.currentTimeMillis()
+      )
+    }
+  }
+
+  fun unblockManagedUser(userKey: String, seedProfile: ManagedUserProfile? = null) {
+    updateManagedUserByKey(userKey, seedProfile) { cur ->
+      cur.copy(
+        accountStatus = "active",
+        blockReason = "",
+        blockedAtMs = 0L
+      )
+    }
+  }
+
+  fun unlockUserLogin(userKey: String, seedProfile: ManagedUserProfile? = null) {
+    updateManagedUserByKey(userKey, seedProfile) { cur ->
+      cur.copy(
+        loginLocked = false,
+        loginIssueNote = "",
+        failedLoginAttempts = 0,
+        accountStatus = "active",
+        blockReason = ""
+      )
+    }
+  }
+
+  fun adminResetUserPassword(userKey: String, newTempPass: String, seedProfile: ManagedUserProfile? = null): String {
+    val cleanPass = newTempPass.trim().ifBlank {
+      "SJG-${Random.nextInt(1000, 9999)}"
+    }
+    updateManagedUserByKey(userKey, seedProfile) { cur ->
+      cur.copy(
+        password = cleanPass,
+        tempPassword = cleanPass,
+        loginLocked = false,
+        failedLoginAttempts = 0,
+        loginIssueNote = ""
+      )
+    }
+    return cleanPass
+  }
+
+  fun customerChangePassword(
+    userKey: String,
+    currentPass: String,
+    newPass: String,
+    seedProfile: ManagedUserProfile? = null
+  ): Pair<Boolean, String> {
+    if (newPass.trim().length < 4) {
+      return false to "নতুন পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!"
+    }
+    val idx = findManagedUserIndex(
+      userKey = userKey,
+      phone = seedProfile?.phone.orEmpty(),
+      email = seedProfile?.email.orEmpty(),
+      id = seedProfile?.id.orEmpty()
+    )
+    val existing = if (idx >= 0) _managedUsers.value[idx] else seedProfile
+    val savedPass = existing?.password.orEmpty()
+    if (savedPass.isNotBlank() && currentPass.trim() != savedPass) {
+      return false to "বর্তমান পাসওয়ার্ড সঠিক নয়!"
+    }
+    updateManagedUserByKey(userKey, seedProfile) { cur ->
+      cur.copy(
+        password = newPass.trim(),
+        tempPassword = "",
+        loginLocked = false,
+        failedLoginAttempts = 0
+      )
+    }
+    return true to "✅ আপনার পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!"
+  }
+
+  fun adjustUserWallet(
+    userKey: String,
+    type: String,
+    amount: Int,
+    note: String = "",
+    orderId: String = "",
+    seedProfile: ManagedUserProfile? = null
+  ): Int {
+    val amt = kotlin.math.abs(amount)
+    if (amt <= 0) return 0
+    val updated = updateManagedUserByKey(userKey, seedProfile) { cur ->
+      val nextBal = if (type == "debit") {
+        (cur.walletBalance - amt).coerceAtLeast(0)
+      } else {
+        cur.walletBalance + amt
+      }
+      val tx = WalletTransaction(
+        id = "wtx-${System.currentTimeMillis()}-${Random.nextInt(100, 999)}",
+        type = type,
+        amount = amt,
+        note = note.trim().ifBlank {
+          when (type) {
+            "debit" -> "Wallet থেকে কর্তন"
+            "refund" -> "রিফান্ড Wallet-এ জমা"
+            else -> "অ্যাডমিন কর্তৃক Wallet যোগ"
+          }
+        },
+        orderId = orderId,
+        timestampMs = System.currentTimeMillis()
+      )
+      cur.copy(
+        walletBalance = nextBal,
+        walletHistory = (listOf(tx) + cur.walletHistory).take(80)
+      )
+    }
+    return updated?.walletBalance ?: 0
+  }
+
+  private fun mergeRemoteManagedUsers(remoteUsers: List<ManagedUserProfile>) {
+    val list = _managedUsers.value.toMutableList()
+    remoteUsers.forEach { remote ->
+      val key = ManagedUserHelper.resolveLookupKey(remote.phone, remote.email, remote.id)
+      val idx = findManagedUserIndex(key, remote.phone, remote.email, remote.id)
+      if (idx >= 0) {
+        val cur = list[idx]
+        list[idx] = if (remote.updatedAtMs >= cur.updatedAtMs) {
+          remote.copy(
+            walletHistory = (remote.walletHistory + cur.walletHistory)
+              .distinctBy { it.id.ifBlank { "${it.timestampMs}_${it.amount}_${it.type}" } }
+              .sortedByDescending { it.timestampMs }
+              .take(80)
+          )
+        } else {
+          cur
+        }
+      } else {
+        list.add(remote)
+      }
+    }
+    _managedUsers.value = list
+    saveManagedUsersToPrefs(list)
+  }
+
+  private fun parseManagedUserDoc(doc: DocumentSnapshot): ManagedUserProfile? {
+    return try {
+      val historyRaw = (doc.get("walletHistory") as? List<*>)?.mapNotNull { entry ->
+        val m = entry as? Map<*, *> ?: return@mapNotNull null
+        WalletTransaction(
+          id = m["id"]?.toString().orEmpty(),
+          type = m["type"]?.toString().orEmpty().ifBlank { "credit" },
+          amount = (m["amount"] as? Number)?.toInt() ?: 0,
+          note = m["note"]?.toString().orEmpty(),
+          orderId = m["orderId"]?.toString().orEmpty(),
+          timestampMs = (m["timestampMs"] as? Number)?.toLong() ?: 0L
+        )
+      } ?: emptyList()
+
+      ManagedUserProfile(
+        id = doc.getString("id") ?: doc.getString("userId") ?: doc.id,
+        name = doc.getString("name") ?: "",
+        phone = doc.getString("phone") ?: "",
+        email = doc.getString("email") ?: "",
+        address = doc.getString("address") ?: "",
+        district = doc.getString("district") ?: "",
+        thana = doc.getString("thana") ?: "",
+        isVerified = doc.getBoolean("isVerified") ?: false,
+        accountStatus = doc.getString("accountStatus") ?: "active",
+        blockReason = doc.getString("blockReason") ?: "",
+        blockedAtMs = doc.getLong("blockedAtMs") ?: 0L,
+        loginLocked = doc.getBoolean("loginLocked") ?: false,
+        loginIssueNote = doc.getString("loginIssueNote") ?: "",
+        failedLoginAttempts = (doc.getLong("failedLoginAttempts") ?: 0L).toInt(),
+        lastLoginAtMs = doc.getLong("lastLoginAtMs") ?: 0L,
+        deviceInfo = doc.getString("deviceInfo") ?: "",
+        password = doc.getString("password") ?: "",
+        tempPassword = doc.getString("tempPassword") ?: "",
+        walletBalance = (doc.getLong("walletBalance") ?: 0L).toInt(),
+        walletHistory = historyRaw,
+        updatedAtMs = doc.getTimestamp("updatedAt")?.toDate()?.time
+          ?: doc.getLong("updatedAtMs")
+          ?: 0L
+      )
+    } catch (_: Exception) {
+      null
+    }
+  }
+
+  private fun syncManagedUserToFirestore(user: ManagedUserProfile, firestoreDocId: String = "") {
+    val db = firestore ?: return
+    val docId = firestoreDocId.ifBlank {
+      user.id.ifBlank {
+        ManagedUserHelper.resolveLookupKey(user.phone, user.email, user.id)
+      }
+    }.replace("/", "_").replace(".", "_")
+    if (docId.isBlank()) return
+
+    val historyMaps = user.walletHistory.take(50).map { tx ->
+      mapOf(
+        "id" to tx.id,
+        "type" to tx.type,
+        "amount" to tx.amount,
+        "note" to tx.note,
+        "orderId" to tx.orderId,
+        "timestampMs" to tx.timestampMs
+      )
+    }
+
+    val payload = mapOf(
+      "id" to user.id,
+      "name" to user.name,
+      "phone" to user.phone,
+      "email" to user.email,
+      "address" to user.address,
+      "district" to user.district,
+      "thana" to user.thana,
+      "isVerified" to user.isVerified,
+      "accountStatus" to user.accountStatus,
+      "blockReason" to user.blockReason,
+      "blockedAtMs" to user.blockedAtMs,
+      "loginLocked" to user.loginLocked,
+      "loginIssueNote" to user.loginIssueNote,
+      "failedLoginAttempts" to user.failedLoginAttempts,
+      "lastLoginAtMs" to user.lastLoginAtMs,
+      "deviceInfo" to user.deviceInfo,
+      "password" to user.password,
+      "tempPassword" to user.tempPassword,
+      "walletBalance" to user.walletBalance,
+      "walletHistory" to historyMaps,
+      "updatedAtMs" to user.updatedAtMs,
+      "updatedAt" to FieldValue.serverTimestamp()
+    )
+    try {
+      db.collection("customers").document(docId)
+        .set(payload, SetOptions.merge())
+        .addOnFailureListener { e ->
+          handleFirestoreError(e, OperationType.UPDATE, "customers/$docId")
+        }
+    } catch (_: Exception) {
+    }
+  }
+
+  private fun loadManagedUsersFromPrefs(): List<ManagedUserProfile> {
+    val raw = prefs.getString("sajgoj_managed_users", null) ?: return emptyList()
+    return try {
+      val arr = JSONArray(raw)
+      val list = mutableListOf<ManagedUserProfile>()
+      for (i in 0 until arr.length()) {
+        val o = arr.getJSONObject(i)
+        val histArr = o.optJSONArray("walletHistory") ?: JSONArray()
+        val history = mutableListOf<WalletTransaction>()
+        for (j in 0 until histArr.length()) {
+          val ho = histArr.getJSONObject(j)
+          history.add(
+            WalletTransaction(
+              id = ho.optString("id"),
+              type = ho.optString("type", "credit"),
+              amount = ho.optInt("amount", 0),
+              note = ho.optString("note"),
+              orderId = ho.optString("orderId"),
+              timestampMs = ho.optLong("timestampMs", 0L)
+            )
+          )
+        }
+        list.add(
+          ManagedUserProfile(
+            id = o.optString("id"),
+            name = o.optString("name"),
+            phone = o.optString("phone"),
+            email = o.optString("email"),
+            address = o.optString("address"),
+            district = o.optString("district"),
+            thana = o.optString("thana"),
+            isVerified = o.optBoolean("isVerified", false),
+            accountStatus = o.optString("accountStatus", "active"),
+            blockReason = o.optString("blockReason"),
+            blockedAtMs = o.optLong("blockedAtMs", 0L),
+            loginLocked = o.optBoolean("loginLocked", false),
+            loginIssueNote = o.optString("loginIssueNote"),
+            failedLoginAttempts = o.optInt("failedLoginAttempts", 0),
+            lastLoginAtMs = o.optLong("lastLoginAtMs", 0L),
+            deviceInfo = o.optString("deviceInfo"),
+            password = o.optString("password"),
+            tempPassword = o.optString("tempPassword"),
+            walletBalance = o.optInt("walletBalance", 0),
+            walletHistory = history,
+            updatedAtMs = o.optLong("updatedAtMs", 0L)
+          )
+        )
+      }
+      list
+    } catch (_: Exception) {
+      emptyList()
+    }
+  }
+
+  private fun saveManagedUsersToPrefs(list: List<ManagedUserProfile>) {
+    val arr = JSONArray()
+    list.take(400).forEach { u ->
+      val histArr = JSONArray()
+      u.walletHistory.take(50).forEach { tx ->
+        histArr.put(
+          JSONObject().apply {
+            put("id", tx.id)
+            put("type", tx.type)
+            put("amount", tx.amount)
+            put("note", tx.note)
+            put("orderId", tx.orderId)
+            put("timestampMs", tx.timestampMs)
+          }
+        )
+      }
+      arr.put(
+        JSONObject().apply {
+          put("id", u.id)
+          put("name", u.name)
+          put("phone", u.phone)
+          put("email", u.email)
+          put("address", u.address)
+          put("district", u.district)
+          put("thana", u.thana)
+          put("isVerified", u.isVerified)
+          put("accountStatus", u.accountStatus)
+          put("blockReason", u.blockReason)
+          put("blockedAtMs", u.blockedAtMs)
+          put("loginLocked", u.loginLocked)
+          put("loginIssueNote", u.loginIssueNote)
+          put("failedLoginAttempts", u.failedLoginAttempts)
+          put("lastLoginAtMs", u.lastLoginAtMs)
+          put("deviceInfo", u.deviceInfo)
+          put("password", u.password)
+          put("tempPassword", u.tempPassword)
+          put("walletBalance", u.walletBalance)
+          put("walletHistory", histArr)
+          put("updatedAtMs", u.updatedAtMs)
+        }
+      )
+    }
+    prefs.edit().putString("sajgoj_managed_users", arr.toString()).apply()
   }
 }
 

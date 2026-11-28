@@ -392,7 +392,9 @@ data class Order(
   val landmark: String = "",
   val addressCategory: String = "Home", // "Home", "Office"
   val defaultShippingAddress: Boolean = false,
-  val createdAt: Long = 0L
+  val createdAt: Long = 0L,
+  val walletPaidAmount: Int = 0,
+  val walletRefunded: Boolean = false
 )
 
 data class Coupon(

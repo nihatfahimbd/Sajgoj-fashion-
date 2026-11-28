@@ -178,6 +178,8 @@ class MainActivity : ComponentActivity() {
         val orderNotifications by viewModel.orderNotifications.collectAsStateWithLifecycle()
         val savedAddresses by viewModel.savedAddresses.collectAsStateWithLifecycle()
         val customerLoyaltyStatus by viewModel.customerLoyaltyStatus.collectAsStateWithLifecycle()
+        val derivedManagedUsers by viewModel.derivedManagedUsers.collectAsStateWithLifecycle()
+        val currentUserManagedProfile by viewModel.currentUserManagedProfile.collectAsStateWithLifecycle()
         val orderTrackingSyncState by viewModel.orderTrackingSyncState.collectAsStateWithLifecycle()
         val unreadOrderNotificationCount by viewModel.unreadOrderNotificationCount.collectAsStateWithLifecycle()
         val activeOrderBannerAlert by viewModel.activeOrderBannerAlert.collectAsStateWithLifecycle()
@@ -645,7 +647,17 @@ class MainActivity : ComponentActivity() {
                     isSendingSupportReply = isSendingSupportChat,
                     onSelectSupportThread = { viewModel.selectAdminSupportThread(it) },
                     onSendSupportReply = { chatId, text -> viewModel.sendAdminSupportReply(chatId, text) },
-                    onToggleSupportThreadStatus = { chatId, status -> viewModel.toggleAdminSupportThreadStatus(chatId, status) }
+                    onToggleSupportThreadStatus = { chatId, status -> viewModel.toggleAdminSupportThreadStatus(chatId, status) },
+                    managedUsers = derivedManagedUsers,
+                    onToggleUserVerified = { key, seed -> viewModel.toggleUserVerified(key, seed) },
+                    onUpdateManagedUserInfo = { key, name, phone, email, address, dist, th, seed ->
+                      viewModel.updateManagedUserInfo(key, name, phone, email, address, dist, th, seed)
+                    },
+                    onBlockManagedUser = { key, reason, seed -> viewModel.blockManagedUser(key, reason, seed) },
+                    onUnblockManagedUser = { key, seed -> viewModel.unblockManagedUser(key, seed) },
+                    onUnlockUserLogin = { key, seed -> viewModel.unlockUserLogin(key, seed) },
+                    onAdminResetUserPassword = { key, tempPass, seed -> viewModel.adminResetUserPassword(key, tempPass, seed) },
+                    onAdjustUserWallet = { key, type, amt, note, seed -> viewModel.adjustUserWallet(key, type, amt, note, seed) }
                   )
                 }
 
@@ -677,7 +689,9 @@ class MainActivity : ComponentActivity() {
                       hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
                       showNotificationsDialog = true
                     },
-                    onOpenLiveSupport = { showLiveSupportDialog = true }
+                    onOpenLiveSupport = { showLiveSupportDialog = true },
+                    managedProfile = currentUserManagedProfile,
+                    onChangePassword = { curPass, newPass -> viewModel.customerChangePassword(curPass, newPass) }
                   )
                 }
 
@@ -950,7 +964,25 @@ class MainActivity : ComponentActivity() {
                 defaultShippingAddress = isDefault
               )
             },
-            onShowToast = { viewModel.emitToast(it) }
+            onShowToast = { viewModel.emitToast(it) },
+            walletBalance = currentUserManagedProfile?.walletBalance ?: 0,
+            onPlaceOrderWithWallet = { name, phone, district, thana, address, payment, coupon, orderType, deliveryType, landmark, category, isDefault, walletUsed ->
+              viewModel.placeOrder(
+                customerName = name,
+                phone = phone,
+                district = district,
+                thana = thana,
+                address = address,
+                paymentMethod = payment,
+                appliedCoupon = coupon,
+                orderType = orderType,
+                deliveryType = deliveryType,
+                landmark = landmark,
+                addressCategory = category,
+                defaultShippingAddress = isDefault,
+                walletAmountToUse = walletUsed
+              )
+            }
           )
 
           if (showAccountDialog) {

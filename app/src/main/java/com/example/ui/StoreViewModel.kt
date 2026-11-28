@@ -18,6 +18,9 @@ import com.example.data.model.CustomerLoyaltyCalculator
 import com.example.data.model.CustomerLoyaltyStatus
 import com.example.data.model.HomeSectionConfig
 import com.example.data.model.InventorySyncEvent
+import com.example.data.model.ManagedUserHelper
+import com.example.data.model.ManagedUserProfile
+import com.example.data.model.ManagedUserWithStats
 import com.example.data.model.Order
 import com.example.data.model.OrderItem
 import com.example.data.model.OrderStatusNotification
@@ -121,6 +124,7 @@ enum class AdminTab(val title: String, val icon: String) {
   PAGE_CONFIG("Page Configuration", "🛠️"),
   PRODUCTS("প্রোডাক্ট", "👗"),
   ORDERS("অর্ডার", "📦"),
+  USER_MANAGEMENT("User Management", "🛡️"),
   SUPPORT_CHAT("সাপোর্ট চ্যাট", "💬"),
   SHIPPING_INFO("Shipping info", "🚚"),
   MARKETING("মার্কেটিং", "🎁"),
@@ -154,6 +158,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   val smsQueue: StateFlow<List<SmsQueueItem>> = repository.smsQueue
   val orderNotifications: StateFlow<List<OrderStatusNotification>> = repository.orderNotifications
   val savedAddresses: StateFlow<List<SavedAddress>> = repository.savedAddresses
+  val managedUsers: StateFlow<List<ManagedUserProfile>> = repository.managedUsers
   val orderTrackingSyncState: StateFlow<OrderTrackingSyncState> = repository.orderTrackingSyncState
   val unreadOrderNotificationCount: StateFlow<Int> = repository.orderNotifications
     .map { list -> list.count { !it.read } }
@@ -225,6 +230,31 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       SharingStarted.WhileSubscribed(5000),
       CustomerLoyaltyCalculator.calculate(emptyList(), null)
     )
+
+  val derivedManagedUsers: StateFlow<List<ManagedUserWithStats>> =
+    combine(managedUsers, orders, returns, _authUser) { mUsers, ordList, retList, user ->
+      ManagedUserHelper.mergeUsersWithStats(
+        managedUsers = mUsers,
+        orders = ordList,
+        returns = retList,
+        authUser = user
+      )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  val currentUserManagedProfile: StateFlow<ManagedUserProfile?> =
+    combine(derivedManagedUsers, _authUser, savedAddresses) { merged, user, addrs ->
+      val userEmail = user?.email.orEmpty().trim()
+      val userUid = user?.uid.orEmpty().trim()
+      val defPhone = addrs.firstOrNull { it.isDefault }?.phone
+        ?: addrs.firstOrNull()?.phone.orEmpty()
+      val normDefPhone = ManagedUserHelper.normalizePhone(defPhone)
+      merged.firstOrNull { item ->
+        val u = item.profile
+        (userEmail.isNotBlank() && u.email.equals(userEmail, ignoreCase = true)) ||
+          (userUid.isNotBlank() && u.id == userUid) ||
+          (normDefPhone.length >= 6 && ManagedUserHelper.normalizePhone(u.phone) == normDefPhone)
+      }?.profile
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
   private val _isAuthBusy = MutableStateFlow(false)
   val isAuthBusy: StateFlow<Boolean> = _isAuthBusy.asStateFlow()
@@ -705,6 +735,27 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       _isAuthBusy.value = false
       result.onSuccess { user ->
         val summary = GoogleAuthHelper.toSummary(user)
+        val matched = derivedManagedUsers.value.firstOrNull { item ->
+          val u = item.profile
+          (summary?.email?.isNotBlank() == true && u.email.equals(summary.email, ignoreCase = true)) ||
+            (summary?.uid?.isNotBlank() == true && u.id == summary.uid)
+        }?.profile
+        if (summary?.isAdmin != true && matched != null && matched.accountStatus == "blocked") {
+          withContext(NonCancellable) {
+            GoogleAuthHelper.signOut(activityContext)
+          }
+          _authUser.value = null
+          emitToast("🚫 অ্যাকাউন্ট ব্লক করা আছে! কারণ: ${matched.blockReason.ifBlank { "অ্যাডমিনের সাথে যোগাযোগ করুন।" }}")
+          return@onSuccess
+        }
+        if (summary?.isAdmin != true && matched != null && matched.loginLocked) {
+          withContext(NonCancellable) {
+            GoogleAuthHelper.signOut(activityContext)
+          }
+          _authUser.value = null
+          emitToast("🔐 আপনার লগইন লক করা হয়েছে! অ্যাডমিন আনলক করলে প্রবেশ করতে পারবেন।")
+          return@onSuccess
+        }
         _authUser.value = summary
         repository.onAuthSessionChanged(user)
         if (summary?.isAdmin == true) {
@@ -891,7 +942,8 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     deliveryType: String = "Standard",
     landmark: String = "",
     addressCategory: String = "Home",
-    defaultShippingAddress: Boolean = false
+    defaultShippingAddress: Boolean = false,
+    walletAmountToUse: Int = 0
   ): Order? {
     val order = repository.placeOrder(
       customerName = customerName,
@@ -905,12 +957,14 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
       deliveryType = deliveryType,
       landmark = landmark,
       addressCategory = addressCategory,
-      defaultShippingAddress = defaultShippingAddress
+      defaultShippingAddress = defaultShippingAddress,
+      walletAmountToUse = walletAmountToUse
     )
     if (order != null) {
       _isCheckoutOpen.value = false
       _isCartOpen.value = false
-      emitToast("ধন্যবাদ ${order.customerName}! আপনার অর্ডার #${order.id} নিশ্চিত হয়েছে 🎉")
+      val walletInfo = if (order.walletPaidAmount > 0) " (Wallet ৳${order.walletPaidAmount} ব্যবহৃত)" else ""
+      emitToast("ধন্যবাদ ${order.customerName}! আপনার অর্ডার #${order.id} নিশ্চিত হয়েছে$walletInfo 🎉")
     } else {
       emitToast("অর্ডার সম্পন্ন করা সম্ভব হয়নি। কার্ট খালি!")
     }
@@ -925,7 +979,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun updateOrderStatus(orderId: String, status: String) {
     repository.updateOrderStatus(orderId, status)
     if (status == "Cancelled") {
-      emitToast("অর্ডার $orderId বাতিল ও স্টক অটোমেটিক স্টোরফ্রন্ট + POS-এ রিস্টক হয়েছে! 🔄")
+      emitToast("অর্ডার $orderId বাতিল ও স্টক অটোমেটিক স্টোরফ্রন্ট + POS-এ রিস্টক ও প্রিপেইড/Wallet রিফান্ড সম্পন্ন! 🔄")
     } else {
       emitToast("অর্ডার $orderId এর স্ট্যাটাস \"$status\" এ আপডেট করা হয়েছে।")
     }
@@ -934,6 +988,100 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
   fun deleteOrder(orderId: String) {
     repository.deleteOrder(orderId)
     emitToast("🗑️ অর্ডার #$orderId স্থায়ীভাবে মুছে ফেলা হয়েছে।")
+  }
+
+  // User Management & Wallet Actions
+  fun toggleUserVerified(userKey: String, seedProfile: ManagedUserProfile? = null) {
+    val nowVerified = repository.toggleUserVerified(userKey, seedProfile)
+    emitToast(if (nowVerified) "✓ ইউজার ভেরিফাইড (Blue Tick) করা হয়েছে!" else "ইউজারের ভেরিফাইড টিকমার্ক সরানো হয়েছে।")
+  }
+
+  fun updateManagedUserInfo(
+    userKey: String,
+    name: String,
+    phone: String,
+    email: String,
+    address: String,
+    district: String,
+    thana: String,
+    seedProfile: ManagedUserProfile? = null
+  ) {
+    repository.updateManagedUserInfo(
+      userKey = userKey,
+      name = name,
+      phone = phone,
+      email = email,
+      address = address,
+      district = district,
+      thana = thana,
+      seedProfile = seedProfile
+    )
+    emitToast("✅ ইউজারের তথ্য সফলভাবে আপডেট করা হয়েছে!")
+  }
+
+  fun blockManagedUser(userKey: String, reason: String, seedProfile: ManagedUserProfile? = null) {
+    repository.blockManagedUser(userKey, reason, seedProfile)
+    emitToast("🚫 ইউজারকে ব্লক করা হয়েছে (${reason.ifBlank { "অ্যাডমিন ব্লক" }})।")
+  }
+
+  fun unblockManagedUser(userKey: String, seedProfile: ManagedUserProfile? = null) {
+    repository.unblockManagedUser(userKey, seedProfile)
+    emitToast("✅ ইউজার আনব্লক ও Active করা হয়েছে!")
+  }
+
+  fun unlockUserLogin(userKey: String, seedProfile: ManagedUserProfile? = null) {
+    repository.unlockUserLogin(userKey, seedProfile)
+    emitToast("🔓 ইউজারের লগইন সমস্যা সমাধান ও অ্যাকাউন্ট আনলক করা হয়েছে!")
+  }
+
+  fun adminResetUserPassword(userKey: String, newTempPass: String, seedProfile: ManagedUserProfile? = null): String {
+    val temp = repository.adminResetUserPassword(userKey, newTempPass, seedProfile)
+    emitToast("🔑 নতুন Temporary Password সেট হয়েছে: $temp")
+    return temp
+  }
+
+  fun customerChangePassword(currentPass: String, newPass: String) {
+    val auth = _authUser.value
+    val existing = currentUserManagedProfile.value
+    val key = ManagedUserHelper.resolveLookupKey(
+      phone = existing?.phone.orEmpty(),
+      email = auth?.email.orEmpty().ifBlank { existing?.email.orEmpty() },
+      fallbackId = auth?.uid.orEmpty().ifBlank { existing?.id.orEmpty() }
+    )
+    val (_, msg) = repository.customerChangePassword(
+      userKey = key,
+      currentPass = currentPass,
+      newPass = newPass,
+      seedProfile = existing ?: ManagedUserProfile(
+        id = auth?.uid.orEmpty(),
+        name = auth?.displayName.orEmpty(),
+        email = auth?.email.orEmpty()
+      )
+    )
+    emitToast(msg)
+  }
+
+  fun adjustUserWallet(
+    userKey: String,
+    type: String,
+    amount: Int,
+    note: String,
+    seedProfile: ManagedUserProfile? = null
+  ) {
+    val nextBal = repository.adjustUserWallet(
+      userKey = userKey,
+      type = type,
+      amount = amount,
+      note = note,
+      seedProfile = seedProfile
+    )
+    emitToast(
+      if (type == "debit") {
+        "💸 Wallet থেকে ৳$amount বাদ দেওয়া হয়েছে (বর্তমান ব্যালেন্স: ৳$nextBal)"
+      } else {
+        "💰 Wallet-এ ৳$amount যোগ করা হয়েছে (বর্তমান ব্যালেন্স: ৳$nextBal)"
+      }
+    )
   }
 
   fun recordPosSale(
