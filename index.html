@@ -3046,9 +3046,6 @@
                   📦 আমার সকল অর্ডার
                 </button>
               )}
-              <span className="px-3 py-1.5 rounded-full bg-white/80 border border-white text-[11px] font-black text-[#000000]">
-                #/order-tracking
-              </span>
             </div>
           </div>
 
@@ -3410,6 +3407,391 @@
             </div>
           )}
         </main>
+      );
+    }
+
+    // =========================================================
+    // CLEAN STANDALONE FOOTER HUB PAGES (ZERO CLUTTER / ZERO SUGGESTIONS)
+    // =========================================================
+    const FOOTER_HUB_TOPICS_META = [
+      { key: "about", group: "INFORMATION", label: "About us", href: "/about-us" },
+      { key: "contact", group: "INFORMATION", label: "Contact us", href: "/contact-us" },
+      { key: "terms", group: "INFORMATION", label: "Terms & Conditions", href: "/terms-and-conditions" },
+      { key: "privacy", group: "INFORMATION", label: "Privacy Policy", href: "/privacy-policy" },
+      { key: "data_deletion", group: "INFORMATION", label: "User Data Deletion", href: "/data-deletion" },
+      { key: "tracking", group: "SUPPORT", label: "Order Tracking", href: "/order-tracking" },
+      { key: "payment", group: "SUPPORT", label: "Payment", href: "/payment-policy" },
+      { key: "shipping", group: "SUPPORT", label: "Shipping", href: "/shipping-policy" },
+      { key: "faq", group: "SUPPORT", label: "FAQ", href: "/faq" },
+      { key: "refund", group: "CONSUMER POLICY", label: "Refund Policy", href: "/refund-policy" },
+      { key: "exchange", group: "CONSUMER POLICY", label: "Exchange Policy", href: "/exchange-policy" },
+      { key: "cancellation", group: "CONSUMER POLICY", label: "Cancellation", href: "/cancellation-policy" },
+      { key: "cookie", group: "CONSUMER POLICY", label: "Cookie Policy", href: "/cookie-policy" },
+      { key: "discount", group: "CONSUMER POLICY", label: "Extra Discount", href: "/offers" }
+    ];
+
+    function getDefaultFooterHubContent(topicKey, cfg = {}) {
+      const storeName = cfg?.storeName || "SAJGOJ FASHION";
+      const phone = cfg?.phone || "+8809697489330";
+      const whatsapp = cfg?.whatsapp || "+8801805119888";
+      const email = cfg?.email || "contact@sajgoj.com";
+      const address = cfg?.address || "অমি স্মৃতি শিশু পার্ক, ফরিদগঞ্জ, চাঁদপুর, বাংলাদেশ";
+      const returnDays = cfg?.returnPolicyDays || 7;
+      const f = cfg?.footer || {};
+      const paymentNames = [
+        f.bkash !== false ? "bKash" : null,
+        f.nagad !== false ? "Nagad" : null,
+        f.rocket !== false ? "Rocket" : null,
+        f.cod !== false ? "Cash on Delivery" : null,
+        f.visa !== false ? "Visa / Mastercard" : null
+      ].filter(Boolean).join(", ") || "Cash on Delivery";
+
+      switch (topicKey) {
+        case "about":
+          return {
+            title: "About Us — আমাদের সম্পর্কে",
+            subtitle: `${storeName} • অফিশিয়াল স্টোর প্রোফাইল`,
+            body: `${storeName} আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি, জামদানি, কাতান ও রাজকীয় জুয়েলারি কালেকশনের একটি বিশ্বস্ত প্রতিষ্ঠান।\n\n• ১০০% খাঁটি ও মানসম্মত পণ্য সরাসরি অভিজ্ঞ কারিগরদের থেকে সংগৃহীত।\n• সারা বাংলাদেশের ৬৪ জেলায় নির্ভরযোগ্য হোম ডেলিভারি ও ক্যাশ অন ডেলিভারি সুবিধা।\n• ${returnDays} দিনের সহজ রিটার্ন ও এক্সচেঞ্জ নীতিমালা।\n• শোরুম ঠিকানা: ${address} | হটলাইন: ${phone}`
+          };
+        case "contact":
+          return {
+            title: "Contact Us — যোগাযোগ করুন",
+            subtitle: "সরাসরি হটলাইন, WhatsApp, ইমেইল ও শোরুম ঠিকানা",
+            body: `📞 হটলাইন: ${phone}\n💬 WhatsApp: ${whatsapp}\n✉️ অফিশিয়াল ইমেইল: ${email}\n📍 শোরুম: ${address}\n🕒 সার্ভিস সময়: প্রতিদিন সকাল ৯:০০ – রাত ১১:০০`
+          };
+        case "terms":
+          return {
+            title: "Terms & Conditions — শর্তাবলী",
+            subtitle: `${storeName} ব্যবহার ও ক্রয়-বিক্রয়ের নিয়মাবলী`,
+            body: `১. শর্তাবলী গ্রহণ: ${storeName}-এর ওয়েবসাইট, মোবাইল অ্যাপ বা যেকোনো প্ল্যাটফর্ম ব্যবহার ও অর্ডার প্লেস করার মাধ্যমে আপনি এই শর্তাবলীতে সম্মত হচ্ছেন।\n\n২. পণ্যের বিবরণ ও মূল্য: সকল মূল্য বাংলাদেশি টাকায় (৳ BDT) প্রদর্শিত। স্ক্রিন ও স্টুডিও আলোর কারণে রঙের সামান্য তারতম্য হতে পারে।\n\n৩. অর্ডার কনফার্মেশন: অর্ডার নিশ্চিত করতে সঠিক নাম, সচল মোবাইল নম্বর ও সম্পূর্ণ ডেলিভারি ঠিকানা দেওয়া আবশ্যক। স্টক প্রাপ্যতা সাপেক্ষে অর্ডার ডেলিভারি করা হয় এবং সন্দেহজনক বা ভুয়া অর্ডার বাতিল করার অধিকার কর্তৃপক্ষ সংরক্ষণ করে।\n\n৪. ডেলিভারি ও রিটার্ন: প্রযোজ্য ক্ষেত্রে ${returnDays} দিনের রিটার্ন ও এক্সচেঞ্জ নীতিমালা অনুসরণ করা হবে।\n\n৫. মেধাস্বত্ব ও আইন: সাইটের সমস্ত লোগো, ছবি ও কনটেন্ট ${storeName}-এর সম্পত্তি এবং গণপ্রজাতন্ত্রী বাংলাদেশের প্রচলিত আইন দ্বারা পরিচালিত।`
+          };
+        case "privacy":
+          return {
+            title: "Privacy Policy — গোপনীয়তা নীতি",
+            subtitle: `আপনার ব্যক্তিগত তথ্যের সর্বোচ্চ সুরক্ষা • ${storeName}`,
+            body: `১. আমরা যে তথ্য সংগ্রহ করি: অর্ডার ডেলিভারি ও অ্যাকাউন্ট সেবার জন্য আপনার পূর্ণ নাম, মোবাইল নম্বর, ডেলিভারি ঠিকানা এবং ঐচ্ছিক ইমেইল সংগ্রহ করা হয়।\n\n২. সোশ্যাল ও অ্যাকাউন্ট লগইন: আপনি Google বা Facebook Login ব্যবহার করলে শুধুমাত্র প্রোফাইল নাম, ইমেইল এবং অ্যাকাউন্ট সিঙ্কের জন্য প্রয়োজনীয় মৌলিক তথ্য ব্যবহার করা হয়।\n\n৩. তথ্যের ব্যবহার ও সুরক্ষা: আপনার তথ্য শুধুমাত্র অর্ডার প্রসেসিং, ইনভয়েস, কুরিয়ার ডেলিভারি (Steadfast / Pathao / RedX) ও কাস্টমার সাপোর্টের জন্য ব্যবহৃত হয়। ক্রেতার ব্যক্তিগত তথ্য তৃতীয় কোনো মার্কেটিং সংস্থার কাছে বিক্রি বা ভাড়া দেওয়া হয় না।\n\n৪. পেমেন্ট নিরাপত্তা: আমরা কখনোই আপনার কার্ড পিন, বিকাশ/নগদ পিন বা OTP সংরক্ষণ করি না।\n\n৫. আপনার অধিকার: আপনি যেকোনো সময় আপনার ব্যক্তিগত তথ্য সংশোধন বা স্থায়ীভাবে মুছে ফেলার অনুরোধ করতে পারেন (${email})।`
+          };
+        case "data_deletion":
+          return {
+            title: "User Data Deletion — ডেটা মুছে ফেলার নির্দেশনা",
+            subtitle: "Facebook Login ও গ্রাহক অ্যাকাউন্ট ডেটা ডিলিশন নীতিমালা",
+            body: `আপনি যদি Facebook Login, Google Sign-In অথবা মোবাইল নম্বর দিয়ে ${storeName}-এ লগইন বা অর্ডার করে থাকেন, তবে নিচের যেকোনো পদ্ধতিতে আপনার সমস্ত ব্যক্তিগত তথ্য স্থায়ীভাবে মুছে ফেলতে পারেন:\n\n• পদ্ধতি ১: নিচের ফর্মে আপনার অ্যাকাউন্টের ইমেইল বা ফোন নম্বর লিখে রিকোয়েস্ট সাবমিট করুন।\n• পদ্ধতি ২: Facebook Settings → Apps and Websites → ${storeName} → Remove করে "Send Data Deletion Request" চাপুন।\n• পদ্ধতি ৩: সরাসরি ইমেইল করুন ${email} ঠিকানায় অথবা WhatsApp করুন ${whatsapp} নম্বরে। ৪৮ ঘণ্টার মধ্যে আপনার তথ্য সম্পূর্ণ মুছে ফেলা হবে।`
+          };
+        case "tracking":
+          return {
+            title: "Order Tracking — অর্ডার ট্র্যাকিং",
+            subtitle: "অর্ডার ID বা মোবাইল নম্বর দিয়ে পার্সেল যাচাই করুন",
+            body: "আপনার অর্ডার ID, কুরিয়ার ট্র্যাকিং কোড অথবা মোবাইল নম্বর দিয়ে অর্ডারের বর্তমান অবস্থা তাৎক্ষণিকভাবে দেখে নিন।"
+          };
+        case "payment":
+          return {
+            title: "Payment Methods — পেমেন্ট তথ্য",
+            subtitle: "নিরাপদ ও সহজ মূল্য পরিশোধ ব্যবস্থা",
+            body: `সক্রিয় পেমেন্ট মাধ্যমসমূহ: ${paymentNames}।\n\n• Cash on Delivery (COD): সারা দেশে পণ্য হাতে পেয়ে ও যাচাই করে নগদ টাকা পরিশোধ করুন।\n• ডিজিটাল পেমেন্ট: bKash, Nagad, Rocket এবং Visa / Mastercard এর মাধ্যমে নিরাপদ পেমেন্ট সুবিধা।\n• নিরাপত্তা: আমরা কখনোই ফোনে আপনার পিন বা ওটিপি (OTP) চাই না।`
+          };
+        case "shipping":
+          return {
+            title: "Shipping & Delivery Policy — ডেলিভারি নীতিমালা",
+            subtitle: "সারা বাংলাদেশের ৬৪ জেলায় দ্রুততম হোম ডেলিভারি",
+            body: `🚚 চাঁদপুর জেলা: স্ট্যান্ডার্ড ডেলিভারি ৳৬০ (২৪–৪৮ ঘণ্টা) | এক্সপ্রেস ডেলিভারি ৳২০০\n📦 ঢাকা ও সারা বাংলাদেশ (৬৪ জেলা): স্ট্যান্ডার্ড হোম ডেলিভারি ৳১২০ (২–৪ কর্মদিবস)\n🎁 ফ্রি ডেলিভারি অফার: ২,০০০+ টাকার অর্ডারে সারা দেশে সম্পূর্ণ ফ্রি হোম ডেলিভারি!\n\nবিশ্বস্ত কুরিয়ার পার্টনার (Steadfast, Pathao, RedX)-এর মাধ্যমে নিরাপদে পার্সেল পৌঁছে দেওয়া হয়।`
+          };
+        case "faq":
+          return {
+            title: "FAQ — সাধারণ জিজ্ঞাসা",
+            subtitle: "ক্রেতাদের সর্বাধিক জিজ্ঞাসিত প্রশ্ন ও উত্তর",
+            body: `১. ডেলিভারি ম্যানের সামনে কি প্রোডাক্ট চেক করা যাবে?\nউত্তর: হ্যাঁ, ডেলিভারি ম্যানের উপস্থিতিতে প্যাকেট যাচাই করে পেমেন্ট করার সুবিধা রয়েছে।\n\n২. ডেলিভারি পেতে কত দিন সময় লাগে?\nউত্তর: চাঁদপুর ও ঢাকার ভেতরে সাধারণত ১–২ দিন এবং সারা দেশে ২–৪ কর্মদিবস সময় লাগে।\n\n৩. পণ্যে সমস্যা থাকলে পরিবর্তন বা রিফান্ড পাওয়া যাবে?\nউত্তর: হ্যাঁ, ডেলিভারির ${returnDays} দিনের মধ্যে সহজ রিটার্ন ও এক্সচেঞ্জ সুবিধা রয়েছে।\n\n৪. জরুরি সহায়তার জন্য কীভাবে যোগাযোগ করবো?\nউত্তর: হটলাইন ${phone} বা WhatsApp ${whatsapp}-এ সরাসরি যোগাযোগ করুন।`
+          };
+        case "refund":
+          return {
+            title: "Return & Refund Policy — রিটার্ন ও রিফান্ড নীতিমালা",
+            subtitle: `${returnDays} দিনের সহজ রিটার্ন ও ১০০% রিফান্ড গ্যারান্টি`,
+            body: `• পণ্য ক্ষতিগ্রস্ত, ত্রুটিপূর্ণ বা ভুল হলে ডেলিভারি পাওয়ার ${returnDays} দিনের মধ্যে ১০০% রিফান্ড বা ফ্রি রিপ্লেসমেন্ট পাবেন।\n• পণ্য অব্যবহৃত, অক্ষত ট্যাগ ও মূল প্যাকেজিংসহ থাকতে হবে।\n• পার্সেল খোলার সময় একটি সংক্ষিপ্ত আনবক্সিং ভিডিও ধারণ করলে ক্লেইম দ্রুত নিষ্পত্তি হয়।\n• রিটার্ন যাচাইয়ের পর ২–৩ কর্মদিবসের মধ্যে bKash, Nagad, Rocket বা ব্যাংক অ্যাকাউন্টে অর্থ ফেরত দেওয়া হয়।`
+          };
+        case "exchange":
+          return {
+            title: "Exchange Policy — পণ্য পরিবর্তন নীতিমালা",
+            subtitle: `${returnDays} দিনের সহজ সাইজ ও কালার পরিবর্তন সুবিধা`,
+            body: `• ডেলিভারি পাওয়ার ${returnDays} দিনের মধ্যে সাইজ, কালার বা ডিজাইন পরিবর্তনের জন্য WhatsApp (${whatsapp}) বা হটলাইনে (${phone}) অর্ডার ID সহ যোগাযোগ করুন।\n• আমাদের ভুল বা ত্রুটিপূর্ণ পণ্যের ক্ষেত্রে এক্সচেঞ্জ ডেলিভারি চার্জ সম্পূর্ণ ফ্রি।\n• ক্রেতার নিজস্ব পছন্দে পরিবর্তনের ক্ষেত্রে শুধুমাত্র প্রযোজ্য কুরিয়ার চার্জ প্রযোজ্য হবে।`
+          };
+        case "cancellation":
+          return {
+            title: "Cancellation Policy — অর্ডার বাতিল নীতিমালা",
+            subtitle: "কখন ও কীভাবে অর্ডার বাতিল করা যাবে",
+            body: `• ডিসপ্যাচের আগে: কুরিয়ারে পার্সেল হ্যান্ডওভার করার আগে যেকোনো সময় বিনামূল্যে অর্ডার বাতিল করা যায়। অগ্রিম পেমেন্ট ২৪–৪৮ ঘণ্টার মধ্যে ফেরত দেওয়া হবে।\n• ডিসপ্যাচের পর: পার্সেল কুরিয়ারে প্রেরিত হয়ে গেলে বাতিল করতে দ্রুত হটলাইন (${phone}) বা WhatsApp (${whatsapp})-এ অর্ডার ID জানান।`
+          };
+        case "cookie":
+          return {
+            title: "Cookie Policy — কুকি নীতিমালা",
+            subtitle: "ব্রাউজার কুকি ও লোকাল স্টোরেজ ব্যবহারের তথ্য",
+            body: `• আপনার শপিং কার্ট, উইশলিস্ট ও ডেলিভারি ঠিকানা সংরক্ষণের জন্য শুধুমাত্র প্রয়োজনীয় কুকি ও ব্রাউজার স্টোরেজ ব্যবহৃত হয়।\n• অফলাইন ব্রাউজিং ও দ্রুত লোডিংয়ের জন্য PWA ক্যাশ ব্যবহৃত হয়।\n• আপনি যেকোনো সময় ব্রাউজার সেটিংস থেকে কুকি ও সাইট স্টোরেজ মুছে ফেলতে পারবেন।`
+          };
+        case "discount":
+          return {
+            title: "Extra Discount & Offers — বিশেষ ছাড় ও কুপন",
+            subtitle: "চলমান প্রমোশনাল কোড ও বিশেষ ডিসকাউন্ট",
+            body: "নিচের সক্রিয় কুপন কোডগুলো চেকআউটের সময় ব্যবহার করে বিশেষ ডিসকাউন্ট ও ফ্রি শিপিং উপভোগ করুন।"
+          };
+        default:
+          return {
+            title: storeName,
+            subtitle: cfg?.tagline || "নতুন সাজে সাজগোজ",
+            body: cfg?.footer?.about || ""
+          };
+      }
+    }
+
+    function getResolvedFooterHubContent(topicKey, hp = {}, cfg = {}) {
+      const def = getDefaultFooterHubContent(topicKey, cfg);
+      const ov = (hp?.footerPageContents && hp.footerPageContents[topicKey]) || {};
+      return {
+        title: (ov.title || "").trim() || def.title,
+        subtitle: (ov.subtitle || "").trim() || def.subtitle,
+        body: (ov.body || "").trim() || def.body
+      };
+    }
+
+    function CleanFooterInfoPageView({
+      topicKey,
+      hp = {},
+      config = {},
+      orders = [],
+      coupons = [],
+      onBackToHome = () => {},
+      notify = () => {}
+    }) {
+      const [deletionIdent, setDeletionIdent] = React.useState("");
+      const [deletionReason, setDeletionReason] = React.useState("");
+      const [deletionConfirmCode, setDeletionConfirmCode] = React.useState("");
+      const [trackingQuery, setTrackingQuery] = React.useState("");
+
+      const meta = FOOTER_HUB_TOPICS_META.find(t => t.key === topicKey) || { key: topicKey, group: "INFORMATION", label: "Store Info" };
+      const content = getResolvedFooterHubContent(topicKey, hp, config);
+
+      const pageBg = hp.footerPageBg || "#fffaf5";
+      const cardBg = hp.footerPageCardBg || "#ffffff";
+      const borderCol = hp.footerPageBorderColor || "#f3e2d0";
+      const headingCol = hp.footerPageHeadingColor || "#7a1c2b";
+      const textCol = hp.footerPageTextColor || "#2c1810";
+      const btnBg = hp.footerPageBtnBg || "#7a1c2b";
+      const btnText = hp.footerPageBtnText || "#ffffff";
+      const radiusPx = Math.max(0, Math.min(32, Number(hp.footerPageRadiusPx ?? 20)));
+
+      const waDigits = String(config?.whatsapp || config?.phone || "8801805119888").replace(/[^0-9]/g, "");
+      const mapUrl = config?.googleMapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config?.googleMapQuery || config?.address || "Faridganj, Chandpur, Bangladesh")}`;
+      const f = config?.footer || {};
+      const activeCoupons = (coupons || []).filter(c => c && c.active !== false && c.isActive !== false);
+      const q = trackingQuery.trim().toLowerCase();
+      const matchedOrders = q
+        ? (orders || []).filter(o =>
+            String(o.id || "").toLowerCase().includes(q) ||
+            String(o.phone || o.customerPhone || "").toLowerCase().includes(q) ||
+            String(o.trackingId || "").toLowerCase().includes(q)
+          )
+        : [];
+
+      const paragraphs = String(content.body || "")
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+      return (
+        <div className="min-h-screen w-full py-6 sm:py-10 px-4" style={{ background: pageBg, color: textCol }}>
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={onBackToHome}
+                className="px-4 py-2.5 text-xs sm:text-sm font-bold inline-flex items-center gap-2 shadow-sm cursor-pointer transition hover:opacity-90 active:scale-95"
+                style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 14)}px` }}
+              >
+                <span>←</span>
+                <span>হোমে ফিরুন</span>
+              </button>
+              <span className="text-xs font-black tracking-wide uppercase opacity-75" style={{ color: headingCol }}>
+                {config?.storeName || "SAJGOJ FASHION"}
+              </span>
+            </div>
+
+            <article
+              className="p-6 sm:p-8 shadow-lg space-y-4"
+              style={{
+                background: cardBg,
+                border: `1.5px solid ${borderCol}`,
+                borderRadius: `${radiusPx}px`,
+                color: textCol
+              }}
+            >
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-75" style={{ color: headingCol }}>
+                  {meta.group}
+                </p>
+                <h1 className="text-xl sm:text-2xl font-black leading-snug" style={{ color: headingCol }}>
+                  {content.title}
+                </h1>
+                {content.subtitle && (
+                  <p className="text-xs sm:text-sm font-semibold opacity-80" style={{ color: textCol }}>
+                    {content.subtitle}
+                  </p>
+                )}
+              </div>
+
+              <hr style={{ borderColor: borderCol, opacity: 0.75 }} />
+
+              <div className="space-y-2.5 text-xs sm:text-sm leading-relaxed font-medium" style={{ color: textCol }}>
+                {paragraphs.map((line, i) => (
+                  <p key={i} className="whitespace-pre-line">{line}</p>
+                ))}
+              </div>
+
+              {topicKey === "contact" && (
+                <div className="pt-2 flex flex-wrap gap-2.5">
+                  <a
+                    href={`tel:${config?.phone || "+8809697489330"}`}
+                    className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm"
+                    style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                  >
+                    <span>📞 কল করুন</span>
+                  </a>
+                  <a
+                    href={`https://wa.me/${waDigits}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm bg-emerald-700 text-white"
+                    style={{ borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                  >
+                    <span>💬 WhatsApp</span>
+                  </a>
+                  <a
+                    href={mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm bg-[#0f294a] text-white"
+                    style={{ borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                  >
+                    <span>🗺️ Google Map</span>
+                  </a>
+                </div>
+              )}
+
+              {topicKey === "data_deletion" && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const code = `SAJGOJ-DEL-${Date.now().toString(36).toUpperCase()}`;
+                    setDeletionConfirmCode(code);
+                    notify("ডেটা ডিলিশন রিকোয়েস্ট রেকর্ড করা হয়েছে!");
+                  }}
+                  className="pt-2 space-y-2.5 p-4 rounded-xl border"
+                  style={{ borderColor: borderCol, background: "rgba(0,0,0,0.02)" }}
+                >
+                  <label className="block text-xs font-bold" style={{ color: headingCol }}>
+                    মোবাইল নম্বর বা ইমেইল (Account Identifier):
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={deletionIdent}
+                    onChange={(e) => setDeletionIdent(e.target.value)}
+                    placeholder="যেমন: 018XXXXXXXX অথবা yourname@gmail.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none bg-white text-black"
+                    style={{ borderColor: borderCol }}
+                  />
+                  <input
+                    type="text"
+                    value={deletionReason}
+                    onChange={(e) => setDeletionReason(e.target.value)}
+                    placeholder="কারণ (ঐচ্ছিক)"
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none bg-white text-black"
+                    style={{ borderColor: borderCol }}
+                  />
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 text-xs font-bold shadow-sm cursor-pointer"
+                    style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                  >
+                    ডেটা ডিলিশন রিকোয়েস্ট পাঠান
+                  </button>
+                  {deletionConfirmCode && (
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-semibold">
+                      ✅ আপনার রিকোয়েস্ট গ্রহণ করা হয়েছে! কনফার্মেশন কোড: <strong>{deletionConfirmCode}</strong>। ৪৮ ঘণ্টার মধ্যে ডেটা স্থায়ীভাবে মুছে ফেলা হবে।
+                    </div>
+                  )}
+                </form>
+              )}
+
+              {topicKey === "payment" && (
+                <div className="pt-2 flex flex-wrap gap-2 text-xs font-bold">
+                  {f.bkash !== false && <span className="px-3 py-1.5 rounded-lg bg-[#e2136e] text-white">bKash</span>}
+                  {f.nagad !== false && <span className="px-3 py-1.5 rounded-lg bg-[#f7941d] text-white">Nagad</span>}
+                  {f.rocket !== false && <span className="px-3 py-1.5 rounded-lg bg-[#8c3494] text-white">Rocket</span>}
+                  {f.cod !== false && <span className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white">Cash on Delivery</span>}
+                  {f.visa !== false && <span className="px-3 py-1.5 rounded-lg bg-[#1e3a8a] text-white">Visa / Mastercard</span>}
+                </div>
+              )}
+
+              {topicKey === "discount" && activeCoupons.length > 0 && (
+                <div className="pt-2 space-y-2">
+                  {activeCoupons.map(cp => (
+                    <div
+                      key={cp.id || cp.code}
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl border"
+                      style={{ borderColor: borderCol, background: "rgba(0,0,0,0.02)" }}
+                    >
+                      <div>
+                        <p className="text-sm font-black font-mono" style={{ color: headingCol }}>{cp.code}</p>
+                        <p className="text-xs opacity-80">
+                          {cp.type === "percent" || cp.type === "%" ? `${cp.value}% ছাড়` : `৳${cp.value} ছাড়`}
+                          {cp.minOrder ? ` (ন্যূনতম অর্ডার ৳${cp.minOrder})` : ""}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (navigator.clipboard?.writeText) navigator.clipboard.writeText(cp.code).catch(() => {});
+                          notify(`কুপন কোড "${cp.code}" কপি হয়েছে!`);
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold cursor-pointer"
+                        style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 10)}px` }}
+                      >
+                        কোড কপি
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {topicKey === "tracking" && (
+                <div className="pt-2 space-y-2.5">
+                  <input
+                    type="text"
+                    value={trackingQuery}
+                    onChange={(e) => setTrackingQuery(e.target.value)}
+                    placeholder="Order ID, ট্র্যাকিং কোড বা ফোন নম্বর লিখুন..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none bg-white text-black"
+                    style={{ borderColor: borderCol }}
+                  />
+                  {q && matchedOrders.length === 0 && (
+                    <p className="text-xs font-bold" style={{ color: headingCol }}>
+                      "{trackingQuery}" দিয়ে কোনো অর্ডার পাওয়া যায়নি।
+                    </p>
+                  )}
+                  {matchedOrders.map(ord => (
+                    <div key={ord.id} className="p-3 rounded-xl border space-y-1" style={{ borderColor: borderCol }}>
+                      <p className="text-xs font-black" style={{ color: headingCol }}>#{ord.id} • {ord.status}</p>
+                      <p className="text-xs">ক্রেতা: {ord.customerName} • মোট: ৳{ord.total}</p>
+                      {ord.trackingId && <p className="text-xs font-bold">🚚 ট্র্যাকিং ID: {ord.trackingId}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-3 border-t text-[11px] opacity-70 flex flex-wrap items-center justify-between gap-2" style={{ borderColor: borderCol }}>
+                <span>© {new Date().getFullYear()} {config?.storeName || "SAJGOJ FASHION"}</span>
+                <span>{config?.email || "contact@sajgoj.com"}</span>
+              </div>
+            </article>
+          </div>
+        </div>
       );
     }
 
@@ -4150,7 +4532,8 @@
       const [adminV2CustomerSearch, setAdminV2CustomerSearch] = useState("");
       const [pageConfigSubTab, setPageConfigSubTab] = useState("home_page"); // "home_page" | "detail_page" | "add_product" | "master" | "json"
       const [pageConfigGroup, setPageConfigGroup] = useState("colors"); // "colors" | "blocks_tables" | "typography" | "titles" | "layout_order"
-      const [homeStudioGroup, setHomeStudioGroup] = useState("ordering"); // "ordering" | "search_login" | "voucher" | "categories" | "page_blocks" | "footer_trust" | "bottom_nav"
+      const [homeStudioGroup, setHomeStudioGroup] = useState("ordering"); // "ordering" | "search_login" | "voucher" | "categories" | "page_blocks" | "footer_trust" | "footer_pages" | "bottom_nav"
+      const [footerPageEditorTopic, setFooterPageEditorTopic] = useState("terms");
       const [pageConfigPreviewProdId, setPageConfigPreviewProdId] = useState("");
       const [pageConfigJsonDraft, setPageConfigJsonDraft] = useState("");
 
@@ -13313,6 +13696,165 @@
         );
       };
 
+      const renderFooterHubPagesEditor = (hp, updateHp) => {
+        const activeMeta = FOOTER_HUB_TOPICS_META.find(t => t.key === footerPageEditorTopic) || FOOTER_HUB_TOPICS_META[2];
+        const ovMap = { ...(hp.footerPageContents || {}) };
+        const defContent = getDefaultFooterHubContent(activeMeta.key, config);
+        const curOv = ovMap[activeMeta.key] || {};
+        const resolved = getResolvedFooterHubContent(activeMeta.key, hp, config);
+
+        const updateTopicContent = (field, val) => {
+          const nextOv = { ...curOv, [field]: val };
+          ovMap[activeMeta.key] = nextOv;
+          updateHp({ footerPageContents: ovMap });
+        };
+
+        const pageBg = hp.footerPageBg || "#fffaf5";
+        const cardBg = hp.footerPageCardBg || "#ffffff";
+        const borderCol = hp.footerPageBorderColor || "#f3e2d0";
+        const headingCol = hp.footerPageHeadingColor || "#7a1c2b";
+        const textCol = hp.footerPageTextColor || "#2c1810";
+        const btnBg = hp.footerPageBtnBg || "#7a1c2b";
+        const btnText = hp.footerPageBtnText || "#ffffff";
+        const radiusPx = Math.max(0, Math.min(32, Number(hp.footerPageRadiusPx ?? 20)));
+
+        return (
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-2xl bg-black/50 border border-amber-500/35 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h5 className="text-xs sm:text-sm font-black text-amber-300">📄 ক্লিন ফুটার পেজ ও কনটেন্ট এডিটর (১৪টি পেজ)</h5>
+                <p className="text-[11px] text-slate-300">
+                  ফুটারের যেকোনো লিংক ক্লিক করলে আলাদা ক্লিন পেজ ওপেন হবে। এখান থেকে কনটেন্ট ও কালার পরিবর্তন করুন।
+                </p>
+              </div>
+              <a
+                href={`#${activeMeta.href}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 hover:brightness-110 transition"
+              >
+                🔗 নতুন উইন্ডোতে প্রিভিউ ↗
+              </a>
+            </div>
+
+            {/* Live Clean Page Preview */}
+            <div className="p-3 rounded-2xl border border-white/15 space-y-2" style={{ background: pageBg }}>
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-1 text-[10px] font-bold" style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 10)}px` }}>
+                  ← হোমে ফিরুন
+                </span>
+                <span className="text-[10px] font-black uppercase" style={{ color: headingCol }}>{activeMeta.group} • LIVE PREVIEW</span>
+              </div>
+              <div className="p-3 space-y-1.5" style={{ background: cardBg, border: `1px solid ${borderCol}`, borderRadius: `${Math.min(radiusPx, 16)}px`, color: textCol }}>
+                <p className="text-xs font-black" style={{ color: headingCol }}>{resolved.title}</p>
+                {resolved.subtitle && <p className="text-[10.5px] font-semibold opacity-80">{resolved.subtitle}</p>}
+                <p className="text-[10.5px] leading-relaxed whitespace-pre-line line-clamp-4 opacity-90">{resolved.body}</p>
+              </div>
+            </div>
+
+            {/* Topic Selector Pills */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-bold text-amber-200">এডিট করার পেজ সিলেক্ট করুন:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {FOOTER_HUB_TOPICS_META.map(t => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setFooterPageEditorTopic(t.key)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition ${
+                      footerPageEditorTopic === t.key
+                        ? "bg-amber-500 text-slate-950 shadow"
+                        : "bg-black/55 text-rose-100 border border-white/15 hover:border-amber-400"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content Editor */}
+            <div className="p-3.5 rounded-2xl bg-black/45 border border-white/15 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-black text-white">✏️ "{activeMeta.label}" কনটেন্ট এডিট</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    delete ovMap[activeMeta.key];
+                    updateHp({ footerPageContents: ovMap });
+                    notify(`${activeMeta.label} কনটেন্ট ডিফল্টে রিসেট হয়েছে!`);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white/10 text-rose-200 hover:bg-red-900/60 text-[10px] font-bold cursor-pointer"
+                >
+                  ↺ ডিফল্ট কনটেন্ট
+                </button>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[11px] font-bold text-amber-200 block mb-1">শিরোনাম (Title)</label>
+                  <input
+                    type="text"
+                    value={curOv.title ?? ""}
+                    placeholder={defContent.title}
+                    onChange={(e) => updateTopicContent("title", e.target.value)}
+                    className="w-full bg-black/70 border border-white/20 text-white rounded-xl px-3 py-2 text-xs outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-amber-200 block mb-1">উপ-শিরোনাম (Subtitle)</label>
+                  <input
+                    type="text"
+                    value={curOv.subtitle ?? ""}
+                    placeholder={defContent.subtitle}
+                    onChange={(e) => updateTopicContent("subtitle", e.target.value)}
+                    className="w-full bg-black/70 border border-white/20 text-white rounded-xl px-3 py-2 text-xs outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-amber-200 block mb-1">বিস্তারিত কনটেন্ট (Body Text)</label>
+                  <textarea
+                    rows={5}
+                    value={curOv.body ?? ""}
+                    placeholder={defContent.body}
+                    onChange={(e) => updateTopicContent("body", e.target.value)}
+                    className="w-full bg-black/70 border border-white/20 text-white rounded-xl px-3 py-2 text-xs outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Style Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {renderDevColorField("পেজ ব্যাকগ্রাউন্ড", pageBg, (v) => updateHp({ footerPageBg: v }))}
+              {renderDevColorField("কার্ড ব্যাকগ্রাউন্ড", cardBg, (v) => updateHp({ footerPageCardBg: v }))}
+              {renderDevColorField("বর্ডার কালার", borderCol, (v) => updateHp({ footerPageBorderColor: v }))}
+              {renderDevColorField("হেডিং কালার", headingCol, (v) => updateHp({ footerPageHeadingColor: v }))}
+              {renderDevColorField("টেক্সট কালার", textCol, (v) => updateHp({ footerPageTextColor: v }))}
+              {renderDevColorField("বাটন ব্যাকগ্রাউন্ড", btnBg, (v) => updateHp({ footerPageBtnBg: v }))}
+              {renderDevColorField("বাটন টেক্সট কালার", btnText, (v) => updateHp({ footerPageBtnText: v }))}
+              <div className="bg-black/45 p-3 rounded-2xl border border-red-900/35 space-y-1">
+                <label className="text-[11px] font-bold text-rose-100">কার্ড রাউন্ড ({radiusPx}px)</label>
+                <input type="range" min="0" max="32" value={radiusPx} onChange={(e) => updateHp({ footerPageRadiusPx: Number(e.target.value) })} className="w-full accent-amber-400" />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={async () => {
+                  setStored("config", config);
+                  await syncDocToCloud("config", "store", config);
+                  notify("ফুটার পেজ কনটেন্ট ও ডিজাইন সফলভাবে সেভ ও সিঙ্ক হয়েছে! ✅");
+                }}
+                className="px-5 py-2 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow cursor-pointer hover:brightness-110"
+              >
+                💾 পেজ কনটেন্ট সেভ ও সিঙ্ক করুন
+              </button>
+            </div>
+          </div>
+        );
+      };
+
       const renderHomePageStudioWorkspace = () => {
         const hp = getResolvedPageConfig().homePage;
         const d = { ...initialStoreConfig.design, ...(config?.design || {}) };
@@ -19349,20 +19891,39 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
         );
       };
 
+      const renderCleanFooterHubPage = (topicKey) => (
+        <CleanFooterInfoPageView
+          topicKey={topicKey}
+          hp={resolvedHomePageCfg}
+          config={config}
+          orders={orders}
+          coupons={coupons}
+          onBackToHome={() => navigateHash("/")}
+          notify={notify}
+        />
+      );
+
       return (
         <div
-          className={`min-h-screen flex flex-col ${activeTab === "Storefront" && sfDesign.useCustomPageBg ? "storefront-page-canvas" : "liquid-glass-canvas"} text-[#000000]`}
+          className={`min-h-screen flex flex-col ${
+            activeTab === "Storefront" && isCleanFooterPageRoute
+              ? ""
+              : activeTab === "Storefront" && sfDesign.useCustomPageBg
+                ? "storefront-page-canvas"
+                : "liquid-glass-canvas"
+          } text-[#000000]`}
+          style={activeTab === "Storefront" && isCleanFooterPageRoute ? { background: resolvedHomePageCfg.footerPageBg || "#fffaf5" } : undefined}
         >
           {/* Offline Mode Indicator Bar */}
-          {!isOnline && (
+          {!isOnline && !isCleanFooterPageRoute && (
             <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center text-xs py-2 px-4 font-bold tracking-wide shadow-md flex items-center justify-center gap-2 sticky top-0 z-50">
               <span>⚡</span>
               <span>ইন্টারনেট সংযোগ নেই — সাজগোজ অফলাইন মোডে চলছে (ক্যাশড প্রোডাক্ট ও POS সচল রয়েছে)</span>
             </div>
           )}
 
-          {/* Top Announcement Bar (Storefront only) */}
-          {activeTab === "Storefront" && config?.announcement?.enabled && config?.announcement?.text && (
+          {/* Top Announcement Bar (Storefront only - hidden on clean footer pages & order tracking) */}
+          {activeTab === "Storefront" && !isCleanFooterPageRoute && !isOrderTrackingRoute && config?.announcement?.enabled && config?.announcement?.text && (
             <div
               className="bg-gradient-to-r from-[#ff5252] via-[#ef4444] to-[#f87171] text-[#000000] text-center text-xs sm:text-sm py-2 px-4 font-extrabold tracking-wide shadow-sm flex items-center justify-center gap-2 border-b border-white/60"
               style={sfDesign.useCustomHeaderColors ? { background: sfDesign.announcementBg, color: sfDesign.announcementTextColor } : undefined}
@@ -19371,8 +19932,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             </div>
           )}
 
-          {/* Main Top Header (Liquid Glass Nav - Storefront only) */}
-          {activeTab === "Storefront" && (
+          {/* Main Top Header (Liquid Glass Nav - hidden on clean footer pages & order tracking) */}
+          {activeTab === "Storefront" && !isCleanFooterPageRoute && !isOrderTrackingRoute && (
             <header
               className={`liquid-glass-nav sm:mx-4 sm:mt-2 sm:rounded-3xl transition-all duration-200 ${config?.header?.sticky ? 'sticky top-0 sm:top-2 z-30' : ''}`}
               style={sfDesign.useCustomHeaderColors ? { background: sfDesign.headerBg, color: sfDesign.headerTextColor } : undefined}
@@ -19750,8 +20311,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             </header>
           )}
 
-          {/* Buy 2 Get 1 Free Promo Strip (Storefront only - shown only when Admin has selected eligible products) */}
-          {activeTab === "Storefront" && isB2g1OfferReady && (
+          {/* Buy 2 Get 1 Free Promo Strip (Storefront only - hidden on clean footer pages & order tracking) */}
+          {activeTab === "Storefront" && !isCleanFooterPageRoute && !isOrderTrackingRoute && isB2g1OfferReady && (
             <div
               className={`${sfDesign.useCustomHeaderColors ? "" : "red-black-bottom-card"} py-2.5 px-4 sm:mx-4 sm:mt-2 sm:rounded-2xl border border-white/60 shadow-sm`}
               style={sfDesign.useCustomHeaderColors ? { background: sfDesign.b2g1Bg, color: sfDesign.b2g1TextColor } : undefined}
@@ -20155,12 +20716,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               ].map(item => (
                                 <li key={item.key}>
                                   <a
-                                    href={item.href}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      navigateHash(item.href);
-                                      window.scrollTo({ top: 0, behavior: "smooth" });
-                                    }}
+                                    href={`#${item.href}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 hover:translate-x-0.5 transition text-left cursor-pointer"
                                     style={{ color: hp.footerTextColor }}
                                   >
@@ -20184,12 +20742,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               ].map(item => (
                                 <li key={item.key}>
                                   <a
-                                    href={item.href}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      navigateHash(item.href);
-                                      window.scrollTo({ top: 0, behavior: "smooth" });
-                                    }}
+                                    href={`#${item.href}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 hover:translate-x-0.5 transition text-left cursor-pointer"
                                     style={{ color: hp.footerTextColor }}
                                   >
@@ -20214,12 +20769,9 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               ].map(item => (
                                 <li key={item.key}>
                                   <a
-                                    href={item.href}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      navigateHash(item.href);
-                                      window.scrollTo({ top: 0, behavior: "smooth" });
-                                    }}
+                                    href={`#${item.href}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 hover:translate-x-0.5 transition text-left cursor-pointer"
                                     style={{ color: hp.footerTextColor }}
                                   >
@@ -41634,52 +42186,56 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
             </div>
           )}
 
-          <SajgojFreeFaqChatbot
-            isOpen={isFaqChatOpen}
-            onClose={() => setIsFaqChatOpen(false)}
-            config={config}
-            orders={orders}
-            coupons={coupons}
-            products={products}
-            getStoreMapUrls={getStoreMapUrls}
-            onSelectProduct={(prod) => {
-              setViewProduct(prod);
-              setSelectedDetailImg(0);
-              setProductQty(1);
-            }}
-            onOpenShopping={() => {
-              if (isOrderTrackingRoute) navigateHash("/");
-              setSelectedCat("All");
-              setSelectedSubCat("All");
-              setStoreSearch("");
-              setImageSearchResult(null);
-              setShoppingCat("All");
-              setStoreBottomTab("shopping");
-              setActiveTab("Storefront");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            onNavigateOrderTracking={(q) => {
-              navigateHash("/order-tracking/" + encodeURIComponent(q));
-            }}
-            notify={notify}
-          />
+          {!(activeTab === "Storefront" && (isCleanFooterPageRoute || isOrderTrackingRoute)) && (
+            <>
+              <SajgojFreeFaqChatbot
+                isOpen={isFaqChatOpen}
+                onClose={() => setIsFaqChatOpen(false)}
+                config={config}
+                orders={orders}
+                coupons={coupons}
+                products={products}
+                getStoreMapUrls={getStoreMapUrls}
+                onSelectProduct={(prod) => {
+                  setViewProduct(prod);
+                  setSelectedDetailImg(0);
+                  setProductQty(1);
+                }}
+                onOpenShopping={() => {
+                  if (isOrderTrackingRoute) navigateHash("/");
+                  setSelectedCat("All");
+                  setSelectedSubCat("All");
+                  setStoreSearch("");
+                  setImageSearchResult(null);
+                  setShoppingCat("All");
+                  setStoreBottomTab("shopping");
+                  setActiveTab("Storefront");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                onNavigateOrderTracking={(q) => {
+                  navigateHash("/order-tracking/" + encodeURIComponent(q));
+                }}
+                notify={notify}
+              />
 
-          <button
-            type="button"
-            onClick={() => setIsFaqChatOpen(prev => !prev)}
-            className={`fixed ${activeTab === "Storefront" ? "bottom-20 right-4" : "bottom-5 right-5"} z-40 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#0f294a] via-[#1b3f72] to-[#7a1c2b] text-white flex items-center gap-2 shadow-2xl border-2 border-[#d4a574] hover:scale-105 transition duration-300 cursor-pointer`}
-            title="সাজগোজ Help (কল, WhatsApp ও শপিং)"
-            aria-label="Help খুলুন"
-          >
-            <span className="relative flex items-center justify-center text-xl leading-none">
-              🤖
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white animate-pulse"></span>
-            </span>
-            <span className="text-xs font-black tracking-wide">Help</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => setIsFaqChatOpen(prev => !prev)}
+                className={`fixed ${activeTab === "Storefront" ? "bottom-20 right-4" : "bottom-5 right-5"} z-40 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#0f294a] via-[#1b3f72] to-[#7a1c2b] text-white flex items-center gap-2 shadow-2xl border-2 border-[#d4a574] hover:scale-105 transition duration-300 cursor-pointer`}
+                title="সাজগোজ Help (কল, WhatsApp ও শপিং)"
+                aria-label="Help খুলুন"
+              >
+                <span className="relative flex items-center justify-center text-xl leading-none">
+                  🤖
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white animate-pulse"></span>
+                </span>
+                <span className="text-xs font-black tracking-wide">Help</span>
+              </button>
+            </>
+          )}
 
-          {/* 5-Tab Bottom Navigation Bar (হোম, শপিং, অফার, একাউন্ট, কার্ট) */}
-          {activeTab === "Storefront" && resolvedHomePageCfg.showBottomNav !== false && (() => {
+          {/* 5-Tab Bottom Navigation Bar (হোম, শপিং, অফার, একাউন্ট, কার্ট - hidden on clean footer pages & order tracking) */}
+          {activeTab === "Storefront" && !isCleanFooterPageRoute && !isOrderTrackingRoute && resolvedHomePageCfg.showBottomNav !== false && (() => {
             const hp = resolvedHomePageCfg;
             const cartQty = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
             const activeNavKey = isCartOpen

@@ -426,67 +426,69 @@ class MainActivity : ComponentActivity() {
               storeBottomTab == StorefrontBottomTab.SHOPPING
             val showSearchStripInHeader = isFilteredOrShopping || activeHomeSections.firstOrNull()?.type == "search_bar"
 
-            // App Header
-            StoreHeader(
-              config = storeConfig,
-              currentScreen = currentScreen,
-              cartItemCount = cartItems.sumOf { it.quantity },
-              searchQuery = searchQuery,
-              onSearchChange = { viewModel.setSearchQuery(it) },
-              onToggleScreen = {
-                viewModel.clearPolicyTopic()
-                if (currentScreen == AppScreen.STOREFRONT || currentScreen == AppScreen.INFO_PAGE) {
-                  viewModel.setScreen(AppScreen.ADMIN_PANEL)
-                } else {
+            // App Header (hidden on dedicated clean footer info pages)
+            if (currentScreen != AppScreen.INFO_PAGE) {
+              StoreHeader(
+                config = storeConfig,
+                currentScreen = currentScreen,
+                cartItemCount = cartItems.sumOf { it.quantity },
+                searchQuery = searchQuery,
+                onSearchChange = { viewModel.setSearchQuery(it) },
+                onToggleScreen = {
+                  viewModel.clearPolicyTopic()
+                  if (currentScreen == AppScreen.STOREFRONT || currentScreen == AppScreen.INFO_PAGE) {
+                    viewModel.setScreen(AppScreen.ADMIN_PANEL)
+                  } else {
+                    viewModel.setScreen(AppScreen.STOREFRONT)
+                  }
+                },
+                onOpenCart = { viewModel.setCartOpen(true) },
+                categories = categories,
+                selectedCategory = selectedCategory,
+                onCategorySelected = {
+                  viewModel.clearPolicyTopic()
                   viewModel.setScreen(AppScreen.STOREFRONT)
-                }
-              },
-              onOpenCart = { viewModel.setCartOpen(true) },
-              categories = categories,
-              selectedCategory = selectedCategory,
-              onCategorySelected = {
-                viewModel.clearPolicyTopic()
-                viewModel.setScreen(AppScreen.STOREFRONT)
-                storeBottomTab = StorefrontBottomTab.HOME
-                viewModel.setSelectedCategory(it)
-              },
-              onHomeReset = {
-                viewModel.clearPolicyTopic()
-                viewModel.setScreen(AppScreen.STOREFRONT)
-                storeBottomTab = StorefrontBottomTab.HOME
-                viewModel.resetHomeFilters()
-              },
-              onVoiceSearchClick = { launchVoiceSearch() },
-              onImageSearchClick = {
-                photoPickerLauncher.launch(
-                  PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-              },
-              onScanClick = {
-                manualScanInput = ""
-                showScannerDialog = true
-              },
-              isImageSearchActive = imageSearchState != null,
-              onClearAllSearch = {
-                viewModel.setSearchQuery("")
-                viewModel.clearImageSearch()
-              },
-              authUser = authUser,
-              isAuthBusy = isAuthBusy,
-              onGoogleAuthClick = {
-                if (authUser != null) {
-                  viewModel.signOutGoogle(context)
-                } else {
-                  viewModel.signInWithGoogle(context, unlockAdminIfVerified = false)
-                }
-              },
-              unreadNotificationCount = unreadOrderNotificationCount,
-              onOpenNotifications = {
-                hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
-                showNotificationsDialog = true
-              },
-              showSearchStripInHeader = showSearchStripInHeader
-            )
+                  storeBottomTab = StorefrontBottomTab.HOME
+                  viewModel.setSelectedCategory(it)
+                },
+                onHomeReset = {
+                  viewModel.clearPolicyTopic()
+                  viewModel.setScreen(AppScreen.STOREFRONT)
+                  storeBottomTab = StorefrontBottomTab.HOME
+                  viewModel.resetHomeFilters()
+                },
+                onVoiceSearchClick = { launchVoiceSearch() },
+                onImageSearchClick = {
+                  photoPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                  )
+                },
+                onScanClick = {
+                  manualScanInput = ""
+                  showScannerDialog = true
+                },
+                isImageSearchActive = imageSearchState != null,
+                onClearAllSearch = {
+                  viewModel.setSearchQuery("")
+                  viewModel.clearImageSearch()
+                },
+                authUser = authUser,
+                isAuthBusy = isAuthBusy,
+                onGoogleAuthClick = {
+                  if (authUser != null) {
+                    viewModel.signOutGoogle(context)
+                  } else {
+                    viewModel.signInWithGoogle(context, unlockAdminIfVerified = false)
+                  }
+                },
+                unreadNotificationCount = unreadOrderNotificationCount,
+                onOpenNotifications = {
+                  hasPushPermission = OrderNotificationHelper.hasNotificationPermission(context)
+                  showNotificationsDialog = true
+                },
+                showSearchStripInHeader = showSearchStripInHeader
+              )
+            }
 
             // Screen Switcher
             Box(modifier = Modifier.fillMaxSize()) {

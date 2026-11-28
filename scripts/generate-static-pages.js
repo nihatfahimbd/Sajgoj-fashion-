@@ -21,14 +21,6 @@ const STATIC_PAGES = [
     title: 'Privacy Policy — গোপনীয়তা নীতি',
     description: `Official Privacy Policy of ${STORE_NAME} (${SITE_URL}) covering personal data collection, Facebook/Google login data protection, Firebase cloud security, order fulfillment, and user rights.`,
     bodyHtml: `
-      <div class="callout">
-        <strong>Official Privacy Policy URL for Facebook Developer App, Google Play &amp; Payment Gateways:</strong>
-        <div class="copy-row">
-          <code>${SITE_URL}/privacy-policy</code>
-          <button type="button" onclick="copyText('${SITE_URL}/privacy-policy', this)">Copy URL</button>
-        </div>
-      </div>
-
       <h2>1. Introduction (পরিচিতি)</h2>
       <p><strong>${STORE_NAME}</strong> ("we", "our", "us") respects your privacy and is committed to protecting the personal data you share when visiting <strong>${SITE_URL}</strong>, using our mobile application, or interacting with our Facebook / WhatsApp integrations.</p>
       <p>সাজগোজ ফ্যাশন (SAJGOJ FASHION) ক্রেতা ও ব্যবহারকারীদের ব্যক্তিগত তথ্যের সর্বোচ্চ গোপনীয়তা রক্ষায় প্রতিশ্রুতিবদ্ধ।</p>
@@ -76,14 +68,6 @@ const STATIC_PAGES = [
     title: 'User Data Deletion — ব্যবহারকারীর ডেটা মুছে ফেলার নির্দেশনা',
     description: `Official User Data Deletion Instructions and Callback endpoint for ${STORE_NAME} (${SITE_URL}) Facebook Developer App, Google Play App & Customer Accounts.`,
     bodyHtml: `
-      <div class="callout">
-        <strong>User Data Deletion URL (Facebook App Settings → Basic → User Data Deletion):</strong>
-        <div class="copy-row">
-          <code>${SITE_URL}/data-deletion</code>
-          <button type="button" onclick="copyText('${SITE_URL}/data-deletion', this)">Copy URL</button>
-        </div>
-      </div>
-
       <h2>How to Request Deletion of Your Data (ডেটা ডিলিট করার পদ্ধতি)</h2>
       <p>If you have logged into <strong>${STORE_NAME}</strong> using Facebook Login, Google Sign-In, or placed an order using your phone number/email, you can permanently delete your account and associated personal data using any of the 3 methods below:</p>
 
@@ -118,14 +102,6 @@ const STATIC_PAGES = [
     title: 'Terms & Conditions — শর্তাবলী',
     description: `Official Terms of Service and Conditions of use for ${STORE_NAME} (${SITE_URL}) online fashion & jewelry store.`,
     bodyHtml: `
-      <div class="callout">
-        <strong>Terms of Service URL (Facebook Developer App &amp; Merchant Gateways):</strong>
-        <div class="copy-row">
-          <code>${SITE_URL}/terms-and-conditions</code>
-          <button type="button" onclick="copyText('${SITE_URL}/terms-and-conditions', this)">Copy URL</button>
-        </div>
-      </div>
-
       <h2>1. Acceptance of Terms</h2>
       <p>By accessing <strong>${SITE_URL}</strong>, browsing products, or placing an order through <strong>${STORE_NAME}</strong>, you agree to comply with these Terms &amp; Conditions and applicable laws of Bangladesh.</p>
 
@@ -167,11 +143,6 @@ const STATIC_PAGES = [
         <li><strong>৭ দিনের সহজ রিটার্ন ও এক্সচেঞ্জ:</strong> কোনো ত্রুটি বা সাইজ সমস্যায় ঝামেলামুক্ত পরিবর্তন সুবিধা।</li>
         <li><strong>সরাসরি শোরুম ও সাপোর্ট:</strong> ${ADDRESS} | হটলাইন: ${PHONE}</li>
       </ul>
-
-      <div class="action-row">
-        <a href="/categories" class="btn-primary">ক্যাটাগরি দেখুন (/categories)</a>
-        <a href="/products" class="btn-secondary">সকল পণ্য দেখুন (/products)</a>
-      </div>
     `
   },
   {
@@ -198,7 +169,6 @@ const STATIC_PAGES = [
       </div>
       <div class="action-row">
         <a href="https://wa.me/${WHATSAPP_NUM}" target="_blank" rel="noopener" class="btn-primary">💬 WhatsApp এ মেসেজ দিন</a>
-        <a href="/order-tracking" class="btn-secondary">📦 অর্ডার ট্র্যাক করুন</a>
       </div>
     `
   },
@@ -430,8 +400,8 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
     footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 24px; }
   </style>
 </head>
-<body>
-  <header class="topbar">
+<body data-slug="${slug}">
+  ${slug === 'pages' ? `<header class="topbar">
     <div class="topbar-inner">
       <a href="/" class="brand">
         <span class="brand-logo">S</span>
@@ -439,22 +409,25 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
       </a>
       <nav class="top-actions" aria-label="Store Quick Links">
         <a href="/">← হোম স্টোরে ফিরুন</a>
-        ${slug === 'pages' ? `<a href="/categories">🏷️ ক্যাটাগরি</a>
+        <a href="/categories">🏷️ ক্যাটাগরি</a>
         <a href="/products">🛍️ সকল পণ্য</a>
-        <a href="/checkout">💳 চেকআউট</a>` : ''}
+        <a href="/checkout">💳 চেকআউট</a>
       </nav>
     </div>
-  </header>
+  </header>` : ''}
 
   <main class="wrap">
-    <article class="card">
+    ${slug !== 'pages' ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+      <a href="/" id="clean-back-btn" style="text-decoration:none;background:#7a1c2b;color:#fff;padding:8px 14px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">← হোমে ফিরুন</a>
+      <span id="clean-store-badge" style="font-size:12px;font-weight:800;color:#7a1c2b;letter-spacing:0.04em;">${STORE_NAME}</span>
+    </div>` : ''}
+    <article class="card" id="clean-page-card">
       <div class="meta-head">
-        <span class="group-tag">${group}</span>
-        <span class="badge">${badge}</span>
+        <span class="group-tag" id="clean-page-group">${group}</span>
       </div>
-      <h1>${title}</h1>
-      <p class="updated">Effective Date: ${EFFECTIVE_DATE} • Last Updated: ${UPDATED_DATE} • Domain: <strong>${SITE_URL}</strong></p>
-      ${bodyHtml}
+      <h1 id="clean-page-title">${title}</h1>
+      <p class="updated" id="clean-page-subtitle">Effective Date: ${EFFECTIVE_DATE} • Last Updated: ${UPDATED_DATE} • <strong>${SITE_URL}</strong></p>
+      <div id="clean-page-body">${bodyHtml}</div>
     </article>
 
     ${slug === 'pages' ? `<section class="nav-section">
@@ -469,11 +442,10 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
       <div class="pill-wrap">
         ${navLinks}
       </div>
-    </section>` : ''}
-
+    </section>
     <footer>
       <p>© 2026 ${STORE_NAME} • ${STORE_TAGLINE} • <a href="mailto:${EMAIL}">${EMAIL}</a> • ${PHONE}</p>
-    </footer>
+    </footer>` : ''}
   </main>
 
   <script>
@@ -488,6 +460,70 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
         });
       }
     }
+    (function applyAdminFooterPageOverrides() {
+      var slug = document.body.getAttribute('data-slug') || '';
+      if (!slug || slug === 'pages') return;
+      var map = {
+        'about-us': 'about',
+        'contact-us': 'contact',
+        'terms-and-conditions': 'terms',
+        'privacy-policy': 'privacy',
+        'data-deletion': 'data_deletion',
+        'payment-policy': 'payment',
+        'shipping-policy': 'shipping',
+        'faq': 'faq',
+        'refund-policy': 'refund',
+        'exchange-policy': 'exchange',
+        'cancellation-policy': 'cancellation',
+        'cookie-policy': 'cookie'
+      };
+      var topicKey = map[slug];
+      if (!topicKey) return;
+      try {
+        var raw = localStorage.getItem('sajgoj_config');
+        if (!raw) return;
+        var cfg = JSON.parse(raw);
+        var hp = cfg && cfg.pageConfig && cfg.pageConfig.homePage ? cfg.pageConfig.homePage : null;
+        if (!hp) return;
+        if (hp.footerPageBg) document.body.style.background = hp.footerPageBg;
+        var card = document.getElementById('clean-page-card');
+        if (card) {
+          if (hp.footerPageCardBg) card.style.background = hp.footerPageCardBg;
+          if (hp.footerPageBorderColor) card.style.borderColor = hp.footerPageBorderColor;
+          if (hp.footerPageTextColor) card.style.color = hp.footerPageTextColor;
+          if (hp.footerPageRadiusPx !== undefined) card.style.borderRadius = hp.footerPageRadiusPx + 'px';
+        }
+        var h1 = document.getElementById('clean-page-title');
+        var grp = document.getElementById('clean-page-group');
+        var badge = document.getElementById('clean-store-badge');
+        if (hp.footerPageHeadingColor) {
+          if (h1) h1.style.color = hp.footerPageHeadingColor;
+          if (grp) grp.style.color = hp.footerPageHeadingColor;
+          if (badge) badge.style.color = hp.footerPageHeadingColor;
+        }
+        var backBtn = document.getElementById('clean-back-btn');
+        if (backBtn) {
+          if (hp.footerPageBtnBg) backBtn.style.background = hp.footerPageBtnBg;
+          if (hp.footerPageBtnText) backBtn.style.color = hp.footerPageBtnText;
+        }
+        var ov = hp.footerPageContents && hp.footerPageContents[topicKey];
+        if (ov) {
+          if (ov.title && ov.title.trim() && h1) h1.textContent = ov.title.trim();
+          var sub = document.getElementById('clean-page-subtitle');
+          if (ov.subtitle && ov.subtitle.trim() && sub) sub.textContent = ov.subtitle.trim();
+          var bodyEl = document.getElementById('clean-page-body');
+          if (ov.body && ov.body.trim() && bodyEl) {
+            bodyEl.innerHTML = '';
+            ov.body.trim().split(/\\n+/).forEach(function(line) {
+              if (!line.trim()) return;
+              var p = document.createElement('p');
+              p.textContent = line.trim();
+              bodyEl.appendChild(p);
+            });
+          }
+        }
+      } catch (e) {}
+    })();
   </script>
 </body>
 </html>`;

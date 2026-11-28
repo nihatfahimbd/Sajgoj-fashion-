@@ -74,7 +74,7 @@
     footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 24px; }
   </style>
 </head>
-<body>
+<body data-slug="pages">
   <header class="topbar">
     <div class="topbar-inner">
       <a href="/" class="brand">
@@ -91,14 +91,14 @@
   </header>
 
   <main class="wrap">
-    <article class="card">
+    
+    <article class="card" id="clean-page-card">
       <div class="meta-head">
-        <span class="group-tag">Complete Site Directory</span>
-        <span class="badge">🔗 All Store & Legal Links</span>
+        <span class="group-tag" id="clean-page-group">Complete Site Directory</span>
       </div>
-      <h1>All Pages & Official Links Directory — সকল পেজ ও লিংক</h1>
-      <p class="updated">Effective Date: January 1, 2026 • Last Updated: November 26, 2026 • Domain: <strong>https://sajgoj.nfbd.workers.dev</strong></p>
-      
+      <h1 id="clean-page-title">All Pages & Official Links Directory — সকল পেজ ও লিংক</h1>
+      <p class="updated" id="clean-page-subtitle">Effective Date: January 1, 2026 • Last Updated: November 26, 2026 • <strong>https://sajgoj.nfbd.workers.dev</strong></p>
+      <div id="clean-page-body">
     <div class="callout">
       <strong>🚀 Facebook Developer App (Meta for Developers) Quick-Setup Links:</strong>
       <ul>
@@ -295,7 +295,7 @@
       <strong>🔍 Search Console &amp; Crawler Files:</strong>
       <p>XML Sitemap: <a href="/sitemap.xml">https://sajgoj.nfbd.workers.dev/sitemap.xml</a> • Robots.txt: <a href="/robots.txt">https://sajgoj.nfbd.workers.dev/robots.txt</a></p>
     </div>
-  
+  </div>
     </article>
 
     <section class="nav-section">
@@ -327,7 +327,6 @@
         <a href="/faq" class="pill">FAQ</a>
       </div>
     </section>
-
     <footer>
       <p>© 2026 SAJGOJ FASHION • Premium Designer Sharee & Royal Jewelry Store • <a href="mailto:contact@sajgoj.com">contact@sajgoj.com</a> • +8809697489330</p>
     </footer>
@@ -345,6 +344,70 @@
         });
       }
     }
+    (function applyAdminFooterPageOverrides() {
+      var slug = document.body.getAttribute('data-slug') || '';
+      if (!slug || slug === 'pages') return;
+      var map = {
+        'about-us': 'about',
+        'contact-us': 'contact',
+        'terms-and-conditions': 'terms',
+        'privacy-policy': 'privacy',
+        'data-deletion': 'data_deletion',
+        'payment-policy': 'payment',
+        'shipping-policy': 'shipping',
+        'faq': 'faq',
+        'refund-policy': 'refund',
+        'exchange-policy': 'exchange',
+        'cancellation-policy': 'cancellation',
+        'cookie-policy': 'cookie'
+      };
+      var topicKey = map[slug];
+      if (!topicKey) return;
+      try {
+        var raw = localStorage.getItem('sajgoj_config');
+        if (!raw) return;
+        var cfg = JSON.parse(raw);
+        var hp = cfg && cfg.pageConfig && cfg.pageConfig.homePage ? cfg.pageConfig.homePage : null;
+        if (!hp) return;
+        if (hp.footerPageBg) document.body.style.background = hp.footerPageBg;
+        var card = document.getElementById('clean-page-card');
+        if (card) {
+          if (hp.footerPageCardBg) card.style.background = hp.footerPageCardBg;
+          if (hp.footerPageBorderColor) card.style.borderColor = hp.footerPageBorderColor;
+          if (hp.footerPageTextColor) card.style.color = hp.footerPageTextColor;
+          if (hp.footerPageRadiusPx !== undefined) card.style.borderRadius = hp.footerPageRadiusPx + 'px';
+        }
+        var h1 = document.getElementById('clean-page-title');
+        var grp = document.getElementById('clean-page-group');
+        var badge = document.getElementById('clean-store-badge');
+        if (hp.footerPageHeadingColor) {
+          if (h1) h1.style.color = hp.footerPageHeadingColor;
+          if (grp) grp.style.color = hp.footerPageHeadingColor;
+          if (badge) badge.style.color = hp.footerPageHeadingColor;
+        }
+        var backBtn = document.getElementById('clean-back-btn');
+        if (backBtn) {
+          if (hp.footerPageBtnBg) backBtn.style.background = hp.footerPageBtnBg;
+          if (hp.footerPageBtnText) backBtn.style.color = hp.footerPageBtnText;
+        }
+        var ov = hp.footerPageContents && hp.footerPageContents[topicKey];
+        if (ov) {
+          if (ov.title && ov.title.trim() && h1) h1.textContent = ov.title.trim();
+          var sub = document.getElementById('clean-page-subtitle');
+          if (ov.subtitle && ov.subtitle.trim() && sub) sub.textContent = ov.subtitle.trim();
+          var bodyEl = document.getElementById('clean-page-body');
+          if (ov.body && ov.body.trim() && bodyEl) {
+            bodyEl.innerHTML = '';
+            ov.body.trim().split(/\n+/).forEach(function(line) {
+              if (!line.trim()) return;
+              var p = document.createElement('p');
+              p.textContent = line.trim();
+              bodyEl.appendChild(p);
+            });
+          }
+        }
+      } catch (e) {}
+    })();
   </script>
 </body>
 </html>

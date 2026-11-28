@@ -74,29 +74,21 @@
     footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 24px; }
   </style>
 </head>
-<body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a href="/" class="brand">
-        <span class="brand-logo">S</span>
-        <span>SAJGOJ FASHION</span>
-      </a>
-      <nav class="top-actions" aria-label="Store Quick Links">
-        <a href="/">← হোম স্টোরে ফিরুন</a>
-        
-      </nav>
-    </div>
-  </header>
+<body data-slug="about-us">
+  
 
   <main class="wrap">
-    <article class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+      <a href="/" id="clean-back-btn" style="text-decoration:none;background:#7a1c2b;color:#fff;padding:8px 14px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">← হোমে ফিরুন</a>
+      <span id="clean-store-badge" style="font-size:12px;font-weight:800;color:#7a1c2b;letter-spacing:0.04em;">SAJGOJ FASHION</span>
+    </div>
+    <article class="card" id="clean-page-card">
       <div class="meta-head">
-        <span class="group-tag">Information & Brand</span>
-        <span class="badge">👑 Official Store Profile</span>
+        <span class="group-tag" id="clean-page-group">Information & Brand</span>
       </div>
-      <h1>About Us — আমাদের সম্পর্কে</h1>
-      <p class="updated">Effective Date: January 1, 2026 • Last Updated: November 26, 2026 • Domain: <strong>https://sajgoj.nfbd.workers.dev</strong></p>
-      
+      <h1 id="clean-page-title">About Us — আমাদের সম্পর্কে</h1>
+      <p class="updated" id="clean-page-subtitle">Effective Date: January 1, 2026 • Last Updated: November 26, 2026 • <strong>https://sajgoj.nfbd.workers.dev</strong></p>
+      <div id="clean-page-body">
       <h2>Welcome to SAJGOJ FASHION (সাজগোজ ফ্যাশন — নতুন সাজে সাজগোজ)</h2>
       <p><strong>SAJGOJ FASHION</strong> আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি, জামদানি, কাতান ও রাজকীয় জুয়েলারি কালেকশনের একটি বিশ্বস্ত অনলাইন ও অফলাইন প্রতিষ্ঠান।</p>
       <p>Every sharee, bridal set, choker, and fashion piece in our catalog is hand-picked and inspected for fabric quality, craftsmanship, and authentic finish before reaching your doorstep.</p>
@@ -108,19 +100,10 @@
         <li><strong>৭ দিনের সহজ রিটার্ন ও এক্সচেঞ্জ:</strong> কোনো ত্রুটি বা সাইজ সমস্যায় ঝামেলামুক্ত পরিবর্তন সুবিধা।</li>
         <li><strong>সরাসরি শোরুম ও সাপোর্ট:</strong> অমি স্মৃতি শিশু পার্ক, ফরিদগঞ্জ, চাঁদপুর, বাংলাদেশ (Ami Smriti Shishu Park, Faridganj, Chandpur, Bangladesh) | হটলাইন: +8809697489330</li>
       </ul>
-
-      <div class="action-row">
-        <a href="/categories" class="btn-primary">ক্যাটাগরি দেখুন (/categories)</a>
-        <a href="/products" class="btn-secondary">সকল পণ্য দেখুন (/products)</a>
-      </div>
-    
+    </div>
     </article>
 
     
-
-    <footer>
-      <p>© 2026 SAJGOJ FASHION • Premium Designer Sharee & Royal Jewelry Store • <a href="mailto:contact@sajgoj.com">contact@sajgoj.com</a> • +8809697489330</p>
-    </footer>
   </main>
 
   <script>
@@ -135,6 +118,70 @@
         });
       }
     }
+    (function applyAdminFooterPageOverrides() {
+      var slug = document.body.getAttribute('data-slug') || '';
+      if (!slug || slug === 'pages') return;
+      var map = {
+        'about-us': 'about',
+        'contact-us': 'contact',
+        'terms-and-conditions': 'terms',
+        'privacy-policy': 'privacy',
+        'data-deletion': 'data_deletion',
+        'payment-policy': 'payment',
+        'shipping-policy': 'shipping',
+        'faq': 'faq',
+        'refund-policy': 'refund',
+        'exchange-policy': 'exchange',
+        'cancellation-policy': 'cancellation',
+        'cookie-policy': 'cookie'
+      };
+      var topicKey = map[slug];
+      if (!topicKey) return;
+      try {
+        var raw = localStorage.getItem('sajgoj_config');
+        if (!raw) return;
+        var cfg = JSON.parse(raw);
+        var hp = cfg && cfg.pageConfig && cfg.pageConfig.homePage ? cfg.pageConfig.homePage : null;
+        if (!hp) return;
+        if (hp.footerPageBg) document.body.style.background = hp.footerPageBg;
+        var card = document.getElementById('clean-page-card');
+        if (card) {
+          if (hp.footerPageCardBg) card.style.background = hp.footerPageCardBg;
+          if (hp.footerPageBorderColor) card.style.borderColor = hp.footerPageBorderColor;
+          if (hp.footerPageTextColor) card.style.color = hp.footerPageTextColor;
+          if (hp.footerPageRadiusPx !== undefined) card.style.borderRadius = hp.footerPageRadiusPx + 'px';
+        }
+        var h1 = document.getElementById('clean-page-title');
+        var grp = document.getElementById('clean-page-group');
+        var badge = document.getElementById('clean-store-badge');
+        if (hp.footerPageHeadingColor) {
+          if (h1) h1.style.color = hp.footerPageHeadingColor;
+          if (grp) grp.style.color = hp.footerPageHeadingColor;
+          if (badge) badge.style.color = hp.footerPageHeadingColor;
+        }
+        var backBtn = document.getElementById('clean-back-btn');
+        if (backBtn) {
+          if (hp.footerPageBtnBg) backBtn.style.background = hp.footerPageBtnBg;
+          if (hp.footerPageBtnText) backBtn.style.color = hp.footerPageBtnText;
+        }
+        var ov = hp.footerPageContents && hp.footerPageContents[topicKey];
+        if (ov) {
+          if (ov.title && ov.title.trim() && h1) h1.textContent = ov.title.trim();
+          var sub = document.getElementById('clean-page-subtitle');
+          if (ov.subtitle && ov.subtitle.trim() && sub) sub.textContent = ov.subtitle.trim();
+          var bodyEl = document.getElementById('clean-page-body');
+          if (ov.body && ov.body.trim() && bodyEl) {
+            bodyEl.innerHTML = '';
+            ov.body.trim().split(/\n+/).forEach(function(line) {
+              if (!line.trim()) return;
+              var p = document.createElement('p');
+              p.textContent = line.trim();
+              bodyEl.appendChild(p);
+            });
+          }
+        }
+      } catch (e) {}
+    })();
   </script>
 </body>
 </html>
