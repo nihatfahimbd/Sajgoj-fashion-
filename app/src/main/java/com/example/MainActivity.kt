@@ -315,6 +315,7 @@ class MainActivity : ComponentActivity() {
         BackHandler(
           enabled = currentScreen == AppScreen.ADMIN_PANEL ||
             currentScreen == AppScreen.CUSTOMER_PROFILE ||
+            currentScreen == AppScreen.INFO_PAGE ||
             isCartOpen ||
             selectedProduct != null ||
             selectedOrderInvoice != null ||
@@ -337,6 +338,7 @@ class MainActivity : ComponentActivity() {
             selectedOrderInvoice != null -> viewModel.closeInvoice()
             selectedProduct != null -> viewModel.closeProductDetail()
             isCartOpen -> viewModel.setCartOpen(false)
+            currentScreen == AppScreen.INFO_PAGE -> viewModel.closePolicyPage()
             currentScreen == AppScreen.CUSTOMER_PROFILE -> viewModel.setScreen(AppScreen.STOREFRONT)
             currentScreen == AppScreen.ADMIN_PANEL -> viewModel.setScreen(AppScreen.STOREFRONT)
           }
@@ -432,7 +434,8 @@ class MainActivity : ComponentActivity() {
               searchQuery = searchQuery,
               onSearchChange = { viewModel.setSearchQuery(it) },
               onToggleScreen = {
-                if (currentScreen == AppScreen.STOREFRONT) {
+                viewModel.clearPolicyTopic()
+                if (currentScreen == AppScreen.STOREFRONT || currentScreen == AppScreen.INFO_PAGE) {
                   viewModel.setScreen(AppScreen.ADMIN_PANEL)
                 } else {
                   viewModel.setScreen(AppScreen.STOREFRONT)
@@ -442,11 +445,13 @@ class MainActivity : ComponentActivity() {
               categories = categories,
               selectedCategory = selectedCategory,
               onCategorySelected = {
+                viewModel.clearPolicyTopic()
                 viewModel.setScreen(AppScreen.STOREFRONT)
                 storeBottomTab = StorefrontBottomTab.HOME
                 viewModel.setSelectedCategory(it)
               },
               onHomeReset = {
+                viewModel.clearPolicyTopic()
                 viewModel.setScreen(AppScreen.STOREFRONT)
                 storeBottomTab = StorefrontBottomTab.HOME
                 viewModel.resetHomeFilters()
@@ -523,7 +528,7 @@ class MainActivity : ComponentActivity() {
                     onAddToCart = { viewModel.addToCart(it, 1) },
                     onAddComboToCart = { viewModel.addComboToCart(it) },
                     onLikeReel = { viewModel.likeReel(it) },
-                    onBannerClick = { /* scroll or search */ },
+                    onBannerClick = { banner -> viewModel.handleBannerClick(banner, context) },
                     onOpenAiStylist = {
                       aiStylistInitialPrompt = ""
                       showAiStylistDialog = true
@@ -550,7 +555,8 @@ class MainActivity : ComponentActivity() {
                     onSendSupportMessage = { text, ordId -> viewModel.sendCustomerSupportMessage(text, ordId) },
                     onMarkSupportRead = { viewModel.markCustomerSupportRead() },
                     incomingPolicyTopic = activePolicyTopic,
-                    onClearIncomingPolicyTopic = { viewModel.clearPolicyTopic() }
+                    onClearIncomingPolicyTopic = { viewModel.clearPolicyTopic() },
+                    onOpenFooterTopic = { topic -> viewModel.openPolicyTopic(topic) }
                   )
                 }
 
@@ -586,7 +592,9 @@ class MainActivity : ComponentActivity() {
                     onToggleCoupon = { viewModel.toggleCoupon(it) },
                     onDeleteCoupon = { viewModel.deleteCoupon(it) },
                     onAddBanner = { viewModel.addBanner(it) },
+                    onUpdateBanner = { viewModel.updateBanner(it) },
                     onToggleBanner = { viewModel.toggleBanner(it) },
+                    onToggleBannerOverlay = { viewModel.toggleBannerOverlay(it) },
                     onDeleteBanner = { viewModel.deleteBanner(it) },
                     onUpdateStoreConfig = { viewModel.updateStoreConfig(it) },
                     onUpdateCourierConfig = { viewModel.updateCourierConfig(it) },
@@ -668,6 +676,23 @@ class MainActivity : ComponentActivity() {
                       showNotificationsDialog = true
                     },
                     onOpenLiveSupport = { showLiveSupportDialog = true }
+                  )
+                }
+
+                AppScreen.INFO_PAGE -> {
+                  com.example.ui.screens.CleanFooterInfoPageScreen(
+                    topicKey = activePolicyTopic ?: "privacy",
+                    config = storeConfig,
+                    orders = orders,
+                    coupons = coupons,
+                    onBack = { viewModel.closePolicyPage() },
+                    onOpenWhatsApp = {
+                      val cleaned = storeConfig.whatsapp.replace("+", "").replace(" ", "").replace("-", "")
+                      val waUrl = "https://wa.me/$cleaned"
+                      runCatching {
+                        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(waUrl)))
+                      }
+                    }
                   )
                 }
               }

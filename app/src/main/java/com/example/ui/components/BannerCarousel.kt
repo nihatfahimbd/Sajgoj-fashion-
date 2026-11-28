@@ -42,6 +42,7 @@ import kotlinx.coroutines.delay
 fun BannerCarousel(
   banners: List<BannerItem>,
   onBannerClick: (BannerItem) -> Unit,
+  bannerOverlayEnabled: Boolean = true,
   modifier: Modifier = Modifier
 ) {
   val activeBanners = banners.filter { it.isActive }
@@ -74,89 +75,87 @@ fun BannerCarousel(
         modifier = Modifier.fillMaxSize()
       ) { page ->
         val banner = activeBanners[page]
+        val hasLink = banner.link.isNotBlank()
+        val hasTitle = banner.title.isNotBlank()
+        val hasSubtitle = banner.subtitle.isNotBlank()
+        val hasButton = banner.buttonText.isNotBlank()
+        val showOverlayContent = bannerOverlayEnabled && banner.showOverlay && (hasTitle || hasSubtitle || hasButton)
+
         Box(
           modifier = Modifier
             .fillMaxSize()
-            .clickable { onBannerClick(banner) }
+            .then(if (hasLink) Modifier.clickable { onBannerClick(banner) } else Modifier)
         ) {
           // Banner Image
           AppImage(
             model = banner.imageUrl,
-            contentDescription = banner.title,
+            contentDescription = banner.title.ifBlank { "হোম ব্যানার" },
             modifier = Modifier.fillMaxSize()
           )
 
-          // Gradient overlay for contrast
-          Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .background(
-                Brush.horizontalGradient(
-                  colors = listOf(
-                    Color.Black.copy(alpha = 0.75f),
-                    Color.Black.copy(alpha = 0.40f),
-                    Color.Transparent
-                  )
-                )
-              )
-          )
-
-          // Text Content
-          Column(
-            modifier = Modifier
-              .fillMaxSize()
-              .padding(16.dp),
-            verticalArrangement = Arrangement.Center
-          ) {
+          if (showOverlayContent) {
+            // Gradient overlay for contrast only when overlay text/button is shown
             Box(
               modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(AntiqueGold)
-                .padding(horizontal = 8.dp, vertical = 2.dp)
-            ) {
-              Text(
-                text = "EXCLUSIVE OFFER",
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                color = DarkEspresso
-              )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-              text = banner.title,
-              color = Color.White,
-              fontSize = 17.sp,
-              fontWeight = FontWeight.Bold,
-              maxLines = 1
+                .fillMaxSize()
+                .background(
+                  Brush.horizontalGradient(
+                    colors = listOf(
+                      Color.Black.copy(alpha = 0.75f),
+                      Color.Black.copy(alpha = 0.40f),
+                      Color.Transparent
+                    )
+                  )
+                )
             )
 
-            Text(
-              text = banner.subtitle,
-              color = CreamSurface,
-              fontSize = 11.sp,
-              maxLines = 2,
-              lineHeight = 14.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-              onClick = { onBannerClick(banner) },
-              colors = ButtonDefaults.buttonColors(
-                containerColor = AntiqueGold,
-                contentColor = DarkEspresso
-              ),
-              shape = RoundedCornerShape(16.dp),
-              contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-              modifier = Modifier.height(28.dp)
+            // Optional Text Content (no forced pill or button when blank)
+            Column(
+              modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+              verticalArrangement = Arrangement.Center
             ) {
-              Text(
-                text = "${banner.buttonText} →",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
-              )
+              if (hasTitle) {
+                Text(
+                  text = banner.title,
+                  color = Color.White,
+                  fontSize = 17.sp,
+                  fontWeight = FontWeight.Bold,
+                  maxLines = 2
+                )
+              }
+
+              if (hasSubtitle) {
+                if (hasTitle) Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                  text = banner.subtitle,
+                  color = CreamSurface,
+                  fontSize = 11.sp,
+                  maxLines = 2,
+                  lineHeight = 14.sp
+                )
+              }
+
+              if (hasButton) {
+                if (hasTitle || hasSubtitle) Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                  onClick = { if (hasLink) onBannerClick(banner) },
+                  colors = ButtonDefaults.buttonColors(
+                    containerColor = AntiqueGold,
+                    contentColor = DarkEspresso
+                  ),
+                  shape = RoundedCornerShape(16.dp),
+                  contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                  modifier = Modifier.height(28.dp)
+                ) {
+                  Text(
+                    text = "${banner.buttonText} →",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                  )
+                }
+              }
             }
           }
         }

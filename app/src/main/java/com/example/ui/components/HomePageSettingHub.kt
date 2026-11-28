@@ -57,7 +57,11 @@ import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.DashboardCustomize
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Movie
@@ -126,12 +130,14 @@ fun HomePageSettingHub(
   onDeleteSection: (String) -> Unit,
   onResetSectionsToDefault: () -> Unit,
   onAddBannerClick: () -> Unit,
+  onEditBannerClick: (BannerItem) -> Unit = {},
   onToggleBanner: (String) -> Unit,
+  onToggleBannerOverlay: (String) -> Unit = {},
   onDeleteBanner: (String) -> Unit,
   onSaveStoreConfig: (StoreConfig) -> Unit,
   modifier: Modifier = Modifier
 ) {
-  var subTab by remember { mutableStateOf("BLOCKS") } // BLOCKS, BANNERS, HEADER, DESIGN
+  var subTab by remember { mutableStateOf("BLOCKS") } // BLOCKS, BANNERS, HEADER, DESIGN, FOOTER_PAGES
   var expandedEditorSectionId by remember { mutableStateOf<String?>("best_deals") }
   var sectionProductQueries by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
   var creatorType by remember { mutableStateOf<String?>(null) }
@@ -263,6 +269,13 @@ fun HomePageSettingHub(
           selected = subTab == "DESIGN",
           onClick = { subTab = "DESIGN" },
           modifier = Modifier.testTag("home_setting_subtab_DESIGN")
+        )
+        HomeSubTabPill(
+          label = "পেজ ও কনটেন্ট",
+          icon = Icons.Outlined.Description,
+          selected = subTab == "FOOTER_PAGES",
+          onClick = { subTab = "FOOTER_PAGES" },
+          modifier = Modifier.testTag("home_setting_subtab_FOOTER_PAGES")
         )
       }
     }
@@ -1287,6 +1300,30 @@ fun HomePageSettingHub(
 
             Spacer(modifier = Modifier.height(10.dp))
 
+            // Global Banner Settings Overlay On/Off Switch
+            val currentHp = storeConfig.pageConfig.homePage
+            PageConfigSwitchRow(
+              title = "Banner Overlay On/Off",
+              subtitle = if (currentHp.bannerOverlayEnabled) {
+                "চালু: ব্যানারের টাইটেল/সাবটাইটেল/বাটন দেখাবে (যদি লেখা থাকে)"
+              } else {
+                "বন্ধ (Off): কোনো লেখা দেখাবে না, শুধু পরিষ্কার ব্যানার ছবি দেখাবে"
+              },
+              checked = currentHp.bannerOverlayEnabled,
+              onCheckedChange = { enabled ->
+                onSaveStoreConfig(
+                  storeConfig.copy(
+                    pageConfig = storeConfig.pageConfig.copy(
+                      homePage = currentHp.copy(bannerOverlayEnabled = enabled)
+                    )
+                  )
+                )
+              },
+              testTag = "home_banner_global_overlay_switch"
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             LazyColumn(
               verticalArrangement = Arrangement.spacedBy(10.dp),
               contentPadding = PaddingValues(bottom = 24.dp)
@@ -1302,73 +1339,155 @@ fun HomePageSettingHub(
                   shadowElevation = 2.dp,
                   modifier = Modifier.fillMaxWidth()
                 ) {
-                  Row(
+                  Column(
                     modifier = Modifier
                       .fillMaxWidth()
                       .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                   ) {
-                    AppImage(
-                      model = b.imageUrl,
-                      contentDescription = b.title,
-                      contentScale = ContentScale.Crop,
-                      modifier = Modifier
-                        .width(74.dp)
-                        .height(54.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                      Text(
-                        text = b.title,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = AdminInkPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      AppImage(
+                        model = b.imageUrl,
+                        contentDescription = b.title.ifBlank { "ব্যানার ছবি" },
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                          .width(74.dp)
+                          .height(54.dp)
+                          .clip(RoundedCornerShape(10.dp))
                       )
-                      Text(
-                        text = b.subtitle,
-                        fontSize = 11.sp,
-                        color = AdminInkMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                      )
-                      Spacer(modifier = Modifier.height(4.dp))
-                      Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFFF0F9FF),
-                        border = BorderStroke(1.dp, Color(0xFFBAE6FD))
-                      ) {
+                      Spacer(modifier = Modifier.width(12.dp))
+                      Column(modifier = Modifier.weight(1f)) {
                         Text(
-                          text = b.buttonText,
-                          fontSize = 10.sp,
-                          color = AdminV2CyanDeep,
+                          text = b.title.ifBlank { "(শুধু ছবি — টাইটেল নেই)" },
+                          fontSize = 13.sp,
+                          fontWeight = FontWeight.ExtraBold,
+                          color = if (b.title.isBlank()) AdminInkMuted else AdminInkPrimary,
+                          maxLines = 1,
+                          overflow = TextOverflow.Ellipsis
+                        )
+                        if (b.subtitle.isNotBlank()) {
+                          Text(
+                            text = b.subtitle,
+                            fontSize = 11.sp,
+                            color = AdminInkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                          )
+                        }
+                        Row(
+                          horizontalArrangement = Arrangement.spacedBy(6.dp),
+                          verticalAlignment = Alignment.CenterVertically,
+                          modifier = Modifier.padding(top = 3.dp)
+                        ) {
+                          if (b.buttonText.isNotBlank()) {
+                            Surface(
+                              shape = RoundedCornerShape(6.dp),
+                              color = Color(0xFFF0F9FF),
+                              border = BorderStroke(1.dp, Color(0xFFBAE6FD))
+                            ) {
+                              Text(
+                                text = b.buttonText,
+                                fontSize = 10.sp,
+                                color = AdminV2CyanDeep,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                              )
+                            }
+                          }
+                          Text(
+                            text = if (b.link.isNotBlank()) "🔗 ${b.link}" else "লিংক নেই",
+                            fontSize = 10.sp,
+                            color = if (b.link.isNotBlank()) Color(0xFF059669) else AdminInkMuted,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                          )
+                        }
+                      }
+                      Switch(
+                        checked = b.isActive,
+                        onCheckedChange = { onToggleBanner(b.id) },
+                        colors = SwitchDefaults.colors(
+                          checkedThumbColor = Color.White,
+                          checkedTrackColor = AccentGreen,
+                          uncheckedThumbColor = Color.White,
+                          uncheckedTrackColor = Color(0xFFCBD5E1)
+                        )
+                      )
+                    }
+
+                    // Per-banner action row: Hide/Show Overlay, Edit, Delete
+                    Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalArrangement = Arrangement.spacedBy(8.dp),
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      OutlinedButton(
+                        onClick = { onToggleBannerOverlay(b.id) },
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, if (b.showOverlay) Color(0xFF94A3B8) else Color(0xFFF59E0B)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier
+                          .weight(1f)
+                          .heightIn(min = 42.dp)
+                          .testTag("home_banner_overlay_btn_${b.id}")
+                      ) {
+                        Icon(
+                          imageVector = if (b.showOverlay) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                          contentDescription = null,
+                          tint = if (b.showOverlay) AdminInkPrimary else Color(0xFFD97706),
+                          modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                          text = if (b.showOverlay) "Hide Overlay" else "Show Overlay",
+                          fontSize = 10.5.sp,
                           fontWeight = FontWeight.Bold,
-                          modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                          color = if (b.showOverlay) AdminInkPrimary else Color(0xFFD97706),
+                          maxLines = 1
                         )
                       }
-                    }
-                    Switch(
-                      checked = b.isActive,
-                      onCheckedChange = { onToggleBanner(b.id) },
-                      colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = AccentGreen,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFFCBD5E1)
-                      )
-                    )
-                    IconButton(
-                      onClick = { onDeleteBanner(b.id) },
-                      modifier = Modifier.minimumInteractiveComponentSize()
-                    ) {
-                      Icon(
-                        imageVector = Icons.Outlined.DeleteOutline,
-                        contentDescription = "মুছুন",
-                        tint = AccentRed,
-                        modifier = Modifier.size(18.dp)
-                      )
+
+                      OutlinedButton(
+                        onClick = { onEditBannerClick(b) },
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier
+                          .heightIn(min = 42.dp)
+                          .testTag("home_banner_edit_btn_${b.id}")
+                      ) {
+                        Icon(
+                          imageVector = Icons.Outlined.Edit,
+                          contentDescription = "এডিট",
+                          tint = AdminV2CyanDeep,
+                          modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("এডিট", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
+                      }
+
+                      OutlinedButton(
+                        onClick = { onDeleteBanner(b.id) },
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier
+                          .heightIn(min = 42.dp)
+                          .testTag("home_banner_delete_btn_${b.id}")
+                      ) {
+                        Icon(
+                          imageVector = Icons.Outlined.DeleteOutline,
+                          contentDescription = "ডিলিট",
+                          tint = AccentRed,
+                          modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("ডিলিট", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                      }
                     }
                   }
                 }
@@ -1622,6 +1741,7 @@ fun HomePageSettingHub(
                   hp = storeConfig.pageConfig.homePage,
                   homeSections = homeSections,
                   categories = categories,
+                  storeConfig = storeConfig,
                   onUpdateHomePage = { nextHp ->
                     onSaveStoreConfig(
                       storeConfig.copy(
@@ -1646,6 +1766,36 @@ fun HomePageSettingHub(
               config = storeConfig,
               onSaveConfig = onSaveStoreConfig
             )
+          }
+        }
+
+        "FOOTER_PAGES" -> {
+          Column(
+            modifier = Modifier
+              .fillMaxSize()
+              .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+          ) {
+            Surface(
+              shape = RoundedCornerShape(16.dp),
+              color = Color.White,
+              border = BorderStroke(1.dp, Color(0xFFD6E8F5)),
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Column(modifier = Modifier.padding(14.dp)) {
+                FooterPagesEditorControls(
+                  hp = storeConfig.pageConfig.homePage,
+                  storeConfig = storeConfig,
+                  onUpdate = { nextHp ->
+                    onSaveStoreConfig(
+                      storeConfig.copy(
+                        pageConfig = storeConfig.pageConfig.copy(homePage = nextHp)
+                      )
+                    )
+                  }
+                )
+              }
+            }
           }
         }
       }

@@ -3,6 +3,9 @@ package com.example.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +35,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
@@ -49,6 +53,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -84,6 +90,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -179,10 +186,14 @@ import com.example.ui.components.adminRoyalGlossBrush
 import com.example.ui.components.adminV2GreetingBn
 import com.example.ui.components.adminVioletCyanBrush
 import com.example.ui.components.adminWarmCoralAmberBrush
+import com.example.ui.components.PageConfigSwitchRow
 import com.example.ui.components.printShippingLabels
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
+import com.example.util.ProductMediaHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -217,7 +228,9 @@ fun AdminDashboardScreen(
   onToggleCoupon: (String) -> Unit,
   onDeleteCoupon: (String) -> Unit,
   onAddBanner: (BannerItem) -> Unit,
+  onUpdateBanner: (BannerItem) -> Unit = {},
   onToggleBanner: (String) -> Unit,
+  onToggleBannerOverlay: (String) -> Unit = {},
   onDeleteBanner: (String) -> Unit,
   onUpdateStoreConfig: (StoreConfig) -> Unit,
   onUpdateCourierConfig: (CourierConfig) -> Unit,
@@ -277,6 +290,7 @@ fun AdminDashboardScreen(
   var editingCategory by remember { mutableStateOf<Category?>(null) }
   var showCouponDialog by remember { mutableStateOf(false) }
   var showBannerDialog by remember { mutableStateOf(false) }
+  var editingBanner by remember { mutableStateOf<BannerItem?>(null) }
   var showReturnDialog by remember { mutableStateOf(false) }
   var returnTargetOrder by remember { mutableStateOf<Order?>(null) }
   var viewingReturnSlip by remember { mutableStateOf<ReturnRecord?>(null) }
@@ -520,8 +534,16 @@ fun AdminDashboardScreen(
             onAddCustomSection = onAddCustomHomeSection,
             onDeleteSection = onDeleteHomeSection,
             onResetSectionsToDefault = onResetHomeSectionsToDefault,
-            onAddBannerClick = { showBannerDialog = true },
+            onAddBannerClick = {
+              editingBanner = null
+              showBannerDialog = true
+            },
+            onEditBannerClick = { b ->
+              editingBanner = b
+              showBannerDialog = true
+            },
             onToggleBanner = onToggleBanner,
+            onToggleBannerOverlay = onToggleBannerOverlay,
             onDeleteBanner = onDeleteBanner,
             onSaveStoreConfig = onUpdateStoreConfig
           )
@@ -639,8 +661,16 @@ fun AdminDashboardScreen(
             onAddCouponClick = { showCouponDialog = true },
             onToggleCoupon = onToggleCoupon,
             onDeleteCoupon = onDeleteCoupon,
-            onAddBannerClick = { showBannerDialog = true },
+            onAddBannerClick = {
+              editingBanner = null
+              showBannerDialog = true
+            },
+            onEditBannerClick = { b ->
+              editingBanner = b
+              showBannerDialog = true
+            },
             onToggleBanner = onToggleBanner,
+            onToggleBannerOverlay = onToggleBannerOverlay,
             onDeleteBanner = onDeleteBanner
           )
         }
@@ -779,13 +809,22 @@ fun AdminDashboardScreen(
     )
   }
 
-  // Banner Add Dialog
+  // Banner Add / Edit Dialog
   if (showBannerDialog) {
     BannerFormDialog(
-      onDismiss = { showBannerDialog = false },
-      onSave = { b ->
-        onAddBanner(b)
+      initialBanner = editingBanner,
+      onDismiss = {
         showBannerDialog = false
+        editingBanner = null
+      },
+      onSave = { b ->
+        if (editingBanner != null) {
+          onUpdateBanner(b)
+        } else {
+          onAddBanner(b)
+        }
+        showBannerDialog = false
+        editingBanner = null
       }
     )
   }
@@ -2591,7 +2630,9 @@ fun AdminMarketingHub(
   onToggleCoupon: (String) -> Unit,
   onDeleteCoupon: (String) -> Unit,
   onAddBannerClick: () -> Unit,
+  onEditBannerClick: (BannerItem) -> Unit = {},
   onToggleBanner: (String) -> Unit,
+  onToggleBannerOverlay: (String) -> Unit = {},
   onDeleteBanner: (String) -> Unit
 ) {
   var selectedSubTab by remember { mutableStateOf("B2G1") }
@@ -2652,8 +2693,20 @@ fun AdminMarketingHub(
       "BANNERS" -> {
         AdminBannersTab(
           banners = banners,
+          bannerOverlayEnabled = storeConfig.pageConfig.homePage.bannerOverlayEnabled,
+          onToggleGlobalOverlay = { enabled ->
+            onUpdateStoreConfig(
+              storeConfig.copy(
+                pageConfig = storeConfig.pageConfig.copy(
+                  homePage = storeConfig.pageConfig.homePage.copy(bannerOverlayEnabled = enabled)
+                )
+              )
+            )
+          },
           onAddClick = onAddBannerClick,
+          onEditClick = onEditBannerClick,
           onToggle = onToggleBanner,
+          onToggleOverlay = onToggleBannerOverlay,
           onDelete = onDeleteBanner
         )
       }
@@ -3587,8 +3640,12 @@ fun AdminCourierTab(
 @Composable
 fun AdminBannersTab(
   banners: List<BannerItem>,
+  bannerOverlayEnabled: Boolean = true,
+  onToggleGlobalOverlay: (Boolean) -> Unit = {},
   onAddClick: () -> Unit,
+  onEditClick: (BannerItem) -> Unit = {},
   onToggle: (String) -> Unit,
+  onToggleOverlay: (String) -> Unit = {},
   onDelete: (String) -> Unit
 ) {
   Column(modifier = Modifier.fillMaxSize()) {
@@ -3602,7 +3659,8 @@ fun AdminBannersTab(
         onClick = onAddClick,
         colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
         shape = RoundedCornerShape(14.dp),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        modifier = Modifier.heightIn(min = 42.dp)
       ) {
         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
@@ -3612,40 +3670,131 @@ fun AdminBannersTab(
 
     Spacer(modifier = Modifier.height(10.dp))
 
+    // Banner Settings Global Overlay On/Off Switch
+    PageConfigSwitchRow(
+      title = "Banner Settings: Overlay On/Off",
+      subtitle = if (bannerOverlayEnabled) {
+        "চালু: ব্যানারের টাইটেল/সাবটাইটেল/বাটন দেখাবে (যদি লেখা থাকে)"
+      } else {
+        "বন্ধ (Off): কোনো লেখা দেখাবে না, শুধু পরিষ্কার ছবি দেখাবে"
+      },
+      checked = bannerOverlayEnabled,
+      onCheckedChange = onToggleGlobalOverlay,
+      testTag = "admin_banner_global_overlay_switch"
+    )
+
+    Spacer(modifier = Modifier.height(10.dp))
+
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
       items(banners, key = { it.id }) { b ->
         GlossyAdminCard(
           cornerRadius = 14.dp,
           contentPadding = 10.dp
         ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            AppImage(
-              model = b.imageUrl,
-              contentDescription = b.title,
-              modifier = Modifier
-                .size(60.dp)
-                .clip(RoundedCornerShape(8.dp))
-            )
+          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              AppImage(
+                model = b.imageUrl,
+                contentDescription = b.title.ifBlank { "ব্যানার ছবি" },
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                  .size(64.dp)
+                  .clip(RoundedCornerShape(8.dp))
+              )
 
-            Spacer(modifier = Modifier.width(10.dp))
+              Spacer(modifier = Modifier.width(10.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-              Text(text = b.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary, maxLines = 1)
-              Text(text = b.subtitle, fontSize = 11.sp, color = AdminInkMuted, maxLines = 1)
-              Text(text = "বাটন: ${b.buttonText}", fontSize = 10.sp, color = AdminV2CyanDeep, fontWeight = FontWeight.SemiBold)
-            }
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = b.title.ifBlank { "(শুধু ছবি — টাইটেল নেই)" },
+                  fontSize = 13.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = if (b.title.isBlank()) AdminInkMuted else AdminInkPrimary,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis
+                )
+                if (b.subtitle.isNotBlank()) {
+                  Text(text = b.subtitle, fontSize = 11.sp, color = AdminInkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                if (b.buttonText.isNotBlank()) {
+                  Text(text = "বাটন: ${b.buttonText}", fontSize = 10.sp, color = AdminV2CyanDeep, fontWeight = FontWeight.SemiBold)
+                }
+                Text(
+                  text = if (b.link.isNotBlank()) "🔗 ${b.link}" else "লিংক নেই (ক্লিক অকার্যকর)",
+                  fontSize = 10.sp,
+                  color = if (b.link.isNotBlank()) Color(0xFF059669) else AdminInkMuted,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis
+                )
+              }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
               Switch(
                 checked = b.isActive,
                 onCheckedChange = { onToggle(b.id) },
                 colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AccentGreen)
               )
-              IconButton(onClick = { onDelete(b.id) }, modifier = Modifier.size(32.dp)) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = AccentRed, modifier = Modifier.size(16.dp))
+            }
+
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              OutlinedButton(
+                onClick = { onToggleOverlay(b.id) },
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (b.showOverlay) Color(0xFF94A3B8) else Color(0xFFF59E0B)),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier
+                  .weight(1f)
+                  .heightIn(min = 42.dp)
+                  .testTag("admin_banner_overlay_btn_${b.id}")
+              ) {
+                Icon(
+                  imageVector = if (b.showOverlay) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                  contentDescription = null,
+                  tint = if (b.showOverlay) AdminInkPrimary else Color(0xFFD97706),
+                  modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                  text = if (b.showOverlay) "Hide Overlay" else "Show Overlay",
+                  fontSize = 10.5.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = if (b.showOverlay) AdminInkPrimary else Color(0xFFD97706),
+                  maxLines = 1
+                )
+              }
+
+              OutlinedButton(
+                onClick = { onEditClick(b) },
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier
+                  .heightIn(min = 42.dp)
+                  .testTag("admin_banner_edit_btn_${b.id}")
+              ) {
+                Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = AdminV2CyanDeep, modifier = Modifier.size(15.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("এডিট", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
+              }
+
+              OutlinedButton(
+                onClick = { onDelete(b.id) },
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier
+                  .heightIn(min = 42.dp)
+                  .testTag("admin_banner_delete_btn_${b.id}")
+              ) {
+                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = AccentRed, modifier = Modifier.size(15.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("ডিলিট", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = AccentRed)
               }
             }
           }
@@ -3758,12 +3907,36 @@ fun CouponFormDialog(
 
 @Composable
 fun BannerFormDialog(
+  initialBanner: BannerItem? = null,
   onDismiss: () -> Unit,
   onSave: (BannerItem) -> Unit
 ) {
-  var title by remember { mutableStateOf("") }
-  var subtitle by remember { mutableStateOf("") }
-  var buttonText by remember { mutableStateOf("কালেকশন দেখুন") }
+  val context = LocalContext.current
+  val scope = rememberCoroutineScope()
+  var title by remember(initialBanner) { mutableStateOf(initialBanner?.title.orEmpty()) }
+  var subtitle by remember(initialBanner) { mutableStateOf(initialBanner?.subtitle.orEmpty()) }
+  var buttonText by remember(initialBanner) { mutableStateOf(initialBanner?.buttonText.orEmpty()) }
+  var link by remember(initialBanner) { mutableStateOf(initialBanner?.link.orEmpty()) }
+  var imageUrl by remember(initialBanner) { mutableStateOf(initialBanner?.imageUrl.orEmpty()) }
+  var showOverlay by remember(initialBanner) { mutableStateOf(initialBanner?.showOverlay ?: true) }
+  var isCopyingImage by remember { mutableStateOf(false) }
+
+  val pickBannerImageLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.PickVisualMedia()
+  ) { uri ->
+    if (uri != null) {
+      isCopyingImage = true
+      scope.launch {
+        val localUri = withContext(Dispatchers.IO) {
+          ProductMediaHelper.copyPickedImageToInternalStorage(context, uri)
+        }
+        if (!localUri.isNullOrBlank()) {
+          imageUrl = localUri
+        }
+        isCopyingImage = false
+      }
+    }
+  }
 
   Dialog(onDismissRequest = onDismiss) {
     Surface(
@@ -3772,65 +3945,156 @@ fun BannerFormDialog(
       border = BorderStroke(1.5.dp, AdminCardBorderWarm),
       shadowElevation = 10.dp,
       modifier = Modifier
-        .fillMaxWidth(0.92f)
-        .padding(16.dp)
+        .fillMaxWidth(0.94f)
+        .padding(12.dp)
     ) {
       Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier
+          .padding(16.dp)
+          .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Text(text = "নতুন ব্যানার যোগ করুন", fontSize = 15.sp, fontWeight = FontWeight.Black, color = AdminInkPrimary)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = if (initialBanner != null) "ব্যানার এডিট করুন" else "নতুন ব্যানার যোগ করুন",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Black,
+            color = AdminInkPrimary
+          )
+          IconButton(onClick = onDismiss, modifier = Modifier.size(40.dp)) {
+            Icon(imageVector = Icons.Default.Close, contentDescription = "বন্ধ করুন", tint = AdminInkMuted)
+          }
+        }
+
+        // Banner Image Preview + Gallery Upload
+        val previewModel = imageUrl.trim().ifBlank { "res://banner_eid_special_1792530116809" }
+        AppImage(
+          model = previewModel,
+          contentDescription = "ব্যানার প্রিভিউ",
+          contentScale = ContentScale.Crop,
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(110.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, AdminCardBorderSoft, RoundedCornerShape(12.dp))
+        )
+
+        OutlinedButton(
+          onClick = {
+            pickBannerImageLauncher.launch(
+              PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+          },
+          shape = RoundedCornerShape(12.dp),
+          border = BorderStroke(1.dp, AdminV2CyanDeep),
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .testTag("banner_pick_gallery_btn")
+        ) {
+          if (isCopyingImage) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+          } else {
+            Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, tint = AdminV2CyanDeep, modifier = Modifier.size(18.dp))
+          }
+          Spacer(modifier = Modifier.width(6.dp))
+          Text(text = "গ্যালারি থেকে ব্যানার ছবি আপলোড করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AdminV2CyanDeep)
+        }
 
         OutlinedTextField(
-          value = title,
-          onValueChange = { title = it },
-          label = { Text("ব্যানার টাইটেল") },
+          value = imageUrl,
+          onValueChange = { imageUrl = it },
+          label = { Text("ছবির URL (ঐচ্ছিক — না দিলে ডিফল্ট)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
           colors = adminOutlinedTextFieldColors(),
           modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+          value = title,
+          onValueChange = { title = it },
+          label = { Text("ব্যানার টাইটেল (ঐচ্ছিক — খালি রাখা যাবে)") },
+          singleLine = true,
+          shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("banner_title_input")
         )
 
         OutlinedTextField(
           value = subtitle,
           onValueChange = { subtitle = it },
-          label = { Text("সাবটাইটেল / অফার টেক্সট") },
+          label = { Text("সাবটাইটেল (ঐচ্ছিক — খালি রাখা যাবে)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
           colors = adminOutlinedTextFieldColors(),
-          modifier = Modifier.fillMaxWidth()
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("banner_subtitle_input")
         )
 
         OutlinedTextField(
           value = buttonText,
           onValueChange = { buttonText = it },
-          label = { Text("বাটন টেক্সট") },
+          label = { Text("বাটন টেক্সট (ঐচ্ছিক — খালি রাখা যাবে)") },
           singleLine = true,
           shape = RoundedCornerShape(12.dp),
           colors = adminOutlinedTextFieldColors(),
-          modifier = Modifier.fillMaxWidth()
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("banner_button_input")
+        )
+
+        OutlinedTextField(
+          value = link,
+          onValueChange = { link = it },
+          label = { Text("ক্লিক লিংক (উদাঃ /product/p1 বা /category/চুরি)") },
+          placeholder = { Text("খালি রাখলে ছবিতে ক্লিক করলে কিছু হবে না", fontSize = 11.sp) },
+          singleLine = true,
+          shape = RoundedCornerShape(12.dp),
+          colors = adminOutlinedTextFieldColors(),
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("banner_link_input")
+        )
+
+        PageConfigSwitchRow(
+          title = "এই ব্যানারে Overlay দেখান",
+          subtitle = "বন্ধ করলে শুধু ছবি দেখাবে (লেখা ও বাটন লুকানো থাকবে)",
+          checked = showOverlay,
+          onCheckedChange = { showOverlay = it },
+          testTag = "banner_item_overlay_switch"
         )
 
         Button(
           onClick = {
-            if (title.isNotBlank()) {
-              onSave(
-                BannerItem(
-                  id = "b_${System.currentTimeMillis()}",
-                  title = title,
-                  subtitle = subtitle,
-                  buttonText = buttonText,
-                  imageUrl = "res://banner_eid_special_1792530116809",
-                  isActive = true
-                )
+            onSave(
+              BannerItem(
+                id = initialBanner?.id ?: "b_${System.currentTimeMillis()}",
+                title = title.trim(),
+                subtitle = subtitle.trim(),
+                buttonText = buttonText.trim(),
+                link = link.trim(),
+                imageUrl = imageUrl.trim().ifBlank { "res://banner_eid_special_1792530116809" },
+                showOverlay = showOverlay,
+                isActive = initialBanner?.isActive ?: true
               )
-            }
+            )
           },
           colors = ButtonDefaults.buttonColors(containerColor = AdminV2CyanDeep, contentColor = Color.White),
           shape = RoundedCornerShape(14.dp),
-          modifier = Modifier.fillMaxWidth().height(48.dp)
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .testTag("banner_save_btn")
         ) {
-          Text("ব্যানার যুক্ত করুন", fontWeight = FontWeight.Bold)
+          Text(if (initialBanner != null) "ব্যানার আপডেট করুন" else "ব্যানার যুক্ত করুন", fontWeight = FontWeight.Bold)
         }
       }
     }

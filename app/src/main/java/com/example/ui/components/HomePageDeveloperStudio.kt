@@ -45,9 +45,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextField
 import com.example.data.model.Category
+import com.example.data.model.FooterPageContentOverride
 import com.example.data.model.HomePageConfig
 import com.example.data.model.HomeSectionConfig
+import com.example.data.model.StoreConfig
+import com.example.ui.screens.FOOTER_HUB_TOPICS
+import com.example.ui.screens.defaultFooterPageContent
+import com.example.ui.screens.resolvedFooterPageContent
+import com.example.ui.theme.DarkEspresso
+import com.example.ui.theme.RoyalMaroon
+import com.example.ui.theme.parseColorHex
 
 private enum class HomeStudioGroup(val label: String) {
   ORDERING("সাজানো (↑↓←→)"),
@@ -55,6 +67,7 @@ private enum class HomeStudioGroup(val label: String) {
   VOUCHER("ভাউচার কার্ড"),
   CATEGORY_BLOCK("ক্যাটাগরি ও ব্লক"),
   FOOTER_TRUST("ফুটার ও ট্রাস্ট"),
+  FOOTER_PAGES("ফুটার পেজ ও কনটেন্ট"),
   BOTTOM_NAV("বটম মেনু")
 }
 
@@ -76,6 +89,7 @@ fun HomePageDeveloperStudio(
   onToggleSection: (String) -> Unit,
   onMoveSection: (String, Int) -> Unit,
   onResetHomePage: () -> Unit = { onUpdateHomePage(HomePageConfig()) },
+  storeConfig: StoreConfig = StoreConfig(),
   modifier: Modifier = Modifier
 ) {
   var activeGroup by remember { mutableStateOf(HomeStudioGroup.ORDERING) }
@@ -150,6 +164,7 @@ fun HomePageDeveloperStudio(
       HomeStudioGroup.VOUCHER -> VoucherStudioControls(hp = hp, onUpdate = onUpdateHomePage)
       HomeStudioGroup.CATEGORY_BLOCK -> CategoryAndBlockControls(hp = hp, onUpdate = onUpdateHomePage)
       HomeStudioGroup.FOOTER_TRUST -> FooterAndTrustControls(hp = hp, onUpdate = onUpdateHomePage)
+      HomeStudioGroup.FOOTER_PAGES -> FooterPagesEditorControls(hp = hp, storeConfig = storeConfig, onUpdate = onUpdateHomePage)
       HomeStudioGroup.BOTTOM_NAV -> BottomNavStudioControls(hp = hp, onUpdate = onUpdateHomePage)
     }
   }
@@ -473,5 +488,220 @@ private fun BottomNavStudioControls(hp: HomePageConfig, onUpdate: (HomePageConfi
     PageColorHexPickerRow("কার্ট ব্যাজ টেক্সট", hp.bottomNavBadgeText, "hp_bn_bdg_txt") { onUpdate(hp.copy(bottomNavBadgeText = it)) }
     PageIntSliderRow("Bottom Nav Top Radius", hp.bottomNavRadiusPx, 0..32) { onUpdate(hp.copy(bottomNavRadiusPx = it)) }
     PageIntSliderRow("Bottom Nav Border Width", hp.bottomNavBorderWidthPx, 0..4) { onUpdate(hp.copy(bottomNavBorderWidthPx = it)) }
+  }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun FooterPagesEditorControls(
+  hp: HomePageConfig,
+  storeConfig: StoreConfig,
+  onUpdate: (HomePageConfig) -> Unit
+) {
+  var selectedTopicKey by remember { mutableStateOf("privacy") }
+  val defContent = remember(selectedTopicKey, storeConfig) {
+    defaultFooterPageContent(selectedTopicKey, storeConfig)
+  }
+  val resolvedContent = remember(selectedTopicKey, hp, storeConfig) {
+    resolvedFooterPageContent(selectedTopicKey, hp, storeConfig)
+  }
+  val currentOverride = hp.footerPageContents[selectedTopicKey]
+
+  val pageBgCol = parseColorHex(hp.footerPageBg, Color(0xFFFFFAF5))
+  val cardBgCol = parseColorHex(hp.footerPageCardBg, Color.White)
+  val borderCol = parseColorHex(hp.footerPageBorderColor, Color(0xFFF3E2D0))
+  val headingCol = parseColorHex(hp.footerPageHeadingColor, RoyalMaroon)
+  val textCol = parseColorHex(hp.footerPageTextColor, DarkEspresso)
+  val btnBgCol = parseColorHex(hp.footerPageBtnBg, RoyalMaroon)
+  val btnTxtCol = parseColorHex(hp.footerPageBtnText, Color.White)
+  val cardRadius = hp.footerPageRadiusPx.coerceIn(0, 32).dp
+
+  Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Text(
+      text = "ফুটার হাব ক্লিন পেজ কাস্টমাইজেশন ও কনটেন্ট এডিটর",
+      fontSize = 13.sp,
+      fontWeight = FontWeight.Black,
+      color = AdminInkPrimary
+    )
+    Text(
+      text = "Information, Support ও Consumer Policy-র প্রতিটি লিংকের সরাসরি ক্লিন পেজের ডিজাইন এবং লেখা এখান থেকে পরিবর্তন করুন।",
+      fontSize = 11.sp,
+      color = AdminInkMuted
+    )
+
+    // Live Mini Preview of Selected Clean Footer Page
+    Surface(
+      shape = RoundedCornerShape(14.dp),
+      color = pageBgCol,
+      border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+      modifier = Modifier
+        .fillMaxWidth()
+        .testTag("footer_page_live_preview")
+    ) {
+      Column(
+        modifier = Modifier.padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Surface(
+          shape = RoundedCornerShape(8.dp),
+          color = btnBgCol
+        ) {
+          Text(
+            text = "← হোমে ফিরুন",
+            fontSize = 9.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = btnTxtCol,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+          )
+        }
+        Surface(
+          shape = RoundedCornerShape(cardRadius),
+          color = cardBgCol,
+          border = BorderStroke(1.dp, borderCol),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Text(
+              text = resolvedContent.title,
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Black,
+              color = headingCol,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+            if (resolvedContent.subtitle.isNotBlank()) {
+              Text(
+                text = resolvedContent.subtitle,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = textCol.copy(alpha = 0.75f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+            Text(
+              text = resolvedContent.body,
+              fontSize = 9.5.sp,
+              color = textCol,
+              maxLines = 3,
+              overflow = TextOverflow.Ellipsis,
+              lineHeight = 13.sp
+            )
+          }
+        }
+      }
+    }
+
+    // Topic Selector Chips
+    Text("১. কোন পেজের কনটেন্ট এডিট করবেন:", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+      FOOTER_HUB_TOPICS.forEach { meta ->
+        val isSel = meta.key == selectedTopicKey
+        val hasCustom = hp.footerPageContents[meta.key]?.let {
+          it.title.isNotBlank() || it.subtitle.isNotBlank() || it.body.isNotBlank()
+        } == true
+        Surface(
+          shape = RoundedCornerShape(10.dp),
+          color = if (isSel) AdminV2CyanDeep else if (hasCustom) Color(0xFFECFDF5) else Color(0xFFF8FAFC),
+          border = BorderStroke(1.dp, if (isSel) AdminV2CyanDeep else if (hasCustom) Color(0xFF34D399) else Color(0xFFCBD5E1)),
+          modifier = Modifier
+            .heightIn(min = 38.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { selectedTopicKey = meta.key }
+            .testTag("footer_editor_topic_${meta.key}")
+        ) {
+          Text(
+            text = meta.defaultLabel,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (isSel) Color.White else AdminInkPrimary,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+          )
+        }
+      }
+    }
+
+    // Content Editor Fields for Selected Topic
+    val titleVal = currentOverride?.title ?: defContent.title
+    val subtitleVal = currentOverride?.subtitle ?: defContent.subtitle
+    val bodyVal = currentOverride?.body ?: defContent.body
+
+    fun updateTopicOverride(nextTitle: String, nextSubtitle: String, nextBody: String) {
+      val nextMap = hp.footerPageContents.toMutableMap()
+      nextMap[selectedTopicKey] = FooterPageContentOverride(
+        title = nextTitle,
+        subtitle = nextSubtitle,
+        body = nextBody
+      )
+      onUpdate(hp.copy(footerPageContents = nextMap))
+    }
+
+    OutlinedTextField(
+      value = titleVal,
+      onValueChange = { updateTopicOverride(it, subtitleVal, bodyVal) },
+      label = { Text("পেজ শিরোনাম (Title)") },
+      singleLine = true,
+      shape = RoundedCornerShape(10.dp),
+      colors = adminOutlinedTextFieldColors(),
+      modifier = Modifier
+        .fillMaxWidth()
+        .testTag("footer_editor_title_input")
+    )
+
+    OutlinedTextField(
+      value = subtitleVal,
+      onValueChange = { updateTopicOverride(titleVal, it, bodyVal) },
+      label = { Text("সাবটাইটেল (Subtitle)") },
+      singleLine = true,
+      shape = RoundedCornerShape(10.dp),
+      colors = adminOutlinedTextFieldColors(),
+      modifier = Modifier
+        .fillMaxWidth()
+        .testTag("footer_editor_subtitle_input")
+    )
+
+    OutlinedTextField(
+      value = bodyVal,
+      onValueChange = { updateTopicOverride(titleVal, subtitleVal, it) },
+      label = { Text("মূল কনটেন্ট (Body Text)") },
+      minLines = 4,
+      maxLines = 8,
+      shape = RoundedCornerShape(10.dp),
+      colors = adminOutlinedTextFieldColors(),
+      modifier = Modifier
+        .fillMaxWidth()
+        .testTag("footer_editor_body_input")
+    )
+
+    OutlinedButton(
+      onClick = {
+        val nextMap = hp.footerPageContents.toMutableMap().apply { remove(selectedTopicKey) }
+        onUpdate(hp.copy(footerPageContents = nextMap))
+      },
+      shape = RoundedCornerShape(10.dp),
+      border = BorderStroke(1.dp, Color(0xFF94A3B8)),
+      modifier = Modifier.heightIn(min = 42.dp)
+    ) {
+      Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+      Text(" এই পেজ ডিফল্টে ফিরিয়ে আনুন", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    }
+
+    HorizontalDivider(color = Color(0xFFE2E8F0))
+    Text("২. ক্লিন পেজের কালার ও বর্ডার সেটিংস:", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AdminInkPrimary)
+
+    PageColorHexPickerRow("পেজ ব্যাকগ্রাউন্ড", hp.footerPageBg, "hp_fp_bg") { onUpdate(hp.copy(footerPageBg = it)) }
+    PageColorHexPickerRow("কার্ড ব্যাকগ্রাউন্ড", hp.footerPageCardBg, "hp_fp_card_bg") { onUpdate(hp.copy(footerPageCardBg = it)) }
+    PageColorHexPickerRow("কার্ড বর্ডার কালার", hp.footerPageBorderColor, "hp_fp_brd") { onUpdate(hp.copy(footerPageBorderColor = it)) }
+    PageColorHexPickerRow("শিরোনাম কালার", hp.footerPageHeadingColor, "hp_fp_hd") { onUpdate(hp.copy(footerPageHeadingColor = it)) }
+    PageColorHexPickerRow("মূল টেক্সট কালার", hp.footerPageTextColor, "hp_fp_txt") { onUpdate(hp.copy(footerPageTextColor = it)) }
+    PageColorHexPickerRow("ব্যাক বাটন ব্যাকগ্রাউন্ড", hp.footerPageBtnBg, "hp_fp_btn_bg") { onUpdate(hp.copy(footerPageBtnBg = it)) }
+    PageColorHexPickerRow("ব্যাক বাটন টেক্সট", hp.footerPageBtnText, "hp_fp_btn_txt") { onUpdate(hp.copy(footerPageBtnText = it)) }
+    PageIntSliderRow("Card Corner Radius", hp.footerPageRadiusPx, 0..32) { onUpdate(hp.copy(footerPageRadiusPx = it)) }
   }
 }

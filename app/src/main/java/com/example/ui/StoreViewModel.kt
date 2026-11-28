@@ -81,7 +81,8 @@ data class ImageSearchState(
 enum class AppScreen {
   STOREFRONT,
   ADMIN_PANEL,
-  CUSTOMER_PROFILE
+  CUSTOMER_PROFILE,
+  INFO_PAGE
 }
 
 enum class ProductSortOption(val label: String, val subtitleBn: String) {
@@ -511,12 +512,12 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
     val matchedTopic = policyPathMap[parsedPath]
     if (matchedTopic != null) {
-      _currentScreen.value = AppScreen.STOREFRONT
       _selectedProduct.value = null
       _selectedOrderInvoice.value = null
       _isCartOpen.value = false
       _isCheckoutOpen.value = false
       _activePolicyTopic.value = matchedTopic
+      _currentScreen.value = AppScreen.INFO_PAGE
       emitToast("📄 পেজ খোলা হয়েছে")
       return true
     }
@@ -545,11 +546,27 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         emitToast("🛍️ সকল কালেকশন খোলা হয়েছে")
         return true
       }
+      parsedPath.startsWith("/product/") -> {
+        val rawPid = android.net.Uri.decode(parsedPath.removePrefix("/product/")).trim()
+        val prod = products.value.firstOrNull {
+          it.id.equals(rawPid, ignoreCase = true) ||
+            it.sku.equals(rawPid, ignoreCase = true) ||
+            it.name.lowercase().replace(" ", "-") == rawPid.lowercase()
+        }
+        if (prod != null) {
+          _currentScreen.value = AppScreen.STOREFRONT
+          _selectedOrderInvoice.value = null
+          _isCartOpen.value = false
+          _selectedProduct.value = prod
+          emitToast("✨ ${prod.name}")
+          return true
+        }
+      }
       parsedPath.startsWith("/category/") -> {
         val rawCat = android.net.Uri.decode(parsedPath.removePrefix("/category/")).trim()
         val matchedCat = categories.value.firstOrNull {
           it.name.equals(rawCat, ignoreCase = true) ||
-            it.name.lowercase().replace(" ", "-") == rawCat
+            it.name.lowercase().replace(" ", "-") == rawCat.lowercase()
         }?.name ?: rawCat
         _currentScreen.value = AppScreen.STOREFRONT
         _selectedCategory.value = matchedCat
@@ -567,12 +584,55 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     return true
   }
 
+  fun handleBannerClick(banner: BannerItem, context: android.content.Context) {
+    val raw = banner.link.trim()
+    if (raw.isBlank()) return
+    if (raw.startsWith("http://", ignoreCase = true) || raw.startsWith("https://", ignoreCase = true)) {
+      if (!raw.contains("sajgoj.nfbd.workers.dev", ignoreCase = true)) {
+        runCatching {
+          context.startActivity(
+            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(raw))
+              .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+          )
+        }
+        return
+      }
+    }
+    if (raw.startsWith("#product-", ignoreCase = true)) {
+      val pid = raw.removePrefix("#product-").trim()
+      val prod = products.value.firstOrNull { it.id.equals(pid, ignoreCase = true) || it.sku.equals(pid, ignoreCase = true) }
+      if (prod != null) {
+        _currentScreen.value = AppScreen.STOREFRONT
+        _selectedProduct.value = prod
+        return
+      }
+    }
+    if (raw.startsWith("#cat=", ignoreCase = true)) {
+      val cat = android.net.Uri.decode(raw.removePrefix("#cat=")).trim()
+      _currentScreen.value = AppScreen.STOREFRONT
+      _selectedCategory.value = cat.ifBlank { "All" }
+      return
+    }
+    val normalized = if (raw.startsWith("/") || raw.startsWith("http", ignoreCase = true)) raw else "/$raw"
+    handleIncomingDomainLink(normalized)
+  }
+
   fun openPolicyTopic(topic: String?) {
-    _activePolicyTopic.value = topic
+    if (topic.isNullOrBlank()) {
+      closePolicyPage()
+    } else {
+      _activePolicyTopic.value = topic
+      _currentScreen.value = AppScreen.INFO_PAGE
+    }
   }
 
   fun clearPolicyTopic() {
     _activePolicyTopic.value = null
+  }
+
+  fun closePolicyPage() {
+    _activePolicyTopic.value = null
+    _currentScreen.value = AppScreen.STOREFRONT
   }
 
   fun openProductDetail(product: Product) {
@@ -976,9 +1036,19 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     emitToast("নতুন ব্যানার যুক্ত হয়েছে! 🖼️")
   }
 
+  fun updateBanner(banner: BannerItem) {
+    repository.updateBanner(banner)
+    emitToast("ব্যানার আপডেট করা হয়েছে! 🖼️")
+  }
+
   fun toggleBanner(bannerId: String) {
     repository.toggleBanner(bannerId)
     emitToast("ব্যানার সক্রিয়/নিষ্ক্রিয় করা হয়েছে।")
+  }
+
+  fun toggleBannerOverlay(bannerId: String) {
+    repository.toggleBannerOverlay(bannerId)
+    emitToast("ব্যানার ওভারলে টগল করা হয়েছে।")
   }
 
   fun deleteBanner(bannerId: String) {

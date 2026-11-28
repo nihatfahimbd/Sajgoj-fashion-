@@ -438,11 +438,10 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
         <span>${STORE_NAME}</span>
       </a>
       <nav class="top-actions" aria-label="Store Quick Links">
-        <a href="/">🏠 হোম স্টোর</a>
-        <a href="/categories">🏷️ ক্যাটাগরি</a>
+        <a href="/">← হোম স্টোরে ফিরুন</a>
+        ${slug === 'pages' ? `<a href="/categories">🏷️ ক্যাটাগরি</a>
         <a href="/products">🛍️ সকল পণ্য</a>
-        <a href="/checkout">💳 চেকআউট</a>
-        <a href="/pages">🔗 সকল লিংক</a>
+        <a href="/checkout">💳 চেকআউট</a>` : ''}
       </nav>
     </div>
   </header>
@@ -458,7 +457,7 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
       ${bodyHtml}
     </article>
 
-    <section class="nav-section">
+    ${slug === 'pages' ? `<section class="nav-section">
       <h3>🛒 Store &amp; Shopping Pages (স্টোর ও শপিং পেজসমূহ)</h3>
       <div class="ecom-grid">
         ${ecomLinks}
@@ -470,7 +469,7 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
       <div class="pill-wrap">
         ${navLinks}
       </div>
-    </section>
+    </section>` : ''}
 
     <footer>
       <p>© 2026 ${STORE_NAME} • ${STORE_TAGLINE} • <a href="mailto:${EMAIL}">${EMAIL}</a> • ${PHONE}</p>

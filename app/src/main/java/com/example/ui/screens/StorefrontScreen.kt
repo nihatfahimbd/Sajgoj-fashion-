@@ -183,6 +183,7 @@ fun StorefrontScreen(
   onMarkSupportRead: () -> Unit = {},
   incomingPolicyTopic: String? = null,
   onClearIncomingPolicyTopic: () -> Unit = {},
+  onOpenFooterTopic: (String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
@@ -196,7 +197,6 @@ fun StorefrontScreen(
   var allProductsInlineCat by remember { mutableStateOf("All") }
   var shoppingInlineCat by remember { mutableStateOf("All") }
   var wishlistIds by remember { mutableStateOf(setOf<String>()) }
-  var activeFooterTopic by remember { mutableStateOf<String?>(null) }
   var showFaqChatbot by remember { mutableStateOf(false) }
   val design = config.design
   val hp = config.pageConfig.homePage
@@ -210,7 +210,7 @@ fun StorefrontScreen(
 
   LaunchedEffect(incomingPolicyTopic) {
     if (!incomingPolicyTopic.isNullOrBlank()) {
-      activeFooterTopic = incomingPolicyTopic
+      onOpenFooterTopic(incomingPolicyTopic)
       onClearIncomingPolicyTopic()
     }
   }
@@ -677,7 +677,8 @@ fun StorefrontScreen(
                     "top_banner" -> {
                       BannerCarousel(
                         banners = banners,
-                        onBannerClick = onBannerClick
+                        onBannerClick = onBannerClick,
+                        bannerOverlayEnabled = hp.bannerOverlayEnabled
                       )
                     }
                     "voucher_strip" -> {
@@ -749,7 +750,7 @@ fun StorefrontScreen(
               item(key = "sec_${section.id}") {
                 StorefrontFooterCard(
                   config = config,
-                  onOpenTopic = { topic -> activeFooterTopic = topic },
+                  onOpenTopic = { topic -> onOpenFooterTopic(topic) },
                   onOpenWhatsApp = { openWhatsApp() }
                 )
               }
@@ -889,7 +890,7 @@ fun StorefrontScreen(
         item(key = "storefront_footer_fallback") {
           StorefrontFooterCard(
             config = config,
-            onOpenTopic = { topic -> activeFooterTopic = topic },
+            onOpenTopic = { topic -> onOpenFooterTopic(topic) },
             onOpenWhatsApp = { openWhatsApp() }
           )
         }
@@ -1015,17 +1016,6 @@ fun StorefrontScreen(
       )
     }
 
-    if (activeFooterTopic != null) {
-      FooterPolicyInfoDialog(
-        initialTopic = activeFooterTopic!!,
-        config = config,
-        orders = orders,
-        coupons = coupons,
-        onDismiss = { activeFooterTopic = null },
-        onOpenWhatsApp = { openWhatsApp() }
-      )
-    }
-
     if (showFaqChatbot) {
       FreeFaqChatbotDialog(
         config = config,
@@ -1038,7 +1028,7 @@ fun StorefrontScreen(
         },
         onOpenStoreMap = {
           showFaqChatbot = false
-          activeFooterTopic = "contact"
+          onOpenFooterTopic("contact")
         },
         onOpenShopping = {
           showFaqChatbot = false
@@ -2252,449 +2242,6 @@ private fun FooterLinkColumn(
           .padding(vertical = 4.dp)
           .testTag("footer_link_$key")
       )
-    }
-  }
-}
-
-@Composable
-private fun FooterPolicyInfoDialog(
-  initialTopic: String,
-  config: StoreConfig,
-  orders: List<Order>,
-  coupons: List<Coupon>,
-  onDismiss: () -> Unit,
-  onOpenWhatsApp: () -> Unit
-) {
-  val context = LocalContext.current
-  var selectedTopic by remember(initialTopic) { mutableStateOf(initialTopic) }
-  var trackingQuery by remember { mutableStateOf("") }
-
-  val topics = listOf(
-    "about" to "About us",
-    "contact" to "Contact us",
-    "terms" to "Terms & Conditions",
-    "privacy" to "Privacy Policy",
-    "data_deletion" to "Data Deletion",
-    "tracking" to "Order Tracking",
-    "payment" to "Payment",
-    "shipping" to "Shipping",
-    "faq" to "FAQ",
-    "refund" to "Refund Policy",
-    "exchange" to "Exchange",
-    "cancellation" to "Cancellation",
-    "cookie" to "Cookie Policy",
-    "discount" to "Extra Discount"
-  )
-  val topicUrlMap = mapOf(
-    "about" to "https://sajgoj.nfbd.workers.dev/about-us",
-    "contact" to "https://sajgoj.nfbd.workers.dev/contact-us",
-    "terms" to "https://sajgoj.nfbd.workers.dev/terms-and-conditions",
-    "privacy" to "https://sajgoj.nfbd.workers.dev/privacy-policy",
-    "data_deletion" to "https://sajgoj.nfbd.workers.dev/data-deletion",
-    "tracking" to "https://sajgoj.nfbd.workers.dev/order-tracking",
-    "payment" to "https://sajgoj.nfbd.workers.dev/payment-policy",
-    "shipping" to "https://sajgoj.nfbd.workers.dev/shipping-policy",
-    "faq" to "https://sajgoj.nfbd.workers.dev/faq",
-    "refund" to "https://sajgoj.nfbd.workers.dev/refund-policy",
-    "exchange" to "https://sajgoj.nfbd.workers.dev/exchange-policy",
-    "cancellation" to "https://sajgoj.nfbd.workers.dev/cancellation-policy",
-    "cookie" to "https://sajgoj.nfbd.workers.dev/cookie-policy",
-    "discount" to "https://sajgoj.nfbd.workers.dev/offers"
-  )
-  val currentTitle = topics.find { it.first == selectedTopic }?.second ?: "Store Info"
-  val currentPublicUrl = topicUrlMap[selectedTopic] ?: "https://sajgoj.nfbd.workers.dev/pages"
-
-  Dialog(onDismissRequest = onDismiss) {
-    Surface(
-      shape = RoundedCornerShape(24.dp),
-      color = Color.White,
-      border = BorderStroke(1.dp, BorderGold),
-      modifier = Modifier
-        .fillMaxWidth()
-        .heightIn(max = 580.dp)
-    ) {
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(16.dp)
-      ) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Column(modifier = Modifier.weight(1f)) {
-            Text(
-              text = config.storeName,
-              fontSize = 11.sp,
-              fontWeight = FontWeight.Bold,
-              color = AntiqueGoldDark
-            )
-            Text(
-              text = currentTitle,
-              fontSize = 17.sp,
-              fontWeight = FontWeight.Black,
-              color = RoyalMaroon
-            )
-          }
-          IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
-            Icon(imageVector = Icons.Default.Close, contentDescription = "বন্ধ করুন", tint = DarkEspresso)
-          }
-        }
-
-        // Direct Public URL Copy & Open Bar (Facebook App / Play Store / Payment Gateways)
-        Surface(
-          shape = RoundedCornerShape(12.dp),
-          color = Color(0xFFF8FAFC),
-          border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-          ) {
-            Text(
-              text = currentPublicUrl,
-              fontSize = 10.5.sp,
-              fontWeight = FontWeight.SemiBold,
-              color = NavyBlue,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-              modifier = Modifier.weight(1f)
-            )
-            Surface(
-              shape = RoundedCornerShape(8.dp),
-              color = RoyalMaroon,
-              modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .clickable {
-                  val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
-                  cb?.setPrimaryClip(android.content.ClipData.newPlainText("Sajgoj URL", currentPublicUrl))
-                  Toast.makeText(context, "লিংক কপি হয়েছে: $currentPublicUrl", Toast.LENGTH_SHORT).show()
-                }
-            ) {
-              Text(
-                text = "Copy",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-              )
-            }
-            Surface(
-              shape = RoundedCornerShape(8.dp),
-              color = NavyBlue,
-              modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .clickable {
-                  try {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(currentPublicUrl)))
-                  } catch (_: Exception) {}
-                }
-            ) {
-              Text(
-                text = "Open ↗",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-              )
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-          horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-          topics.forEach { (key, label) ->
-            val isOn = key == selectedTopic
-            Surface(
-              shape = RoundedCornerShape(16.dp),
-              color = if (isOn) RoyalMaroon else CreamSurface,
-              border = BorderStroke(1.dp, if (isOn) RoyalMaroon else BorderGold),
-              modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .clickable { selectedTopic = key }
-            ) {
-              Text(
-                text = label,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isOn) Color.White else RoyalMaroon,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-              )
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Column(
-          modifier = Modifier
-            .weight(1f, fill = false)
-            .verticalScroll(rememberScrollState()),
-          verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-          when (selectedTopic) {
-            "about" -> {
-              Text(
-                text = "${config.storeName} — আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। আমাদের প্রতিটি পণ্য গুণগত মান যাচাই করে সরাসরি ক্রেতার হাতে পৌঁছে দেওয়া হয়।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 18.sp
-              )
-            }
-            "contact" -> {
-              Text(text = "📞 হটলাইন: ${config.phone}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-              Text(text = "💬 WhatsApp: ${config.whatsapp}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DarkEspresso)
-              Text(text = "📍 শোরুম: ${config.address}", fontSize = 12.sp, color = DarkEspresso)
-              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                  onClick = {
-                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${config.phone}"))
-                    context.startActivity(intent)
-                  },
-                  colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-                  modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                ) {
-                  Text("কল করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                Button(
-                  onClick = onOpenWhatsApp,
-                  colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                  modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                ) {
-                  Text("WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-              }
-              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                  onClick = { openStoreGoogleMap(context, config, directions = false) },
-                  colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                  modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .testTag("contact_dialog_open_map_btn")
-                ) {
-                  Text("🗺️ গুগল ম্যাপ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                Button(
-                  onClick = { openStoreGoogleMap(context, config, directions = true) },
-                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E)),
-                  modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .testTag("contact_dialog_directions_btn")
-                ) {
-                  Text("🧭 ডিরেকশন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-              }
-            }
-            "terms" -> {
-              Text(
-                text = "• অর্ডার কনফার্ম করতে সঠিক নাম, মোবাইল নম্বর ও ঠিকানা প্রদান আবশ্যক।\n• স্টক প্রাপ্যতা অনুযায়ী ডেলিভারি নিশ্চিত করা হয়।\n• যেকোনো ভুয়া অর্ডার বা অপব্যবহারের ক্ষেত্রে স্টোর কর্তৃপক্ষ অর্ডার বাতিলের অধিকার সংরক্ষণ করে।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "privacy" -> {
-              Text(
-                text = "• ক্রেতার নাম, ফোন নম্বর, ইমেইল ও ডেলিভারি ঠিকানা শুধুমাত্র অর্ডার প্রক্রিয়াকরণ, অ্যাকাউন্ট লগইন ও কাস্টমার কেয়ারের জন্য ব্যবহার করা হয়।\n• ব্যক্তিগত তথ্য কোনো তৃতীয় পক্ষের কাছে বিক্রি বা শেয়ার করা হয় না।\n• অফিসিয়াল URL: https://sajgoj.nfbd.workers.dev/privacy-policy",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "data_deletion" -> {
-              Text(
-                text = "• Facebook Developer App বা স্টোর অ্যাকাউন্ট থেকে আপনার সমস্ত ডেটা মুছে ফেলতে https://sajgoj.nfbd.workers.dev/data-deletion লিংক ব্যবহার করুন অথবা ${config.email}-এ মেইল করুন।\n• Facebook Settings → Apps and Websites → SAJGOJ FASHION থেকে Remove করেও ডেটা ডিলিশন রিকোয়েস্ট পাঠাতে পারবেন (৪৮ ঘণ্টার মধ্যে সম্পন্ন হয়)।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "tracking" -> {
-              OutlinedTextField(
-                value = trackingQuery,
-                onValueChange = { trackingQuery = it },
-                label = { Text("অর্ডার ID, ট্র্যাকিং কোড বা ফোন নম্বর") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-              )
-              val q = trackingQuery.trim().lowercase()
-              val matched = if (q.isBlank()) emptyList() else orders.filter {
-                it.id.lowercase().contains(q) ||
-                  it.phone.lowercase().contains(q) ||
-                  it.trackingId.lowercase().contains(q)
-              }
-              if (q.isBlank()) {
-                Text(
-                  text = "অর্ডার ID বা ফোন নম্বর লিখে আপনার পার্সেলের বর্তমান অবস্থা দেখুন।",
-                  fontSize = 12.sp,
-                  color = AntiqueGoldDark
-                )
-              } else if (matched.isEmpty()) {
-                Text(
-                  text = "\"$trackingQuery\" দিয়ে কোনো অর্ডার পাওয়া যায়নি।",
-                  fontSize = 12.sp,
-                  color = RoyalMaroon,
-                  fontWeight = FontWeight.Bold
-                )
-              } else {
-                matched.forEach { ord ->
-                  Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = CreamSurface,
-                    border = BorderStroke(1.dp, BorderGold),
-                    modifier = Modifier.fillMaxWidth()
-                  ) {
-                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                      Text(text = "#${ord.id} • ${ord.status}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
-                      Text(text = "ক্রেতা: ${ord.customerName} • মোট: ৳${ord.total}", fontSize = 12.sp, color = DarkEspresso)
-                      if (ord.trackingId.isNotBlank()) {
-                        Text(text = "🚚 ট্র্যাকিং ID: ${ord.trackingId}", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
-                      }
-                      Spacer(modifier = Modifier.height(2.dp))
-                      Button(
-                        onClick = {
-                          val smsMsg = "Notify me via SMS — সাজগোজ অর্ডার #${ord.id}" +
-                            (if (ord.trackingId.isNotBlank()) " (ট্র্যাকিং: ${ord.trackingId})" else "") +
-                            " | বর্তমান অবস্থা: ${ord.status} | ক্রেতার নম্বর: ${ord.phone}"
-                          val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("smsto:${config.phone}")
-                            putExtra("sms_body", smsMsg)
-                          }
-                          try {
-                            context.startActivity(smsIntent)
-                          } catch (_: Exception) {
-                            Toast.makeText(context, "SMS অ্যাপ পাওয়া যায়নি", Toast.LENGTH_SHORT).show()
-                          }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier
-                          .fillMaxWidth()
-                          .heightIn(min = 48.dp)
-                          .testTag("order_tracking_sms_btn_${ord.id}")
-                      ) {
-                        Text(
-                          text = "📩 Notify me via SMS",
-                          fontSize = 11.5.sp,
-                          fontWeight = FontWeight.Bold
-                        )
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            "payment" -> {
-              Text(
-                text = "উপলব্ধ পেমেন্ট মাধ্যম: ${listOfNotNull(
-                  if (config.bkashEnabled) "bKash" else null,
-                  if (config.nagadEnabled) "Nagad" else null,
-                  if (config.rocketEnabled) "Rocket" else null,
-                  if (config.codEnabled) "Cash on Delivery" else null,
-                  if (config.visaEnabled) "Visa / Mastercard" else null
-                ).joinToString(", ")}।\n\nসারা দেশে পণ্য হাতে পেয়ে ক্যাশ অন ডেলিভারিতে মূল্য পরিশোধ করা যায়।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "shipping" -> {
-              Text(
-                text = "🚚 ঢাকার ভেতরে ডেলিভারি চার্জ: ৳৭০ (১-২ কার্যদিবস)\n📦 ঢাকার বাইরে ডেলিভারি চার্জ: ৳১৩০ (২-৪ কার্যদিবস)\n🎁 ২০০০+ টাকার অর্ডারে ফ্রি হোম ডেলিভারি ও ${config.returnPolicyDays} দিনের রিটার্ন সুবিধা!",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 20.sp
-              )
-            }
-            "faq" -> {
-              Text(
-                text = "প্রশ্ন: ডেলিভারি ম্যানের সামনে পণ্য চেক করা যাবে?\nউত্তর: হ্যাঁ, ডেলিভারি ম্যানের সামনেই যাচাই করে নিতে পারবেন।\n\nপ্রশ্ন: সাইজ বা ডিজাইন পরিবর্তন করা যাবে?\nউত্তর: হ্যাঁ, ৭ দিনের মধ্যে সহজ এক্সচেঞ্জ সুবিধা আছে।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "refund" -> {
-              Text(
-                text = "• ডেলিভারি পাওয়ার ৭ দিনের মধ্যে ত্রুটিপূর্ণ বা ভুল পণ্যে ১০০% রিফান্ড সুবিধা পাওয়া যাবে।\n• রিটার্ন যাচাইয়ের পর ২-৩ কর্মদিবসে bKash/Nagad/ব্যাংকে অর্থ ফেরত দেওয়া হয়।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "exchange" -> {
-              Text(
-                text = "• ডেলিভারির ৭ দিনের মধ্যে সাইজ বা কালার পরিবর্তনের জন্য হটলাইন (${config.phone}) বা WhatsApp-এ যোগাযোগ করুন।\n• আমাদের ভুলের কারণে এক্সচেঞ্জ হলে ডেলিভারি চার্জ ফ্রি।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "cancellation" -> {
-              Text(
-                text = "• কুরিয়ারে পার্সেল পাঠানোর আগে যেকোনো সময় অর্ডার বাতিল করা যাবে।\n• অর্ডার বাতিলের জন্য দ্রুত হটলাইন বা WhatsApp-এ অর্ডার ID জানান।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "cookie" -> {
-              Text(
-                text = "• আপনার কার্ট, উইশলিস্ট ও নিরাপদ লগইন সেশন ধরে রাখতে শুধুমাত্র প্রয়োজনীয় ব্রাউজার স্টোরেজ ও কুকি ব্যবহৃত হয়। ব্রাউজার সেটিংস থেকে যেকোনো সময় এটি মুছে ফেলা যায়।",
-                fontSize = 12.5.sp,
-                color = DarkEspresso,
-                lineHeight = 19.sp
-              )
-            }
-            "discount" -> {
-              val active = coupons.filter { it.isActive }
-              if (active.isEmpty()) {
-                Text(
-                  text = "বর্তমানে Buy 2 Get 1 এবং ভাউচার ডিসকাউন্ট কার্ড থেকে অতিরিক্ত ছাড় উপভোগ করতে পারবেন!",
-                  fontSize = 12.5.sp,
-                  color = DarkEspresso
-                )
-              } else {
-                active.forEach { cp ->
-                  Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = CreamSurface,
-                    border = BorderStroke(1.dp, BorderGold),
-                    modifier = Modifier.fillMaxWidth()
-                  ) {
-                    Row(
-                      modifier = Modifier.padding(10.dp),
-                      horizontalArrangement = Arrangement.SpaceBetween,
-                      verticalAlignment = Alignment.CenterVertically
-                    ) {
-                      Column {
-                        Text(text = cp.code, fontSize = 13.sp, fontWeight = FontWeight.Black, color = RoyalMaroon)
-                        Text(
-                          text = if (cp.type == "%" || cp.type.equals("percent", ignoreCase = true)) "${cp.value}% ছাড়" else "৳${cp.value} ছাড়",
-                          fontSize = 11.5.sp,
-                          color = DarkEspresso
-                        )
-                      }
-                      Text(text = "সক্রিয় ✓", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
   }
 }

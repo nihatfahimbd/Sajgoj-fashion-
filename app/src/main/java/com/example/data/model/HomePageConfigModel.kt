@@ -24,6 +24,7 @@ data class HomePageConfig(
   val bottomNavShowLabels: Boolean = true,
   val bottomNavShowCartBadge: Boolean = true,
   val blockHeaderReversed: Boolean = false,
+  val bannerOverlayEnabled: Boolean = true,
   // 2. Horizontal Ordering (Left/Right Moving)
   val searchBarOrder: List<String> = listOf("cat_menu", "home_btn", "search_input"),
   val searchToolsOrder: List<String> = listOf("voice", "image", "scan"),
@@ -158,7 +159,23 @@ data class HomePageConfig(
   val bottomNavActivePillBg: String = "transparent",
   val bottomNavInactiveColor: String = "#4b5563",
   val bottomNavBadgeBg: String = "#7a1c2b",
-  val bottomNavBadgeText: String = "#ffffff"
+  val bottomNavBadgeText: String = "#ffffff",
+  // 9. Clean Footer Hub Pages Customization & Content Overrides
+  val footerPageBg: String = "#fffaf5",
+  val footerPageCardBg: String = "#ffffff",
+  val footerPageBorderColor: String = "#f3e2d0",
+  val footerPageHeadingColor: String = "#7a1c2b",
+  val footerPageTextColor: String = "#2c1810",
+  val footerPageBtnBg: String = "#7a1c2b",
+  val footerPageBtnText: String = "#ffffff",
+  val footerPageRadiusPx: Int = 20,
+  val footerPageContents: Map<String, FooterPageContentOverride> = emptyMap()
+)
+
+data class FooterPageContentOverride(
+  val title: String = "",
+  val subtitle: String = "",
+  val body: String = ""
 )
 
 object HomePageConfigJson {
@@ -197,6 +214,7 @@ object HomePageConfigJson {
     put("bottomNavShowLabels", h.bottomNavShowLabels)
     put("bottomNavShowCartBadge", h.bottomNavShowCartBadge)
     put("blockHeaderReversed", h.blockHeaderReversed)
+    put("bannerOverlayEnabled", h.bannerOverlayEnabled)
 
     put("searchBarOrder", JSONArray(h.searchBarOrder))
     put("searchToolsOrder", JSONArray(h.searchToolsOrder))
@@ -332,6 +350,31 @@ object HomePageConfigJson {
     put("bottomNavInactiveColor", h.bottomNavInactiveColor)
     put("bottomNavBadgeBg", h.bottomNavBadgeBg)
     put("bottomNavBadgeText", h.bottomNavBadgeText)
+    put("footerPageBg", h.footerPageBg)
+    put("footerPageCardBg", h.footerPageCardBg)
+    put("footerPageBorderColor", h.footerPageBorderColor)
+    put("footerPageHeadingColor", h.footerPageHeadingColor)
+    put("footerPageTextColor", h.footerPageTextColor)
+    put("footerPageBtnBg", h.footerPageBtnBg)
+    put("footerPageBtnText", h.footerPageBtnText)
+    put("footerPageRadiusPx", h.footerPageRadiusPx)
+    put(
+      "footerPageContents",
+      JSONObject().apply {
+        h.footerPageContents.forEach { (key, value) ->
+          if (value.title.isNotBlank() || value.subtitle.isNotBlank() || value.body.isNotBlank()) {
+            put(
+              key,
+              JSONObject().apply {
+                put("title", value.title)
+                put("subtitle", value.subtitle)
+                put("body", value.body)
+              }
+            )
+          }
+        }
+      }
+    )
   }
 
   fun fromJsonObject(obj: JSONObject?): HomePageConfig {
@@ -357,6 +400,7 @@ object HomePageConfigJson {
       bottomNavShowLabels = obj.optBoolean("bottomNavShowLabels", d.bottomNavShowLabels),
       bottomNavShowCartBadge = obj.optBoolean("bottomNavShowCartBadge", d.bottomNavShowCartBadge),
       blockHeaderReversed = obj.optBoolean("blockHeaderReversed", d.blockHeaderReversed),
+      bannerOverlayEnabled = obj.optBoolean("bannerOverlayEnabled", d.bannerOverlayEnabled),
       searchBarOrder = mergeOrder(obj.optJSONArray("searchBarOrder"), d.searchBarOrder),
       searchToolsOrder = mergeOrder(obj.optJSONArray("searchToolsOrder"), d.searchToolsOrder),
       voucherSlotsOrder = mergeOrder(obj.optJSONArray("voucherSlotsOrder"), d.voucherSlotsOrder),
@@ -484,7 +528,32 @@ object HomePageConfigJson {
       bottomNavActivePillBg = obj.optString("bottomNavActivePillBg", d.bottomNavActivePillBg),
       bottomNavInactiveColor = obj.optString("bottomNavInactiveColor", d.bottomNavInactiveColor),
       bottomNavBadgeBg = obj.optString("bottomNavBadgeBg", d.bottomNavBadgeBg),
-      bottomNavBadgeText = obj.optString("bottomNavBadgeText", d.bottomNavBadgeText)
+      bottomNavBadgeText = obj.optString("bottomNavBadgeText", d.bottomNavBadgeText),
+      footerPageBg = obj.optString("footerPageBg", d.footerPageBg),
+      footerPageCardBg = obj.optString("footerPageCardBg", d.footerPageCardBg),
+      footerPageBorderColor = obj.optString("footerPageBorderColor", d.footerPageBorderColor),
+      footerPageHeadingColor = obj.optString("footerPageHeadingColor", d.footerPageHeadingColor),
+      footerPageTextColor = obj.optString("footerPageTextColor", d.footerPageTextColor),
+      footerPageBtnBg = obj.optString("footerPageBtnBg", d.footerPageBtnBg),
+      footerPageBtnText = obj.optString("footerPageBtnText", d.footerPageBtnText),
+      footerPageRadiusPx = obj.optInt("footerPageRadiusPx", d.footerPageRadiusPx).coerceIn(0, 32),
+      footerPageContents = obj.optJSONObject("footerPageContents")?.let { mapObj ->
+        buildMap {
+          val keys = mapObj.keys()
+          while (keys.hasNext()) {
+            val k = keys.next()
+            val entry = mapObj.optJSONObject(k) ?: continue
+            val ov = FooterPageContentOverride(
+              title = entry.optString("title", ""),
+              subtitle = entry.optString("subtitle", ""),
+              body = entry.optString("body", "")
+            )
+            if (ov.title.isNotBlank() || ov.subtitle.isNotBlank() || ov.body.isNotBlank()) {
+              put(k, ov)
+            }
+          }
+        }
+      } ?: d.footerPageContents
     )
   }
 }

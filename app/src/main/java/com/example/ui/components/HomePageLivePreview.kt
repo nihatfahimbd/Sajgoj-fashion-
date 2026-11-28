@@ -154,7 +154,12 @@ fun HomePageLivePreview(
                 .padding(horizontal = 10.dp),
               contentAlignment = Alignment.CenterStart
             ) {
-              Text("🖼️ ${sec.title}", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+              Text(
+                text = if (hp.bannerOverlayEnabled) "🖼️ ${sec.title} (Overlay ON)" else "🖼️ ${sec.title} (শুধু ছবি — Overlay OFF)",
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+              )
             }
             "voucher_strip" -> if (hp.showVoucherStrip) PreviewVoucherCard(hp)
             "category_slider" -> if (hp.showCategorySlider) PreviewCategoryStrip(hp, orderedCats)

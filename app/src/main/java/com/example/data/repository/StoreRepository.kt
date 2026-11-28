@@ -659,7 +659,7 @@ class StoreRepository(private val context: Context) {
   private val _coupons = MutableStateFlow<List<Coupon>>(initialCoupons)
   val coupons: StateFlow<List<Coupon>> = _coupons.asStateFlow()
 
-  private val _banners = MutableStateFlow<List<BannerItem>>(initialBanners)
+  private val _banners = MutableStateFlow<List<BannerItem>>(loadBannersFromPrefs())
   val banners: StateFlow<List<BannerItem>> = _banners.asStateFlow()
 
   private val _storeConfig = MutableStateFlow(loadStoreConfig())
@@ -2170,19 +2170,86 @@ class StoreRepository(private val context: Context) {
     _coupons.value = _coupons.value.filterNot { it.id == couponId }
   }
 
-  // Banner CRUD
-  fun addBanner(banner: BannerItem) {
-    _banners.value = _banners.value + banner
-  }
-
-  fun toggleBanner(bannerId: String) {
-    _banners.value = _banners.value.map {
-      if (it.id == bannerId) it.copy(isActive = !it.isActive) else it
+  // Banner CRUD (persisted locally so optional fields, links, and overlay flags survive restarts)
+  private fun loadBannersFromPrefs(): List<BannerItem> {
+    val raw = prefs.getString("sajgoj_banners", null) ?: return initialBanners
+    return try {
+      val arr = JSONArray(raw)
+      buildList {
+        for (i in 0 until arr.length()) {
+          val obj = arr.optJSONObject(i) ?: continue
+          val id = obj.optString("id", "").trim()
+          if (id.isBlank()) continue
+          add(
+            BannerItem(
+              id = id,
+              title = obj.optString("title", ""),
+              subtitle = obj.optString("subtitle", ""),
+              buttonText = obj.optString("buttonText", ""),
+              link = obj.optString("link", ""),
+              imageUrl = obj.optString("imageUrl", ""),
+              showOverlay = obj.optBoolean("showOverlay", true),
+              isActive = obj.optBoolean("isActive", true)
+            )
+          )
+        }
+      }
+    } catch (_: Exception) {
+      initialBanners
     }
   }
 
+  private fun saveBannersToPrefs(list: List<BannerItem>) {
+    val arr = JSONArray()
+    list.forEach { b ->
+      arr.put(
+        JSONObject().apply {
+          put("id", b.id)
+          put("title", b.title)
+          put("subtitle", b.subtitle)
+          put("buttonText", b.buttonText)
+          put("link", b.link)
+          put("imageUrl", b.imageUrl)
+          put("showOverlay", b.showOverlay)
+          put("isActive", b.isActive)
+        }
+      )
+    }
+    prefs.edit().putString("sajgoj_banners", arr.toString()).apply()
+  }
+
+  fun addBanner(banner: BannerItem) {
+    val next = _banners.value + banner
+    _banners.value = next
+    saveBannersToPrefs(next)
+  }
+
+  fun updateBanner(banner: BannerItem) {
+    val next = _banners.value.map { if (it.id == banner.id) banner else it }
+    _banners.value = next
+    saveBannersToPrefs(next)
+  }
+
+  fun toggleBanner(bannerId: String) {
+    val next = _banners.value.map {
+      if (it.id == bannerId) it.copy(isActive = !it.isActive) else it
+    }
+    _banners.value = next
+    saveBannersToPrefs(next)
+  }
+
+  fun toggleBannerOverlay(bannerId: String) {
+    val next = _banners.value.map {
+      if (it.id == bannerId) it.copy(showOverlay = !it.showOverlay) else it
+    }
+    _banners.value = next
+    saveBannersToPrefs(next)
+  }
+
   fun deleteBanner(bannerId: String) {
-    _banners.value = _banners.value.filterNot { it.id == bannerId }
+    val next = _banners.value.filterNot { it.id == bannerId }
+    _banners.value = next
+    saveBannersToPrefs(next)
   }
 
   // Store Configuration
@@ -2820,7 +2887,9 @@ class StoreRepository(private val context: Context) {
     _orders.value = initialOrders
     _coupons.value = initialCoupons
     _banners.value = initialBanners
+    saveBannersToPrefs(initialBanners)
     _storeConfig.value = StoreConfig()
+    saveStoreConfigToPrefs(StoreConfig())
     saveHomeSections(initialHomeSections)
   }
 

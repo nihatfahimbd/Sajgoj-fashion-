@@ -407,10 +407,12 @@ data class Coupon(
 
 data class BannerItem(
   val id: String,
-  val title: String,
-  val subtitle: String,
-  val buttonText: String,
-  val imageUrl: String,
+  val title: String = "",
+  val subtitle: String = "",
+  val buttonText: String = "",
+  val link: String = "",
+  val imageUrl: String = "",
+  val showOverlay: Boolean = true,
   val isActive: Boolean = true
 )
 
