@@ -1668,7 +1668,7 @@
       favicon: "./favicon.ico",
       tagline: "ঐতিহ্যবাহী আভিজাত্য, আধুনিক সাজ",
       whatsapp: "+8801805119888",
-      email: "contact@sajgoj.com",
+      email: "nihatfahimbd@gmail.com",
       phone: "+8809697489330",
       address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
       showGoogleMap: true,
@@ -2095,7 +2095,7 @@
       },
       footer: {
         about: "SAJGOJ FASHION - আধুনিক ও রুচিশীল নারীদের জন্য প্রিমিয়াম ডিজাইনার শাড়ি ও রাজকীয় জুয়েলারি কালেকশন। খাঁটি কারুকার্য এবং নির্ভরতার সেরা ঠিকানা।",
-        email: "support@sajgoj.com",
+        email: "nihatfahimbd@gmail.com",
         phone: "+8809697489330",
         address: "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
         fb: "https://facebook.com/sajgojfashion",
@@ -2251,11 +2251,16 @@
       };
       const legacyPhoneSet = new Set(["", "018051198888", "88018051198888", "+8801805119888", "01805119888", "8801805119888", "01700000000", "8801700000000"]);
       const legacyWhatsappSet = new Set(["", "88018051198888", "018051198888", "01805119888", "8801805119888"]);
+      const legacyEmailSet = new Set(["", "contact@sajgoj.com", "support@sajgoj.com", "admin@sajgoj.com"]);
       const rawPhone = String(r.phone !== undefined ? r.phone : (b.phone !== undefined ? b.phone : initialStoreConfig.phone)).trim();
       const rawWhatsapp = String(r.whatsapp !== undefined ? r.whatsapp : (b.whatsapp !== undefined ? b.whatsapp : initialStoreConfig.whatsapp)).trim();
+      const rawEmail = String(r.email !== undefined ? r.email : (b.email !== undefined ? b.email : initialStoreConfig.email)).trim();
       const mergedFooter = { ...initialStoreConfig.footer, ...(b.footer || {}), ...(r.footer || {}) };
       if (legacyPhoneSet.has(String(mergedFooter.phone || "").trim())) {
         mergedFooter.phone = initialStoreConfig.footer.phone;
+      }
+      if (legacyEmailSet.has(String(mergedFooter.email || "").trim().toLowerCase())) {
+        mergedFooter.email = initialStoreConfig.footer.email;
       }
       return {
         ...initialStoreConfig,
@@ -2263,6 +2268,7 @@
         ...r,
         phone: legacyPhoneSet.has(rawPhone) ? initialStoreConfig.phone : rawPhone,
         whatsapp: legacyWhatsappSet.has(rawWhatsapp) ? initialStoreConfig.whatsapp : rawWhatsapp,
+        email: legacyEmailSet.has(rawEmail.toLowerCase()) ? initialStoreConfig.email : rawEmail,
         announcement: { ...initialStoreConfig.announcement, ...(b.announcement || {}), ...(r.announcement || {}) },
         b2g1: mergedB2g1,
         header: { ...initialStoreConfig.header, ...(b.header || {}), ...(r.header || {}) },
@@ -3434,7 +3440,7 @@
       const storeName = cfg?.storeName || "SAJGOJ FASHION";
       const phone = cfg?.phone || "+8809697489330";
       const whatsapp = cfg?.whatsapp || "+8801805119888";
-      const email = cfg?.email || "contact@sajgoj.com";
+      const email = cfg?.email || "nihatfahimbd@gmail.com";
       const address = cfg?.address || "অমি স্মৃতি শিশু পার্ক, ফরিদগঞ্জ, চাঁদপুর, বাংলাদেশ";
       const returnDays = cfg?.returnPolicyDays || 7;
       const f = cfg?.footer || {};
@@ -3563,6 +3569,22 @@
       const [deletionReason, setDeletionReason] = React.useState("");
       const [deletionConfirmCode, setDeletionConfirmCode] = React.useState("");
       const [trackingQuery, setTrackingQuery] = React.useState("");
+      const [contactName, setContactName] = React.useState("");
+      const [contactSender, setContactSender] = React.useState("");
+      const [contactSubject, setContactSubject] = React.useState("");
+      const [contactMessage, setContactMessage] = React.useState("");
+      const [contactSending, setContactSending] = React.useState(false);
+      const [contactFeedback, setContactFeedback] = React.useState(null);
+
+      React.useEffect(() => {
+        setContactFeedback(null);
+      }, [topicKey]);
+
+      const supportEmail = (() => {
+        const raw = String(config?.email || config?.footer?.email || "").trim();
+        if (!raw || /^(contact|support|admin)@sajgoj\.com$/i.test(raw)) return "nihatfahimbd@gmail.com";
+        return raw;
+      })();
 
       const meta = FOOTER_HUB_TOPICS_META.find(t => t.key === topicKey) || { key: topicKey, group: "INFORMATION", label: "Store Info" };
       const content = getResolvedFooterHubContent(topicKey, hp, config);
@@ -3644,32 +3666,215 @@
               </div>
 
               {topicKey === "contact" && (
-                <div className="pt-2 flex flex-wrap gap-2.5">
-                  <a
-                    href={`tel:${config?.phone || "+8809697489330"}`}
-                    className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm"
-                    style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                <div className="pt-2 space-y-4">
+                  <div className="flex flex-wrap gap-2.5">
+                    <a
+                      href={`tel:${config?.phone || "+8809697489330"}`}
+                      className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm"
+                      style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                    >
+                      <span>📞 কল করুন</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/${waDigits}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm bg-emerald-700 text-white"
+                      style={{ borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                    >
+                      <span>💬 WhatsApp</span>
+                    </a>
+                    <a
+                      href={mapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm bg-[#0f294a] text-white"
+                      style={{ borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                    >
+                      <span>🗺️ Google Map</span>
+                    </a>
+                  </div>
+
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const cleanName = contactName.trim();
+                      const cleanSender = contactSender.trim();
+                      const cleanSubject = contactSubject.trim() || `${config?.storeName || "SAJGOJ FASHION"} — কাস্টমার বার্তা`;
+                      const cleanMsg = contactMessage.trim();
+                      if (!cleanName || !cleanSender || !cleanMsg) {
+                        notify("অনুগ্রহ করে নাম, ইমেইল/মোবাইল এবং আপনার বার্তা লিখুন।");
+                        return;
+                      }
+                      const mailtoSubject = encodeURIComponent(cleanSubject);
+                      const mailtoBody = encodeURIComponent(
+                        `নাম: ${cleanName}\nযোগাযোগ (ইমেইল/মোবাইল): ${cleanSender}\n\nবার্তা:\n${cleanMsg}`
+                      );
+                      const mailtoHref = `mailto:${supportEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
+                      setContactSending(true);
+                      setContactFeedback(null);
+                      try {
+                        const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(supportEmail)}`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                          },
+                          body: JSON.stringify({
+                            name: cleanName,
+                            contact: cleanSender,
+                            ...(cleanSender.includes("@") ? { email: cleanSender, _replyto: cleanSender } : {}),
+                            subject: cleanSubject,
+                            message: cleanMsg,
+                            _subject: `[${config?.storeName || "SAJGOJ FASHION"}] ${cleanSubject}`,
+                            _template: "table",
+                            _captcha: "false"
+                          })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (res.ok && data?.success !== "false" && data?.success !== false) {
+                          setContactFeedback({
+                            ok: true,
+                            msg: `আপনার বার্তা সরাসরি ${supportEmail}-এ পাঠানো হয়েছে! আমাদের টিম শীঘ্রই উত্তর দেবে।`,
+                            mailtoHref
+                          });
+                          setContactName("");
+                          setContactSender("");
+                          setContactSubject("");
+                          setContactMessage("");
+                          notify(`বার্তা ${supportEmail}-এ পাঠানো হয়েছে!`);
+                        } else {
+                          setContactFeedback({
+                            ok: false,
+                            msg: data?.message
+                              ? `সরাসরি ইমেইল সার্ভিসে প্রথমবার অ্যাক্টিভেশন প্রয়োজন অথবা নিচের বাটনে ক্লিক করে আপনার ইমেইল অ্যাপ থেকে সরাসরি ${supportEmail}-এ পাঠান।`
+                              : `নেটওয়ার্ক সমস্যার কারণে সরাসরি সাবমিট করা যায়নি। নিচের বাটনে ক্লিক করে সরাসরি ${supportEmail}-এ ইমেইল পাঠান।`,
+                            mailtoHref
+                          });
+                          window.location.href = mailtoHref;
+                        }
+                      } catch (_) {
+                        setContactFeedback({
+                          ok: false,
+                          msg: `সরাসরি ${supportEmail}-এ পাঠাতে আপনার ডিভাইসের ইমেইল অ্যাপ ওপেন করা হচ্ছে অথবা নিচের বাটনে চাপুন।`,
+                          mailtoHref
+                        });
+                        window.location.href = mailtoHref;
+                      } finally {
+                        setContactSending(false);
+                      }
+                    }}
+                    className="p-4 sm:p-5 rounded-2xl border space-y-3"
+                    style={{ borderColor: borderCol, background: "rgba(0,0,0,0.02)" }}
                   >
-                    <span>📞 কল করুন</span>
-                  </a>
-                  <a
-                    href={`https://wa.me/${waDigits}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm bg-emerald-700 text-white"
-                    style={{ borderRadius: `${Math.min(radiusPx, 12)}px` }}
-                  >
-                    <span>💬 WhatsApp</span>
-                  </a>
-                  <a
-                    href={mapUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2.5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm bg-[#0f294a] text-white"
-                    style={{ borderRadius: `${Math.min(radiusPx, 12)}px` }}
-                  >
-                    <span>🗺️ Google Map</span>
-                  </a>
+                    <div className="space-y-0.5">
+                      <h2 className="text-sm sm:text-base font-black" style={{ color: headingCol }}>
+                        ✉️ সরাসরি সাপোর্ট ইমেইলে বার্তা পাঠান
+                      </h2>
+                      <p className="text-[11px] sm:text-xs opacity-75">
+                        প্রাপক: <strong style={{ color: headingCol }}>{supportEmail}</strong>
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-xs font-bold mb-1" style={{ color: headingCol }}>
+                          আপনার নাম *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          placeholder="যেমন: তানিয়া আক্তার"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none bg-white text-black"
+                          style={{ borderColor: borderCol }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold mb-1" style={{ color: headingCol }}>
+                          আপনার ইমেইল বা মোবাইল *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={contactSender}
+                          onChange={(e) => setContactSender(e.target.value)}
+                          placeholder="name@gmail.com বা 01XXXXXXXXX"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none bg-white text-black"
+                          style={{ borderColor: borderCol }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold mb-1" style={{ color: headingCol }}>
+                        বিষয় (Subject)
+                      </label>
+                      <input
+                        type="text"
+                        value={contactSubject}
+                        onChange={(e) => setContactSubject(e.target.value)}
+                        placeholder="যেমন: অর্ডার সংক্রান্ত তথ্য / পণ্যের জিজ্ঞাসা"
+                        className="w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none bg-white text-black"
+                        style={{ borderColor: borderCol }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold mb-1" style={{ color: headingCol }}>
+                        আপনার বার্তা *
+                      </label>
+                      <textarea
+                        required
+                        rows={4}
+                        value={contactMessage}
+                        onChange={(e) => setContactMessage(e.target.value)}
+                        placeholder="আপনার প্রশ্ন, অর্ডার নম্বর বা বিস্তারিত বার্তা এখানে লিখুন..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none bg-white text-black resize-y"
+                        style={{ borderColor: borderCol }}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <button
+                        type="submit"
+                        disabled={contactSending}
+                        className="px-5 py-2.5 text-xs sm:text-sm font-bold shadow-sm cursor-pointer disabled:opacity-60 transition hover:opacity-90"
+                        style={{ background: btnBg, color: btnText, borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                      >
+                        {contactSending ? "পাঠানো হচ্ছে..." : "✉️ বার্তা পাঠান"}
+                      </button>
+                      <a
+                        href={`mailto:${supportEmail}`}
+                        className="px-4 py-2.5 text-xs font-bold border inline-flex items-center gap-1.5"
+                        style={{ borderColor: borderCol, color: headingCol, borderRadius: `${Math.min(radiusPx, 12)}px` }}
+                      >
+                        <span>📧 {supportEmail}</span>
+                      </a>
+                    </div>
+
+                    {contactFeedback && (
+                      <div
+                        className={`p-3 rounded-xl border text-xs font-semibold space-y-2 ${
+                          contactFeedback.ok
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+                            : "bg-amber-50 border-amber-300 text-amber-900"
+                        }`}
+                      >
+                        <p>{contactFeedback.ok ? "✅ " : "ℹ️ "}{contactFeedback.msg}</p>
+                        {!contactFeedback.ok && contactFeedback.mailtoHref && (
+                          <a
+                            href={contactFeedback.mailtoHref}
+                            className="inline-block px-3.5 py-1.5 rounded-lg font-bold text-white"
+                            style={{ background: btnBg }}
+                          >
+                            ইমেইল অ্যাপে পাঠান ↗
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </form>
                 </div>
               )}
 
@@ -3787,7 +3992,7 @@
 
               <div className="pt-3 border-t text-[11px] opacity-70 flex flex-wrap items-center justify-between gap-2" style={{ borderColor: borderCol }}>
                 <span>© {new Date().getFullYear()} {config?.storeName || "SAJGOJ FASHION"}</span>
-                <span>{config?.email || "contact@sajgoj.com"}</span>
+                <span>{supportEmail}</span>
               </div>
             </article>
           </div>
@@ -3998,7 +4203,7 @@
           return {
             id: mkId(),
             isFromUser: false,
-            text: `📞 যোগাযোগ ও শোরুম ঠিকানা:\n\n• হটলাইন: ${storePhone}\n• WhatsApp: ${storeWhatsapp}\n• ইমেইল: ${config?.email || "contact@sajgoj.com"}\n• ঠিকানা: ${config?.address || "Dhaka"}`,
+            text: `📞 যোগাযোগ ও শোরুম ঠিকানা:\n\n• হটলাইন: ${storePhone}\n• WhatsApp: ${storeWhatsapp}\n• ইমেইল: ${config?.email || "nihatfahimbd@gmail.com"}\n• ঠিকানা: ${config?.address || "Dhaka"}`,
             showSupportActions: true,
             showMapAction: config?.showGoogleMap !== false,
             handoffQuery: `আসসালামু আলাইকুম, আমি ${storeName} সম্পর্কে জানতে চাই।`
@@ -22266,63 +22471,75 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                   );
                 };
 
-                const renderGoogleMapBlock = () => {
+                const renderGoogleMapBlock = (insideFooter = false) => {
                   if (config.showGoogleMap === false || (mapSecObj && mapSecObj.enabled === false)) return null;
                   const { embedSrc, openUrl, directionsUrl } = getStoreMapUrls(config);
                   return (
-                    <section id="storefront-google-map" className="max-w-7xl mx-auto px-3 sm:px-4 mt-8 w-full">
-                      <div className="liquid-glass-surface rounded-3xl p-5 sm:p-7 shadow-xl border border-white/75 text-[#000000]">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                          <div className="lg:col-span-5 space-y-3.5">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#7a1c2b] border border-rose-300 text-[11px] font-black uppercase tracking-wider">
+                    <section
+                      id="storefront-google-map"
+                      className={insideFooter ? "max-w-7xl mx-auto mt-4 mb-3 w-full" : "max-w-7xl mx-auto px-3 sm:px-4 mt-6 w-full"}
+                    >
+                      <div className="liquid-glass-surface rounded-2xl p-3.5 sm:p-4 shadow-md border border-white/75 text-[#000000]">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-100 text-[#7a1c2b] border border-rose-300 text-[10px] font-black uppercase tracking-wider">
                               <span>📍</span>
                               <span>Google Map Location</span>
                             </span>
-                            <h3 className="text-xl sm:text-2xl font-black text-[#000000]">
+                            <h3 className="text-sm sm:text-base font-black text-[#000000] leading-snug">
                               আমাদের শোরুমে সরাসরি আসুন
                             </h3>
-                            <p className="text-xs sm:text-sm font-bold text-[#000000]/85 leading-relaxed">
+                            <p className="text-[11px] sm:text-xs font-bold text-[#000000]/80 leading-snug line-clamp-2">
                               {config.storeName} — {config.address}
                             </p>
-                            <div className="bg-white/75 rounded-2xl p-3.5 border border-black/10 space-y-1.5 text-xs font-semibold text-[#000000]">
-                              <p>🕒 খোলা থাকে: প্রতিদিন সকাল ১০:০০ – রাত ০৯:৩০</p>
-                              <p>📞 হটলাইন: {config.phone}</p>
-                              <p>💬 WhatsApp: {config.whatsapp}</p>
-                            </div>
-                            <div className="flex flex-wrap gap-2.5 pt-1">
-                              <a
-                                href={openUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="cta-dark-pill px-4 py-2.5 rounded-full text-xs font-black inline-flex items-center gap-1.5 shadow-md hover:opacity-95 transition"
-                              >
-                                <span>🗺️</span>
-                                <span>গুগল ম্যাপে খুলুন</span>
-                              </a>
-                              <a
-                                href={directionsUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="red-black-tab px-4 py-2.5 rounded-full text-xs font-black inline-flex items-center gap-1.5 shadow-sm transition"
-                              >
-                                <span>🧭</span>
-                                <span>ডিরেকশন নিন</span>
-                              </a>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10.5px] sm:text-[11px] font-semibold text-[#000000]/80 pt-0.5">
+                              <span>🕒 সকাল ১০:০০ – রাত ০৯:৩০</span>
+                              <span>📞 {config.phone}</span>
+                              <span>💬 {config.whatsapp}</span>
                             </div>
                           </div>
 
-                          <div className="lg:col-span-7">
-                            <div className="rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-white/80">
-                              <iframe
-                                title="Store Google Map Location"
-                                src={embedSrc}
-                                loading="lazy"
-                                allowFullScreen
-                                referrerPolicy="no-referrer-when-downgrade"
-                                className="w-full h-64 sm:h-72 border-0"
-                              />
-                            </div>
-                          </div>
+                          <a
+                            href={openUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Google Map এ দেখুন"
+                            aria-label="Google Map এ দেখুন"
+                            className="relative shrink-0 w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] rounded-xl overflow-hidden border-2 border-white shadow-md bg-white/90 block group"
+                          >
+                            <iframe
+                              title="Store Google Map Preview"
+                              src={embedSrc}
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                              className="pointer-events-none border-0 absolute top-1/2 left-1/2 w-[220px] h-[220px]"
+                              style={{ transform: "translate(-50%, -50%) scale(0.42)", transformOrigin: "center center" }}
+                            />
+                            <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-black/70 text-white text-[9px] font-black leading-none shadow-xs group-hover:bg-[#7a1c2b] transition">
+                              ↗
+                            </span>
+                          </a>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-2.5 mt-2.5 border-t border-black/10">
+                          <a
+                            href={openUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="cta-dark-pill px-3.5 py-2 rounded-full text-[11px] font-black inline-flex items-center gap-1.5 shadow-sm hover:opacity-95 transition"
+                          >
+                            <span>🗺️</span>
+                            <span>গুগল ম্যাপে খুলুন</span>
+                          </a>
+                          <a
+                            href={directionsUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="red-black-tab px-3.5 py-2 rounded-full text-[11px] font-black inline-flex items-center gap-1.5 shadow-sm transition"
+                          >
+                            <span>🧭</span>
+                            <span>ডিরেকশন নিন</span>
+                          </a>
                         </div>
                       </div>
                     </section>
@@ -22483,7 +22700,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                         </div>
                       )}
 
-                      {(hp.showTrustBadges !== false || hp.showCopyrightBar !== false) && (
+                      {(hp.showTrustBadges !== false || hp.showCopyrightBar !== false || (config.showGoogleMap !== false && (!mapSecObj || mapSecObj.enabled !== false))) && (
                         <div className={`max-w-7xl mx-auto ${hp.showFooterMain !== false ? "pt-6 sm:pt-8 mt-8 border-t border-white/70" : ""}`}>
                           {hp.showTrustBadges !== false && (
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 mb-5">
@@ -22509,6 +22726,8 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               })}
                             </div>
                           )}
+
+                          {renderGoogleMapBlock(true)}
 
                           {hp.showCopyrightBar !== false && (
                             <div
@@ -23900,7 +24119,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                     } else if (sec.type === "category_pills") {
                       groupedOutput.push(<React.Fragment key={sec.id}>{renderCategoryPillsBlock()}</React.Fragment>);
                     } else if (sec.type === "google_map") {
-                      groupedOutput.push(<React.Fragment key={sec.id}>{renderGoogleMapBlock()}</React.Fragment>);
+                      const mapInsideFooter = (!footerSecObj || footerSecObj.enabled !== false) && (hp.showFooterMain !== false || hp.showTrustBadges !== false || hp.showCopyrightBar !== false);
+                      if (!mapInsideFooter) {
+                        groupedOutput.push(<React.Fragment key={sec.id}>{renderGoogleMapBlock(false)}</React.Fragment>);
+                      }
                     } else if (sec.type === "footer_block") {
                       groupedOutput.push(<React.Fragment key={sec.id}>{renderStorefrontFooterBlock()}</React.Fragment>);
                     }
@@ -23911,7 +24133,10 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                 })()}
               </div>
               </main>
-              {(isFilteredOuter || storeBottomTab === "shopping" || !mapSecObj) && renderGoogleMapBlock()}
+              {(() => {
+                const mapInsideFooter = (!footerSecObj || footerSecObj.enabled !== false) && (hp.showFooterMain !== false || hp.showTrustBadges !== false || hp.showCopyrightBar !== false);
+                return (isFilteredOuter || storeBottomTab === "shopping" || !mapSecObj) && !mapInsideFooter ? renderGoogleMapBlock(false) : null;
+              })()}
               {(isFilteredOuter || storeBottomTab === "shopping" || !footerSecObj) && renderStorefrontFooterBlock()}
               </>
               );
@@ -23973,7 +24198,7 @@ ${(order.orderNote || order.note) ? `📝 *বিশেষ ডেলিভার
                               required
                               value={adminLoginForm.email}
                               onChange={(e) => setAdminLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                              placeholder="admin@sajgoj.com"
+                              placeholder="nihatfahimbd@gmail.com"
                               className="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-300 focus:border-[#7c1d2a] focus:bg-white rounded-xl text-sm font-medium outline-none transition"
                             />
                           </div>

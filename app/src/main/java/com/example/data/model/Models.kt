@@ -534,7 +534,7 @@ data class StoreConfig(
   val isAnnouncementEnabled: Boolean = true,
   val phone: String = "+8809697489330",
   val whatsapp: String = "+8801805119888",
-  val email: String = "contact@sajgoj.com",
+  val email: String = "nihatfahimbd@gmail.com",
   val websiteUrl: String = "https://sajgoj.nfbd.workers.dev",
   val address: String = "Shop 12, Eastern Plaza, Hatirpool, Dhaka-1205",
   val showGoogleMap: Boolean = true,

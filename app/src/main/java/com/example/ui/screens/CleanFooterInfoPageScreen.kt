@@ -28,8 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +62,13 @@ import com.example.ui.theme.DarkEspresso
 import com.example.ui.theme.NavyBlue
 import com.example.ui.theme.RoyalMaroon
 import com.example.ui.theme.parseColorHex
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 data class FooterHubTopicMeta(
   val key: String,
@@ -199,10 +209,22 @@ fun CleanFooterInfoPageScreen(
   BackHandler(onBack = onBack)
 
   val context = LocalContext.current
+  val scope = rememberCoroutineScope()
   val hp = config.pageConfig.homePage
+  val supportEmail = remember(config.email) {
+    config.email.trim().takeIf {
+      it.isNotBlank() &&
+        !it.equals("contact@sajgoj.com", ignoreCase = true) &&
+        !it.equals("support@sajgoj.com", ignoreCase = true) &&
+        !it.equals("admin@sajgoj.com", ignoreCase = true)
+    } ?: "nihatfahimbd@gmail.com"
+  }
+  val effectiveConfig = remember(config, supportEmail) {
+    if (config.email == supportEmail) config else config.copy(email = supportEmail)
+  }
   val meta = FOOTER_HUB_TOPICS.find { it.key == topicKey } ?: FooterHubTopicMeta(topicKey, "INFORMATION", "Info")
-  val content = remember(topicKey, hp, config) {
-    resolvedFooterPageContent(topicKey, hp, config)
+  val content = remember(topicKey, hp, effectiveConfig) {
+    resolvedFooterPageContent(topicKey, hp, effectiveConfig)
   }
 
   val pageBg = parseColorHex(hp.footerPageBg, Color(0xFFFFFAF5))
@@ -216,6 +238,14 @@ fun CleanFooterInfoPageScreen(
 
   var trackingQuery by remember(topicKey) { mutableStateOf("") }
   var deletionEmail by remember(topicKey) { mutableStateOf("") }
+  var contactName by remember(topicKey) { mutableStateOf("") }
+  var contactSender by remember(topicKey) { mutableStateOf("") }
+  var contactSubject by remember(topicKey) { mutableStateOf("") }
+  var contactMessage by remember(topicKey) { mutableStateOf("") }
+  var contactSending by remember(topicKey) { mutableStateOf(false) }
+  var contactValidationError by remember(topicKey) { mutableStateOf<String?>(null) }
+  var contactStatusOk by remember(topicKey) { mutableStateOf(false) }
+  var contactStatusMsg by remember(topicKey) { mutableStateOf<String?>(null) }
 
   Box(
     modifier = modifier
@@ -365,6 +395,259 @@ fun CleanFooterInfoPageScreen(
                     .heightIn(min = 48.dp)
                 ) {
                   Text("🧭 ডিরেকশন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+              }
+
+              Spacer(modifier = Modifier.height(6.dp))
+
+              Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = CreamSurface.copy(alpha = 0.72f),
+                border = BorderStroke(1.dp, borderCol),
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .testTag("contact_us_form_card")
+              ) {
+                Column(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                  verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                  Text(
+                    text = "✉️ সরাসরি সাপোর্ট ইমেইলে বার্তা পাঠান",
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.Black,
+                    color = headingCol
+                  )
+                  Text(
+                    text = "প্রাপক: $supportEmail",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = textCol.copy(alpha = 0.78f)
+                  )
+
+                  OutlinedTextField(
+                    value = contactName,
+                    onValueChange = {
+                      contactName = it
+                      contactValidationError = null
+                    },
+                    label = { Text("আপনার নাম *") },
+                    placeholder = { Text("যেমন: তানিয়া আক্তার") },
+                    singleLine = true,
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .testTag("contact_form_name")
+                  )
+
+                  OutlinedTextField(
+                    value = contactSender,
+                    onValueChange = {
+                      contactSender = it
+                      contactValidationError = null
+                    },
+                    label = { Text("আপনার ইমেইল বা মোবাইল *") },
+                    placeholder = { Text("name@gmail.com বা 01XXXXXXXXX") },
+                    singleLine = true,
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .testTag("contact_form_contact")
+                  )
+
+                  OutlinedTextField(
+                    value = contactSubject,
+                    onValueChange = { contactSubject = it },
+                    label = { Text("বিষয় (Subject)") },
+                    placeholder = { Text("যেমন: অর্ডার সংক্রান্ত তথ্য") },
+                    singleLine = true,
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .testTag("contact_form_subject")
+                  )
+
+                  OutlinedTextField(
+                    value = contactMessage,
+                    onValueChange = {
+                      contactMessage = it
+                      contactValidationError = null
+                    },
+                    label = { Text("আপনার বার্তা *") },
+                    placeholder = { Text("আপনার প্রশ্ন বা বিস্তারিত বার্তা এখানে লিখুন...") },
+                    minLines = 3,
+                    maxLines = 6,
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .testTag("contact_form_message")
+                  )
+
+                  if (!contactValidationError.isNullOrBlank()) {
+                    Text(
+                      text = contactValidationError!!,
+                      fontSize = 12.sp,
+                      fontWeight = FontWeight.SemiBold,
+                      color = Color(0xFFB91C1C),
+                      modifier = Modifier.testTag("contact_form_error")
+                    )
+                  }
+
+                  fun openMailClientFallback(
+                    cleanName: String,
+                    cleanSender: String,
+                    cleanSubject: String,
+                    cleanMsg: String
+                  ) {
+                    val subjectText = cleanSubject.ifBlank { "${config.storeName} — কাস্টমার বার্তা" }
+                    val bodyText = buildString {
+                      if (cleanName.isNotBlank()) appendLine("নাম: $cleanName")
+                      if (cleanSender.isNotBlank()) appendLine("যোগাযোগ (ইমেইল/মোবাইল): $cleanSender")
+                      if (cleanName.isNotBlank() || cleanSender.isNotBlank()) appendLine()
+                      appendLine("বার্তা:")
+                      append(cleanMsg)
+                    }
+                    val mailIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$supportEmail")).apply {
+                      putExtra(Intent.EXTRA_SUBJECT, subjectText)
+                      putExtra(Intent.EXTRA_TEXT, bodyText)
+                    }
+                    runCatching { context.startActivity(mailIntent) }.onFailure {
+                      Toast.makeText(context, "ইমেইল পাঠান: $supportEmail", Toast.LENGTH_LONG).show()
+                    }
+                  }
+
+                  Button(
+                    onClick = {
+                      val cleanName = contactName.trim()
+                      val cleanSender = contactSender.trim()
+                      val cleanSubject = contactSubject.trim().ifBlank { "${config.storeName} — কাস্টমার বার্তা" }
+                      val cleanMsg = contactMessage.trim()
+                      if (cleanName.isBlank() || cleanSender.isBlank() || cleanMsg.isBlank()) {
+                        contactValidationError = "অনুগ্রহ করে নাম, ইমেইল/মোবাইল এবং আপনার বার্তা লিখুন।"
+                        return@Button
+                      }
+                      contactSending = true
+                      contactStatusMsg = null
+                      scope.launch {
+                        val sentRemotely = withContext(Dispatchers.IO) {
+                          runCatching {
+                            val endpoint = "https://formsubmit.co/ajax/${URLEncoder.encode(supportEmail, "UTF-8")}"
+                            val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+                              requestMethod = "POST"
+                              connectTimeout = 10000
+                              readTimeout = 12000
+                              doOutput = true
+                              setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                              setRequestProperty("Accept", "application/json")
+                            }
+                            val payload = JSONObject().apply {
+                              put("name", cleanName)
+                              put("contact", cleanSender)
+                              if (cleanSender.contains("@")) {
+                                put("email", cleanSender)
+                                put("_replyto", cleanSender)
+                              }
+                              put("subject", cleanSubject)
+                              put("message", cleanMsg)
+                              put("_subject", "[${config.storeName}] $cleanSubject")
+                              put("_template", "table")
+                              put("_captcha", "false")
+                            }.toString()
+                            conn.outputStream.use { os ->
+                              os.write(payload.toByteArray(Charsets.UTF_8))
+                            }
+                            val code = conn.responseCode
+                            val respBody = runCatching {
+                              val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+                              stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                            }.getOrDefault("")
+                            conn.disconnect()
+                            if (code in 200..299) {
+                              val json = runCatching { JSONObject(respBody) }.getOrNull()
+                              val okFlag = json?.opt("success")
+                              okFlag != false && okFlag?.toString()?.equals("false", ignoreCase = true) != true
+                            } else {
+                              false
+                            }
+                          }.getOrDefault(false)
+                        }
+                        contactSending = false
+                        if (sentRemotely) {
+                          contactStatusOk = true
+                          contactStatusMsg = "✅ আপনার বার্তা সরাসরি $supportEmail-এ পাঠানো হয়েছে! আমাদের টিম শীঘ্রই উত্তর দেবে।"
+                          contactName = ""
+                          contactSender = ""
+                          contactSubject = ""
+                          contactMessage = ""
+                          Toast.makeText(context, "বার্তা $supportEmail-এ পাঠানো হয়েছে!", Toast.LENGTH_SHORT).show()
+                        } else {
+                          contactStatusOk = false
+                          contactStatusMsg = "ℹ️ সরাসরি $supportEmail-এ পাঠাতে আপনার ইমেইল অ্যাপ ওপেন করা হচ্ছে..."
+                          openMailClientFallback(cleanName, cleanSender, cleanSubject, cleanMsg)
+                        }
+                      }
+                    },
+                    enabled = !contactSending,
+                    colors = ButtonDefaults.buttonColors(containerColor = btnBg, contentColor = btnTxt),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .heightIn(min = 48.dp)
+                      .testTag("contact_form_submit")
+                  ) {
+                    if (contactSending) {
+                      CircularProgressIndicator(
+                        color = btnTxt,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(18.dp)
+                      )
+                      Spacer(modifier = Modifier.size(8.dp))
+                      Text("পাঠানো হচ্ছে...", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    } else {
+                      Text("✉️ বার্তা পাঠান", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                  }
+
+                  OutlinedButton(
+                    onClick = {
+                      openMailClientFallback(
+                        contactName.trim(),
+                        contactSender.trim(),
+                        contactSubject.trim(),
+                        contactMessage.trim()
+                      )
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, borderCol),
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .heightIn(min = 48.dp)
+                      .testTag("contact_form_mailto_btn")
+                  ) {
+                    Text(
+                      text = "📧 ইমেইল অ্যাপ দিয়ে পাঠান ($supportEmail)",
+                      fontSize = 12.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = headingCol
+                    )
+                  }
+
+                  if (!contactStatusMsg.isNullOrBlank()) {
+                    Surface(
+                      shape = RoundedCornerShape(12.dp),
+                      color = if (contactStatusOk) Color(0xFFECFDF5) else Color(0xFFFFFBEB),
+                      border = BorderStroke(1.dp, if (contactStatusOk) Color(0xFF10B981) else Color(0xFFF59E0B)),
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("contact_form_status")
+                    ) {
+                      Text(
+                        text = contactStatusMsg!!,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (contactStatusOk) Color(0xFF065F46) else Color(0xFF92400E),
+                        modifier = Modifier.padding(12.dp)
+                      )
+                    }
+                  }
                 }
               }
             }

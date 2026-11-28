@@ -2527,8 +2527,10 @@ class StoreRepository(private val context: Context) {
       val defCfg = StoreConfig()
       val legacyPhones = setOf("", "018051198888", "88018051198888", "+8801805119888", "01805119888", "8801805119888", "01700000000", "8801700000000")
       val legacyWhatsapps = setOf("", "88018051198888", "018051198888", "01805119888", "8801805119888")
+      val legacyEmails = setOf("", "contact@sajgoj.com", "support@sajgoj.com", "admin@sajgoj.com")
       val loadedPhone = o.optString("phone", defCfg.phone).trim().let { if (it in legacyPhones) defCfg.phone else it }
       val loadedWhatsapp = o.optString("whatsapp", defCfg.whatsapp).trim().let { if (it in legacyWhatsapps) defCfg.whatsapp else it }
+      val loadedEmail = o.optString("email", defCfg.email).trim().let { if (it.lowercase() in legacyEmails) defCfg.email else it }
       val pageConfig = com.example.data.model.PageConfigJson.fromJsonObject(o.optJSONObject("pageConfig"))
       StoreConfig(
         storeName = o.optString("storeName", defCfg.storeName),
@@ -2537,7 +2539,7 @@ class StoreRepository(private val context: Context) {
         isAnnouncementEnabled = o.optBoolean("isAnnouncementEnabled", defCfg.isAnnouncementEnabled),
         phone = loadedPhone,
         whatsapp = loadedWhatsapp,
-        email = o.optString("email", defCfg.email),
+        email = loadedEmail,
         websiteUrl = o.optString("websiteUrl", defCfg.websiteUrl).trim().ifBlank { defCfg.websiteUrl },
         address = o.optString("address", defCfg.address),
         showGoogleMap = o.optBoolean("showGoogleMap", defCfg.showGoogleMap),

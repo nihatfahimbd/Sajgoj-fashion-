@@ -4,7 +4,7 @@ const path = require('path');
 const SITE_URL = 'https://sajgoj.nfbd.workers.dev';
 const STORE_NAME = 'SAJGOJ FASHION';
 const STORE_TAGLINE = 'Premium Designer Sharee & Royal Jewelry Store';
-const EMAIL = 'contact@sajgoj.com';
+const EMAIL = 'nihatfahimbd@gmail.com';
 const PHONE = '+8809697489330';
 const WHATSAPP = '+8801805119888';
 const WHATSAPP_NUM = '8801805119888';
@@ -170,6 +170,24 @@ const STATIC_PAGES = [
       <div class="action-row">
         <a href="https://wa.me/${WHATSAPP_NUM}" target="_blank" rel="noopener" class="btn-primary">💬 WhatsApp এ মেসেজ দিন</a>
       </div>
+
+      <h2>✉️ সরাসরি সাপোর্ট ইমেইলে বার্তা পাঠান</h2>
+      <form id="contact-us-form" class="box-form" onsubmit="return submitStaticContactForm(event)">
+        <p style="margin:0 0 4px;font-size:12px;color:#475569;">প্রাপক: <strong id="contact-target-email">${EMAIL}</strong></p>
+        <label for="cu-name">আপনার নাম *</label>
+        <input type="text" id="cu-name" required placeholder="যেমন: তানিয়া আক্তার">
+        <label for="cu-sender">আপনার ইমেইল বা মোবাইল *</label>
+        <input type="text" id="cu-sender" required placeholder="name@gmail.com বা 01XXXXXXXXX">
+        <label for="cu-subject">বিষয় (Subject)</label>
+        <input type="text" id="cu-subject" placeholder="যেমন: অর্ডার সংক্রান্ত তথ্য / পণ্যের জিজ্ঞাসা">
+        <label for="cu-message">আপনার বার্তা *</label>
+        <textarea id="cu-message" rows="4" required placeholder="আপনার প্রশ্ন বা বিস্তারিত বার্তা এখানে লিখুন..."></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          <button type="submit" id="cu-submit-btn" class="btn-primary">✉️ বার্তা পাঠান</button>
+          <a href="mailto:${EMAIL}" id="cu-mailto-link" class="btn-secondary">📧 ${EMAIL}</a>
+        </div>
+        <div id="cu-feedback" style="display:none;margin-top:10px;padding:12px;border-radius:12px;font-size:13px;"></div>
+      </form>
     `
   },
   {
@@ -387,7 +405,7 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
     .faq-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; }
     .box-form { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
     .box-form label { font-size: 12px; font-weight: 700; color: #334155; }
-    .box-form input { padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13px; }
+    .box-form input, .box-form textarea { padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13px; width: 100%; background: #fff; color: #0f172a; }
     .nav-section { margin-top: 22px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; }
     .pill-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .pill { text-decoration: none; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
@@ -449,6 +467,81 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
   </main>
 
   <script>
+    function getStaticSupportEmail() {
+      var defEmail = '${EMAIL}';
+      try {
+        var raw = localStorage.getItem('sajgoj_config');
+        if (raw) {
+          var cfg = JSON.parse(raw);
+          var em = cfg && (cfg.email || (cfg.footer && cfg.footer.email)) ? String(cfg.email || cfg.footer.email).trim() : '';
+          if (em && !/^(contact|support|admin)@sajgoj\\.com$/i.test(em)) return em;
+        }
+      } catch (e) {}
+      return defEmail;
+    }
+
+    function submitStaticContactForm(event) {
+      event.preventDefault();
+      var name = (document.getElementById('cu-name')?.value || '').trim();
+      var sender = (document.getElementById('cu-sender')?.value || '').trim();
+      var subject = (document.getElementById('cu-subject')?.value || '').trim() || '${STORE_NAME} — কাস্টমার বার্তা';
+      var message = (document.getElementById('cu-message')?.value || '').trim();
+      var btn = document.getElementById('cu-submit-btn');
+      var fb = document.getElementById('cu-feedback');
+      var targetEmail = getStaticSupportEmail();
+      if (!name || !sender || !message) return false;
+      var mailtoHref = 'mailto:' + targetEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('নাম: ' + name + '\\nযোগাযোগ: ' + sender + '\\n\\nবার্তা:\\n' + message);
+      if (btn) { btn.disabled = true; btn.textContent = 'পাঠানো হচ্ছে...'; }
+      if (fb) { fb.style.display = 'none'; }
+      fetch('https://formsubmit.co/ajax/' + encodeURIComponent(targetEmail), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          contact: sender,
+          subject: subject,
+          message: message,
+          _subject: '[${STORE_NAME}] ' + subject,
+          _template: 'table',
+          _captcha: 'false'
+        })
+      }).then(function(r) {
+        return r.json().catch(function() { return {}; }).then(function(d) { return { ok: r.ok, data: d }; });
+      }).then(function(res) {
+        if (res.ok && res.data && res.data.success !== 'false' && res.data.success !== false) {
+          if (fb) {
+            fb.style.display = 'block';
+            fb.style.background = '#ecfdf5';
+            fb.style.border = '1px solid #10b981';
+            fb.style.color = '#065f46';
+            fb.textContent = '✅ আপনার বার্তা সরাসরি ' + targetEmail + '-এ পাঠানো হয়েছে! আমাদের টিম শীঘ্রই উত্তর দেবে।';
+          }
+          document.getElementById('contact-us-form')?.reset();
+        } else {
+          if (fb) {
+            fb.style.display = 'block';
+            fb.style.background = '#fffbeb';
+            fb.style.border = '1px solid #f59e0b';
+            fb.style.color = '#92400e';
+            fb.innerHTML = 'ℹ️ সরাসরি ' + targetEmail + '-এ পাঠাতে আপনার ইমেইল অ্যাপ ওপেন করা হচ্ছে... <a href="' + mailtoHref + '" style="font-weight:700;margin-left:6px;">ইমেইল পাঠান ↗</a>';
+          }
+          window.location.href = mailtoHref;
+        }
+      }).catch(function() {
+        if (fb) {
+          fb.style.display = 'block';
+          fb.style.background = '#fffbeb';
+          fb.style.border = '1px solid #f59e0b';
+          fb.style.color = '#92400e';
+          fb.innerHTML = 'ℹ️ সরাসরি ' + targetEmail + '-এ পাঠাতে আপনার ইমেইল অ্যাপ ওপেন করা হচ্ছে... <a href="' + mailtoHref + '" style="font-weight:700;margin-left:6px;">ইমেইল পাঠান ↗</a>';
+        }
+        window.location.href = mailtoHref;
+      }).finally(function() {
+        if (btn) { btn.disabled = false; btn.textContent = '✉️ বার্তা পাঠান'; }
+      });
+      return false;
+    }
+
     function copyText(txt, btn) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(txt).then(function() {
@@ -513,6 +606,7 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
           if (ov.subtitle && ov.subtitle.trim() && sub) sub.textContent = ov.subtitle.trim();
           var bodyEl = document.getElementById('clean-page-body');
           if (ov.body && ov.body.trim() && bodyEl) {
+            var preservedContactForm = topicKey === 'contact' ? document.getElementById('contact-us-form') : null;
             bodyEl.innerHTML = '';
             ov.body.trim().split(/\\n+/).forEach(function(line) {
               if (!line.trim()) return;
@@ -520,7 +614,15 @@ function renderPageShell({ slug, title, description, badge, group, bodyHtml }) {
               p.textContent = line.trim();
               bodyEl.appendChild(p);
             });
+            if (preservedContactForm) bodyEl.appendChild(preservedContactForm);
           }
+        }
+        if (topicKey === 'contact') {
+          var resolvedEm = getStaticSupportEmail();
+          var emLabel = document.getElementById('contact-target-email');
+          var emLink = document.getElementById('cu-mailto-link');
+          if (emLabel) emLabel.textContent = resolvedEm;
+          if (emLink) { emLink.href = 'mailto:' + resolvedEm; emLink.textContent = '📧 ' + resolvedEm; }
         }
       } catch (e) {}
     })();

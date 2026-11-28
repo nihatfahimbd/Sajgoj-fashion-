@@ -163,17 +163,22 @@ fun HomePageLivePreview(
             }
             "voucher_strip" -> if (hp.showVoucherStrip) PreviewVoucherCard(hp)
             "category_slider" -> if (hp.showCategorySlider) PreviewCategoryStrip(hp, orderedCats)
-            "google_map" -> Box(
-              modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFFECFDF5))
-                .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(10.dp))
-                .padding(horizontal = 8.dp, vertical = 5.dp)
-            ) {
-              Text("📍 স্টোর লোকেশন (Google Map)", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF065F46))
+            "google_map" -> {
+              val hasFooterPreview = previewSections.any { it.type == "footer_block" }
+              if (!hasFooterPreview) {
+                Box(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFECFDF5))
+                    .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                ) {
+                  Text("📍 স্টোর লোকেশন (Google Map)", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF065F46))
+                }
+              }
             }
-            "footer_block" -> PreviewFooter2x2(hp, storeConfig)
+            "footer_block" -> PreviewFooter2x2(hp, storeConfig, showGoogleMap = storeConfig.showGoogleMap)
             else -> if (!shownProductSample) {
               shownProductSample = true
               val blkR = hp.blockRadiusPx.coerceIn(0, 32).dp
@@ -447,7 +452,7 @@ private fun PreviewCatTile(hp: HomePageConfig, icon: String, label: String) {
 }
 
 @Composable
-private fun PreviewFooter2x2(hp: HomePageConfig, storeConfig: StoreConfig) {
+private fun PreviewFooter2x2(hp: HomePageConfig, storeConfig: StoreConfig, showGoogleMap: Boolean = true) {
   Column(verticalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.fillMaxWidth()) {
     if (hp.showFooterMain) {
       val fR = hp.footerRadiusPx.coerceIn(0, 24).dp
@@ -509,6 +514,37 @@ private fun PreviewFooter2x2(hp: HomePageConfig, storeConfig: StoreConfig) {
               Text(txt, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = previewOptColor(hp.trustCardTextColor, Color.Black), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
           }
+        }
+      }
+    }
+
+    if (showGoogleMap) {
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(10.dp))
+          .background(Color.White.copy(alpha = 0.9f))
+          .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(10.dp))
+          .padding(horizontal = 7.dp, vertical = 5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          "📍 শোরুম ও Google Map",
+          fontSize = 7.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = Color(0xFF065F46),
+          modifier = Modifier.weight(1f)
+        )
+        Box(
+          modifier = Modifier
+            .size(18.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color(0xFFD1FAE5))
+            .border(0.8.dp, Color(0xFF10B981), RoundedCornerShape(4.dp)),
+          contentAlignment = Alignment.Center
+        ) {
+          Text("🗺️", fontSize = 8.sp)
         }
       }
     }

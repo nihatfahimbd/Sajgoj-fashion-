@@ -239,18 +239,28 @@ fun StorefrontScreen(
   val sortedDisplayProducts = remember(activeStorefrontProducts, sortOption) {
     sortStorefrontProducts(activeStorefrontProducts, sortOption)
   }
-  val activeSections = remember(homeSections) {
-    (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).filter { it.enabled }
+  val allSections = remember(homeSections) {
+    if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections
   }
-  val hasSearchBarSection = remember(homeSections) {
-    (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).any { it.type == "search_bar" }
+  val activeSections = remember(allSections) {
+    allSections.filter { it.enabled }
   }
-  val hasMapSection = remember(homeSections) {
-    (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).any { it.type == "google_map" }
+  val hasSearchBarSection = remember(allSections) {
+    allSections.any { it.type == "search_bar" }
   }
-  val hasFooterSection = remember(homeSections) {
-    (if (homeSections.isNotEmpty()) homeSections else fallbackDefaultSections).any { it.type == "footer_block" }
+  val hasMapSection = remember(allSections) {
+    allSections.any { it.type == "google_map" }
   }
+  val hasFooterSection = remember(allSections) {
+    allSections.any { it.type == "footer_block" }
+  }
+  val mapSectionEnabled = remember(allSections) {
+    allSections.find { it.type == "google_map" }?.enabled ?: true
+  }
+  val footerSectionEnabled = remember(allSections) {
+    allSections.find { it.type == "footer_block" }?.enabled ?: true
+  }
+  val mapRenderedInFooter = footerSectionEnabled && (hp.showFooterMain || hp.showTrustBadges || hp.showCopyrightBar)
   val searchBarIsPinnedTop = activeSections.firstOrNull()?.type == "search_bar"
 
   // Group top hero blocks so Banner -> Voucher -> Category keep their tight 4.dp vertical spacing
@@ -741,7 +751,7 @@ fun StorefrontScreen(
                 }
               }
             } else if (section.type == "google_map") {
-              if (config.showGoogleMap) {
+              if (config.showGoogleMap && !mapRenderedInFooter) {
                 item(key = "sec_${section.id}") {
                   StorefrontGoogleMapCard(config = config)
                 }
@@ -750,6 +760,7 @@ fun StorefrontScreen(
               item(key = "sec_${section.id}") {
                 StorefrontFooterCard(
                   config = config,
+                  showGoogleMapAboveCopyright = config.showGoogleMap && mapSectionEnabled,
                   onOpenTopic = { topic -> onOpenFooterTopic(topic) },
                   onOpenWhatsApp = { openWhatsApp() }
                 )
@@ -879,7 +890,7 @@ fun StorefrontScreen(
 
       // Fallback Map & Footer when in filtered/shopping mode or if structural entries are absent
       if (isFilteredMode || isShoppingAllMode || !hasMapSection) {
-        if (config.showGoogleMap) {
+        if (config.showGoogleMap && !mapRenderedInFooter) {
           item(key = "storefront_google_map_fallback") {
             StorefrontGoogleMapCard(config = config)
           }
@@ -890,6 +901,7 @@ fun StorefrontScreen(
         item(key = "storefront_footer_fallback") {
           StorefrontFooterCard(
             config = config,
+            showGoogleMapAboveCopyright = config.showGoogleMap && mapSectionEnabled,
             onOpenTopic = { topic -> onOpenFooterTopic(topic) },
             onOpenWhatsApp = { openWhatsApp() }
           )
@@ -1837,6 +1849,7 @@ private fun EmptySearchResultBox() {
 @Composable
 private fun StorefrontFooterCard(
   config: StoreConfig,
+  showGoogleMapAboveCopyright: Boolean = false,
   onOpenTopic: (String) -> Unit = {},
   onOpenWhatsApp: () -> Unit = {}
 ) {
@@ -2175,6 +2188,10 @@ private fun StorefrontFooterCard(
       }
     }
 
+    if (showGoogleMapAboveCopyright && config.showGoogleMap) {
+      StorefrontGoogleMapCard(config = config, insideFooter = true)
+    }
+
     // Copyright Bar
     if (hp.showCopyrightBar) {
       val copyTxt = hp.footerCopyrightOverride.ifBlank { "© 2026 ${config.storeName}. All Rights Reserved." }
@@ -2320,109 +2337,136 @@ private fun openStoreGoogleMap(context: Context, config: StoreConfig, directions
   }
 }
 
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 private fun StorefrontGoogleMapCard(
-  config: StoreConfig
+  config: StoreConfig,
+  insideFooter: Boolean = false
 ) {
   val context = LocalContext.current
   var showLiveMapDialog by remember { mutableStateOf(false) }
+  val embedUrl = remember(config.googleMapQuery, config.address) { buildStoreMapEmbedUrl(config) }
 
   Surface(
-    shape = RoundedCornerShape(18.dp),
+    shape = RoundedCornerShape(16.dp),
     color = Color.White,
     border = BorderStroke(1.2.dp, BorderGold),
     shadowElevation = 2.dp,
     modifier = Modifier
       .fillMaxWidth()
-      .padding(top = 12.dp)
+      .padding(top = if (insideFooter) 4.dp else 10.dp)
       .testTag("storefront_google_map_card")
   ) {
     Column(
-      modifier = Modifier.padding(14.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp)
+      modifier = Modifier.padding(12.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Box(
-          modifier = Modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-              Brush.linearGradient(
-                listOf(RoyalMaroon, NavyBlue)
-              )
-            ),
-          contentAlignment = Alignment.Center
-        ) {
-          Icon(
-            imageVector = Icons.Default.LocationOn,
-            contentDescription = "শোরুম গুগল ম্যাপ লোকেশন",
-            tint = AntiqueGold,
-            modifier = Modifier.size(24.dp)
-          )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = "📍 Google Map Location — আমাদের শোরুম",
-            fontSize = 13.5.sp,
-            fontWeight = FontWeight.Black,
-            color = RoyalMaroon
-          )
-          Text(
-            text = config.address,
-            fontSize = 11.5.sp,
-            color = DarkEspresso,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-          )
-        }
-      }
-
-      Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = CreamSurface,
-        border = BorderStroke(1.dp, BorderGold.copy(alpha = 0.8f)),
-        modifier = Modifier.fillMaxWidth()
-      ) {
         Column(
-          modifier = Modifier.padding(10.dp),
+          modifier = Modifier.weight(1f),
           verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
           Text(
-            text = "🕒 প্রতিদিন সকাল ১০:০০ – রাত ০৯:৩০ • হটলাইন: ${config.phone}",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = DarkEspresso
+            text = "📍 Google Map Location",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = RoyalMaroon
           )
           Text(
-            text = "🗺️ পিন: ${resolveStoreMapQuery(config)}",
+            text = "আমাদের শোরুমে সরাসরি আসুন",
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Black,
+            color = DarkEspresso,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+          )
+          Text(
+            text = config.address,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkEspresso.copy(alpha = 0.82f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            lineHeight = 14.sp
+          )
+          Text(
+            text = "🕒 ১০:০০–২১:৩০ • 📞 ${config.phone}",
             fontSize = 10.5.sp,
+            fontWeight = FontWeight.SemiBold,
             color = AntiqueGoldDark,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
           )
         }
+
+        // Compact square mini-map preview right next to the block title
+        Box(
+          modifier = Modifier
+            .size(76.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(CreamSurface)
+            .border(1.5.dp, BorderGold, RoundedCornerShape(12.dp))
+            .clickable { showLiveMapDialog = true }
+            .testTag("storefront_mini_map_square")
+        ) {
+          AndroidView(
+            factory = { ctx ->
+              runCatching {
+                WebView(ctx).apply {
+                  settings.javaScriptEnabled = true
+                  settings.domStorageEnabled = true
+                  settings.useWideViewPort = true
+                  settings.loadWithOverviewMode = true
+                  setInitialScale(45)
+                  isHorizontalScrollBarEnabled = false
+                  isVerticalScrollBarEnabled = false
+                  webViewClient = WebViewClient()
+                  loadUrl(embedUrl)
+                }
+              }.getOrElse { android.view.View(ctx) }
+            },
+            update = { view ->
+              val wv = view as? WebView ?: return@AndroidView
+              if (wv.url != embedUrl) {
+                wv.loadUrl(embedUrl)
+              }
+            },
+            modifier = Modifier.fillMaxSize()
+          )
+          // Transparent click overlay so tapping the square map opens the interactive map dialog cleanly
+          Box(
+            modifier = Modifier
+              .fillMaxSize()
+              .clickable { showLiveMapDialog = true }
+          )
+          Box(
+            modifier = Modifier
+              .align(Alignment.BottomEnd)
+              .padding(4.dp)
+              .clip(RoundedCornerShape(6.dp))
+              .background(Color.Black.copy(alpha = 0.72f))
+              .padding(horizontal = 4.dp, vertical = 2.dp)
+          ) {
+            Text(
+              text = "↗",
+              fontSize = 9.sp,
+              fontWeight = FontWeight.Black,
+              color = Color.White
+            )
+          }
+        }
       }
+
+      HorizontalDivider(color = BorderGold.copy(alpha = 0.45f))
 
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Button(
-          onClick = { showLiveMapDialog = true },
-          colors = ButtonDefaults.buttonColors(containerColor = RoyalMaroon),
-          shape = RoundedCornerShape(12.dp),
-          contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-          modifier = Modifier
-            .weight(1f)
-            .heightIn(min = 48.dp)
-            .testTag("storefront_live_map_btn")
-        ) {
-          Text("লাইভ ম্যাপ", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        }
         Button(
           onClick = { openStoreGoogleMap(context, config, directions = false) },
           colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
@@ -2433,7 +2477,7 @@ private fun StorefrontGoogleMapCard(
             .heightIn(min = 48.dp)
             .testTag("storefront_open_gmaps_btn")
         ) {
-          Text("গুগল ম্যাপ ↗", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+          Text("🗺️ গুগল ম্যাপে খুলুন", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
         Button(
           onClick = { openStoreGoogleMap(context, config, directions = true) },
@@ -2445,7 +2489,7 @@ private fun StorefrontGoogleMapCard(
             .heightIn(min = 48.dp)
             .testTag("storefront_directions_btn")
         ) {
-          Text("ডিরেকশন", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+          Text("🧭 ডিরেকশন নিন", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
       }
     }
